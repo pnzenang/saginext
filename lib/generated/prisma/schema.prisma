@@ -1,0 +1,58 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Profile {
+  id                       String @id @default(uuid())
+  clerkId                  String @unique
+  associationName          String
+  associationCode          String @unique()
+  firstDelegateName        String
+  firstDelegateEmail       String
+  firstDelegatePhoneNumber String
+  email                    String
+
+  secondDelegateName        String
+  secondDelegateEmail       String
+  secondDelegatePhoneNumber String
+
+  thirdDelegateName        String
+  thirdDelegateEmail       String
+  thirdDelegatePhoneNumber String
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+  // Member                   Member[]
+}
+
+model Member {
+  id            String   @id @default(uuid())
+  clerkId       String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  matriculation String
+  firstName     String
+
+  middleName      String
+  lastName        String
+  countryOfBirth  String
+  dateOfBirth     String
+  associationName String
+  associationCode String
+  recommendation  String
+  status          String
+  // profile         Profile @relation(fields: [profileId], references: [clerkId], onDelete: Cascade)
+  // profileId       String
+}
