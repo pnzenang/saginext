@@ -43,9 +43,9 @@ const EditMemberInfo = async ({ params }: { params: { id: string } }) => {
   return (
     <section className='border-4 border-primary rounded-lg mt-48'>
       <h1 className='text-3xl sm:text-4xl lg:text-6xl font-semibold mb-2 p-10 text-primary'>
-        Edit member's information
+        Edit member information
         <span className=' text-primary block mt-1 sm:text-xl'>
-          Here, you can change the member's date of birth, country of birth or
+          Here, you can change the member date of birth, country of birth or
           delegate recommendation and beneficiary name.
         </span>
       </h1>

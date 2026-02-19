@@ -40,7 +40,7 @@ const DeathAnnouncement = async ({ params }: { params: { id: string } }) => {
   return (
     <section className='border-4 border-purple-500 rounded-lg mt-48'>
       <h1 className='text-2xl sm:text-4xl lg:text-6xl font-semibold mb-2 p-10 text-purple-500'>
-        Post member's death
+        Post member death
         <span className=' text-purple-500 block mt-1 text-sm sm:text-xl'>
           Sorry for the loss, check your entry very well before submission, the
           process is not reversible.

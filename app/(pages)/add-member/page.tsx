@@ -28,7 +28,7 @@ const AddMembers = async () => {
       <h1 className='text-3xl sm:text-4xl lg:text-6xl font-semibold mb-2 capitalize p-10 text-primary'>
         Add member
         <span className='text-sm text-primary block mt-2 '>
-          Add the information as they appear in the member's official documents.
+          Add the information as they appear in the member official documents.
         </span>
       </h1>
 
