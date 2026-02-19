@@ -26,7 +26,7 @@ const SingleMemberPage = async ({ params }: { params: { id: string } }) => {
     <section className='mt-36   '>
       <div className='mx-auto max-w-screen-xl  py-12 sm:py-14'>
         <h2 className='text-cente  font-semibold tracking-tight text-balance sm:text-5xl py-2'>
-          Member's Information
+          Member Information
         </h2>
 
         <div className='bg-primary/20 mb- break-inside-avoid rounded-lg border p-2.5 '>

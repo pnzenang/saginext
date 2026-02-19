@@ -188,7 +188,7 @@ const MemberList = () => {
                         >
                           <DropdownMenuItem className='flex  gap-2 text-purple-500 text-xs  sm:h-10'>
                             <RiCrossFill />
-                            Post {firstName} {lastName}'s death
+                            Post {firstName} {lastName} death
                           </DropdownMenuItem>
                         </Link>
                       </DropdownMenuContent>
