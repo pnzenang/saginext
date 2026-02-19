@@ -5,13 +5,13 @@ import {
   FiChevronsLeft,
   FiChevronsRight,
   FiChevronUp,
-} from 'react-icons/fi'
-import { Table } from '@tanstack/react-table'
+} from 'react-icons/fi';
+import { Table } from '@tanstack/react-table';
 
-import { Button } from '../ui/button'
+import { Button } from '../ui/button';
 
 interface DataTablePaginationProps<TData> {
-  table: Table<TData>
+  table: Table<TData>;
 }
 
 export function DataTablePagination<TData>({
@@ -33,19 +33,19 @@ export function DataTablePagination<TData>({
             <FiChevronUp
               onClick={
                 !table.getCanNextPage()
-                  ? null
+                  ? undefined
                   : () => {
                       table.getState().pagination.pageSize <= 1
                         ? table.setPageSize(5)
                         : table.setPageSize(
-                            table.getState().pagination.pageSize + 5
-                          )
+                            table.getState().pagination.pageSize + 5,
+                          );
                     }
               }
             ></FiChevronUp>
             <FiChevronDown
               onClick={() => {
-                table.setPageSize(table.getState().pagination.pageSize - 5)
+                table.setPageSize(table.getState().pagination.pageSize - 5);
               }}
             ></FiChevronDown>
           </div>
@@ -95,5 +95,5 @@ export function DataTablePagination<TData>({
         </div>
       </div>
     </>
-  )
+  );
 }
