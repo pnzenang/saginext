@@ -11,7 +11,6 @@ const Footer = () => {
       <div className='pb mt-10 sm:px-16 md:-mb-2 lg:px-24'>
         <HoverText text='SAGI' />
       </div>
-      <h1 className='pb-9 text-center'> a 501(c)(3) organization</h1>
     </footer>
   )
 }
