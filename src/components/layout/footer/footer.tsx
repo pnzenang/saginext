@@ -10,8 +10,8 @@ const Footer = () => {
     <footer className='relative overflow-hidden'>
       <div className='mt-10 pb-10 sm:px-16 md:-mb-22 lg:px-24'>
         <HoverText text='SAGI' />
+        <h1 className='text-center'> a 501(c)(3) organization</h1>
       </div>
-      <h1> a 501(c)(3) organization</h1>
     </footer>
   )
 }
