@@ -8,10 +8,10 @@ import Logo from '@/components/logo'
 const Footer = () => {
   return (
     <footer className='relative overflow-hidden'>
-      <div className='pb mt-10 sm:px-16 md:-mb-22 lg:px-24'>
+      <div className='pb mt-10 sm:px-16 md:-mb-2 lg:px-24'>
         <HoverText text='SAGI' />
       </div>
-      <h1 className='text-center'> a 501(c)(3) organization</h1>
+      <h1 className='pb-9 text-center'> a 501(c)(3) organization</h1>
     </footer>
   )
 }
