@@ -1,0 +1,117 @@
+import { IoIosWarning } from 'react-icons/io'
+
+import { SubmitButton } from '@/components/forms/Buttons'
+import FormContainer from '@/components/forms/FormContainer'
+import FormInput from '@/components/forms/FormInput'
+import FormInputS from '@/components/forms/FormInputS'
+import FormSelect from '@/components/forms/FormSelect'
+import MaskDateInput from '@/components/forms/MaskDateInput'
+import {
+  createRemovedMemberAction,
+  fetchProfile,
+  fetchSingleMemberDetails,
+  updateMemberDetailsAction
+} from '@/utils/actions'
+import { reasonForLeaving } from '@/utils/types'
+import { BsSignStopFill } from 'react-icons/bs'
+
+const RemoveMember = async ({ params }: { params: { id: string } }) => {
+  const { id } = await params
+
+  const member = await fetchSingleMemberDetails(id)
+
+  const {
+    firstName,
+    lastAndMiddleNames,
+    dateOfBirth,
+    countryOfBirth,
+    memberMatriculationNumber,
+    associationCode,
+    associationName
+  } = member
+
+  const profile = await fetchProfile()
+  const currentDay = new Date().getDate()
+  const shouldShow = currentDay <= 5 || currentDay >= 15
+
+  return (
+    <section className='mt-16 flex flex-col'>
+      <div className='mt-4 flex flex-row items-center'>
+        <IoIosWarning size={60} className='text-red-500' />
+        <h1 className='text-3xl font-semibold text-red-600 capitalize sm:text-6xl'> member Removal </h1>
+      </div>
+      <div>
+        {shouldShow ? (
+          <p className='text-xs text-red-500 sm:text-lg'>
+            Check your entry well before submission as the process is not reversible once submitted. Sorry to see your
+            member go.
+          </p>
+        ) : null}
+      </div>
+
+      <div className='border-destructive rounded-lg border bg-red-800/40 p-8'>
+        <FormContainer action={createRemovedMemberAction}>
+          <div>
+            <input type='hidden' name='id' value={id} />
+            <div className='mt-4 grid gap-4 md:grid-cols-3'>
+              <FormInput
+                type='text'
+                name='lastAndMiddleNames'
+                label='member last and middle names'
+                defaultValue={lastAndMiddleNames}
+              />
+              {/* <FormInputS type='text' name='middleName' label='member middle name' defaultValue={middleName} /> */}
+              <FormInput type='text' name='firstName' label='member first names' value={firstName} readOnly />
+              <FormInput type='text' name='dateOfBirth' label='member date of birth' defaultValue={dateOfBirth} />
+              <FormInput
+                type='text'
+                name='countryOfBirth'
+                label='member country of birth'
+                defaultValue={countryOfBirth}
+              />
+              <FormInput
+                type='text'
+                name='memberMatriculationNumber'
+                label='matriculation'
+                defaultValue={memberMatriculationNumber}
+              />
+              <FormInput
+                type='text'
+                name='associationName'
+                label='member association name'
+                defaultValue={associationName}
+              />
+              <FormInput
+                type='text'
+                name='associationCode'
+                label='member association code'
+                defaultValue={associationCode}
+              />
+              <FormSelect
+                label='reason for leaving'
+                items={Object.values(reasonForLeaving)}
+                name='reasonForLeaving'
+                defaultValue={reasonForLeaving.NoReason}
+              />
+
+              {shouldShow && (
+                <SubmitButton text='Withdraw member' className='mt-4 w-full bg-red-800 hover:bg-red-900' />
+              )}
+            </div>
+            {!shouldShow && (
+              <div className='mt-10 flex flex-col items-center justify-center gap-1 sm:flex-row'>
+                <BsSignStopFill className='size-8 items-center text-red-500' />{' '}
+                <h1 className='text-center text-sm font-semibold text-red-500 sm:text-lg'>
+                  SAGI prevents withdrawal between the 5th and the 15th of the month in order to ensure accuracy of the
+                  contribution. Resume withdrawal on or after the 15th.
+                </h1>
+              </div>
+            )}
+          </div>
+        </FormContainer>
+      </div>
+    </section>
+  )
+}
+
+export default RemoveMember
