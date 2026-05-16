@@ -21,28 +21,31 @@ const ContactUs = () => {
               <CardContent className='text-primary-foreground space-y-7'>
                 <div className='space-y-2'>
                   <h2 className='text-2xl font-semibold'>Contact Information</h2>
-                  <p>Explore new destinations, indulge in local cuisines, and immerse yourself in diverse cultures.</p>
+                  <p>
+                    If you could not find the information you were looking for, please don&apos;t hesitate to contact
+                    us.
+                  </p>
                 </div>
 
                 <div className='space-y-7'>
                   {/* Phone */}
                   <div className='flex items-start gap-4 text-lg font-semibold'>
                     <PhoneIcon className='size-7 shrink-0' />
-                    +1-316-555-1258
+                    <a href='tel:+1-804-214-6390'>(804) 214-6390</a>
                   </div>
 
                   {/* Email */}
                   <div className='flex items-start gap-4'>
                     <MailIcon className='size-7 shrink-0' />
-                    <a className='text-lg font-semibold' href='mailto:hadams@gmail.com'>
-                      hadams@gmail.com
+                    <a className='text-lg font-semibold' href='mailto:info@mySagi.org'>
+                      info@mySagi.org
                     </a>
                   </div>
 
                   {/* Address */}
                   <div className='flex items-start gap-4 text-lg font-semibold'>
                     <MapPinIcon className='size-7 shrink-0' />
-                    <address className='not-italic'>802 Pension Rd, Maine 96812, USA</address>
+                    <address className='not-italic'>9711 Washingtonian Blvd Suite 550, Gaithersburg, MD 20878</address>
                   </div>
                 </div>
               </CardContent>
