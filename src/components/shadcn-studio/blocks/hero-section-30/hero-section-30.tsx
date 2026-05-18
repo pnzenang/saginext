@@ -27,7 +27,7 @@ const HeroSection = ({ testimonials }: { testimonials: Testimonial[] }) => {
       <div
         className='mx-auto flex max-w-7xl flex-col items-center gap-8 rounded-xl bg-cover bg-center px-4 sm:gap-16 sm:px-6 lg:gap-24 lg:px-8'
         style={{
-          backgroundImage: "url('https://res.cloudinary.com/dp8tkb7hq/image/upload/v1779065659/mourning3_bsmnes.svg')"
+          backgroundImage: "url('https://res.cloudinary.com/dp8tkb7hq/image/upload/v1779077351/mourning_fdgbjz.svg')"
         }}
       >
         {/* <div className='absolute inset-0 bg-black/50'></div> */}
@@ -60,7 +60,7 @@ const HeroSection = ({ testimonials }: { testimonials: Testimonial[] }) => {
               slide={{ direction: 'down', offset: 50 }}
               delay={0.5}
               transition={{ duration: 0.5, ease: 'easeOut' }}
-              className='z-10 max-w-5xl text-xl text-white sm:text-2xl lg:py-16 lg:text-3xl'
+              className='z-10 max-w-5xl py-12 text-xl text-white sm:text-2xl lg:py-16 lg:text-3xl'
             >
               Join the most cost effective mutual aid community in the USA. With SAGI, you save money while gaining
               access to a network of support and solidarity with low overhead expenses and big benefits.
