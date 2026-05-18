@@ -26,14 +26,16 @@ const Team2 = ({ teamMembers2 }: { teamMembers2: TeamMember }) => {
       </div>
       <div className='mx-auto mb-12 max-w-7xl px-4 sm:mb-16 sm:px-6 lg:mb-24 lg:px-8'>
         <div className='mx-auto space-y-4 text-center'>
-          <MotionPreset fade slide={{ direction: 'down', offset: 50 }} blur transition={{ duration: 0.5 }} delay={0.1}>
-            <Badge variant='outline' className='text-sm font-normal'>
-              Meet our team
-            </Badge>
-          </MotionPreset>
+          <MotionPreset
+            fade
+            slide={{ direction: 'down', offset: 50 }}
+            blur
+            transition={{ duration: 0.5 }}
+            delay={0.1}
+          ></MotionPreset>
           <MotionPreset
             component='h2'
-            className='text-2xl font-semibold md:text-3xl lg:text-4xl'
+            className='text-2xl font-semibold md:text-4xl lg:text-6xl'
             fade
             slide={{ direction: 'down', offset: 50 }}
             blur
@@ -51,12 +53,7 @@ const Team2 = ({ teamMembers2 }: { teamMembers2: TeamMember }) => {
             transition={{ duration: 0.5 }}
             delay={0.2}
           >
-            Driven by purpose, our team blends creativity, innovation, and expertise to shape remarkable outcomes.
-          </MotionPreset>
-          <MotionPreset fade blur slide={{ direction: 'down', offset: 50 }} delay={0.3} transition={{ duration: 0.5 }}>
-            <Button size='lg' className='rounded-lg text-base'>
-              About Us
-            </Button>
+            Driven by purpose, this team is the team without which we couldn't achieve our anything.
           </MotionPreset>
         </div>
       </div>

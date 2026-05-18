@@ -21,7 +21,7 @@ const TestimonialsComponent = ({ testimonials }: TestimonialsComponentProps) => 
     <section id='testimonials' className='bg-muted space-y-12 py-8 sm:space-y-16 sm:py-16 lg:space-y-24 lg:py-24'>
       {/* Header */}
       <div className='mb-12 space-y-4 text-center sm:mb-16 lg:mb-24'>
-        <h2 className='text-2xl font-semibold md:text-3xl lg:text-4xl'>Trusted by 12,000+ users</h2>
+        <h2 className='text-2xl font-semibold md:text-4xl lg:text-6xl'>Trusted by 13,000 + members</h2>
 
         <p className='text-muted-foreground text-lg md:text-xl'>
           A trusted platform built around security, clarity, and user success <br className='hidden lg:block' /> just

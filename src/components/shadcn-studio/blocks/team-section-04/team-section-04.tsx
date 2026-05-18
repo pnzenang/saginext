@@ -26,12 +26,7 @@ const Team = ({ teamMembers }: { teamMembers: TeamMember }) => {
     <section className='py-8 sm:py-16 lg:py-24'>
       <div className='bg-muted mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8'>
         <div className='mb-20 space-y-4 text-center lg:mb-24'>
-          <div>
-            <Badge variant='outline' className='text-sm font-normal'>
-              Creative team
-            </Badge>
-          </div>
-          <h2 className='text-2xl font-semibold md:text-3xl lg:text-4xl'>
+          <h2 className='text-2xl font-semibold md:text-4xl lg:text-6xl'>
             Meet the Brilliant Minds Behind Our Success
           </h2>
           <p className='text-muted-foreground text-xl'>

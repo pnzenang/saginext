@@ -14,6 +14,8 @@ import { stats, teamMembers, teamMembers2 } from '@/utils/constants'
 import Team2 from '@/components/shadcn-studio/blocks/team-section-17/team-section-17'
 import ContactUs from '@/components/shadcn-studio/blocks/contact-us-page-02/contact-us-page-02'
 import AboutUs from '@/components/shadcn-studio/blocks/about-us-page-01/about-us-page-01'
+import Features from '@/components/features'
+import Features2 from '@/components/shadcn-studio/blocks/features-section-02/features-section-02'
 
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -36,8 +38,11 @@ const Home = () => {
     <>
       <HeroSection testimonials={testimonials} />
       <AboutUs stats={stats} />
+
       <SocialProof features={features} />
+      <Features />
       <Pricing pricingPlans={pricingPlans} />
+      <Features2 />
       <Team teamMembers={teamMembers} />
       <Team2 teamMembers2={teamMembers2} />
       <Quote />
@@ -116,42 +121,39 @@ const features = [
 
 const pricingPlans = [
   {
-    name: 'Starter',
+    name: 'Pending',
     price: 99,
-    description: 'Recommended for people with at least 1 year experience in crypto markets.',
-    buttonText: 'Starter',
+    description: 'In this stage, the member is in the waiting period.',
+    buttonText: 'Pending',
     features: [
-      '1 user account',
-      '24 transaction per month',
-      '16 altcoin pairs',
-      'Basic AI analysis of markets',
-      'Build-in wallet API for your crypto'
+      'The member is in the waiting period',
+      'The member is not eligible for payouts',
+      'The registration fee can be paid at any time',
+      'The member can be removed at any time '
     ]
   },
   {
-    name: 'Professional',
+    name: 'Not_In_Good_Standing',
     price: 199,
-    description: 'Best for large business owners, startups who need a landing page for their business.',
-    buttonText: 'Professional',
+    description: 'Here the member is not in good standing, and is not .',
+    buttonText: 'Not_In_Good_Standing',
     features: [
-      '1 user account',
-      'Unlimited transactions per month',
-      'Unlimited altcoin pairs',
-      'Advanced AI analysis of markets',
-      'Build-in wallet API for your crypto'
+      'The member is not in waiting period',
+      'The member has missed registration and/or',
+      'The members have missed contributions ',
+      'The member is not eligible for payouts'
     ]
   },
   {
-    name: 'Enterprise',
+    name: 'Vested',
     price: 299,
-    description: 'Best for large business owners, startups who need a landing page for their business.',
-    buttonText: 'Enterprise',
+    description: 'The members meet all their participation requirements and are eligible for payouts.',
+    buttonText: 'Vested',
     features: [
-      'Unlimited users account',
-      'Unlimited transactions per month',
-      'Unlimited altcoin pairs',
-      'Advanced AI analysis of market by expert',
-      'Build-in wallet API for your crypto'
+      'The member is not in waiting period',
+      'The member has paid registration fee',
+      'The members have no missed contributions',
+      'The member is  eligible for payouts'
     ]
   }
 ]

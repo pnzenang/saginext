@@ -19,7 +19,7 @@ const SocialProof = ({ features }: { features: Features[] }) => {
             <div className='mb-10 space-y-4'>
               <MotionPreset
                 component='h2'
-                className='text-2xl font-semibold md:text-3xl lg:text-4xl'
+                className='text-2xl font-semibold md:text-3xl lg:text-6xl'
                 fade
                 slide={{ direction: 'up', offset: 50 }}
                 blur
@@ -37,9 +37,7 @@ const SocialProof = ({ features }: { features: Features[] }) => {
                 delay={0.3}
                 transition={{ duration: 0.5 }}
               >
-                In the world of construction, our journey showcases the strength found in teamwork and determination.
-                We&apos;ve faced obstacles head-on, marked significant achievements, and built a compelling story of
-                progress and success.
+                When it comes to performance, we deliver results, No detours, no compromises, no shenanigans.
               </MotionPreset>
             </div>
 
@@ -71,7 +69,7 @@ const SocialProof = ({ features }: { features: Features[] }) => {
           {/* Right Column - Image */}
           <MotionPreset className='my-auto h-fit' fade delay={0.4} transition={{ duration: 1.5 }}>
             <img
-              src='https://cdn.shadcnstudio.com/ss-assets/blocks/marketing/social-proof/image-2.png'
+              src='https://res.cloudinary.com/dp8tkb7hq/image/upload/v1778934995/stats_un5hkj.svg'
               alt='Social Image'
               className='w-full rounded-md object-contain'
             />

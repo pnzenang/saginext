@@ -9,7 +9,7 @@ const ContactUs = () => {
     <section id='contact' className='bg-muted py-8 sm:py-16 lg:py-24'>
       <div className='mx-auto max-w-7xl px-4 sm:px-6 lg:px-8'>
         <div className='mb-12 space-y-4 text-center sm:mb-16 lg:mb-24'>
-          <h2 className='text-2xl font-semibold md:text-3xl lg:text-4xl'>How Can We Help?</h2>
+          <h2 className='text-2xl font-semibold md:text-3xl lg:text-6xl'>How Can We Help?</h2>
           <p className='text-muted-foreground text-xl'>
             Have a question or need assistance? Contact us and let&apos;s find a solution together!
           </p>

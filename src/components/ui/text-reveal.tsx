@@ -39,7 +39,7 @@ const TextReveal = ({ children, className }: TextRevealProps) => {
 
   return (
     <section id='quote' ref={targetRef} className={cn('relative z-0 h-[200vh]', className)}>
-      <div className={'sticky top-0 mx-auto flex h-1/2 max-w-7xl items-center bg-transparent py-8 sm:py-16 lg:py-12'}>
+      <div className={'sticky top-0 mx-auto flex h-1/2 max-w-7xl items-center bg-transparent py-8 sm:py-8 lg:py-12'}>
         <div
           ref={targetRef}
           className={

@@ -12,27 +12,21 @@ type StatItem = {
 
 const AboutUs = ({ stats }: { stats: StatItem }) => {
   return (
-    <section id='#about' className='bg-muted py-8 sm:py-16 lg:py-24'>
+    <section id='about' className='bg-muted py-8 sm:py-16 lg:py-24'>
       <div className='mx-auto max-w-7xl px-4 sm:px-6 lg:px-8'>
         {/* Header */}
-        <div className='mb-12 space-y-4 text-center md:mb-16 lg:mb-24'>
-          <h2 className='text-2xl font-semibold tracking-tight md:text-3xl lg:text-4xl'>About Us</h2>
+        <div className='mb-6 space-y-4 text-center md:mb-8 lg:mb-12'>
+          <h2 className='text-2xl font-semibold tracking-tight md:text-3xl lg:text-6xl'>About Us</h2>
           <p className='text-muted-foreground text-xl'>
             Our achievement story stands as a powerful testament to teamwork and perseverance. United, we have faced
             challenges, celebrated victories, and woven a narrative of growth and success.
           </p>
-          <Button size='lg' asChild className='group rounded-lg text-base has-[>svg]:px-6'>
-            <a href='#'>
-              Read more
-              <ArrowRightIcon className='transition-transform duration-200 group-hover:translate-x-0.5' />
-            </a>
-          </Button>
         </div>
 
         {/* Video player and stats */}
         <div className='relative mb-8 h-full w-full max-lg:space-y-6 sm:mb-16 lg:mb-24'>
           <img
-            src='https://cdn.shadcnstudio.com/ss-assets/blocks/marketing/about-us/image-44.png'
+            src='https://res.cloudinary.com/dp8tkb7hq/image/upload/v1778931667/brainstorm_mehsgn.svg'
             alt='About us illustration'
             className='h-full w-full rounded-lg object-cover'
           />

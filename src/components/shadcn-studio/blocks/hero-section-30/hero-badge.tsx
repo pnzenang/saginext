@@ -67,7 +67,7 @@ const HeroBadge = () => {
             }
           }}
           transition={{ layout: { duration: 0.3 } }}
-          className='inline-flex overflow-hidden text-xs sm:text-xl'
+          className='inline-flex overflow-hidden text-xs text-white sm:text-xl'
         >
           {badges[currentIndex].words.split('').map((char, i) => (
             <motion.span
