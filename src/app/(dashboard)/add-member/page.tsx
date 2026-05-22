@@ -36,7 +36,7 @@ const AddMember = async () => {
             <FormInput
               type='text'
               name='lastAndMiddleNames'
-              label='member last and Middle names (Last Name First & No Abbreviation)'
+              label='last & middle names (Last Name First & No Abbreviation)'
             />
             {/* <FormInputS type='text' name='middleName' label='member middle name' /> */}
             <FormInput type='text' name='firstName' label='member first names' />
@@ -44,7 +44,7 @@ const AddMember = async () => {
           <div className='mt-4 grid gap-4 md:grid-cols-3'> */}
             <MaskDateInput type='text' name='dateOfBirth' label='member date of birth' placeholder='MM / DD / YYYY' />
             <FormInput type='text' name='countryOfBirth' label='member country of birth' />
-            <FormInput type='text' name='nameOfBeneficiary' label='Name fo Beneficiary' />
+            <FormInput type='text' name='nameOfBeneficiary' label='Name of the Beneficiary' />
             {/* </div>
           <div className='mt-4 grid gap-4 md:grid-cols-3'> */}
             <FormInput

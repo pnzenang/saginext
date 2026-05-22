@@ -1,7 +1,6 @@
 'use client'
 import { useId, useMemo, useState } from 'react'
 
-import { IoIosWarning } from 'react-icons/io'
 import day from 'dayjs'
 import advancedFormat from 'dayjs/plugin/advancedFormat'
 import Papa from 'papaparse'
@@ -63,10 +62,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { usePagination } from '@/hooks/use-pagination'
 
 import { cn } from '@/lib/utils'
-import type { RemovedMemberType } from '@/utils/types'
 import { type MemberType } from '@/utils/types'
-import { deleteRemovedMemberAction } from '@/utils/actions'
-import FormContainer from '@/components/forms/FormContainer'
 
 declare module '@tanstack/react-table' {
   interface ColumnMeta<TData extends RowData, TValue> {
@@ -74,55 +70,7 @@ declare module '@tanstack/react-table' {
   }
 }
 
-const columns: ColumnDef<RemovedMemberType>[] = [
-  {
-    header: 'Last And Middle Names',
-    accessorKey: 'lastAndMiddleNames',
-    cell: ({ row }) => (
-      <div className='flex items-center gap-2'>
-        <div className='flex flex-col'>
-          <span className='font-medium'>{row.getValue('lastAndMiddleNames')}</span>
-        </div>
-      </div>
-    ),
-    size: 100
-  },
-  // {
-  //   header: 'Middle Name',
-  //   accessorKey: 'middleName',
-  //   cell: ({ row }) => (
-  //     <div className='flex items-center gap-2'>
-  //       <div className='flex flex-col'>
-  //         <span className='font-medium'>{row.getValue('middleName')}</span>
-  //       </div>
-  //     </div>
-  //   ),
-  //   size: 100
-  // },
-  {
-    header: 'First Name',
-    accessorKey: 'firstName',
-    cell: ({ row }) => (
-      <div className='flex items-center gap-2'>
-        <div className='flex flex-col'>
-          <span className='font-medium'>{row.getValue('firstName')}</span>
-        </div>
-      </div>
-    )
-  },
-
-  {
-    header: 'Matriculation',
-    accessorKey: 'memberMatriculationNumber',
-    cell: ({ row }) => (
-      <div className='flex items-center gap-2'>
-        <div className='flex flex-col'>
-          <span className='font-medium'>{row.getValue('memberMatriculationNumber')}</span>
-        </div>
-      </div>
-    ),
-    size: 150
-  },
+const columns: ColumnDef<MemberType>[] = [
   {
     header: 'Code',
     accessorKey: 'associationCode',
@@ -133,62 +81,124 @@ const columns: ColumnDef<RemovedMemberType>[] = [
         </div>
       </div>
     ),
-    size: 150
+    size: 100
   },
-
-  // {
-  //   header: 'Groupe Name',
-  //   accessorKey: 'associationName',
-  //   cell: ({ row }) => (
-  //     <div className='flex items-center gap-2'>
-  //       <div className='flex flex-col'>
-  //         <span className='font-medium'>{row.getValue('associationName')}</span>
-  //       </div>
-  //     </div>
-  //   ),
-  //   size: 150
-  // },
   {
-    header: 'Reason For Leaving',
-    accessorKey: 'reasonForLeaving',
+    header: 'Matriculation',
+    accessorKey: 'memberMatriculationNumber',
     cell: ({ row }) => (
       <div className='flex items-center gap-2'>
         <div className='flex flex-col'>
-          <span className='font-medium'>{row.getValue('reasonForLeaving')}</span>
+          <span className='font-medium'>{row.getValue('memberMatriculationNumber')}</span>
         </div>
       </div>
     ),
-    meta: {
-      filterVariant: 'select'
-    },
-    size: 150
+    size: 100
   },
   {
-    accessorKey: 'registrationDate', // The key in your data object
-    header: 'Registration Date',
-    cell: ({ row }) => {
-      const field = row.getValue('registrationDate') as string
-      const fieldDate = new Date(field)
-
-      const formattedRegistrationDate = day(fieldDate).format('MMM D, YYYY')
-
-      return <div>{formattedRegistrationDate}</div>
-    },
+    header: 'Last and Middle Names',
+    accessorKey: 'lastAndMiddleNames',
+    cell: ({ row }) => (
+      <div className='flex items-center gap-2'>
+        <div className='flex flex-col'>
+          <span className='font-medium'>{row.getValue('lastAndMiddleNames')}</span>
+        </div>
+      </div>
+    ),
+    size: 100
+  },
+  {
+    header: 'First Name',
+    accessorKey: 'firstName',
+    cell: ({ row }) => (
+      <div className='flex items-center gap-2'>
+        <div className='flex flex-col'>
+          <span className='font-medium'>{row.getValue('firstName')}</span>
+        </div>
+      </div>
+    ),
     size: 100
   },
 
   {
     accessorKey: 'createdAt', // The key in your data object
-    header: 'Date Removed',
+    header: 'Longevity(Days)',
     cell: ({ row }) => {
       const field = row.getValue('createdAt') as Date
       const time = day(Date.now())
 
-      const formattedLongevity = day(field).format('MMM D, YYYY')
+      const formattedLongevity = new Intl.NumberFormat('en-US', { style: 'decimal', maximumFractionDigits: 2 }).format(
+        time.diff(field.toDateString(), 'days')
+      )
 
       return <div>{formattedLongevity}</div>
     },
-    size: 150
+    size: 100
+  },
+  {
+    header: 'Recommendation',
+    accessorKey: 'delegateRecommendation',
+    cell: ({ row }) => {
+      const recommendation = row.getValue('delegateRecommendation') as string
+
+      const styles = {
+        // transfer: 'text-blue-500 bg-transparent ',
+        // confirm: ' text-muted-foreground bg-transparent',
+        Confirm:
+          'bg-green-600/10 text-zinc-600 focus-visible:ring-zinc-600/20 dark:bg-zinc-400/10 dark:text-zinc-400 dark:focus-visible:ring-zinc-400/40 [a&]:hover:bg-zinc-600/5 dark:[a&]:hover:bg-zinc-400/5',
+        Transfer_From_A_SAGICAM:
+          'bg-orange-600/10 text-orange-600 focus-visible:ring-orange-600/20 dark:bg-orange-400/10 dark:text-orange-400 dark:focus-visible:ring-orange-400/40 [a&]:hover:bg-orange-600/5 dark:[a&]:hover:bg-orange-400/5',
+        Transfer_From_SAGINIGERIA:
+          'bg-orange-600/10 text-orange-600 focus-visible:ring-orange-600/20 dark:bg-orange-400/10 dark:text-orange-400 dark:focus-visible:ring-orange-400/40 [a&]:hover:bg-orange-600/5 dark:[a&]:hover:bg-orange-400/5',
+        Transfer_From_SAGIEUROPE:
+          'bg-orange-600/10 text-orange-600 focus-visible:ring-orange-600/20 dark:bg-orange-400/10 dark:text-orange-400 dark:focus-visible:ring-orange-400/40 [a&]:hover:bg-orange-600/5 dark:[a&]:hover:bg-orange-400/5',
+        Transfer_From_SAGIGHANA:
+          'bg-orange-600/10 text-orange-600 focus-visible:ring-orange-600/20 dark:bg-orange-400/10 dark:text-orange-400 dark:focus-visible:ring-orange-400/40 [a&]:hover:bg-orange-600/5 dark:[a&]:hover:bg-orange-400/5',
+        Transfer_From_SAGICOTEDIVOIRE:
+          'bg-orange-600/10 text-orange-600 focus-visible:ring-orange-600/20 dark:bg-orange-400/10 dark:text-orange-400 dark:focus-visible:ring-orange-400/40 [a&]:hover:bg-orange-600/5 dark:[a&]:hover:bg-orange-400/5',
+        Transfer_Out:
+          'bg-blue-600/10 text-blue-600 focus-visible:ring-blue-600/20 dark:bg-blue-400/10 dark:text-blue-400 dark:focus-visible:ring-blue-400/40 [a&]:hover:bg-blue-600/5 dark:[a&]:hover:bg-blue-400/5',
+        Transfer_In:
+          'bg-purple-600/10 text-purple-600 focus-visible:ring-purple-600/20 dark:bg-purple-400/10 dark:text-purple-400 dark:focus-visible:ring-purple-400/40 [a&]:hover:bg-purple-600/5 dark:[a&]:hover:bg-purple-400/5'
+      }[recommendation]
+
+      return (
+        <Badge className={cn('rounded-sm border capitalize focus-visible:outline-none', styles)}>
+          {row.getValue('delegateRecommendation')}
+        </Badge>
+      )
+    },
+    meta: {
+      filterVariant: 'select'
+    },
+    size: 100
+  },
+
+  {
+    header: 'Status',
+    accessorKey: 'memberStatus',
+    cell: ({ row }) => {
+      const status = row.getValue('memberStatus') as string
+
+      const styles = {
+        vested:
+          'bg-green-600/10 text-green-600 focus-visible:ring-green-600/20 dark:bg-green-400/10 dark:text-green-400 dark:focus-visible:ring-green-400/40 [a&]:hover:bg-green-600/5 dark:[a&]:hover:bg-green-400/5',
+        pending:
+          'bg-amber-600/10 text-amber-600 focus-visible:ring-amber-600/20 dark:bg-amber-400/10 dark:text-amber-400 dark:focus-visible:ring-amber-400/40 [a&]:hover:bg-amber-600/5 dark:[a&]:hover:bg-amber-400/5',
+        not_in_good_standing:
+          'bg-red-600/10 text-red-600 focus-visible:ring-red-600/20 dark:bg-red-400/10 dark:text-red-400 dark:focus-visible:ring-red-400/40 [a&]:hover:bg-red-600/5 dark:[a&]:hover:bg-red-400/5'
+      }[status]
+
+      return (
+        <Badge className={cn('rounded-sm border-none capitalize focus-visible:outline-none', styles)}>
+          {row.getValue('memberStatus')}
+        </Badge>
+      )
+    },
+    meta: {
+      filterVariant: 'select'
+    },
+    size: 100
   },
   {
     header: 'Actions',
@@ -197,13 +207,13 @@ const columns: ColumnDef<RemovedMemberType>[] = [
       // Destructuring 'id' directly from the row data
       const { id } = original
 
-      return <RowActions removedMemberId={id} />
+      return <RowActions memberId={id} />
     },
     size: 20
   }
 ]
 
-const RemovedMembersDataTable = ({ data }: { data: RemovedMemberType[] }) => {
+const MembersDataTable = ({ data }: { data: MemberType[] }) => {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
 
   const pageSize = 100
@@ -304,14 +314,13 @@ const RemovedMembersDataTable = ({ data }: { data: RemovedMemberType[] }) => {
   })
 
   return (
-    <div className='border-destructive w-full rounded border'>
+    <div className='border-primary w-full rounded border'>
       <div className='border-b'>
         <div className='flex flex-col gap-4 border-b p-6'>
-          <span className='text-2xl font-semibold text-red-500 sm:text-4xl lg:text-6xl'>REMOVED MEMBERS (Admin)</span>
-
+          <span className='text-2xl font-semibold sm:text-4xl lg:text-6xl'>All Active Members</span>
           <div className='flex items-center justify-between gap-3 px-6 py-4 max-sm:flex-col'>
-            <p className='text-sm font-extrabold whitespace-nowrap text-red-500' aria-live='polite'>
-              <span>{table.getRowCount().toString()} Member(s) removed so far </span>
+            <p className='text-primary text-sm font-extrabold whitespace-nowrap' aria-live='polite'>
+              <span>{table.getRowCount().toString()} Member(s) Found</span>
             </p>
 
             <div>
@@ -325,8 +334,8 @@ const RemovedMembersDataTable = ({ data }: { data: RemovedMemberType[] }) => {
                       disabled={!table.getCanPreviousPage()}
                       aria-label='Go to previous page'
                     >
-                      <ChevronLeftIcon aria-hidden='true' className='text-red-400' />
-                      <span className='text-red-400 max-sm:hidden'>Previous</span>
+                      <ChevronLeftIcon aria-hidden='true' className='text-primary' />
+                      <span className='text-primary max-sm:hidden'>Previous</span>
                     </Button>
                   </PaginationItem>
 
@@ -343,7 +352,7 @@ const RemovedMembersDataTable = ({ data }: { data: RemovedMemberType[] }) => {
                       <PaginationItem key={page}>
                         <Button
                           size='icon'
-                          className='bg-red-400 hover:bg-red-300'
+                          className={`${!isActive && 'bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-red-300/40'}`}
                           onClick={() => table.setPageIndex(page - 1)}
                           aria-current={isActive ? 'page' : undefined}
                         >
@@ -367,8 +376,8 @@ const RemovedMembersDataTable = ({ data }: { data: RemovedMemberType[] }) => {
                       disabled={!table.getCanNextPage()}
                       aria-label='Go to next page'
                     >
-                      <span className='text-red-400 max-sm:hidden'>Next</span>
-                      <ChevronRightIcon aria-hidden='true' className='text-red-400' />
+                      <span className='text-primary max-sm:hidden'>Next</span>
+                      <ChevronRightIcon aria-hidden='true' className='text-primary' />
                     </Button>
                   </PaginationItem>
                 </PaginationContent>
@@ -381,11 +390,12 @@ const RemovedMembersDataTable = ({ data }: { data: RemovedMemberType[] }) => {
         </div>
         <div className='flex items-start gap-4 p-6 max-sm:flex-col sm:items-center sm:justify-between'>
           <div className='flex w-6/7 flex-col justify-start gap-2 sm:flex-row sm:items-center'>
+            <Filter column={table.getColumn('associationCode')!} />
             <Filter column={table.getColumn('lastAndMiddleNames')!} />
             {/* <Filter column={table.getColumn('middleName')!} /> */}
             <Filter column={table.getColumn('firstName')!} />
-            <Filter column={table.getColumn('associationCode')!} />
-            <Filter column={table.getColumn('reasonForLeaving')!} />
+            <Filter column={table.getColumn('delegateRecommendation')!} />
+            <Filter column={table.getColumn('memberStatus')!} />
           </div>
           <div className='flex items-center gap-4 sm:justify-between'>
             <div className='flex items-center gap-2'>
@@ -412,7 +422,7 @@ const RemovedMembersDataTable = ({ data }: { data: RemovedMemberType[] }) => {
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button className='text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40 bg-red-400/10'>
+                <Button className='bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40'>
                   <UploadIcon />
                   Export
                 </Button>
@@ -438,7 +448,7 @@ const RemovedMembersDataTable = ({ data }: { data: RemovedMemberType[] }) => {
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map(headerGroup => (
-              <TableRow key={headerGroup.id} className='h-14 border-t bg-red-400 hover:bg-red-300'>
+              <TableRow key={headerGroup.id} className='bg-primary hover:bg-primary/80 h-14 border-t'>
                 {headerGroup.headers.map(header => {
                   return (
                     <TableHead
@@ -479,7 +489,7 @@ const RemovedMembersDataTable = ({ data }: { data: RemovedMemberType[] }) => {
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map(row => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'} className='hover:bg-red-400/30'>
+                <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'} className='hover:bg-primary/30'>
                   {row.getVisibleCells().map(cell => (
                     <TableCell key={cell.id} className='h-14 first:w-12.5 first:pl-4 last:w-29 last:px-4'>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -490,7 +500,7 @@ const RemovedMembersDataTable = ({ data }: { data: RemovedMemberType[] }) => {
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length} className='h-24 text-center'>
-                  No Removed Member(s) Found.
+                  No Member Found, add members.
                 </TableCell>
               </TableRow>
             )}
@@ -501,7 +511,7 @@ const RemovedMembersDataTable = ({ data }: { data: RemovedMemberType[] }) => {
   )
 }
 
-export default RemovedMembersDataTable
+export default MembersDataTable
 
 function Filter({ column }: { column: Column<any, unknown> }) {
   const id = useId()
@@ -528,7 +538,7 @@ function Filter({ column }: { column: Column<any, unknown> }) {
 
   if (filterVariant === 'select') {
     return (
-      <div className='w-full max-w-2xs space-y-2 rounded border border-dashed border-red-400'>
+      <div className='border-primary w-full max-w-2xs space-y-2 rounded border border-dashed'>
         {/* <Label htmlFor={`${id}-select`}>Select {columnHeader}</Label> */}
         <Select
           value={columnFilterValue?.toString() ?? 'all'}
@@ -553,7 +563,7 @@ function Filter({ column }: { column: Column<any, unknown> }) {
   }
 
   return (
-    <div className='w-full max-w-2xs rounded border border-red-400'>
+    <div className='border-primary w-full max-w-2xs rounded border'>
       <Label htmlFor={`${id}-input`} className='sr-only'>
         {columnHeader}
       </Label>
@@ -574,14 +584,44 @@ function Filter({ column }: { column: Column<any, unknown> }) {
   )
 }
 
-function RowActions({ removedMemberId }: { removedMemberId: string }) {
-  const deleteRemovedMember = deleteRemovedMemberAction.bind(null, { removedMemberId })
-
+function RowActions({ memberId }: { memberId: string }) {
   return (
-    <FormContainer action={deleteRemovedMember}>
-      <Button size='icon' variant='ghost' className='rounded-full p-2 hover:bg-red-300' aria-label='Edit item'>
-        <Trash2 className='text-destructive size-5' aria-hidden='true' />
-      </Button>
-    </FormContainer>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <div className='flex'>
+          <Button size='icon' variant='ghost' className='rounded-full p-2' aria-label='Edit item'>
+            <Ellipsis className='size-6' aria-hidden='true' />
+          </Button>
+        </div>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align='center' className='border-primary rounded border'>
+        <DropdownMenuGroup>
+          <DropdownMenuItem>
+            <Link href={`/all-members/${memberId}/edit`}>
+              <span className='flex gap-3 text-blue-500'>
+                <Pencil className='text-blue-500' />
+                Edit Member&apos;s Details
+              </span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem>
+            <Link href={`/all-members/${memberId}/deathAnnouncement`}>
+              <span className='flex gap-3 text-purple-500'>
+                <Cross className='text-purple-500' />
+                Announce Member&apos;s Dead
+              </span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem>
+            <Link href={`/all-members/${memberId}/removeMember`}>
+              <span className='flex gap-3 text-red-500'>
+                <Trash2 className='text-red-500' />
+                Remove Member
+              </span>
+            </Link>
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }

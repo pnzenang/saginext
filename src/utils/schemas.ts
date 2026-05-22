@@ -55,6 +55,7 @@ export const RemovedMemberSchema = z.object({
     .toUpperCase()
     .min(2, { message: 'the member last name should be at least 2 characters' }),
   dateOfBirth: z.string().length(10, { message: 'Date of birth should be 10 characters' }),
+  registrationDate: z.string(),
   countryOfBirth: z.string().toUpperCase().min(2, { message: 'the member las name should be at least 2 characters' }),
   memberMatriculationNumber: z.string(),
   reasonForLeaving: z.enum(reasonForLeaving)

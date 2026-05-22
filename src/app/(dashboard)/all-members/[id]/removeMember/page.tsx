@@ -27,6 +27,7 @@ const RemoveMember = async ({ params }: { params: { id: string } }) => {
     countryOfBirth,
     memberMatriculationNumber,
     associationCode,
+    createdAt,
     associationName
   } = member
 
@@ -86,6 +87,13 @@ const RemoveMember = async ({ params }: { params: { id: string } }) => {
                 name='associationCode'
                 label='member association code'
                 defaultValue={associationCode}
+              />
+              <FormInput
+                type='text'
+                name='registrationDate'
+                label='registration date'
+                value={createdAt.toLocaleDateString()}
+                readOnly
               />
               <FormSelect
                 label='reason for leaving'

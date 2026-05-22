@@ -16,6 +16,7 @@ import ContactUs from '@/components/shadcn-studio/blocks/contact-us-page-02/cont
 import AboutUs from '@/components/shadcn-studio/blocks/about-us-page-01/about-us-page-01'
 import Features from '@/components/features'
 import Features2 from '@/components/shadcn-studio/blocks/features-section-02/features-section-02'
+import FuneralHomesPage from '@/components/shadcn-studio/blocks/funeralHomes'
 
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -43,6 +44,7 @@ const Home = () => {
       <Features />
       <Pricing pricingPlans={pricingPlans} />
       <Features2 />
+      <FuneralHomesPage />
       <Team teamMembers={teamMembers} />
       <Team2 teamMembers2={teamMembers2} />
       <Quote />
@@ -135,7 +137,7 @@ const pricingPlans = [
   {
     name: 'Not_In_Good_Standing',
     price: 199,
-    description: 'Here the member is not in good standing, and is not .',
+    description: 'Here the member is not in good standing, and is not eligible for payouts.',
     buttonText: 'Not_In_Good_Standing',
     features: [
       'The member is not in waiting period',

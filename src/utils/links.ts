@@ -76,7 +76,7 @@ export const pagesItems: MenuItem[] = [
   },
   {
     icon: WalletMinimal,
-    label: 'Financial Positions',
+    label: ' Financial Positions',
     href: '/financial-position'
   },
 

@@ -57,6 +57,7 @@ model RemovedMember {
   dateOfBirth String
   countryOfBirth String
   memberMatriculationNumber String
+  registrationDate String
   associationCode String
   reasonForLeaving String
   createdAt DateTime @default(now())

@@ -163,6 +163,19 @@ const columns: ColumnDef<RemovedMemberType>[] = [
     },
     size: 150
   },
+  {
+    accessorKey: 'registrationDate', // The key in your data object
+    header: 'Registration Date',
+    cell: ({ row }) => {
+      const field = row.getValue('registrationDate') as string
+      const fieldDate = new Date(field)
+
+      const formattedRegistrationDate = day(fieldDate).format('MMM D, YYYY')
+
+      return <div>{formattedRegistrationDate}</div>
+    },
+    size: 100
+  },
 
   {
     accessorKey: 'createdAt', // The key in your data object

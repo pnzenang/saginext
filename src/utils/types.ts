@@ -54,6 +54,7 @@ export type RemovedMemberType = {
   dateOfBirth: string
   countryOfBirth: string
   memberMatriculationNumber: string
+  registrationDate: string
   associationCode: string
   reasonForLeaving: string
   createdAt: Date
