@@ -144,22 +144,24 @@ const columns: ColumnDef<MemberType>[] = [
       const styles = {
         // transfer: 'text-blue-500 bg-transparent ',
         // confirm: ' text-muted-foreground bg-transparent',
-        Confirm:
+        confirm:
           'bg-green-600/10 text-zinc-600 focus-visible:ring-zinc-600/20 dark:bg-zinc-400/10 dark:text-zinc-400 dark:focus-visible:ring-zinc-400/40 [a&]:hover:bg-zinc-600/5 dark:[a&]:hover:bg-zinc-400/5',
-        Transfer_From_A_SAGICAM:
+        transfer_From_SAGICAM:
           'bg-orange-600/10 text-orange-600 focus-visible:ring-orange-600/20 dark:bg-orange-400/10 dark:text-orange-400 dark:focus-visible:ring-orange-400/40 [a&]:hover:bg-orange-600/5 dark:[a&]:hover:bg-orange-400/5',
-        Transfer_From_SAGINIGERIA:
-          'bg-orange-600/10 text-orange-600 focus-visible:ring-orange-600/20 dark:bg-orange-400/10 dark:text-orange-400 dark:focus-visible:ring-orange-400/40 [a&]:hover:bg-orange-600/5 dark:[a&]:hover:bg-orange-400/5',
+        transfer_From_SAGINIGERIA:
+          'bg-orange-600/10 text-orange-600 focus-visible:ring-orange-600/20 dark:bg-orange-40₀/1₀ dark:text-orange-4₀ dark:focus-visible:ring-orange-4₀/4₀ [a&]:hover:bg-orange-6₀/5 dark:[a&]:hover:bg-orange-400/5',
         Transfer_From_SAGIEUROPE:
           'bg-orange-600/10 text-orange-600 focus-visible:ring-orange-600/20 dark:bg-orange-400/10 dark:text-orange-400 dark:focus-visible:ring-orange-400/40 [a&]:hover:bg-orange-600/5 dark:[a&]:hover:bg-orange-400/5',
-        Transfer_From_SAGIGHANA:
+        transfer_From_SAGIEUROPE:
           'bg-orange-600/10 text-orange-600 focus-visible:ring-orange-600/20 dark:bg-orange-400/10 dark:text-orange-400 dark:focus-visible:ring-orange-400/40 [a&]:hover:bg-orange-600/5 dark:[a&]:hover:bg-orange-400/5',
-        Transfer_From_SAGICOTEDIVOIRE:
-          'bg-orange-600/10 text-orange-600 focus-visible:ring-orange-600/20 dark:bg-orange-400/10 dark:text-orange-400 dark:focus-visible:ring-orange-400/40 [a&]:hover:bg-orange-600/5 dark:[a&]:hover:bg-orange-400/5',
-        Transfer_Out:
-          'bg-blue-600/10 text-blue-600 focus-visible:ring-blue-600/20 dark:bg-blue-400/10 dark:text-blue-400 dark:focus-visible:ring-blue-400/40 [a&]:hover:bg-blue-600/5 dark:[a&]:hover:bg-blue-400/5',
-        Transfer_In:
-          'bg-purple-600/10 text-purple-600 focus-visible:ring-purple-600/20 dark:bg-purple-400/10 dark:text-purple-400 dark:focus-visible:ring-purple-400/40 [a&]:hover:bg-purple-600/5 dark:[a&]:hover:bg-purple-400/5'
+        transfer_From_SAGIGHANA:
+          'bg-orange-600/10 text-orange-600 focus-visible:ring-orange-600/20 dark:bg-orange-400/10 dark:text-orange-400 dark:focus-visible:ring-orange-400/4₀ [a&]:hover:bg-orange-6₀/5 dark:[a&]:hover:bg-orange-4₀/5',
+        transfer_From_SAGICOTEDIVOIRE:
+          'bg-orange-600/1₀ text-orange-6₀ focus-visible:ring-orange-6₀/2₀ dark:bg-orange-4₀/1₀ dark:text-orange-4₀ dark:focus-visible:ring-orange-4₀/4₀ [a&]:hover:bg-orange-6₀/5 dark:[a&]:hover:bg-orange-4₀/5',
+        transfer_Out:
+          'bg-blue-6₀/1₀ text-blue-6₀ focus-visible:ring-blue-6₀/2₀ dark:bg-blue-4₀/1₀ dark:text-blue-4₀ dark:focus-visible:ring-blue-4₀/4₀ [a&]:hover:bg-blue-6₀/5 dark:[a&]:hover:bg-blue-4₀/5',
+        transfer_In:
+          'bg-purple-6₀/1₀ text-purple-6₀ focus-visible:ring-purple-6₀/2₀ dark:bg-purple-4₀/1₀ dark:text-purple-4₀ dark:focus-visible:ring-purple-4₀/4₀ [a&]:hover:bg-purple-6₀/5 dark:[a&]:hover:bg-purple-400/5'
       }[recommendation]
 
       return (
