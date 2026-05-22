@@ -15,14 +15,14 @@ export type MenuItem = {
 export type actionFunction = (prevState: any, formData: FormData) => Promise<{ message: string }>
 
 export enum delegateRecommendation {
-  Confirm = 'Confirm',
-  TransferFromSagicam = 'Transfer_From_SAGICAM',
-  TransferFromSagiEurope = 'Transfer_From_SAGIEUROPE',
-  TransferFromSAgiNigeria = 'Transfer_From_SAGINIGERIA',
-  TransferFromSagiGhana = 'Transfer_From_SAGIGHANA',
-  TransferFromSagiCoteDivoire = 'Transfer_From_SAGICOTEDIVOIRE',
-  TransferIn = 'Transfer_In',
-  TransferOut = 'Transfer_Out'
+  Confirm = 'confirm',
+  TransferFromSagicam = 'transfer_From_SAGICAM',
+  TransferFromSagiEurope = 'transfer_From_SAGIEUROPE',
+  TransferFromSAgiNigeria = 'transfer_From_SAGINIGERIA',
+  TransferFromSagiGhana = 'transfer_From_SAGIGHANA',
+  TransferFromSagiCoteDivoire = 'transfer_From_SAGICOTEDIVOIRE',
+  TransferIn = 'transfer_In',
+  TransferOut = 'transfer_Out'
 }
 
 export enum memberStatus {
