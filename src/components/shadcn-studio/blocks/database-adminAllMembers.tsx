@@ -63,6 +63,7 @@ import { usePagination } from '@/hooks/use-pagination'
 
 import { cn } from '@/lib/utils'
 import { type MemberType } from '@/utils/types'
+import { tr } from 'zod/v4/locales/index.js'
 
 declare module '@tanstack/react-table' {
   interface ColumnMeta<TData extends RowData, TValue> {
