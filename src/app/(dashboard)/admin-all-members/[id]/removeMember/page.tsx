@@ -5,6 +5,7 @@ import FormSelect from '@/components/forms/FormSelect'
 import MaskDateInput from '@/components/forms/MaskDateInput'
 import { createRemovedMemberActionAdmin, fetchProfile, fetchSingleMemberDetailsAdmin } from '@/utils/actions'
 import { reasonForLeaving } from '@/utils/types'
+import { BsSignStopFill } from 'react-icons/bs'
 import { TiWarning } from 'react-icons/ti'
 const RemoveMember = async ({ params }: { params: { id: string } }) => {
   const { id } = await params
@@ -18,10 +19,13 @@ const RemoveMember = async ({ params }: { params: { id: string } }) => {
     countryOfBirth,
     memberMatriculationNumber,
     associationCode,
+    associationName,
     createdAt
   } = member
 
   const profile = await fetchProfile()
+  const currentDay = new Date().getDate()
+  const shouldShow = currentDay <= 5 || currentDay >= 15
 
   return (
     <section className='mt-16 flex flex-col'>
@@ -39,32 +43,66 @@ const RemoveMember = async ({ params }: { params: { id: string } }) => {
           <div>
             <input type='hidden' name='id' value={id} />
             <div className='mt-4 grid gap-4 md:grid-cols-3'>
-              <FormInput type='text' name='firstName' label='member first name' defaultValue={firstName} />
               <FormInput
                 type='text'
                 name='lastAndMiddleNames'
                 label='member last and middle names'
                 defaultValue={lastAndMiddleNames}
               />
+              {/* <FormInputS type='text' name='middleName' label='member middle name' defaultValue={middleName} /> */}
+              <FormInput type='text' name='firstName' label='member first names' value={firstName} readOnly />
               <FormInput type='text' name='dateOfBirth' label='member date of birth' defaultValue={dateOfBirth} />
-
-              <FormInput type='text' name='countryOfBirth' label=' Country of birth' defaultValue={countryOfBirth} />
+              <FormInput
+                type='text'
+                name='countryOfBirth'
+                label='member country of birth'
+                defaultValue={countryOfBirth}
+              />
               <FormInput
                 type='text'
                 name='memberMatriculationNumber'
                 label='matriculation'
                 defaultValue={memberMatriculationNumber}
               />
-
-              <FormInput type='text' name='associationCode' label='Association  code' defaultValue={associationCode} />
+              <FormInput
+                type='text'
+                name='associationName'
+                label='member association name'
+                defaultValue={associationName}
+              />
+              <FormInput
+                type='text'
+                name='associationCode'
+                label='member association code'
+                defaultValue={associationCode}
+              />
+              <FormInput
+                type='text'
+                name='registrationDate'
+                label='registration date'
+                value={createdAt.toLocaleDateString()}
+                readOnly
+              />
               <FormSelect
                 label='reason for leaving'
                 items={Object.values(reasonForLeaving)}
                 name='reasonForLeaving'
                 defaultValue={reasonForLeaving.NoReason}
               />
-              <SubmitButton text='withdraw Loved one' className='mt-4 w-full bg-red-500 hover:bg-red-800' />
+
+              {shouldShow && (
+                <SubmitButton text='Withdraw member' className='mt-4 w-full bg-red-800 hover:bg-red-900' />
+              )}
             </div>
+            {!shouldShow && (
+              <div className='mt-10 flex flex-col items-center justify-center gap-1 sm:flex-row'>
+                <BsSignStopFill className='size-8 items-center text-red-500' />{' '}
+                <h1 className='text-center text-sm font-semibold text-red-500 sm:text-lg'>
+                  SAGI prevents withdrawal between the 5th and the 15th of the month in order to ensure accuracy of the
+                  contribution. Resume withdrawal on or after the 15th.
+                </h1>
+              </div>
+            )}
           </div>
         </FormContainer>
       </div>
