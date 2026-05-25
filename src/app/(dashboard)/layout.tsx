@@ -48,9 +48,10 @@ const PagesLayout = ({ children }: Readonly<{ children: ReactNode }>) => {
                 <SidebarTrigger className='text-primary font-extrabold [&_svg]:size-6!' />
                 <LogoSmall className='size-10 sm:hidden' />
               </div>
+              <h1 className='font-bold'>SAGI-USA</h1>
               <div className='mx=auto flex items-center justify-center gap-x-3'>
                 <ModeToggle />
-                
+
                 <ClerkProvider>
                   <UserButton />
                 </ClerkProvider>
