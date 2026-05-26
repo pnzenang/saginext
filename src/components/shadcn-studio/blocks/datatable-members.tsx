@@ -218,7 +218,7 @@ const columns: ColumnDef<MemberType>[] = [
 const MembersDataTable = ({ data }: { data: MemberType[] }) => {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
 
-  const pageSize = 100
+  const pageSize = 200
 
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
