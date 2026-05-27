@@ -1,0 +1,49 @@
+<svg width="1100" height="720" viewBox="0 0 1100 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1100" height="720" rx="28" fill="#F8FAFC"/>
+  <rect x="56" y="56" width="988" height="608" rx="22" fill="#FFFFFF" stroke="#16A34A" stroke-width="4"/>
+  <text x="92" y="118" fill="#0F172A" font-family="Arial, sans-serif" font-size="34" font-weight="700">Add New Member Form</text>
+  <text x="92" y="158" fill="#64748B" font-family="Arial, sans-serif" font-size="20">Fill each member's information carefully before submitting.</text>
+
+  <g font-family="Arial, sans-serif">
+    <text x="92" y="224" fill="#334155" font-size="18" font-weight="700">Last &amp; middle names</text>
+    <rect x="92" y="242" width="286" height="58" rx="10" fill="#F8FAFC" stroke="#CBD5E1"/>
+    <text x="112" y="278" fill="#94A3B8" font-size="17">Last name first</text>
+
+    <text x="407" y="224" fill="#334155" font-size="18" font-weight="700">Member first names</text>
+    <rect x="407" y="242" width="286" height="58" rx="10" fill="#F8FAFC" stroke="#CBD5E1"/>
+    <text x="427" y="278" fill="#94A3B8" font-size="17">First names</text>
+
+    <text x="722" y="224" fill="#334155" font-size="18" font-weight="700">Date of birth</text>
+    <rect x="722" y="242" width="286" height="58" rx="10" fill="#F8FAFC" stroke="#CBD5E1"/>
+    <text x="742" y="278" fill="#94A3B8" font-size="17">MM / DD / YYYY</text>
+
+    <text x="92" y="352" fill="#334155" font-size="18" font-weight="700">Country of birth</text>
+    <rect x="92" y="370" width="286" height="58" rx="10" fill="#F8FAFC" stroke="#CBD5E1"/>
+    <text x="112" y="406" fill="#94A3B8" font-size="17">Country</text>
+
+    <text x="407" y="352" fill="#334155" font-size="18" font-weight="700">Name of beneficiary</text>
+    <rect x="407" y="370" width="286" height="58" rx="10" fill="#F8FAFC" stroke="#CBD5E1"/>
+    <text x="427" y="406" fill="#94A3B8" font-size="17">Beneficiary full name</text>
+
+    <text x="722" y="352" fill="#334155" font-size="18" font-weight="700">Association name</text>
+    <rect x="722" y="370" width="286" height="58" rx="10" fill="#ECFDF5" stroke="#BBF7D0"/>
+    <text x="742" y="406" fill="#16A34A" font-size="17">Filled automatically</text>
+
+    <text x="92" y="480" fill="#334155" font-size="18" font-weight="700">Association code</text>
+    <rect x="92" y="498" width="286" height="58" rx="10" fill="#ECFDF5" stroke="#BBF7D0"/>
+    <text x="112" y="534" fill="#16A34A" font-size="17">Filled automatically</text>
+
+    <text x="407" y="480" fill="#334155" font-size="18" font-weight="700">Delegate recommendation</text>
+    <rect x="407" y="498" width="286" height="58" rx="10" fill="#F8FAFC" stroke="#CBD5E1"/>
+    <text x="427" y="534" fill="#475569" font-size="17">Confirm</text>
+    <path d="M660 520L671 531L682 520" stroke="#64748B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <text x="722" y="480" fill="#334155" font-size="18" font-weight="700">Member status</text>
+    <rect x="722" y="498" width="286" height="58" rx="10" fill="#F8FAFC" stroke="#CBD5E1"/>
+    <text x="742" y="534" fill="#475569" font-size="17">Pending</text>
+    <path d="M975 520L986 531L997 520" stroke="#64748B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <rect x="92" y="592" width="916" height="54" rx="12" fill="#16A34A"/>
+    <text x="498" y="626" fill="#FFFFFF" font-size="19" font-weight="700">Add Member</text>
+  </g>
+</svg>

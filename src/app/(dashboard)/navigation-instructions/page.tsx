@@ -127,11 +127,11 @@ const featuresList = [
     icon: Cross,
     title: 'Death of a Member',
     description:
-      'Click on the 3 dots at the end of the member row and select to death announcement, the member need to be vested to be able to be announced dead. No document is needed.',
+      'To announce a death, click the 3 dots at the end of the member row and select Death Announcement. The member must have vested status before the death can be announced. No document is needed for the first announcement.',
     cardBorderColor: 'border-primary/40 hover:border-primary',
     avatarTextColor: 'text-primary',
     avatarBgColor: 'bg-primary/10',
-    href: '/navigation-instructions/deathDocumentations'
+    href: '/navigation-instructions/deathAnnouncement'
   },
   {
     icon: WalletCards,

@@ -1,0 +1,53 @@
+<svg width="1120" height="680" viewBox="0 0 1120 680" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1120" height="680" rx="28" fill="#FAF5FF"/>
+  <rect x="56" y="56" width="1008" height="568" rx="22" fill="#FFFFFF" stroke="#7E22CE" stroke-width="4"/>
+  <circle cx="112" cy="118" r="28" fill="#F3E8FF"/>
+  <path d="M112 92V144M96 108H128" stroke="#7E22CE" stroke-width="9" stroke-linecap="round"/>
+  <text x="158" y="112" fill="#6B21A8" font-family="Arial, sans-serif" font-size="34" font-weight="700">Death Announcement</text>
+  <text x="158" y="150" fill="#64748B" font-family="Arial, sans-serif" font-size="20">Review the member record, then enter place and date of death.</text>
+
+  <g font-family="Arial, sans-serif">
+    <text x="92" y="218" fill="#334155" font-size="18" font-weight="700">Last and middle names</text>
+    <rect x="92" y="236" width="286" height="56" rx="10" fill="#F8FAFC" stroke="#CBD5E1"/>
+    <text x="112" y="271" fill="#0F172A" font-size="17">DOE MICHAEL</text>
+
+    <text x="407" y="218" fill="#334155" font-size="18" font-weight="700">First names</text>
+    <rect x="407" y="236" width="286" height="56" rx="10" fill="#F8FAFC" stroke="#CBD5E1"/>
+    <text x="427" y="271" fill="#0F172A" font-size="17">JOHN</text>
+
+    <text x="722" y="218" fill="#334155" font-size="18" font-weight="700">Matriculation</text>
+    <rect x="722" y="236" width="286" height="56" rx="10" fill="#F8FAFC" stroke="#CBD5E1"/>
+    <text x="742" y="271" fill="#0F172A" font-size="17">10342</text>
+
+    <text x="92" y="338" fill="#334155" font-size="18" font-weight="700">Registration date</text>
+    <rect x="92" y="356" width="286" height="56" rx="10" fill="#F8FAFC" stroke="#CBD5E1"/>
+    <text x="112" y="391" fill="#0F172A" font-size="17">05/01/2024</text>
+
+    <text x="407" y="338" fill="#334155" font-size="18" font-weight="700">Country of birth</text>
+    <rect x="407" y="356" width="286" height="56" rx="10" fill="#F8FAFC" stroke="#CBD5E1"/>
+    <text x="427" y="391" fill="#0F172A" font-size="17">CAMEROON</text>
+
+    <text x="722" y="338" fill="#334155" font-size="18" font-weight="700">Beneficiary</text>
+    <rect x="722" y="356" width="286" height="56" rx="10" fill="#F8FAFC" stroke="#CBD5E1"/>
+    <text x="742" y="391" fill="#0F172A" font-size="17">JANE DOE</text>
+
+    <text x="92" y="458" fill="#334155" font-size="18" font-weight="700">Association name</text>
+    <rect x="92" y="476" width="286" height="56" rx="10" fill="#F8FAFC" stroke="#CBD5E1"/>
+    <text x="112" y="511" fill="#0F172A" font-size="17">SAGI GROUP</text>
+
+    <text x="407" y="458" fill="#334155" font-size="18" font-weight="700">Place of death</text>
+    <rect x="407" y="476" width="286" height="56" rx="10" fill="#F8FAFC" stroke="#CBD5E1"/>
+    <text x="427" y="511" fill="#94A3B8" font-size="17">State or place</text>
+
+    <text x="722" y="458" fill="#334155" font-size="18" font-weight="700">Date of death</text>
+    <rect x="722" y="476" width="286" height="56" rx="10" fill="#F8FAFC" stroke="#CBD5E1"/>
+    <text x="742" y="511" fill="#94A3B8" font-size="17">MM/DD/YYYY</text>
+
+    <text x="92" y="574" fill="#334155" font-size="18" font-weight="700">Contribution status</text>
+    <rect x="92" y="592" width="286" height="48" rx="10" fill="#F8FAFC" stroke="#CBD5E1"/>
+    <text x="112" y="623" fill="#475569" font-size="17">Case_In_Review</text>
+
+    <rect x="407" y="592" width="601" height="48" rx="12" fill="#7E22CE"/>
+    <text x="640" y="623" fill="#FFFFFF" font-size="18" font-weight="700">Post member's death</text>
+  </g>
+</svg>

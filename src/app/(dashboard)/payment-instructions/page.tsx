@@ -1,7 +1,7 @@
-import React from 'react'
+import PaymentInstructionsContent from '@/components/payment-instructions-content'
 
 const PaymentInstructions = () => {
-  return <div>Payment Instructions</div>
+  return <PaymentInstructionsContent />
 }
 
 export default PaymentInstructions

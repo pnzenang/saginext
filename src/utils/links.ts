@@ -9,13 +9,11 @@ import {
   FileStack,
   Users,
   Wallet,
-  FileCheck,
   WalletCards,
   WalletMinimal,
   CreditCard,
   List,
   Table,
-  ArrowRightLeft,
   Pencil
 } from 'lucide-react'
 
@@ -55,9 +53,19 @@ export const pagesItems: MenuItem[] = [
     href: '/deceased-members'
   },
   {
+    icon: CreditCard,
+    label: 'Payment Instructions',
+    href: '/payment-instructions'
+  },
+  {
     icon: WalletCards,
     label: 'Registrations Payments',
     href: '/registrations'
+  },
+  {
+    icon: Wallet,
+    label: 'Contributions Payments',
+    href: '/contributions'
   },
   {
     icon: List,
@@ -68,11 +76,6 @@ export const pagesItems: MenuItem[] = [
     icon: Table,
     label: 'Contribution Table',
     href: '/contribution-table'
-  },
-  {
-    icon: Wallet,
-    label: 'Contributions Payments',
-    href: '/contributions'
   },
   {
     icon: WalletMinimal,
@@ -89,11 +92,6 @@ export const pagesItems: MenuItem[] = [
     icon: Pencil,
     label: 'Name Change & Documentations',
     href: '/name-modification'
-  },
-  {
-    icon: CreditCard,
-    label: 'Payment Instructions',
-    href: '/payment-instructions'
   },
   {
     icon: SquareUser,
