@@ -60,7 +60,7 @@ export const pagesItems: MenuItem[] = [
   {
     icon: WalletCards,
     label: 'Registrations Payments',
-    href: '/registrations'
+    href: '/registrationsPayments'
   },
   {
     icon: Wallet,

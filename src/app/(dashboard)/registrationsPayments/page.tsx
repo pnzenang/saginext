@@ -31,7 +31,7 @@ const RegistrationPayments = () => {
       </div>
 
       <iframe
-        src='https://docs.google.com/spreadsheets/d/e/2PACX-1vQLP2vo4A-krzmVWffynBL4jTD74hnbew7dhQfrNgxZr1zjzEAU1hcYSy40rnZLzCZrMxKE5SXLVOxE/pubhtml?widget=true&amp;headers=false'
+        src='https://docs.google.com/spreadsheets/d/e/2PACX-1vSHQnTAqf5nrETcrIw6kys1hPL9eZKoU8clmdLuR0CUDXwHtEDlY-H51N-CGXuTkY4jQFtV6j8Ws771/pubhtml?widget=true&amp;headers=false'
         className='mx-auto mt-5 h-120 w-full max-w-19/20 items-center rounded-lg border'
       ></iframe>
     </section>

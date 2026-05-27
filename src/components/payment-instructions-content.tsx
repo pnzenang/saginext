@@ -25,7 +25,7 @@ const paymentSteps = [
     icon: FileText,
     title: 'Write a clear payment note',
     description:
-      'Include your group name, delegate name, payment month, and whether the payment is for registration or contribution.'
+      'Always include your group 4-letter code, group name, delegate name, payment month, and whether the payment is for registration or contribution.'
   },
   {
     icon: Upload,
@@ -37,6 +37,7 @@ const paymentSteps = [
 
 const reminders = [
   'Confirm the amount before sending payment.',
+  'Always include your group 4-letter code when making a payment.',
   'Use the same group name that appears in your SAGI dashboard.',
   'Keep your Zelle confirmation until the payment is reflected in SAGI.',
   'Do not combine registration and contribution payments without writing a clear note.'
@@ -55,7 +56,11 @@ const PaymentInstructionsContent = () => {
           </h1>
           <p className='text-muted-foreground mt-4 max-w-3xl text-base leading-7'>
             Send your payment first, then record it in the correct SAGI payment page so the admin team can match the
-            money to your group without delays.
+            money to your group without delays.{' '}
+            <span className='text-primary font-bold'>
+              {' '}
+              Always include at least your group 4-letter code in the payment memo.
+            </span>
           </p>
           <div className='mt-6 flex flex-col gap-3 sm:flex-row'>
             <Button asChild>

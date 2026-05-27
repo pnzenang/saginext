@@ -135,7 +135,7 @@ const featuresList = [
   },
   {
     icon: WalletCards,
-    title: 'Member Registration',
+    title: 'Registration Payment',
     description:
       'After you submit your registration, you need to send the registration fee and fill out form seen after clicking the Registration Payments Link, please follow the instruction.',
     cardBorderColor: 'border-primary/40 hover:border-primary',
