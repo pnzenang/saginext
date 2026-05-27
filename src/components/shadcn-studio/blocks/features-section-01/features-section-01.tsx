@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 
 import { cn } from '@/lib/utils'
+import Link from 'next/link'
 
 type Features = {
   icon: ComponentType
@@ -15,6 +16,7 @@ type Features = {
   cardBorderColor: string
   avatarTextColor: string
   avatarBgColor: string
+  href?: string
 }[]
 
 const Features = ({ featuresList }: { featuresList: Features }) => {
@@ -43,6 +45,15 @@ const Features = ({ featuresList }: { featuresList: Features }) => {
                 </Avatar>
                 <h6 className='mb-2 text-lg font-semibold'>{features.title}</h6>
                 <p className='text-muted-foreground'>{features.description}</p>
+                {features.href && (
+                  <Link
+                    href={features.href}
+                    target='_blank'
+                    className='text-primary mt-4 inline-flex w-full items-center justify-end gap-2 text-sm font-medium'
+                  >
+                    Read More <ArrowRightIcon className='size-4' />
+                  </Link>
+                )}
               </CardContent>
             </Card>
           ))}

@@ -4,6 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { FaSquareWhatsapp } from 'react-icons/fa6'
+
 const NavigationInstructions = async () => {
   const user = await fetchProfile()
 
@@ -47,9 +48,9 @@ const NavigationInstructions = async () => {
           width='750'
           height='300'
         ></iframe>
-      </div>
+      </div> */}
 
-      <iframe
+      {/* <iframe
         src='https://docs.google.com/spreadsheets/d/e/2PACX-1vSFr8dHDHdvlX686YnYBjoi1TfPZwiKoZMDj1PkkJId6gdlXD-sKk0B-YI0x4Q_4ta-CXdZTuk7apON/pubhtml?widget=true&amp;headers=false'
         className='mx-auto mt-5 h-120 w-full max-w-19/20 items-center rounded-lg border'
       ></iframe> */}
@@ -89,6 +90,7 @@ import {
   Table
 } from 'lucide-react'
 import Features from '@/components/shadcn-studio/blocks/features-section-01/features-section-01'
+import { hr } from 'motion/react-client'
 
 const featuresList = [
   {
@@ -98,7 +100,8 @@ const featuresList = [
       'You add new member to your family or group by clicking on Add Member Link in the sidebar and follow the process, read the instruction to avoid delaying the process.',
     cardBorderColor: 'border-primary/40 hover:border-primary',
     avatarTextColor: 'text-primary',
-    avatarBgColor: 'bg-primary/10'
+    avatarBgColor: 'bg-primary/10',
+    href: '/navigation-instructions/addMember'
   },
   {
     icon: Users,
@@ -107,7 +110,8 @@ const featuresList = [
       'After adding member, you can see him or her in your dashboard when you click on the link All Members, but the member will be pending until their registration is received by the admin.',
     cardBorderColor: 'border-primary/40 hover:border-primary',
     avatarTextColor: 'text-primary',
-    avatarBgColor: 'bg-primary/10'
+    avatarBgColor: 'bg-primary/10',
+    href: '/navigation-instructions/seeingAllMembers'
   },
   {
     icon: Trash2,
@@ -116,7 +120,8 @@ const featuresList = [
       'You can remove member from the 16th of the month to the 5th of the next month, any removal during the contribution does not affect the contribution.',
     cardBorderColor: 'border-primary/40 hover:border-primary',
     avatarTextColor: 'text-primary',
-    avatarBgColor: 'bg-primary/10'
+    avatarBgColor: 'bg-primary/10',
+    href: '/navigation-instructions/removedMembers'
   },
   {
     icon: Cross,
@@ -125,7 +130,8 @@ const featuresList = [
       'Click on the 3 dots at the end of the member row and select to death announcement, the member need to be vested to be able to be announced dead. No document is needed.',
     cardBorderColor: 'border-primary/40 hover:border-primary',
     avatarTextColor: 'text-primary',
-    avatarBgColor: 'bg-primary/10'
+    avatarBgColor: 'bg-primary/10',
+    href: '/navigation-instructions/deathDocumentations'
   },
   {
     icon: WalletCards,
@@ -134,7 +140,8 @@ const featuresList = [
       'After you submit your registration, you need to send the registration fee and fill out form seen after clicking the Registration Payments Link, please follow the instruction.',
     cardBorderColor: 'border-primary/40 hover:border-primary',
     avatarTextColor: 'text-primary',
-    avatarBgColor: 'bg-primary/10'
+    avatarBgColor: 'bg-primary/10',
+    href: '/navigation-instructions/memberRegistration'
   },
   {
     icon: Table,
@@ -143,7 +150,8 @@ const featuresList = [
       'Here, you will see the names of the new members joining the organization this month or the next month, this not the contribution table, it is just for informational purpose.',
     cardBorderColor: 'border-primary/40 hover:border-primary',
     avatarTextColor: 'text-primary',
-    avatarBgColor: 'bg-primary/10'
+    avatarBgColor: 'bg-primary/10',
+    href: '/navigation-instructions/contributionTable'
   },
   {
     icon: Wallet,
@@ -152,7 +160,8 @@ const featuresList = [
       'Here we encourage the delegate to record their contribution after they send it, they should also upload their registration as it reduce confusion.',
     cardBorderColor: 'border-primary/40 hover:border-primary',
     avatarTextColor: 'text-primary',
-    avatarBgColor: 'bg-primary/10'
+    avatarBgColor: 'bg-primary/10',
+    href: '/navigation-instructions/contributionPayment'
   },
   {
     icon: WalletMinimal,
@@ -161,7 +170,8 @@ const featuresList = [
       'This spreadsheet allow the delegate to see the financial positions of his or her group, if they send more money they will see the difference in from of their group name.',
     cardBorderColor: 'border-primary/40 hover:border-primary',
     avatarTextColor: 'text-primary',
-    avatarBgColor: 'bg-primary/10'
+    avatarBgColor: 'bg-primary/10',
+    href: '/navigation-instructions/groupFinancialPosition'
   },
   {
     icon: FileStack,
@@ -170,7 +180,8 @@ const featuresList = [
       'To announce the death, you do not need any documentation, when the document are ready, you should upload them by clicking on the appropriate link: Death Documentations.',
     cardBorderColor: 'border-primary/40 hover:border-primary',
     avatarTextColor: 'text-primary',
-    avatarBgColor: 'bg-primary/10'
+    avatarBgColor: 'bg-primary/10',
+    href: '/navigation-instructions/deathDocumentations'
   },
   {
     icon: Pencil,
@@ -179,7 +190,8 @@ const featuresList = [
       'Click the link to initiate the name modification. The error correction does not need any documents but name change requires name change documentations.',
     cardBorderColor: 'border-primary/40 hover:border-primary',
     avatarTextColor: 'text-primary',
-    avatarBgColor: 'bg-primary/10'
+    avatarBgColor: 'bg-primary/10',
+    href: '/navigation-instructions/nameChange'
   },
   {
     icon: CreditCard,
@@ -188,7 +200,8 @@ const featuresList = [
       'Here, we give you the payment information to allow you yo send contribution to SAGI, but the zelle QR-code already exists in the payment pages.',
     cardBorderColor: 'border-primary/40 hover:border-primary',
     avatarTextColor: 'text-primary',
-    avatarBgColor: 'bg-primary/10'
+    avatarBgColor: 'bg-primary/10',
+    href: '/navigation-instructions/paymentInstructions'
   },
   {
     icon: ArrowRightLeft,
@@ -197,6 +210,7 @@ const featuresList = [
       'Register the member, Select Edit Member details  from the 3 dots and Transfer_In  from Delegate Recommendation if the member is joining your group. or Transfer_out otherwise',
     cardBorderColor: 'border-primary/40 hover:border-primary',
     avatarTextColor: 'text-primary',
-    avatarBgColor: 'bg-primary/10'
+    avatarBgColor: 'bg-primary/10',
+    href: '/navigation-instructions/membersTransfer'
   }
 ]
