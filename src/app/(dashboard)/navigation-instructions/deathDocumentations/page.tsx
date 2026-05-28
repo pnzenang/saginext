@@ -8,6 +8,7 @@ import {
   FileText,
   Home,
   IdCard,
+  Plane,
   ShieldCheck
 } from 'lucide-react'
 
@@ -17,41 +18,60 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 
 const documentExamples = [
   {
+    icon: FileText,
+    title: 'Case details',
+    description:
+      'Include the association name and code, deceased full name, matricule number, membership date, and date and place of death.'
+  },
+  {
     icon: FileBadge,
     title: 'Death certificate',
-    description: 'Upload the official death certificate when it is available.'
+    description: 'Upload the death certificate. The cause of death may be hidden before submission.'
+  },
+  {
+    icon: IdCard,
+    title: 'Identification',
+    description:
+      "Upload the SAGI membership ID when available, plus a picture ID such as ID, driver's license, or passport."
   },
   {
     icon: Home,
     title: 'Funeral home invoice',
-    description: 'Include funeral home invoices, receipts, or related funeral service documents.'
-  },
-  {
-    icon: IdCard,
-    title: 'Passport or ID card',
-    description: "Upload a copy of the deceased member's passport, national ID, or other identification card."
-  },
-  {
-    icon: FileText,
-    title: 'Funeral program',
-    description: 'Add the funeral program or other documents connected to the funeral arrangements.'
+    description: 'Include the funeral home invoice and any related funeral service documents.'
   }
 ]
 
 const uploadChecklist = [
-  'Open the dashboard link named Death Documentations.',
-  'Use that page to upload all documents connected to the deceased member.',
-  'When possible, gather all required documents and upload them at the same time.',
-  'Make sure each uploaded document belongs to the correct deceased member.',
-  'Upload clear images or PDF files so the admin can review the information without delay.',
-  'If more documents become available later, return to Death Documentations and upload them there.'
+  'Family contact.',
+  'Association name and code.',
+  'Deceased full name.',
+  'Matricule number.',
+  'Membership date.',
+  'Date and place of death.',
+  'Death certificate. You can hide the cause of death before submission.',
+  'SAGI membership ID, if available.',
+  'Picture with a clear and visible face for a presentable contribution chart.',
+  "Picture ID, such as ID, driver's license, or passport.",
+  'Funeral home invoice.',
+  'Confirmation that the association is in good standing with no outstanding invoices',
+  'Funeral Program.'
+]
+
+const outOfUsChecklist = [
+  'Certified copy of the death certificate by the Ministry of External Relations of the country where the death occurred.',
+  'Proof that the death has been reported to the Social Security Administration.',
+  'For a US citizen, obtain the Consular Report of Death from American Citizen Services in the consular section of the embassy.',
+  "Copy of the deceased's green card and passport or US passport, including the VISA page.",
+  "Copy of the deceased's trip ticket or tickets."
 ]
 
 const importantNotes = [
   'Death documentation is uploaded after the death has been announced.',
   'The initial death announcement does not require documents.',
   'All death-related documents should stay together in Death Documentations.',
-  'Do not send death documents through unrelated forms such as registration or contribution payment forms.'
+  'Upload clear images or PDF files so the admin can review the information without delay.',
+  'Do not send death documents through unrelated forms such as registration or contribution payment forms.',
+  'If more documents become available later, return to Death Documentations and upload them there.'
 ]
 
 const DeathDocumentations = () => {
@@ -73,9 +93,9 @@ const DeathDocumentations = () => {
                 correct place for admin review.
               </p>
               <p>
-                Use Death Documentations for documents such as the death certificate, funeral home invoices, deceased
-                member&apos;s passport or ID card, funeral program, and any other document related to the death or
-                funeral arrangements.
+                Use Death Documentations for the family contact, association details, deceased member details, death
+                certificate, SAGI membership ID when available, clear picture, picture ID, funeral home invoice, and any
+                other document related to the death or funeral arrangements.
               </p>
               <p>
                 It is better to gather all required documents first and upload them at once when possible. This helps
@@ -110,7 +130,8 @@ const DeathDocumentations = () => {
             <CardContent className='text-muted-foreground space-y-3 text-sm leading-6'>
               <p>
                 The correct upload location is the dashboard link named Death Documentations. That page is where the
-                death certificate, funeral papers, identification, and other supporting files should be submitted.
+                death certificate, family contact, funeral papers, identification, pictures, and other supporting files
+                should be submitted.
               </p>
               <p>
                 The death announcement records that the member has passed away. Death Documentations stores the proof
@@ -146,9 +167,9 @@ const DeathDocumentations = () => {
           <CardHeader>
             <CardTitle className='flex items-center gap-2'>
               <ClipboardCheck className='text-primary size-5' />
-              What to Upload There
+              Required Documents
             </CardTitle>
-            <CardDescription>Use Death Documentations for every file related to the deceased member.</CardDescription>
+            <CardDescription>Gather these items before submitting the death documentation.</CardDescription>
           </CardHeader>
           <CardContent>
             <ul className='grid gap-3'>
@@ -165,14 +186,14 @@ const DeathDocumentations = () => {
         <Card>
           <CardHeader>
             <CardTitle className='flex items-center gap-2'>
-              <FileStack className='text-primary size-5' />
-              Important Notes
+              <Plane className='text-primary size-5' />
+              If Death Occurred Out of the US
             </CardTitle>
-            <CardDescription>Documents and announcements are handled in separate steps.</CardDescription>
+            <CardDescription>Upload these additional documents when the death occurred outside the US.</CardDescription>
           </CardHeader>
           <CardContent>
             <ul className='grid gap-3'>
-              {importantNotes.map(item => (
+              {outOfUsChecklist.map(item => (
                 <li className='text-muted-foreground flex gap-3 text-sm leading-6' key={item}>
                   <CheckCircle2 className='text-primary mt-0.5 size-5 shrink-0' />
                   <span>{item}</span>
@@ -182,6 +203,26 @@ const DeathDocumentations = () => {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className='flex items-center gap-2'>
+            <FileStack className='text-primary size-5' />
+            Important Notes
+          </CardTitle>
+          <CardDescription>Documents and announcements are handled in separate steps.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ul className='grid gap-3 md:grid-cols-2'>
+            {importantNotes.map(item => (
+              <li className='text-muted-foreground flex gap-3 text-sm leading-6' key={item}>
+                <CheckCircle2 className='text-primary mt-0.5 size-5 shrink-0' />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
     </section>
   )
 }
