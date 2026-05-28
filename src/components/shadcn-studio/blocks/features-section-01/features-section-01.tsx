@@ -28,7 +28,7 @@ const Features = ({ featuresList }: { featuresList: Features }) => {
           <h2 className='text-center text-2xl font-semibold md:text-3xl lg:text-4xl'>NAVIGATION INSTRUCTIONS</h2>
           <p className='text-muted-foreground text-center text-xl'>
             Here, you will see the instructions on how and where to go for each SAGI transaction such as adding member,
-            removing member etc.
+            removing member, transferring member, death announcement and more...
           </p>
         </div>
 

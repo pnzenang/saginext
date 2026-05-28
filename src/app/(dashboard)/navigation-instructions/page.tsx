@@ -10,7 +10,7 @@ const NavigationInstructions = async () => {
 
   return (
     <div className='flex flex-col items-center gap-4'>
-      <div className='flex flex-col items-center justify-center gap-8 sm:mt-10 sm:flex-row'>
+      {/* <div className='flex flex-col items-center justify-center gap-8 sm:mt-10 sm:flex-row'>
         <Card className='flex flex-col items-center gap-5 p-5 sm:flex-row sm:p-20'>
           <FaSquareWhatsapp className='text-9xl text-green-600' />
           <div className='w-64 sm:w-96'>
@@ -28,7 +28,7 @@ const NavigationInstructions = async () => {
             height={300}
           />
         </Link>
-      </div>
+      </div> */}
       <Features featuresList={featuresList} />
     </div>
   )
