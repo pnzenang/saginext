@@ -1,7 +1,7 @@
 import React from 'react'
 
-const FinancialPositions = () => {
-  return <div>Financial Positions</div>
+const FinancialPosition = () => {
+  return <div>Financial Position</div>
 }
 
-export default FinancialPositions
+export default FinancialPosition

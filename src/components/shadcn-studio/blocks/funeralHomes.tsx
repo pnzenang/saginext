@@ -23,7 +23,7 @@ const FuneralHomesPage = () => {
           </MotionPreset>
           <MotionPreset
             component='p'
-            className='text-muted-foreground text-xl'
+            className='text-muted-foreground text-start text-xl'
             fade
             blur
             slide={{ direction: 'down', offset: 50 }}
@@ -31,9 +31,11 @@ const FuneralHomesPage = () => {
             transition={{ duration: 0.5 }}
           >
             SAGI does not run funeral homes, but we think losing a loved one is already hard enough, so we want to make
-            it easier for you to find a funeral home near you, also, we have partnered with some of the best funeral
-            homes that you can find in your dashboard that are ready to provide you with the best service possible,
-            without initial deposits or any payment from you directly.
+            it easier for you to find a funeral home near you.
+            <br /> Also, we have partnered with some of the best funeral homes in the country that are ready to provide
+            you with the best service possible, without initial deposits or any payment from you directly, just call us
+            at: <span className='font-extrabold'> 1(804) 214-6390 </span>
+            and the rest will be taken care of.
           </MotionPreset>
         </div>
         <MotionPreset

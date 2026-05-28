@@ -2,7 +2,7 @@
 import { fetchProfile } from '@/utils/actions'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card } from '@/components/ui/card'
 import { FaSquareWhatsapp } from 'react-icons/fa6'
 
 const NavigationInstructions = async () => {
@@ -29,31 +29,6 @@ const NavigationInstructions = async () => {
           />
         </Link>
       </div>
-      {/* <div className='flex flex-col justify-center gap-3 sm:flex-row'>
-        <Link href='https://enroll.zellepay.com/qr-codes?data=eyJuYW1lIjoiUEFUUklDRSIsImFjdGlvbiI6InBheW1lbnQiLCJ0b2tlbiI6IjQ0MzUzMTU4NTIifQ=='>
-          <Image
-            alt='chef'
-            src='https://res.cloudinary.com/dp8tkb7hq/image/upload/v1778042720/sagiQrCode_jmwsbf.svg'
-            width={300}
-            height={300}
-          />
-        </Link>
-
-        <iframe
-          // id='JotFormIFrame-261231251869053'
-          title='REGISTRATION SUBMISSION'
-          allow='geolocation; microphone; camera; fullscreen; payment'
-          src='https://form.jotform.com/261231251869053'
-          // scrolling='Yes'
-          width='750'
-          height='300'
-        ></iframe>
-      </div> */}
-
-      {/* <iframe
-        src='https://docs.google.com/spreadsheets/d/e/2PACX-1vSFr8dHDHdvlX686YnYBjoi1TfPZwiKoZMDj1PkkJId6gdlXD-sKk0B-YI0x4Q_4ta-CXdZTuk7apON/pubhtml?widget=true&amp;headers=false'
-        className='mx-auto mt-5 h-120 w-full max-w-19/20 items-center rounded-lg border'
-      ></iframe> */}
       <Features featuresList={featuresList} />
     </div>
   )

@@ -48,7 +48,8 @@ const Features = ({ featuresList }: { featuresList: Features }) => {
                 {features.href && (
                   <Link
                     href={features.href}
-                    target='_blank'
+                    replace={true}
+                    // target='blank'
                     className='text-primary mt-4 inline-flex w-full items-center justify-end gap-2 text-sm font-medium'
                   >
                     Read More <ArrowRightIcon className='size-4' />
