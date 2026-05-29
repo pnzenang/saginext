@@ -82,7 +82,7 @@ const featuresList = [
     icon: Users,
     title: 'Seeing All Your Members',
     description:
-      'After adding member, you can see him or her in your dashboard when you click on the link All Members, but the member will be pending until their registration is received by the admin.',
+      'After adding member, you can see him or her in your dashboard when you click on the link All Members, but the member will be pending until their registration is sent.',
     cardBorderColor: 'border-primary/40 hover:border-primary',
     avatarTextColor: 'text-primary',
     avatarBgColor: 'bg-primary/10',
@@ -102,7 +102,7 @@ const featuresList = [
     icon: Cross,
     title: 'Death of a Member',
     description:
-      'To announce a death, click the 3 dots at the end of the member row and select Death Announcement. The member must have vested status before the death can be announced. No document is needed for the first announcement.',
+      'To announce a death, click the 3 dots at the end of the member row and select Death Announcement. The member must be vested. No document is needed.',
     cardBorderColor: 'border-primary/40 hover:border-primary',
     avatarTextColor: 'text-primary',
     avatarBgColor: 'bg-primary/10',
@@ -152,7 +152,7 @@ const featuresList = [
     icon: FileStack,
     title: 'Death Documentations ',
     description:
-      'To announce the death, you do not need any documentation, when the document are ready, you should upload them by clicking on the appropriate link: Death Documentations.',
+      'To announce the death, you do not need any documentation, when the document are ready, you should upload them by clicking on the link: Death Documentations.',
     cardBorderColor: 'border-primary/40 hover:border-primary',
     avatarTextColor: 'text-primary',
     avatarBgColor: 'bg-primary/10',
@@ -182,7 +182,7 @@ const featuresList = [
     icon: ArrowRightLeft,
     title: 'Transfer ',
     description:
-      'Register the member, Select Edit Member details  from the 3 dots and Transfer_In  from Delegate Recommendation if the member is joining your group. or Transfer_out otherwise',
+      'This is a 3 steps process, the receiving group select Transfer_In, the departed group select Transfer_Out, the admin team reviews the case and transfer the member.',
     cardBorderColor: 'border-primary/40 hover:border-primary',
     avatarTextColor: 'text-primary',
     avatarBgColor: 'bg-primary/10',

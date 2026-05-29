@@ -277,7 +277,7 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
     const url = URL.createObjectURL(blob)
 
     link.setAttribute('href', url)
-    link.setAttribute('download', `payments-export-${new Date().toISOString().split('T')[0]}.csv`)
+    link.setAttribute('download', `all-members-${new Date().toISOString().split('T')[0]}.csv`)
     link.style.visibility = 'hidden'
     document.body.appendChild(link)
     link.click()
@@ -301,7 +301,7 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
 
     worksheet['!cols'] = cols
 
-    XLSX.writeFile(workbook, `payments-export-${new Date().toISOString().split('T')[0]}.xlsx`)
+    XLSX.writeFile(workbook, `all-members-${new Date().toISOString().split('T')[0]}.xlsx`)
   }
 
   const exportToJSON = () => {
@@ -318,7 +318,7 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
     const url = URL.createObjectURL(blob)
 
     link.setAttribute('href', url)
-    link.setAttribute('download', `payments-export-${new Date().toISOString().split('T')[0]}.json`)
+    link.setAttribute('download', `all-members-${new Date().toISOString().split('T')[0]}.json`)
     link.style.visibility = 'hidden'
     document.body.appendChild(link)
     link.click()
