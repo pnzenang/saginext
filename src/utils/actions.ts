@@ -18,7 +18,7 @@ import {
   validateWithZodSchema
 } from './schemas'
 import { Prisma } from '@/generated/prisma/client'
-import prisma from './db'
+import { memberStatus } from './types'
 
 const randomMatriculation = customAlphabet('1234567890', 6)
 
@@ -134,6 +134,7 @@ export const createMemberAction = async (provState: any, formData: FormData): Pr
         }
       }
     }
+
     return renderError(error)
   }
 
@@ -146,6 +147,7 @@ export const fetchMembers = async () => {
   const members = await db.member.findMany({
     where: {
       clerkId: user.id
+
       // memberStatus: 'vested'
     },
     orderBy: { createdAt: 'desc' }
@@ -155,7 +157,7 @@ export const fetchMembers = async () => {
 }
 
 export const fetchMembersForAdmin = async () => {
-  const user = await getAuthUser()
+  await getAuthUser()
 
   const members = await db.member.findMany({
     // where: {},
@@ -163,6 +165,94 @@ export const fetchMembersForAdmin = async () => {
   })
 
   return members
+}
+
+export const fetchMemberStatusCountsByAssociationCode = async () => {
+  await getAuthUser()
+
+  const counts = await db.member.groupBy({
+    by: ['associationCode', 'memberStatus'],
+    where: {
+      memberStatus: {
+        in: Object.values(memberStatus)
+      }
+    },
+    _count: {
+      _all: true
+    },
+    orderBy: {
+      associationCode: 'asc'
+    }
+  })
+
+  const associationCodes = [...new Set(counts.map(item => item.associationCode))]
+  const profiles = await db.profile.findMany({
+    where: {
+      associationCode: {
+        in: associationCodes
+      }
+    },
+    select: {
+      associationCode: true,
+      associationName: true
+    }
+  })
+  const associationNamesByCode = new Map(profiles.map(profile => [profile.associationCode, profile.associationName]))
+  const memberAssociationNames = await db.member.findMany({
+    where: {
+      associationCode: {
+        in: associationCodes
+      }
+    },
+    select: {
+      associationCode: true,
+      associationName: true
+    },
+    orderBy: {
+      associationName: 'asc'
+    }
+  })
+
+  for (const member of memberAssociationNames) {
+    if (!associationNamesByCode.has(member.associationCode)) {
+      associationNamesByCode.set(member.associationCode, member.associationName)
+    }
+  }
+
+  const countsByAssociationCode = counts.reduce<Record<string, {
+    associationCode: string
+    associationName: string
+    vested: number
+    pending: number
+    awaitingPublication: number
+    notInGoodStanding: number
+    total: number
+  }>>((acc, item) => {
+    const associationCode = item.associationCode
+
+    acc[associationCode] ??= {
+      associationCode,
+      associationName: associationNamesByCode.get(associationCode) ?? associationCode,
+      vested: 0,
+      pending: 0,
+      awaitingPublication: 0,
+      notInGoodStanding: 0,
+      total: 0
+    }
+
+    const count = item._count._all
+
+    if (item.memberStatus === memberStatus.Vested) acc[associationCode].vested += count
+    if (item.memberStatus === memberStatus.Pending) acc[associationCode].pending += count
+    if (item.memberStatus === memberStatus.Awaiting) acc[associationCode].awaitingPublication += count
+    if (item.memberStatus === memberStatus.Delinquent) acc[associationCode].notInGoodStanding += count
+
+    acc[associationCode].total += count
+
+    return acc
+  }, {})
+
+  return Object.values(countsByAssociationCode)
 }
 
 export const fetchSingleMemberDetails = async (memberId: string) => {

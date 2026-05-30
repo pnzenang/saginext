@@ -112,5 +112,10 @@ export const pagesItems: MenuItem[] = [
     icon: UserCog,
     label: 'Admin All Deceased',
     href: '/admin-all-deceased'
+  },
+  {
+    icon: UserCog,
+    label: 'Admin Count ',
+    href: '/admin-count'
   }
 ]
