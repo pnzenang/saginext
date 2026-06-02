@@ -17,18 +17,23 @@ import {
 import day from 'dayjs'
 import advancedFormat from 'dayjs/plugin/advancedFormat'
 import {
+  AlertTriangle,
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   ChevronUpIcon,
+  Clock,
+  Cross,
   Ellipsis,
-  Trash2,
   FileSpreadsheetIcon,
   FileTextIcon,
+  Hourglass,
+  Pencil,
   SearchIcon,
+  ShieldCheck,
+  Trash2,
   UploadIcon,
-  Cross,
-  Pencil
+  Users
 } from 'lucide-react'
 import Link from 'next/link'
 import Papa from 'papaparse'
@@ -277,27 +282,37 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
     {
       label: 'Vested',
       value: summaryTotals.vested,
-      className: 'text-primary'
+      icon: ShieldCheck,
+      colorClassName: 'text-primary',
+      cardClassName: 'border-primary/20 bg-primary/10'
     },
     {
       label: 'Awaiting',
       value: summaryTotals.awaiting,
-      className: 'text-sky-600 dark:text-sky-400'
+      icon: Clock,
+      colorClassName: 'text-sky-600 dark:text-sky-400',
+      cardClassName: 'border-sky-500/20 bg-sky-500/10'
     },
     {
       label: 'Pending',
       value: summaryTotals.pending,
-      className: 'text-amber-600 dark:text-amber-400'
+      icon: Hourglass,
+      colorClassName: 'text-amber-600 dark:text-amber-400',
+      cardClassName: 'border-amber-500/20 bg-amber-500/10'
     },
     {
       label: 'Delinquent',
       value: summaryTotals.delinquent,
-      className: 'text-destructive'
+      icon: AlertTriangle,
+      colorClassName: 'text-destructive',
+      cardClassName: 'border-destructive/20 bg-destructive/10'
     },
     {
       label: 'Total Membership',
       value: summaryTotals.total,
-      className: 'text-foreground'
+      icon: Users,
+      colorClassName: 'text-foreground',
+      cardClassName: 'border-foreground/10 bg-muted/70'
     }
   ]
 
@@ -409,18 +424,25 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
         <div className='flex flex-col gap-4 border-b p-6'>
           <span className='text-2xl font-semibold sm:text-4xl lg:text-6xl'>All Active Members</span>
           <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-5'>
-            {summaryCards.map(status => (
-              <Card key={status.label} className='gap-2 py-4'>
-                <CardHeader className='pb-0'>
-                  <CardTitle className='text-muted-foreground text-sm font-medium'>{status.label}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className={`text-3xl font-extrabold lg:text-4xl ${status.className}`}>
-                    {formatNumber(status.value)}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
+            {summaryCards.map(status => {
+              const Icon = status.icon
+
+              return (
+                <Card key={status.label} className={`gap-2 py-4 ${status.cardClassName}`}>
+                  <CardHeader className='pb-0'>
+                    <CardTitle className={`flex items-center gap-2 text-sm font-medium ${status.colorClassName}`}>
+                      <Icon className='size-4 shrink-0' aria-hidden='true' />
+                      {status.label}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className={`text-3xl font-extrabold lg:text-4xl ${status.colorClassName}`}>
+                      {formatNumber(status.value)}
+                    </p>
+                  </CardContent>
+                </Card>
+              )
+            })}
           </div>
           <div className='flex items-center justify-between gap-3 px-6 py-4 max-sm:flex-col'>
             <p className='text-primary text-sm font-extrabold whitespace-nowrap' aria-live='polite'>
