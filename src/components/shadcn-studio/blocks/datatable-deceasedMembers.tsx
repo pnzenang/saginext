@@ -289,7 +289,21 @@ const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
 
   const summaryCards = [
     {
-      label: 'Case Review',
+      label: 'Completed',
+      value: summaryTotals.completed,
+      icon: CheckCircle2,
+      colorClassName: 'text-green-600 dark:text-green-400',
+      cardClassName: 'border-green-500/20 bg-green-500/10'
+    },
+    {
+      label: 'Underway',
+      value: summaryTotals.underway,
+      icon: CircleDollarSign,
+      colorClassName: 'text-blue-600 dark:text-blue-400',
+      cardClassName: 'border-blue-500/20 bg-blue-500/10'
+    },
+    {
+      label: 'In Review',
       value: summaryTotals.review,
       icon: ClipboardList,
       colorClassName: 'text-amber-600 dark:text-amber-400',
@@ -303,21 +317,7 @@ const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
       cardClassName: 'border-destructive/20 bg-destructive/10'
     },
     {
-      label: 'Underway',
-      value: summaryTotals.underway,
-      icon: CircleDollarSign,
-      colorClassName: 'text-blue-600 dark:text-blue-400',
-      cardClassName: 'border-blue-500/20 bg-blue-500/10'
-    },
-    {
-      label: 'Completed',
-      value: summaryTotals.completed,
-      icon: CheckCircle2,
-      colorClassName: 'text-green-600 dark:text-green-400',
-      cardClassName: 'border-green-500/20 bg-green-500/10'
-    },
-    {
-      label: 'Total Deceased',
+      label: 'All Deceased',
       value: summaryTotals.total,
       icon: Users,
       colorClassName: 'text-foreground',
