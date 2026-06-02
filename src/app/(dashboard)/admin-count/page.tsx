@@ -1,5 +1,7 @@
 import React from 'react'
 
+import { AlertTriangle, Clock, Hourglass, ShieldCheck, Users } from 'lucide-react'
+
 import AdminCountExcelButton from '@/components/global/AdminCountExcelButton'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -32,50 +34,67 @@ const Counts = async () => {
     {
       label: 'Vested',
       value: totals.vested,
-      className: 'text-primary'
+      icon: ShieldCheck,
+      colorClassName: 'text-primary',
+      cardClassName: 'border-primary/20 bg-primary/10'
     },
     {
       label: 'Awaiting',
       value: totals.awaitingPublication,
-      className: 'text-sky-600 dark:text-sky-400'
+      icon: Clock,
+      colorClassName: 'text-sky-600 dark:text-sky-400',
+      cardClassName: 'border-sky-500/20 bg-sky-500/10'
     },
     {
       label: 'Pending',
       value: totals.pending,
-      className: 'text-amber-600 dark:text-amber-400'
+      icon: Hourglass,
+      colorClassName: 'text-amber-600 dark:text-amber-400',
+      cardClassName: 'border-amber-500/20 bg-amber-500/10'
     },
     {
       label: 'Delinquent',
       value: totals.notInGoodStanding,
-      className: 'text-destructive'
+      icon: AlertTriangle,
+      colorClassName: 'text-destructive',
+      cardClassName: 'border-destructive/20 bg-destructive/10'
     },
     {
       label: 'Total Membership',
       value: totals.total,
-      className: 'text-foreground'
+      icon: Users,
+      colorClassName: 'text-foreground',
+      cardClassName: 'border-foreground/10 bg-muted/70'
     }
   ]
 
   return (
-    <div className='py-8 print:py-0 sm:py-10'>
-      <div className='max-w-9xl mx-auto w-full px-4 print:px-0 sm:px-6 lg:px-8'>
+    <div className='py-8 sm:py-10 print:py-0'>
+      <div className='max-w-9xl mx-auto w-full px-4 sm:px-6 lg:px-8 print:px-0'>
         <div className='mb-6'>
           <h1 className='text-xl font-semibold tracking-normal md:text-4xl'>Member Counts by Association Code</h1>
         </div>
 
         <div className='mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5'>
-          {statusCards.map(status => (
-            <Card key={status.label} className='gap-2 py-4'>
-              <CardHeader className='pb-0'>
-                <CardTitle className='text-muted-foreground text-sm font-medium'>{status.label}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className={`text-3xl font-extrabold lg:text-4xl ${status.className}`}>
-                  {formatNumber(status.value)}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
+          {statusCards.map(status => {
+            const Icon = status.icon
+
+            return (
+              <Card key={status.label} className={`gap-2 py-4 ${status.cardClassName}`}>
+                <CardHeader className='pb-0'>
+                  <CardTitle className={`flex items-center gap-2 text-sm font-medium ${status.colorClassName}`}>
+                    <Icon className='size-4 shrink-0' aria-hidden='true' />
+                    {status.label}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className={`text-3xl font-extrabold lg:text-4xl ${status.colorClassName}`}>
+                    {formatNumber(status.value)}
+                  </p>
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
 
         <div className='mb-6 flex justify-end'>
@@ -87,11 +106,11 @@ const Counts = async () => {
             <CardTitle>Association Breakdown</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className='print:hidden md:hidden'>
+            <div className='md:hidden print:hidden'>
               {counts.length > 0 ? (
                 <div className='divide-border overflow-hidden rounded-md border'>
                   {counts.map(item => (
-                    <div key={item.associationCode} className='space-y-3 p-4 odd:bg-muted/35 even:bg-background'>
+                    <div key={item.associationCode} className='odd:bg-muted/35 even:bg-background space-y-3 p-4'>
                       <div className='flex items-start justify-between gap-3'>
                         <div className='min-w-0'>
                           <p className='line-clamp-2 text-sm font-semibold' title={item.associationName}>
@@ -142,7 +161,7 @@ const Counts = async () => {
               )}
             </div>
 
-            <div className='hidden print:block md:block'>
+            <div className='hidden md:block print:block'>
               <Table className='table-fixed'>
                 <colgroup>
                   <col className='w-[52%]' />
@@ -191,9 +210,13 @@ const Counts = async () => {
                   <TableFooter>
                     <TableRow className='font-extrabold'>
                       <TableCell colSpan={2}>Total</TableCell>
-                      <TableCell className='text-primary text-right font-extrabold'>{formatNumber(totals.vested)}</TableCell>
+                      <TableCell className='text-primary text-right font-extrabold'>
+                        {formatNumber(totals.vested)}
+                      </TableCell>
                       <TableCell className='text-right font-extrabold'>{formatNumber(totals.pending)}</TableCell>
-                      <TableCell className='text-right font-extrabold'>{formatNumber(totals.awaitingPublication)}</TableCell>
+                      <TableCell className='text-right font-extrabold'>
+                        {formatNumber(totals.awaitingPublication)}
+                      </TableCell>
                       <TableCell className='text-right font-extrabold'>
                         {formatNumber(totals.notInGoodStanding)}
                       </TableCell>
