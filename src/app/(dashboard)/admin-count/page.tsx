@@ -35,15 +35,15 @@ const Counts = async () => {
       label: 'Vested',
       value: totals.vested,
       icon: ShieldCheck,
-      colorClassName: 'text-primary',
-      cardClassName: 'border-primary/20 bg-primary/10'
+      colorClassName: 'text-green-600 dark:text-green-400',
+      cardClassName: 'border-green-500/20 bg-green-500/10'
     },
     {
       label: 'Awaiting',
       value: totals.awaitingPublication,
       icon: Clock,
-      colorClassName: 'text-sky-600 dark:text-sky-400',
-      cardClassName: 'border-sky-500/20 bg-sky-500/10'
+      colorClassName: 'text-blue-600 dark:text-blue-400',
+      cardClassName: 'border-blue-500/20 bg-blue-500/10'
     },
     {
       label: 'Pending',

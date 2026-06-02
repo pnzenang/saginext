@@ -9,19 +9,24 @@ import * as XLSX from 'xlsx'
 day.extend(advancedFormat)
 
 import {
+  Ban,
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   ChevronUpIcon,
+  CheckCircle2,
+  CircleDollarSign,
+  ClipboardList,
+  Cross,
   Ellipsis,
-  Trash2,
+  Eye,
   FileSpreadsheetIcon,
   FileTextIcon,
+  Pencil,
   SearchIcon,
+  Trash2,
   UploadIcon,
-  Cross,
-  Eye,
-  Pencil
+  Users
 } from 'lucide-react'
 
 import type { Column, ColumnDef, ColumnFiltersState, PaginationState, RowData } from '@tanstack/react-table'
@@ -43,6 +48,7 @@ import { id } from 'zod/v4/locales'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 import {
   DropdownMenu,
@@ -63,7 +69,7 @@ import { usePagination } from '@/hooks/use-pagination'
 
 import { cn } from '@/lib/utils'
 
-import { type DeceasedMemberType } from '@/utils/types'
+import { contributionStatus, type DeceasedMemberType } from '@/utils/types'
 import { deleteDeceasedMemberAction } from '@/utils/actions'
 import FormContainer from '@/components/forms/FormContainer'
 
@@ -227,6 +233,9 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
   // }
 ]
 
+const numberFormatter = new Intl.NumberFormat('en-US')
+const formatNumber = (value: number) => numberFormatter.format(value)
+
 const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
 
@@ -255,6 +264,66 @@ const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
     getPaginationRowModel: getPaginationRowModel(),
     onPaginationChange: setPagination
   })
+
+  const summaryTotals = table.getCoreRowModel().rows.reduce(
+    (acc, row) => {
+      const status = row.getValue('contributionStatus')
+
+      if (status === contributionStatus.review) acc.review += 1
+      if (status === contributionStatus.denied) acc.denied += 1
+      if (status === contributionStatus.underway) acc.underway += 1
+      if (status === contributionStatus.completed) acc.completed += 1
+
+      acc.total += 1
+
+      return acc
+    },
+    {
+      review: 0,
+      denied: 0,
+      underway: 0,
+      completed: 0,
+      total: 0
+    }
+  )
+
+  const summaryCards = [
+    {
+      label: 'Case Review',
+      value: summaryTotals.review,
+      icon: ClipboardList,
+      colorClassName: 'text-amber-600 dark:text-amber-400',
+      cardClassName: 'border-amber-500/20 bg-amber-500/10'
+    },
+    {
+      label: 'Denied',
+      value: summaryTotals.denied,
+      icon: Ban,
+      colorClassName: 'text-destructive',
+      cardClassName: 'border-destructive/20 bg-destructive/10'
+    },
+    {
+      label: 'Underway',
+      value: summaryTotals.underway,
+      icon: CircleDollarSign,
+      colorClassName: 'text-blue-600 dark:text-blue-400',
+      cardClassName: 'border-blue-500/20 bg-blue-500/10'
+    },
+    {
+      label: 'Completed',
+      value: summaryTotals.completed,
+      icon: CheckCircle2,
+      colorClassName: 'text-green-600 dark:text-green-400',
+      cardClassName: 'border-green-500/20 bg-green-500/10'
+    },
+    {
+      label: 'Total Deceased',
+      value: summaryTotals.total,
+      icon: Users,
+      colorClassName: 'text-foreground',
+      cardClassName: 'border-foreground/10 bg-muted/70'
+    }
+  ]
 
   const exportToCSV = () => {
     const selectedRows = table.getSelectedRowModel().rows
@@ -332,6 +401,27 @@ const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
       <div className='border-b'>
         <div className='flex flex-col gap-4 border-b p-6'>
           <span className='text-2xl font-semibold text-purple-500 sm:text-4xl lg:text-6xl'> Deceased Members</span>
+          <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-5'>
+            {summaryCards.map(status => {
+              const Icon = status.icon
+
+              return (
+                <Card key={status.label} className={`gap-2 py-4 ${status.cardClassName}`}>
+                  <CardHeader className='pb-0'>
+                    <CardTitle className={`flex items-center gap-2 text-sm font-medium ${status.colorClassName}`}>
+                      <Icon className='size-4 shrink-0' aria-hidden='true' />
+                      {status.label}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className={`text-3xl font-extrabold lg:text-4xl ${status.colorClassName}`}>
+                      {formatNumber(status.value)}
+                    </p>
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
           <div className='flex items-center justify-between gap-3 px-6 py-4 max-sm:flex-col'>
             <p className='text-sm font-extrabold whitespace-nowrap text-purple-400' aria-live='polite'>
               <span>{table.getRowCount().toString()} Deceased Member(s) Found</span>
