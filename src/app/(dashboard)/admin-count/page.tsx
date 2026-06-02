@@ -1,9 +1,12 @@
 import React from 'react'
 
-import PrintButton from '@/components/global/PrintButton'
+import AdminCountExcelButton from '@/components/global/AdminCountExcelButton'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { fetchMemberStatusCountsByAssociationCode } from '@/utils/actions'
+
+const numberFormatter = new Intl.NumberFormat('en-US')
+const formatNumber = (value: number) => numberFormatter.format(value)
 
 const Counts = async () => {
   const counts = await fetchMemberStatusCountsByAssociationCode()
@@ -25,13 +28,63 @@ const Counts = async () => {
     }
   )
 
+  const statusCards = [
+    {
+      label: 'Vested',
+      value: totals.vested,
+      className: 'text-primary'
+    },
+    {
+      label: 'Awaiting',
+      value: totals.awaitingPublication,
+      className: 'text-sky-600 dark:text-sky-400'
+    },
+    {
+      label: 'Pending',
+      value: totals.pending,
+      className: 'text-amber-600 dark:text-amber-400'
+    },
+    {
+      label: 'Delinquent',
+      value: totals.notInGoodStanding,
+      className: 'text-destructive'
+    },
+    {
+      label: 'Total Membership',
+      value: totals.total,
+      className: 'text-foreground'
+    }
+  ]
+
   return (
     <div className='py-8 print:py-0 sm:py-10'>
       <div className='max-w-9xl mx-auto w-full px-4 print:px-0 sm:px-6 lg:px-8'>
+        <div className='mb-6'>
+          <h1 className='text-xl font-semibold tracking-normal md:text-4xl'>Member Counts by Association Code</h1>
+        </div>
+
+        <div className='mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5'>
+          {statusCards.map(status => (
+            <Card key={status.label} className='gap-2 py-4'>
+              <CardHeader className='pb-0'>
+                <CardTitle className='text-muted-foreground text-sm font-medium'>{status.label}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className={`text-3xl font-extrabold lg:text-4xl ${status.className}`}>
+                  {formatNumber(status.value)}
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        <div className='mb-6 flex justify-end'>
+          <AdminCountExcelButton counts={counts} totals={totals} />
+        </div>
+
         <Card className='print:border-0 print:shadow-none'>
-          <CardHeader className='flex flex-row items-center justify-between gap-4'>
-            <CardTitle>Member Counts by Association Code</CardTitle>
-            <PrintButton />
+          <CardHeader>
+            <CardTitle>Association Breakdown</CardTitle>
           </CardHeader>
           <CardContent>
             <div className='print:hidden md:hidden'>
@@ -48,25 +101,25 @@ const Counts = async () => {
                         </div>
                         <div className='text-right'>
                           <p className='text-muted-foreground text-xs'>Total</p>
-                          <p className='text-lg font-extrabold'>{item.total}</p>
+                          <p className='text-lg font-extrabold'>{formatNumber(item.total)}</p>
                         </div>
                       </div>
                       <div className='grid grid-cols-2 gap-2 text-sm'>
                         <div>
                           <p className='text-muted-foreground text-xs'>Vested</p>
-                          <p className='text-primary font-semibold'>{item.vested}</p>
+                          <p className='text-primary font-semibold'>{formatNumber(item.vested)}</p>
                         </div>
                         <div>
                           <p className='text-muted-foreground text-xs'>Pending</p>
-                          <p className='font-semibold'>{item.pending}</p>
+                          <p className='font-semibold'>{formatNumber(item.pending)}</p>
                         </div>
                         <div>
                           <p className='text-muted-foreground text-xs'>Awaiting</p>
-                          <p className='font-semibold'>{item.awaitingPublication}</p>
+                          <p className='font-semibold'>{formatNumber(item.awaitingPublication)}</p>
                         </div>
                         <div>
                           <p className='text-muted-foreground text-xs'>Delinquent</p>
-                          <p className='font-semibold'>{item.notInGoodStanding}</p>
+                          <p className='font-semibold'>{formatNumber(item.notInGoodStanding)}</p>
                         </div>
                       </div>
                     </div>
@@ -74,13 +127,13 @@ const Counts = async () => {
                   <div className='bg-muted p-4 font-extrabold'>
                     <div className='mb-3 flex items-center justify-between gap-3'>
                       <span>Total</span>
-                      <span>{totals.total}</span>
+                      <span>{formatNumber(totals.total)}</span>
                     </div>
                     <div className='grid grid-cols-2 gap-2 text-sm'>
-                      <span className='text-primary'>Vested: {totals.vested}</span>
-                      <span>Pending: {totals.pending}</span>
-                      <span>Awaiting: {totals.awaitingPublication}</span>
-                      <span>Delinquent: {totals.notInGoodStanding}</span>
+                      <span className='text-primary'>Vested: {formatNumber(totals.vested)}</span>
+                      <span>Pending: {formatNumber(totals.pending)}</span>
+                      <span>Awaiting: {formatNumber(totals.awaitingPublication)}</span>
+                      <span>Delinquent: {formatNumber(totals.notInGoodStanding)}</span>
                     </div>
                   </div>
                 </div>
@@ -119,11 +172,11 @@ const Counts = async () => {
                           {item.associationName}
                         </TableCell>
                         <TableCell>{item.associationCode}</TableCell>
-                        <TableCell className='text-primary text-right'>{item.vested}</TableCell>
-                        <TableCell className='text-right'>{item.pending}</TableCell>
-                        <TableCell className='text-right'>{item.awaitingPublication}</TableCell>
-                        <TableCell className='text-right'>{item.notInGoodStanding}</TableCell>
-                        <TableCell className='text-right font-extrabold'>{item.total}</TableCell>
+                        <TableCell className='text-primary text-right'>{formatNumber(item.vested)}</TableCell>
+                        <TableCell className='text-right'>{formatNumber(item.pending)}</TableCell>
+                        <TableCell className='text-right'>{formatNumber(item.awaitingPublication)}</TableCell>
+                        <TableCell className='text-right'>{formatNumber(item.notInGoodStanding)}</TableCell>
+                        <TableCell className='text-right font-extrabold'>{formatNumber(item.total)}</TableCell>
                       </TableRow>
                     ))
                   ) : (
@@ -138,11 +191,13 @@ const Counts = async () => {
                   <TableFooter>
                     <TableRow className='font-extrabold'>
                       <TableCell colSpan={2}>Total</TableCell>
-                      <TableCell className='text-primary text-right font-extrabold'>{totals.vested}</TableCell>
-                      <TableCell className='text-right font-extrabold'>{totals.pending}</TableCell>
-                      <TableCell className='text-right font-extrabold'>{totals.awaitingPublication}</TableCell>
-                      <TableCell className='text-right font-extrabold'>{totals.notInGoodStanding}</TableCell>
-                      <TableCell className='text-right font-extrabold'>{totals.total}</TableCell>
+                      <TableCell className='text-primary text-right font-extrabold'>{formatNumber(totals.vested)}</TableCell>
+                      <TableCell className='text-right font-extrabold'>{formatNumber(totals.pending)}</TableCell>
+                      <TableCell className='text-right font-extrabold'>{formatNumber(totals.awaitingPublication)}</TableCell>
+                      <TableCell className='text-right font-extrabold'>
+                        {formatNumber(totals.notInGoodStanding)}
+                      </TableCell>
+                      <TableCell className='text-right font-extrabold'>{formatNumber(totals.total)}</TableCell>
                     </TableRow>
                   </TableFooter>
                 )}

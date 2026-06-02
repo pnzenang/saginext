@@ -40,6 +40,26 @@ const renderError = (error: unknown): { message: string } => {
   return { message: error instanceof Error ? error.message : 'An error occurred' }
 }
 
+const assertMemberCanBeWithdrawn = async (memberId: string) => {
+  const member = await db.member.findUnique({
+    where: {
+      id: memberId
+    },
+    select: {
+      memberStatus: true
+    }
+  })
+
+  const currentDay = new Date().getDate()
+  const isWithdrawalBlocked = member?.memberStatus === memberStatus.Vested && currentDay >= 7 && currentDay <= 25
+
+  if (isWithdrawalBlocked) {
+    throw new Error(
+      'SAGI prevents withdrawal of vested members between the 7th and the 25th of each month. Resume withdrawal on or after the 26th, or before the 7th.'
+    )
+  }
+}
+
 export const createProfileAction = async (prevState: any, formData: FormData) => {
   try {
     const user = await currentUser()
@@ -186,6 +206,7 @@ export const fetchMemberStatusCountsByAssociationCode = async () => {
   })
 
   const associationCodes = [...new Set(counts.map(item => item.associationCode))]
+
   const profiles = await db.profile.findMany({
     where: {
       associationCode: {
@@ -197,7 +218,9 @@ export const fetchMemberStatusCountsByAssociationCode = async () => {
       associationName: true
     }
   })
+
   const associationNamesByCode = new Map(profiles.map(profile => [profile.associationCode, profile.associationName]))
+
   const memberAssociationNames = await db.member.findMany({
     where: {
       associationCode: {
@@ -347,6 +370,8 @@ export const createRemovedMemberAction = async (provState: any, formData: FormDa
     const rawData = Object.fromEntries(formData)
     const validatedFields = validateWithZodSchema(RemovedMemberSchema, rawData)
 
+    await assertMemberCanBeWithdrawn(memberId)
+
     await db.removedMember.create({
       data: {
         ...validatedFields,
@@ -375,6 +400,8 @@ export const createRemovedMemberActionAdmin = async (
     const memberId = formData.get('id') as string
     const rawData = Object.fromEntries(formData)
     const validatedFields = validateWithZodSchema(RemovedMemberSchema, rawData)
+
+    await assertMemberCanBeWithdrawn(memberId)
 
     await db.removedMember.create({
       data: {

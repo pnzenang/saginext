@@ -1,9 +1,4 @@
-import { InstagramIcon, MailIcon, TwitchIcon, YoutubeIcon } from 'lucide-react'
-
-import Link from 'next/link'
-
 import HoverText from '@/components/layout/footer/hover-text'
-import Logo from '@/components/logo'
 
 const Footer = () => {
   return (

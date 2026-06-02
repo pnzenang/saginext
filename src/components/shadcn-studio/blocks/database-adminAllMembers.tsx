@@ -1,28 +1,6 @@
 'use client'
+
 import { useId, useMemo, useState } from 'react'
-
-import day from 'dayjs'
-import advancedFormat from 'dayjs/plugin/advancedFormat'
-import Papa from 'papaparse'
-import * as XLSX from 'xlsx'
-
-day.extend(advancedFormat)
-
-import {
-  ChevronDownIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  ChevronUpIcon,
-  Ellipsis,
-  Trash2,
-  FileSpreadsheetIcon,
-  FileTextIcon,
-  SearchIcon,
-  UploadIcon,
-  Cross,
-  Eye,
-  Pencil
-} from 'lucide-react'
 
 import type { Column, ColumnDef, ColumnFiltersState, PaginationState, RowData } from '@tanstack/react-table'
 import {
@@ -36,14 +14,29 @@ import {
   getSortedRowModel,
   useReactTable
 } from '@tanstack/react-table'
-
+import day from 'dayjs'
+import advancedFormat from 'dayjs/plugin/advancedFormat'
+import {
+  ChevronDownIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ChevronUpIcon,
+  Ellipsis,
+  Trash2,
+  FileSpreadsheetIcon,
+  FileTextIcon,
+  SearchIcon,
+  UploadIcon,
+  Cross,
+  Pencil
+} from 'lucide-react'
 import Link from 'next/link'
-
-import { id } from 'zod/v4/locales'
+import Papa from 'papaparse'
+import * as XLSX from 'xlsx'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,19 +49,27 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem } from '@/components/ui/pagination'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-
 import { usePagination } from '@/hooks/use-pagination'
-
 import { cn } from '@/lib/utils'
-import { type MemberType } from '@/utils/types'
-import { tr } from 'zod/v4/locales/index.js'
+import { memberStatus, type MemberType } from '@/utils/types'
+
+day.extend(advancedFormat)
 
 declare module '@tanstack/react-table' {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface ColumnMeta<TData extends RowData, TValue> {
     filterVariant?: 'text' | 'range' | 'select'
   }
+}
+
+const numberFormatter = new Intl.NumberFormat('en-US')
+const formatNumber = (value: number) => numberFormatter.format(value)
+
+const getVisibleMatriculationNumber = (status: unknown, matriculationNumber: unknown) => {
+  if (status === memberStatus.Pending || status === memberStatus.Awaiting) return 'Pending'
+
+  return String(matriculationNumber ?? '')
 }
 
 const columns: ColumnDef<MemberType>[] = [
@@ -90,13 +91,18 @@ const columns: ColumnDef<MemberType>[] = [
   {
     header: 'Matriculation',
     accessorKey: 'memberMatriculationNumber',
-    cell: ({ row }) => (
-      <div className='flex items-center gap-2'>
-        <div className='flex flex-col'>
-          <span className='font-medium'>{row.getValue('memberMatriculationNumber')}</span>
+    cell: ({ row }) => {
+      const status = row.getValue('memberStatus')
+      const matriculationNumber = row.getValue('memberMatriculationNumber')
+
+      return (
+        <div className='flex items-center gap-2'>
+          <div className='flex flex-col'>
+            <span className='font-medium'>{getVisibleMatriculationNumber(status, matriculationNumber)}</span>
+          </div>
         </div>
-      </div>
-    ),
+      )
+    },
     size: 100
   },
   {
@@ -111,6 +117,7 @@ const columns: ColumnDef<MemberType>[] = [
     ),
     size: 100
   },
+
   // {
   //   header: 'Middle Names',
   //   accessorKey: 'middleName',
@@ -260,6 +267,56 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
     onPaginationChange: setPagination
   })
 
+  const summaryTotals = table.getCoreRowModel().rows.reduce(
+    (acc, row) => {
+      const status = row.getValue('memberStatus')
+
+      if (status === memberStatus.Vested) acc.vested += 1
+      if (status === memberStatus.Pending) acc.pending += 1
+      if (status === memberStatus.Awaiting) acc.awaiting += 1
+      if (status === memberStatus.Delinquent) acc.delinquent += 1
+
+      acc.total += 1
+
+      return acc
+    },
+    {
+      vested: 0,
+      pending: 0,
+      awaiting: 0,
+      delinquent: 0,
+      total: 0
+    }
+  )
+
+  const summaryCards = [
+    {
+      label: 'Vested',
+      value: summaryTotals.vested,
+      className: 'text-primary'
+    },
+    {
+      label: 'Awaiting',
+      value: summaryTotals.awaiting,
+      className: 'text-sky-600 dark:text-sky-400'
+    },
+    {
+      label: 'Pending',
+      value: summaryTotals.pending,
+      className: 'text-amber-600 dark:text-amber-400'
+    },
+    {
+      label: 'Delinquent',
+      value: summaryTotals.delinquent,
+      className: 'text-destructive'
+    },
+    {
+      label: 'Total Membership',
+      value: summaryTotals.total,
+      className: 'text-foreground'
+    }
+  ]
+
   const exportToCSV = () => {
     const selectedRows = table.getSelectedRowModel().rows
 
@@ -304,6 +361,40 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
     XLSX.writeFile(workbook, `all-members-${new Date().toISOString().split('T')[0]}.xlsx`)
   }
 
+  const exportVisibleColumnsToExcel = () => {
+    const dataToExport = table.getFilteredRowModel().rows.map(row => {
+      const createdAt = row.getValue('createdAt') as Date
+      const longevity = day(Date.now()).diff(createdAt.toDateString(), 'days')
+
+      return {
+        Code: row.getValue('associationCode'),
+        Matriculation: getVisibleMatriculationNumber(
+          row.getValue('memberStatus'),
+          row.getValue('memberMatriculationNumber')
+        ),
+        'Last And Middle Names': row.getValue('lastAndMiddleNames'),
+        'First Name': row.getValue('firstName'),
+        'Longevity(Days)': longevity,
+        Recommendation: row.getValue('delegateRecommendation'),
+        Status: row.getValue('memberStatus')
+      }
+    })
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport)
+    const workbook = XLSX.utils.book_new()
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'All Members')
+
+    const cols = [{ wch: 12 }, { wch: 18 }, { wch: 28 }, { wch: 18 }, { wch: 16 }, { wch: 28 }, { wch: 22 }]
+
+    worksheet['!cols'] = cols
+
+    XLSX.writeFile(
+      workbook,
+      `all-members-visible-columns-${new Date().toISOString().split('T')[0]}.xlsx`
+    )
+  }
+
   const exportToJSON = () => {
     const selectedRows = table.getSelectedRowModel().rows
 
@@ -336,12 +427,26 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
       <div className='border-b'>
         <div className='flex flex-col gap-4 border-b p-6'>
           <span className='text-2xl font-semibold sm:text-4xl lg:text-6xl'>All Active Members (Admin)</span>
+          <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-5'>
+            {summaryCards.map(status => (
+              <Card key={status.label} className='gap-2 py-4'>
+                <CardHeader className='pb-0'>
+                  <CardTitle className='text-muted-foreground text-sm font-medium'>{status.label}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className={`text-3xl font-extrabold lg:text-4xl ${status.className}`}>
+                    {formatNumber(status.value)}
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
           <div className='flex items-center justify-between gap-3 px-6 py-4 max-sm:flex-col'>
             <p className='text-primary text-sm font-extrabold whitespace-nowrap' aria-live='polite'>
-              <span>{table.getRowCount().toString()} Member(s) Found</span>
+              <span>{formatNumber(table.getRowCount())} Member(s) Found</span>
             </p>
 
-            <div>
+            <div className='flex items-center gap-2 max-sm:flex-col'>
               <Pagination>
                 <PaginationContent>
                   <PaginationItem>
@@ -400,6 +505,15 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
                   </PaginationItem>
                 </PaginationContent>
               </Pagination>
+              <Button
+                type='button'
+                onClick={exportVisibleColumnsToExcel}
+                disabled={table.getFilteredRowModel().rows.length === 0}
+                className='bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40'
+              >
+                <FileSpreadsheetIcon />
+                Export Page
+              </Button>
             </div>
           </div>
           <div className='grid grid-cols-1 gap-6 max-md:*:last:col-span-full sm:grid-cols-2 md:grid-cols-3'>

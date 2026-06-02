@@ -1,19 +1,12 @@
 import { IoIosWarning } from 'react-icons/io'
+import { BsSignStopFill } from 'react-icons/bs'
 
 import { SubmitButton } from '@/components/forms/Buttons'
 import FormContainer from '@/components/forms/FormContainer'
 import FormInput from '@/components/forms/FormInput'
-import FormInputS from '@/components/forms/FormInputS'
 import FormSelect from '@/components/forms/FormSelect'
-import MaskDateInput from '@/components/forms/MaskDateInput'
-import {
-  createRemovedMemberAction,
-  fetchProfile,
-  fetchSingleMemberDetails,
-  updateMemberDetailsAction
-} from '@/utils/actions'
-import { reasonForLeaving } from '@/utils/types'
-import { BsSignStopFill } from 'react-icons/bs'
+import { createRemovedMemberAction, fetchSingleMemberDetails } from '@/utils/actions'
+import { memberStatus, reasonForLeaving } from '@/utils/types'
 
 const RemoveMember = async ({ params }: { params: { id: string } }) => {
   const { id } = await params
@@ -28,12 +21,12 @@ const RemoveMember = async ({ params }: { params: { id: string } }) => {
     memberMatriculationNumber,
     associationCode,
     createdAt,
-    associationName
+    associationName,
+    memberStatus: currentMemberStatus
   } = member
 
-  const profile = await fetchProfile()
   const currentDay = new Date().getDate()
-  const shouldShow = currentDay <= 5 || currentDay >= 15
+  const isWithdrawalBlocked = currentMemberStatus === memberStatus.Vested && currentDay >= 6 && currentDay <= 25
 
   return (
     <section className='mt-16 flex flex-col'>
@@ -42,7 +35,7 @@ const RemoveMember = async ({ params }: { params: { id: string } }) => {
         <h1 className='text-3xl font-semibold text-red-600 capitalize sm:text-6xl'> member Removal </h1>
       </div>
       <div>
-        {shouldShow ? (
+        {!isWithdrawalBlocked ? (
           <p className='text-xs text-red-500 sm:text-lg'>
             Check your entry well before submission as the process is not reversible once submitted. Sorry to see your
             member go.
@@ -102,16 +95,16 @@ const RemoveMember = async ({ params }: { params: { id: string } }) => {
                 defaultValue={reasonForLeaving.NoReason}
               />
 
-              {shouldShow && (
+              {!isWithdrawalBlocked && (
                 <SubmitButton text='Withdraw member' className='mt-4 w-full bg-red-800 hover:bg-red-900' />
               )}
             </div>
-            {!shouldShow && (
+            {isWithdrawalBlocked && (
               <div className='mt-10 flex flex-col items-center justify-center gap-1 sm:flex-row'>
                 <BsSignStopFill className='size-8 items-center text-red-500' />{' '}
                 <h1 className='text-center text-sm font-semibold text-red-500 sm:text-lg'>
-                  SAGI prevents withdrawal between the 5th and the 15th of the month in order to ensure accuracy of the
-                  contribution. Resume withdrawal on or after the 15th.
+                  SAGI prevents withdrawal of vested members between the 7th and the 25th of each month. Resume
+                  withdrawal on or after the 26th, or before the 7th.
                 </h1>
               </div>
             )}
