@@ -16,11 +16,11 @@ const badges = [
     color: 'bg-sky-500'
   },
   {
-    words: '$15,000,000+ distributed to more than 800,000 bereaved families.',
+    words: '$15,000,000+ distributed to 800,000+ bereaved families.',
     color: 'bg-red-500'
   },
   {
-    words: '99% of the monies collected go toward helping bereaved families.',
+    words: '99% of the monies collected go toward helping families.',
     color: 'bg-green-500'
   }
 ]

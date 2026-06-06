@@ -25,7 +25,7 @@ const HeroSection = ({ testimonials }: { testimonials: Testimonial[] }) => {
     <section className='flex-1 py-4 sm:py-16 lg:py-16'>
       {/* <BackgroundRippleEffect cellSize={60} rows={11} cols={32} /> */}
       <div
-        className='mx-auto flex max-w-7xl flex-col items-center gap-8 rounded-xl bg-cover bg-center px-4 sm:gap-16 sm:px-6 lg:gap-24 lg:px-8'
+        className='max-w-9xl mx-auto flex flex-col items-center gap-8 bg-cover bg-center px-4 sm:gap-16 sm:px-6 lg:gap-24 lg:px-8'
         style={{
           backgroundImage: "url('https://res.cloudinary.com/dp8tkb7hq/image/upload/v1779077351/mourning_fdgbjz.svg')"
         }}
@@ -60,13 +60,17 @@ const HeroSection = ({ testimonials }: { testimonials: Testimonial[] }) => {
               slide={{ direction: 'down', offset: 50 }}
               delay={0.5}
               transition={{ duration: 0.5, ease: 'easeOut' }}
-              className='z-10 max-w-5xl py-12 text-xl text-white sm:text-2xl lg:py-16 lg:text-3xl'
+              className='z-10 max-w-7xl py-12 text-left text-xl text-white sm:text-2xl lg:py-24 lg:text-3xl'
             >
-              Join the most cost effective mutual aid community in the USA. With SAGI, you save money while gaining
-              access to a network of support and solidarity with low overhead expenses and big benefits.
+              Join the most cost effective mutual aid community in the USA instead!
+              <br />
+              <br />
+              With SAGI, you save money while gaining access to a network of support and solidarity with low overhead
+              expenses and big benefits.
               <span className='hidden sm:block'>
-                Experience the power of collective support, where your contribution creates a safety net for you and
-                your family.
+                <br />
+                With SAGI, you experience the power of collective support, where your contribution creates a safety net
+                for you and your family.
               </span>
             </MotionPreset>
           </div>
