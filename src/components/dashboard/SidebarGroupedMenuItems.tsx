@@ -1,39 +1,137 @@
 import Link from 'next/link'
 
+import { ChevronRight, UserCog, Users } from 'lucide-react'
+
+import { auth } from '@clerk/nextjs/server'
+
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarGroupContent,
   SidebarMenu,
   SidebarMenuItem,
-  SidebarMenuButton
+  SidebarMenuButton,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem
 } from '../ui/sidebar'
 import type { MenuItem } from '@/utils/types'
-import { auth } from '@clerk/nextjs/server'
+
+const sidebarLinkClass =
+  'data-[state=open]:text-primary focus:bg-primary my-1 py-1 transition-all duration-500 hover:ml-5 focus:text-neutral-50'
+
+const sidebarDropdownClass =
+  'data-[state=open]:text-primary focus:bg-primary my-1 h-auto py-2 transition-all duration-500 hover:ml-5 focus:text-neutral-50 [&[data-state=open]>svg:last-child]:rotate-90'
+
+const memberLabels = new Set(['add member', 'all members', 'removed members', 'all deceased members'])
+
+const isAdminItem = (item: MenuItem) =>
+  item.href.startsWith('/admin-') || item.label.trim().toLowerCase().startsWith('admin')
+
+const isMemberItem = (item: MenuItem) => memberLabels.has(item.label.trim().toLowerCase())
+const getAdminLabel = (label: string) => label.trim().replace(/^admin\s+/i, '')
+
+const SidebarLinkItem = ({ item }: { item: MenuItem }) => (
+  <SidebarMenuItem>
+    <SidebarMenuButton tooltip={item.label} asChild className={sidebarLinkClass}>
+      <Link href={item.href}>
+        <item.icon />
+        <span className='truncate capitalize'>{item.label}</span>
+      </Link>
+    </SidebarMenuButton>
+  </SidebarMenuItem>
+)
+
+const SidebarDropdownMenu = ({
+  icon: Icon,
+  title,
+  subtitle,
+  items,
+  formatLabel = label => label
+}: {
+  icon: MenuItem['icon']
+  title: string
+  subtitle: string
+  items: MenuItem[]
+  formatLabel?: (label: string) => string
+}) => (
+  <Collapsible asChild>
+    <SidebarMenuItem>
+      <CollapsibleTrigger asChild>
+        <SidebarMenuButton tooltip={title} className={sidebarDropdownClass}>
+          <Icon />
+          <span className='flex min-w-0 flex-col'>
+            <span className='truncate capitalize'>{title}</span>
+            <span className='text-muted-foreground truncate text-xs font-normal normal-case group-data-[collapsible=icon]:hidden'>
+              {subtitle}
+            </span>
+          </span>
+          <ChevronRight className='ml-auto transition-transform duration-200' />
+        </SidebarMenuButton>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <SidebarMenuSub>
+          {items.map(item => (
+            <SidebarMenuSubItem key={item.href}>
+              <SidebarMenuSubButton asChild>
+                <Link href={item.href}>
+                  <item.icon />
+                  <span className='truncate capitalize'>{formatLabel(item.label)}</span>
+                </Link>
+              </SidebarMenuSubButton>
+            </SidebarMenuSubItem>
+          ))}
+        </SidebarMenuSub>
+      </CollapsibleContent>
+    </SidebarMenuItem>
+  </Collapsible>
+)
+
 const SidebarGroupedMenuItems = async ({ data, groupLabel }: { data: MenuItem[]; groupLabel?: string }) => {
   const { userId } = await auth()
   const isAdminUser = userId === process.env.ADMIN_USER_ID
+  const memberItems = data.filter(isMemberItem)
+  const adminItems = isAdminUser ? data.filter(isAdminItem) : []
+  const firstMemberItemIndex = data.findIndex(isMemberItem)
+  const firstAdminItemIndex = data.findIndex(isAdminItem)
+
   return (
     <SidebarGroup className='justify-center pt-16'>
       {groupLabel && <SidebarGroupLabel>{groupLabel}</SidebarGroupLabel>}
       <SidebarGroupContent>
         <SidebarMenu>
-          {data.map(item => {
-            if (item.label.includes('Admin') && !isAdminUser) return null
-            return (
-              <SidebarMenuItem key={item.label}>
-                <SidebarMenuButton
-                  tooltip={item.label}
-                  asChild
-                  className='data-[state=open]:text-primary focus:bg-primary my-1 py-1 transition-all duration-500 hover:ml-5 focus:text-neutral-50'
-                >
-                  <Link href={item.href}>
-                    <item.icon />
-                    <span className='truncate capitalize'>{item.label}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            )
+          {data.map((item, index) => {
+            if (isMemberItem(item)) {
+              if (index !== firstMemberItemIndex) return null
+
+              return (
+                <SidebarDropdownMenu
+                  key='members-menu'
+                  icon={Users}
+                  title='Members'
+                  subtitle='The various member pages'
+                  items={memberItems}
+                />
+              )
+            }
+
+            if (isAdminItem(item)) {
+              if (!isAdminUser || index !== firstAdminItemIndex) return null
+
+              return (
+                <SidebarDropdownMenu
+                  key='admin-menu'
+                  icon={UserCog}
+                  title='Admin'
+                  subtitle='The various admin pages'
+                  items={adminItems}
+                  formatLabel={getAdminLabel}
+                />
+              )
+            }
+
+            return <SidebarLinkItem key={item.label} item={item} />
           })}
         </SidebarMenu>
       </SidebarGroupContent>
