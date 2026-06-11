@@ -9,6 +9,7 @@ import * as XLSX from 'xlsx'
 day.extend(advancedFormat)
 
 import {
+  ArrowUpDown,
   Ban,
   ChevronDownIcon,
   ChevronLeftIcon,
@@ -566,7 +567,7 @@ const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
                         <div
                           className={cn(
                             header.column.getCanSort() &&
-                              'flex h-full cursor-pointer items-center justify-between gap-2 select-none'
+                              'inline-flex h-full cursor-pointer items-center gap-1.5 select-none'
                           )}
                           onClick={header.column.getToggleSortingHandler()}
                           onKeyDown={e => {
@@ -581,7 +582,9 @@ const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
                           {{
                             asc: <ChevronUpIcon className='shrink-0 opacity-60' size={16} aria-hidden='true' />,
                             desc: <ChevronDownIcon className='shrink-0 opacity-60' size={16} aria-hidden='true' />
-                          }[header.column.getIsSorted() as string] ?? null}
+                          }[header.column.getIsSorted() as string] ?? (
+                            <ArrowUpDown className='shrink-0 opacity-60' size={16} aria-hidden='true' />
+                          )}
                         </div>
                       ) : (
                         flexRender(header.column.columnDef.header, header.getContext())

@@ -18,6 +18,7 @@ import day from 'dayjs'
 import advancedFormat from 'dayjs/plugin/advancedFormat'
 import {
   AlertTriangle,
+  ArrowUpDown,
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -612,7 +613,7 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
                         <div
                           className={cn(
                             header.column.getCanSort() &&
-                              'flex h-full cursor-pointer items-center justify-between gap-2 select-none'
+                              'inline-flex h-full cursor-pointer items-center gap-1.5 select-none'
                           )}
                           onClick={header.column.getToggleSortingHandler()}
                           onKeyDown={e => {
@@ -627,7 +628,9 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
                           {{
                             asc: <ChevronUpIcon className='shrink-0 opacity-60' size={16} aria-hidden='true' />,
                             desc: <ChevronDownIcon className='shrink-0 opacity-60' size={16} aria-hidden='true' />
-                          }[header.column.getIsSorted() as string] ?? null}
+                          }[header.column.getIsSorted() as string] ?? (
+                            <ArrowUpDown className='shrink-0 opacity-60' size={16} aria-hidden='true' />
+                          )}
                         </div>
                       ) : (
                         flexRender(header.column.columnDef.header, header.getContext())
