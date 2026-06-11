@@ -102,8 +102,8 @@ const RemovedMembers = () => {
             member from Removed Members within 48 hours.
           </p>
           <p className='mt-3 max-w-3xl rounded-md border border-red-200 bg-red-50 p-3 text-sm leading-6 font-medium text-red-700'>
-            Member removal is open from the 25th of one month to the 5th of the next month. Outside that window, the
-            Withdraw member button is hidden.
+            Vested Member removal is open from the 25th of one month to the 5th of the next month. Outside that window,
+            the Withdraw member button is hidden for the vested members.
           </p>
           <div className='mt-6 flex flex-col gap-3 sm:flex-row'>
             <Button asChild>
