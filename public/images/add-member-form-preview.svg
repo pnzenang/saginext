@@ -17,7 +17,7 @@
     <rect x="722" y="242" width="286" height="58" rx="10" fill="#F8FAFC" stroke="#CBD5E1"/>
     <text x="742" y="278" fill="#94A3B8" font-size="17">MM / DD / YYYY</text>
 
-    <text x="92" y="352" fill="#334155" font-size="18" font-weight="700">Country of birth</text>
+    <text x="92" y="352" fill="#334155" font-size="18" font-weight="700">Country Of Residence</text>
     <rect x="92" y="370" width="286" height="58" rx="10" fill="#F8FAFC" stroke="#CBD5E1"/>
     <text x="112" y="406" fill="#94A3B8" font-size="17">Country</text>
 

@@ -38,7 +38,7 @@ model Member {
   lastAndMiddleNames String
   // middleName String
   dateOfBirth String
-  countryOfBirth String
+  countryOfResidence String @map("countryOfBirth")
   memberMatriculationNumber String
   delegateRecommendation String
   memberStatus String
@@ -51,15 +51,21 @@ model Member {
 }
 model RemovedMember {
   id String @id @default(uuid())
+  originalMemberId String?
   clerkId String
   firstName String
   lastAndMiddleNames String
   dateOfBirth String
-  countryOfBirth String
+  countryOfResidence String @map("countryOfBirth")
   memberMatriculationNumber String
   registrationDate String
+  associationName String?
   associationCode String
+  nameOfBeneficiary String?
+  delegateRecommendation String?
+  memberStatus String?
   reasonForLeaving String
+  originalMemberCreatedAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -68,7 +74,7 @@ model DeceasedMember {
   clerkId String
   firstName String
   lastAndMiddleNames String
-  countryOfBirth String
+  countryOfResidence String @map("countryOfBirth")
   memberMatriculationNumber String
   registrationDate String
   nameOfBeneficiary String

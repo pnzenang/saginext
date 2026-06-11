@@ -21,6 +21,7 @@ import { Prisma } from '@/generated/prisma/client'
 import { memberStatus } from './types'
 
 const randomMatriculation = customAlphabet('1234567890', 6)
+const MEMBER_REMOVAL_RESTORE_WINDOW_MS = 48 * 60 * 60 * 1000
 
 const getAuthUser = async () => {
   const user = await currentUser()
@@ -59,6 +60,9 @@ const assertMemberCanBeWithdrawn = async (memberId: string) => {
     )
   }
 }
+
+const isWithinMemberRemovalRestoreWindow = (createdAt: Date) =>
+  Date.now() - createdAt.getTime() <= MEMBER_REMOVAL_RESTORE_WINDOW_MS
 
 export const createProfileAction = async (prevState: any, formData: FormData) => {
   try {
@@ -372,17 +376,41 @@ export const createRemovedMemberAction = async (provState: any, formData: FormDa
 
     await assertMemberCanBeWithdrawn(memberId)
 
-    await db.removedMember.create({
-      data: {
-        ...validatedFields,
+    const member = await db.member.findFirst({
+      where: {
+        id: memberId,
         clerkId: user.id
       }
     })
-    await db.member.delete({
-      where: {
-        id: memberId
-      }
-    })
+
+    if (!member) throw new Error('Member not found')
+
+    await db.$transaction([
+      db.removedMember.create({
+        data: {
+          originalMemberId: member.id,
+          clerkId: member.clerkId,
+          firstName: member.firstName,
+          lastAndMiddleNames: member.lastAndMiddleNames,
+          dateOfBirth: member.dateOfBirth,
+          countryOfResidence: member.countryOfResidence,
+          memberMatriculationNumber: member.memberMatriculationNumber,
+          registrationDate: validatedFields.registrationDate,
+          associationName: member.associationName,
+          associationCode: member.associationCode,
+          nameOfBeneficiary: member.nameOfBeneficiary,
+          delegateRecommendation: member.delegateRecommendation,
+          memberStatus: member.memberStatus,
+          reasonForLeaving: validatedFields.reasonForLeaving,
+          originalMemberCreatedAt: member.createdAt
+        }
+      }),
+      db.member.delete({
+        where: {
+          id: memberId
+        }
+      })
+    ])
   } catch (error) {
     return renderError(error)
   }
@@ -397,23 +425,48 @@ export const createRemovedMemberActionAdmin = async (
   const user = await getAuthUser()
 
   try {
+    if (user.id !== process.env.ADMIN_USER_ID) throw new Error('Admin privileges are required to remove this member')
+
     const memberId = formData.get('id') as string
     const rawData = Object.fromEntries(formData)
     const validatedFields = validateWithZodSchema(RemovedMemberSchema, rawData)
 
     await assertMemberCanBeWithdrawn(memberId)
 
-    await db.removedMember.create({
-      data: {
-        ...validatedFields,
-        clerkId: user.id
-      }
-    })
-    await db.member.delete({
+    const member = await db.member.findUnique({
       where: {
         id: memberId
       }
     })
+
+    if (!member) throw new Error('Member not found')
+
+    await db.$transaction([
+      db.removedMember.create({
+        data: {
+          originalMemberId: member.id,
+          clerkId: member.clerkId,
+          firstName: member.firstName,
+          lastAndMiddleNames: member.lastAndMiddleNames,
+          dateOfBirth: member.dateOfBirth,
+          countryOfResidence: member.countryOfResidence,
+          memberMatriculationNumber: member.memberMatriculationNumber,
+          registrationDate: validatedFields.registrationDate,
+          associationName: member.associationName,
+          associationCode: member.associationCode,
+          nameOfBeneficiary: member.nameOfBeneficiary,
+          delegateRecommendation: member.delegateRecommendation,
+          memberStatus: member.memberStatus,
+          reasonForLeaving: validatedFields.reasonForLeaving,
+          originalMemberCreatedAt: member.createdAt
+        }
+      }),
+      db.member.delete({
+        where: {
+          id: memberId
+        }
+      })
+    ])
   } catch (error) {
     return renderError(error)
   }
@@ -444,6 +497,78 @@ export const fetchRemovedMembersActionAdmin = async () => {
   })
 
   return removedMembers
+}
+
+export const restoreRemovedMemberAction = async (prevState: { removedMemberId: string }) => {
+  const user = await getAuthUser()
+  const { removedMemberId } = prevState
+
+  try {
+    const removedMember = await db.removedMember.findUnique({
+      where: {
+        id: removedMemberId
+      }
+    })
+
+    if (!removedMember) throw new Error('Removed member not found')
+
+    const isAdminUser = user.id === process.env.ADMIN_USER_ID
+
+    if (!isAdminUser && removedMember.clerkId !== user.id) {
+      throw new Error('You can only restore members removed from your own account')
+    }
+
+    if (!isWithinMemberRemovalRestoreWindow(removedMember.createdAt)) {
+      throw new Error('This member can no longer be restored because the 48-hour reversal window has expired')
+    }
+
+    if (
+      !removedMember.associationName ||
+      !removedMember.nameOfBeneficiary ||
+      !removedMember.delegateRecommendation ||
+      !removedMember.memberStatus
+    ) {
+      throw new Error('This removed member record is missing the original details needed for restoration')
+    }
+
+    await db.$transaction([
+      db.member.create({
+        data: {
+          ...(removedMember.originalMemberId ? { id: removedMember.originalMemberId } : {}),
+          clerkId: removedMember.clerkId,
+          firstName: removedMember.firstName,
+          lastAndMiddleNames: removedMember.lastAndMiddleNames,
+          dateOfBirth: removedMember.dateOfBirth,
+          countryOfResidence: removedMember.countryOfResidence,
+          memberMatriculationNumber: removedMember.memberMatriculationNumber,
+          delegateRecommendation: removedMember.delegateRecommendation,
+          memberStatus: removedMember.memberStatus,
+          nameOfBeneficiary: removedMember.nameOfBeneficiary,
+          associationName: removedMember.associationName,
+          associationCode: removedMember.associationCode,
+          ...(removedMember.originalMemberCreatedAt ? { createdAt: removedMember.originalMemberCreatedAt } : {})
+        }
+      }),
+      db.removedMember.delete({
+        where: {
+          id: removedMember.id
+        }
+      })
+    ])
+
+    revalidatePath('/removed-members')
+    revalidatePath('/all-members')
+    revalidatePath('/admin-all-removed')
+    revalidatePath('/admin-all-members')
+
+    return { message: 'Member restored successfully' }
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      return { message: 'This member already exists in All Members and cannot be restored again' }
+    }
+
+    return renderError(error)
+  }
 }
 
 export const createDeceasedMemberAction = async (provState: any, formData: FormData): Promise<{ message: string }> => {

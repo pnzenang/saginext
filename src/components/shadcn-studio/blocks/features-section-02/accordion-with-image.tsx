@@ -14,7 +14,7 @@ const featureData = [
     id: '1',
     title: 'What are the requirements for registration?',
     description:
-      "To register a member, the member need to live in the USA, you must provide the member's full name, date of birth, country of birth, as it appears on the official documents and the name of the beneficiary."
+      "To register a member, the member need to live in the USA, you must provide the member's full name, date of birth, country of residence, as it appears on the official documents and the name of the beneficiary."
   },
   {
     id: '2',

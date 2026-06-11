@@ -19,7 +19,7 @@ const EditCaseStatus = async ({ params }: { params: { id: string } }) => {
   const {
     firstName,
     lastAndMiddleNames,
-    countryOfBirth,
+    countryOfResidence,
     nameOfBeneficiary,
     memberMatriculationNumber,
 
@@ -64,7 +64,12 @@ const EditCaseStatus = async ({ params }: { params: { id: string } }) => {
                 // placeholder='MM/DD/YYYY'
               />
 
-              <FormInput type='text' name='countryOfBirth' label='member city of birth' defaultValue={countryOfBirth} />
+              <FormInput
+                type='text'
+                name='countryOfResidence'
+                label='Country Of Residence'
+                defaultValue={countryOfResidence}
+              />
 
               <FormInput
                 type='text'

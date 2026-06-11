@@ -19,7 +19,7 @@ const EditMemberDetailPage = async ({ params }: { params: { id: string } }) => {
     firstName,
     lastAndMiddleNames,
     dateOfBirth,
-    countryOfBirth,
+    countryOfResidence,
     clerkId,
     nameOfBeneficiary,
     associationName,
@@ -37,7 +37,7 @@ const EditMemberDetailPage = async ({ params }: { params: { id: string } }) => {
           view and update member&apos;s details{' '}
         </h1>
         <p className='text-primary text-xs sm:text-lg'>
-          Here you can change the member&apos;s date of birth, the beneficiary&apos;s names or country of death, but to
+          Here you can change the member&apos;s date of birth, beneficiary&apos;s names, or country of residence, but to
           edit the name you need fill out the name change form on the dashboard.
         </p>
       </div>
@@ -58,9 +58,9 @@ const EditMemberDetailPage = async ({ params }: { params: { id: string } }) => {
               <FormInput type='text' name='dateOfBirth' label='member date of birth' defaultValue={dateOfBirth} />
               <FormInput
                 type='text'
-                name='countryOfBirth'
-                label='member country of birth'
-                defaultValue={countryOfBirth}
+                name='countryOfResidence'
+                label='Country Of Residence'
+                defaultValue={countryOfResidence}
               />
               <FormInput
                 type='text'

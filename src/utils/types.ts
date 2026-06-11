@@ -38,7 +38,7 @@ export type MemberType = {
   firstName: string
   lastAndMiddleNames: string
   dateOfBirth: string
-  countryOfBirth: string
+  countryOfResidence: string
   memberMatriculationNumber: string
   nameOfBeneficiary?: string
   associationName: string
@@ -49,15 +49,21 @@ export type MemberType = {
 
 export type RemovedMemberType = {
   id: string
+  originalMemberId?: string | null
   clerkId: string
   firstName: string
   lastAndMiddleNames: string
   dateOfBirth: string
-  countryOfBirth: string
+  countryOfResidence: string
   memberMatriculationNumber: string
   registrationDate: string
+  associationName?: string | null
   associationCode: string
+  nameOfBeneficiary?: string | null
+  delegateRecommendation?: string | null
+  memberStatus?: string | null
   reasonForLeaving: string
+  originalMemberCreatedAt?: Date | null
   createdAt: Date
   updatedAt: Date
 }
@@ -76,7 +82,7 @@ export type DeceasedMemberType = {
   lastAndMiddleNames: string
   contributionStatus: string
   registrationDate: string
-  countryOfBirth: string
+  countryOfResidence: string
   memberMatriculationNumber: string
   nameOfBeneficiary?: string
   associationName: string

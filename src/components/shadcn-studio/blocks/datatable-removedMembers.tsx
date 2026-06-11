@@ -1,7 +1,6 @@
 'use client'
 import { useId, useMemo, useState } from 'react'
 
-import { IoIosWarning } from 'react-icons/io'
 import day from 'dayjs'
 import advancedFormat from 'dayjs/plugin/advancedFormat'
 import Papa from 'papaparse'
@@ -14,15 +13,10 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   ChevronUpIcon,
-  Ellipsis,
-  Trash2,
   FileSpreadsheetIcon,
   FileTextIcon,
   SearchIcon,
-  UploadIcon,
-  Cross,
-  Eye,
-  Pencil
+  UploadIcon
 } from 'lucide-react'
 
 import type { Column, ColumnDef, ColumnFiltersState, PaginationState, RowData } from '@tanstack/react-table'
@@ -38,17 +32,11 @@ import {
   useReactTable
 } from '@tanstack/react-table'
 
-import Link from 'next/link'
-
-import { id } from 'zod/v4/locales'
-
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger
@@ -64,11 +52,10 @@ import { usePagination } from '@/hooks/use-pagination'
 
 import { cn } from '@/lib/utils'
 import type { RemovedMemberType } from '@/utils/types'
-import { type MemberType } from '@/utils/types'
-import { deleteRemovedMemberAction } from '@/utils/actions'
-import FormContainer from '@/components/forms/FormContainer'
+import RestoreRemovedMemberButton from '@/components/global/RestoreRemovedMemberButton'
 
 declare module '@tanstack/react-table' {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface ColumnMeta<TData extends RowData, TValue> {
     filterVariant?: 'text' | 'range' | 'select'
   }
@@ -87,6 +74,7 @@ const columns: ColumnDef<RemovedMemberType>[] = [
     ),
     size: 100
   },
+
   // {
   //   header: 'Middle Name',
   //   accessorKey: 'middleName',
@@ -182,25 +170,19 @@ const columns: ColumnDef<RemovedMemberType>[] = [
     header: 'Date Removed',
     cell: ({ row }) => {
       const field = row.getValue('createdAt') as Date
-      const time = day(Date.now())
 
       const formattedLongevity = day(field).format('MMM D, YYYY')
 
       return <div>{formattedLongevity}</div>
     },
     size: 150
+  },
+  {
+    header: 'Actions',
+    id: 'actions',
+    cell: ({ row: { original } }) => <RowActions removedMember={original} />,
+    size: 120
   }
-  // {
-  //   header: 'Actions',
-  //   accessorKey: 'id',
-  //   cell: ({ row: { original } }) => {
-  //     // Destructuring 'id' directly from the row data
-  //     const { id } = original
-
-  //     return <RowActions removedMemberId={id} />
-  //   },
-  //   size: 20
-  // }
 ]
 
 const RemovedMembersDataTable = ({ data }: { data: RemovedMemberType[] }) => {
@@ -574,14 +556,6 @@ function Filter({ column }: { column: Column<any, unknown> }) {
   )
 }
 
-function RowActions({ removedMemberId }: { removedMemberId: string }) {
-  const deleteRemovedMember = deleteRemovedMemberAction.bind(null, { removedMemberId })
-
-  return (
-    <FormContainer action={deleteRemovedMember}>
-      <Button size='icon' variant='ghost' className='rounded-full p-2 hover:bg-red-300' aria-label='Edit item'>
-        <Trash2 className='text-destructive size-5' aria-hidden='true' />
-      </Button>
-    </FormContainer>
-  )
+function RowActions({ removedMember }: { removedMember: RemovedMemberType }) {
+  return <RestoreRemovedMemberButton removedMember={removedMember} />
 }

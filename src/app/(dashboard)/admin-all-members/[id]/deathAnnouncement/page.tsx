@@ -16,7 +16,7 @@ const DeathAnnouncement = async ({ params }: { params: { id: string } }) => {
     firstName,
     lastAndMiddleNames,
     dateOfBirth,
-    countryOfBirth,
+    countryOfResidence,
     clerkId,
     nameOfBeneficiary,
     memberMatriculationNumber,
@@ -67,9 +67,9 @@ const DeathAnnouncement = async ({ params }: { params: { id: string } }) => {
 
               <FormInput
                 type='text'
-                name='countryOfBirth'
-                label='loved one country of birth'
-                defaultValue={countryOfBirth}
+                name='countryOfResidence'
+                label='Country Of Residence'
+                defaultValue={countryOfResidence}
               />
 
               <FormInput

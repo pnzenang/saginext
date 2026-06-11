@@ -17,7 +17,7 @@ const RemoveMember = async ({ params }: { params: { id: string } }) => {
     firstName,
     lastAndMiddleNames,
     dateOfBirth,
-    countryOfBirth,
+    countryOfResidence,
     memberMatriculationNumber,
     associationCode,
     associationName,
@@ -37,7 +37,8 @@ const RemoveMember = async ({ params }: { params: { id: string } }) => {
           <h1 className='text-2xl font-semibold text-red-600 capitalize sm:text-6xl'> member Removal </h1>
         </div>
         <p className='text-xs text-red-500 sm:text-lg'>
-          Check your entry well before submission, the process is not reversible.
+          Check your entry well before submission. If this removal is a mistake, you can restore the member from Removed
+          Members within 48 hours.
         </p>
       </div>
       <div className='border-destructive rounded-lg border bg-red-800/40 p-8'>
@@ -56,9 +57,9 @@ const RemoveMember = async ({ params }: { params: { id: string } }) => {
               <FormInput type='text' name='dateOfBirth' label='member date of birth' defaultValue={dateOfBirth} />
               <FormInput
                 type='text'
-                name='countryOfBirth'
-                label='member country of birth'
-                defaultValue={countryOfBirth}
+                name='countryOfResidence'
+                label='Country Of Residence'
+                defaultValue={countryOfResidence}
               />
               <FormInput
                 type='text'

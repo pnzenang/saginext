@@ -43,7 +43,7 @@ const AddMember = async () => {
             {/* </div>
           <div className='mt-4 grid gap-4 md:grid-cols-3'> */}
             <MaskDateInput type='text' name='dateOfBirth' label='member date of birth' placeholder='MM / DD / YYYY' />
-            <FormInput type='text' name='countryOfBirth' label='member country of birth' />
+            <FormInput type='text' name='countryOfResidence' label='Country Of Residence' />
             <FormInput type='text' name='nameOfBeneficiary' label='Name of the Beneficiary' />
             {/* </div>
           <div className='mt-4 grid gap-4 md:grid-cols-3'> */}

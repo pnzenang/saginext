@@ -17,7 +17,7 @@ const RemoveMember = async ({ params }: { params: { id: string } }) => {
     firstName,
     lastAndMiddleNames,
     dateOfBirth,
-    countryOfBirth,
+    countryOfResidence,
     memberMatriculationNumber,
     associationCode,
     createdAt,
@@ -26,7 +26,7 @@ const RemoveMember = async ({ params }: { params: { id: string } }) => {
   } = member
 
   const currentDay = new Date().getDate()
-  const isWithdrawalBlocked = currentMemberStatus === memberStatus.Vested && currentDay >= 6 && currentDay <= 25
+  const isWithdrawalBlocked = currentMemberStatus === memberStatus.Vested && currentDay >= 5 && currentDay <= 25
 
   return (
     <section className='mt-16 flex flex-col'>
@@ -59,9 +59,9 @@ const RemoveMember = async ({ params }: { params: { id: string } }) => {
               <FormInput type='text' name='dateOfBirth' label='member date of birth' defaultValue={dateOfBirth} />
               <FormInput
                 type='text'
-                name='countryOfBirth'
-                label='member country of birth'
-                defaultValue={countryOfBirth}
+                name='countryOfResidence'
+                label='Country Of Residence'
+                defaultValue={countryOfResidence}
               />
               <FormInput
                 type='text'

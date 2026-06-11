@@ -49,7 +49,7 @@ const removalFormFields = [
   'Last and middle names: confirm this is the correct member before submitting.',
   'First names: this field is shown from the member record and should match the person being removed.',
   'Date of birth: use this to confirm the member identity when names are similar.',
-  'Country of birth: confirm the member record is the right one.',
+  'Country of residence: confirm the member record is the right one.',
   'Matriculation: check the member number before removal.',
   'Association name and association code: confirm the member belongs to your group.',
   'Registration date: shows when the member was originally registered in the system.',
@@ -59,6 +59,7 @@ const removalFormFields = [
 const removedMembersTable = [
   'Removed members no longer appear in the active All Members table.',
   'The Removed Members page keeps a record of the member who was withdrawn.',
+  'A removed member can be restored from Removed Members within 48 hours of the removal.',
   'The table shows the member name, matriculation, association code, reason for leaving, and registration date.',
   'Use the filters on the Removed Members page if you need to find a removed member later.'
 ]
@@ -77,7 +78,7 @@ const beforeSubmitting = [
   'Check every pre-filled field before submitting.',
   'Select the most accurate reason for leaving.',
   'Make sure your group has agreed to remove the member.',
-  'Remember that the form is not reversible after submission.'
+  'Remember that restoration is only available for 48 hours after submission.'
 ]
 
 const RemovedMembers = () => {
@@ -97,7 +98,8 @@ const RemovedMembers = () => {
           </p>
           <p className='text-muted-foreground mt-3 max-w-3xl text-base leading-7'>
             This process should be used carefully. Once the removal form is submitted, the app deletes the active member
-            record and stores the member in the removed-members history.
+            record and stores the member in the removed-members history. If the removal was a mistake, restore the member
+            from Removed Members within 48 hours.
           </p>
           <p className='mt-3 max-w-3xl rounded-md border border-red-200 bg-red-50 p-3 text-sm font-medium leading-6 text-red-700'>
             Member removal is open from the 15th of one month to the 5th of the next month. Outside that window, the
@@ -150,7 +152,8 @@ const RemovedMembers = () => {
         <CardContent className='space-y-3 text-sm leading-6 text-red-800'>
           <p>
             Removal is a serious action. When the withdrawal is submitted, the member is removed from the active All
-            Members page and moved to the Removed Members page for record keeping.
+            Members page and moved to the Removed Members page for record keeping. The member can be restored from that
+            page within 48 hours.
           </p>
           <p>
             Do not remove a member just to correct a spelling mistake or update information. Use Edit Member&apos;s

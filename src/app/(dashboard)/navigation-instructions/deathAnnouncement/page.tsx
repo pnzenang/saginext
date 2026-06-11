@@ -58,7 +58,7 @@ const formFields = [
   'First names: read-only field used to confirm the member identity.',
   'Matriculation: the official member number tied to the deceased member.',
   'Registration date: shows when the member originally entered SAGI.',
-  'Country of birth: another identity check before submitting.',
+  'Country of residence: another identity check before submitting.',
   'Name of beneficiary: confirms who is recorded as the beneficiary.',
   'Association name: confirms the member belongs to the correct group.',
   'Place of death: enter the state or place where the death occurred.',
