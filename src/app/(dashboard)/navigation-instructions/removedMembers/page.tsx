@@ -65,7 +65,7 @@ const removedMembersTable = [
 ]
 
 const timingRules = [
-  'Removal is open to users from the 15th day of one month through the 5th day of the next month.',
+  'Removal of vested members is open to users from the 25th day of one month through the 5th day of the next month.',
   'For example, a member can be removed from May 15 through June 5, then removal closes again until June 15.',
   'Removal is blocked from the 6th through the 14th so contribution calculations stay accurate.',
   'If the button is not shown, wait until the removal window opens again.',
@@ -98,11 +98,11 @@ const RemovedMembers = () => {
           </p>
           <p className='text-muted-foreground mt-3 max-w-3xl text-base leading-7'>
             This process should be used carefully. Once the removal form is submitted, the app deletes the active member
-            record and stores the member in the removed-members history. If the removal was a mistake, restore the member
-            from Removed Members within 48 hours.
+            record and stores the member in the removed-members history. If the removal was a mistake, restore the
+            member from Removed Members within 48 hours.
           </p>
-          <p className='mt-3 max-w-3xl rounded-md border border-red-200 bg-red-50 p-3 text-sm font-medium leading-6 text-red-700'>
-            Member removal is open from the 15th of one month to the 5th of the next month. Outside that window, the
+          <p className='mt-3 max-w-3xl rounded-md border border-red-200 bg-red-50 p-3 text-sm leading-6 font-medium text-red-700'>
+            Member removal is open from the 25th of one month to the 5th of the next month. Outside that window, the
             Withdraw member button is hidden.
           </p>
           <div className='mt-6 flex flex-col gap-3 sm:flex-row'>
@@ -189,10 +189,10 @@ const RemovedMembers = () => {
           <CardHeader>
             <CardTitle className='flex items-center gap-2'>
               <CalendarClock className='text-primary size-5' />
-              Removal Window: 15th to 5th
+              Removal Window: 25th to 5th
             </CardTitle>
             <CardDescription>
-              Users can remove members from the 15th of one month through the 5th of the next month.
+              Users can remove members from the 25th of one month through the 5th of the next month.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -221,7 +221,7 @@ const RemovedMembers = () => {
               allowed withdrawal window.
             </p>
             <p>
-              In that case, do not look for another way to remove the member. Wait until the 15th day of the month or
+              In that case, do not look for another way to remove the member. Wait until the 25th day of the month or
               later, then return to the same member row and open Remove Member again.
             </p>
           </CardContent>
