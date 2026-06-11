@@ -45,7 +45,7 @@ export const pagesItems: MenuItem[] = [
   },
   {
     icon: UserMinus,
-    label: 'Remove a Member',
+    label: 'Remove Member',
     href: '/navigation-instructions/removedMembers'
   },
 
