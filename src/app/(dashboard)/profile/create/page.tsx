@@ -43,14 +43,14 @@ const CreateProfilePage = async () => {
             <FormInput type='text' name='secondDelegateEmail' label='Second Delegate Email' />
           </div>
           <div className='mt-4 grid gap-4 md:grid-cols-3'>
-            <FormInput type='text' name='thirdDelegateFullName' label='Third Delegate Name' />
+            <FormInput type='text' name='thirdDelegateFullName' label='Board Member Name' />
             <MaskPhoneInput
               type='text'
               name='thirdDelegatePhoneNumber'
-              label='First Delegate Phone Number'
+              label='Board Member Phone Number'
               placeholder='(###) ###-####'
             />
-            <FormInput type='text' name='thirdDelegateEmail' label='Third Delegate Email' />
+            <FormInput type='text' name='thirdDelegateEmail' label='Board Member Email' />
           </div>
           <div className='mt-4 grid gap-4 md:grid-cols-3'>
             <SubmitButton text='Create Profile' className='mt-3 w-full' />

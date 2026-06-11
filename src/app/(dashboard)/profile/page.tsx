@@ -70,20 +70,20 @@ const Profile = async () => {
             <FormInput
               type='text'
               name='thirdDelegateFullName'
-              label='Third Delegate Name'
+              label='Board Member Name'
               defaultValue={profile.thirdDelegateFullName}
             />
             <MaskPhoneInput
               type='text'
               name='thirdDelegatePhoneNumber'
-              label='Third Delegate Phone Number'
+              label='Board Member Phone Number'
               defaultValue={profile.thirdDelegatePhoneNumber}
             />
             <FormInput
               type='text'
               name='thirdDelegateEmail'
-              label='Third Delegate Email'
-              defaultValue={profile.firstDelegateEmail}
+              label='Board Member Email'
+              defaultValue={profile.thirdDelegateEmail}
             />
           </div>
           <div className='mt-4 grid gap-4 md:grid-cols-3'>
