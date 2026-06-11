@@ -5,6 +5,7 @@ import {
   SquareUser,
   Trash2,
   UserCog,
+  UserMinus,
   UserPlus,
   FileStack,
   Users,
@@ -13,6 +14,7 @@ import {
   WalletMinimal,
   CreditCard,
   List,
+  Megaphone,
   Table,
   Pencil
 } from 'lucide-react'
@@ -41,11 +43,21 @@ export const pagesItems: MenuItem[] = [
     label: 'All Members',
     href: '/all-members'
   },
+  {
+    icon: UserMinus,
+    label: 'Remove Member',
+    href: '/navigation-instructions/removedMembers'
+  },
 
   {
     icon: Trash2,
     label: 'Removed Members',
     href: '/removed-members'
+  },
+  {
+    icon: Megaphone,
+    label: 'Death Announcement',
+    href: '/navigation-instructions/deathAnnouncement'
   },
   {
     icon: Cross,

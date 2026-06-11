@@ -24,7 +24,14 @@ const sidebarLinkClass =
 const sidebarDropdownClass =
   'data-[state=open]:text-primary focus:bg-primary my-1 h-auto py-2 transition-all duration-500 hover:ml-5 focus:text-neutral-50 [&[data-state=open]>svg:last-child]:rotate-90'
 
-const memberLabels = new Set(['add member', 'all members', 'removed members', 'all deceased members'])
+const memberLabels = new Set([
+  'add member',
+  'all members',
+  'death announcement',
+  'remove member',
+  'removed members',
+  'all deceased members'
+])
 
 const isAdminItem = (item: MenuItem) =>
   item.href.startsWith('/admin-') || item.label.trim().toLowerCase().startsWith('admin')
