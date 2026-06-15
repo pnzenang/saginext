@@ -1,12 +1,8 @@
 'use client'
 import { useId, useMemo, useState } from 'react'
 
-import day from 'dayjs'
-import advancedFormat from 'dayjs/plugin/advancedFormat'
 import Papa from 'papaparse'
 import * as XLSX from 'xlsx'
-
-day.extend(advancedFormat)
 
 import {
   ArrowUpDown,
@@ -63,6 +59,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { usePagination } from '@/hooks/use-pagination'
 
 import { cn } from '@/lib/utils'
+import { formatLongevity } from '@/utils/formatLongevity'
 import { type MemberType } from '@/utils/types'
 
 declare module '@tanstack/react-table' {
@@ -123,18 +120,13 @@ const columns: ColumnDef<MemberType>[] = [
 
   {
     accessorKey: 'createdAt', // The key in your data object
-    header: 'Longevity(Days)',
+    header: 'Longevity',
     cell: ({ row }) => {
       const field = row.getValue('createdAt') as Date
-      const time = day(Date.now())
 
-      const formattedLongevity = new Intl.NumberFormat('en-US', { style: 'decimal', maximumFractionDigits: 2 }).format(
-        time.diff(field.toDateString(), 'days')
-      )
-
-      return <div>{formattedLongevity}</div>
+      return <div>{formatLongevity(field)}</div>
     },
-    size: 100
+    size: 160
   },
   {
     header: 'Recommendation',

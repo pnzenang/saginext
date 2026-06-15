@@ -14,8 +14,6 @@ import {
   getSortedRowModel,
   useReactTable
 } from '@tanstack/react-table'
-import day from 'dayjs'
-import advancedFormat from 'dayjs/plugin/advancedFormat'
 import {
   AlertTriangle,
   ArrowUpDown,
@@ -58,9 +56,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { usePagination } from '@/hooks/use-pagination'
 import { cn } from '@/lib/utils'
+import { formatLongevity } from '@/utils/formatLongevity'
 import { memberStatus, type MemberType } from '@/utils/types'
-
-day.extend(advancedFormat)
 
 declare module '@tanstack/react-table' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -151,18 +148,13 @@ const columns: ColumnDef<MemberType>[] = [
 
   {
     accessorKey: 'createdAt', // The key in your data object
-    header: 'Longevity(Days)',
+    header: 'Longevity',
     cell: ({ row }) => {
       const field = row.getValue('createdAt') as Date
-      const time = day(Date.now())
 
-      const formattedLongevity = new Intl.NumberFormat('en-US', { style: 'decimal', maximumFractionDigits: 2 }).format(
-        time.diff(field.toDateString(), 'days')
-      )
-
-      return <div>{formattedLongevity}</div>
+      return <div>{formatLongevity(field)}</div>
     },
-    size: 100
+    size: 160
   },
   {
     header: 'Recommendation',
@@ -380,7 +372,6 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
   const exportVisibleColumnsToExcel = () => {
     const dataToExport = table.getFilteredRowModel().rows.map(row => {
       const createdAt = row.getValue('createdAt') as Date
-      const longevity = day(Date.now()).diff(createdAt.toDateString(), 'days')
 
       return {
         Code: row.getValue('associationCode'),
@@ -390,7 +381,7 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
         ),
         'Last And Middle Names': row.getValue('lastAndMiddleNames'),
         'First Name': row.getValue('firstName'),
-        'Longevity(Days)': longevity,
+        Longevity: formatLongevity(createdAt),
         Recommendation: row.getValue('delegateRecommendation'),
         Status: row.getValue('memberStatus')
       }
@@ -401,7 +392,7 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
 
     XLSX.utils.book_append_sheet(workbook, worksheet, 'All Members')
 
-    const cols = [{ wch: 12 }, { wch: 18 }, { wch: 28 }, { wch: 18 }, { wch: 16 }, { wch: 28 }, { wch: 22 }]
+    const cols = [{ wch: 12 }, { wch: 18 }, { wch: 28 }, { wch: 18 }, { wch: 32 }, { wch: 28 }, { wch: 22 }]
 
     worksheet['!cols'] = cols
 

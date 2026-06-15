@@ -22,7 +22,7 @@ const tableColumns = [
   'Matriculation: the official member number after admin processing. New pending members may not have this yet.',
   'Last and Middle Names: the name entered in the Add Member form.',
   'First Name: the member first name or names.',
-  'Longevity: the number of days since the member was created in the system.',
+  'Longevity: the years, months, and days since the member was created in the system.',
   'Recommendation: the delegate recommendation, such as confirm or transfer.',
   'Status: shows whether the member is pending, vested, awaiting publication, or not in good standing.',
   'Actions: the three-dot menu used to edit, announce death, or remove a member when allowed.'
