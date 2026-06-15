@@ -207,7 +207,11 @@ const AdminContributionPayments = async () => {
           Review contribution payments recorded by associations, verify received amounts, and compare balances against
           the latest contribution calculation
           {latestContributionAssessment
-            ? ` created on ${dateFormatter.format(latestContributionAssessment.createdAt)}`
+            ? ` created on ${dateFormatter.format(latestContributionAssessment.createdAt)}${
+                latestContributionAssessment.dueDate
+                  ? ` and due on ${dateFormatter.format(latestContributionAssessment.dueDate)}`
+                  : ''
+              }`
             : ''}
           .
         </p>

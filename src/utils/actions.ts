@@ -95,6 +95,22 @@ const getPositiveDollarAmountFromForm = (formData: FormData, fieldName: string) 
   return Number(amount.toFixed(2))
 }
 
+const getRequiredDateFromForm = (formData: FormData, fieldName: string) => {
+  const value = getRequiredFormValue(formData, fieldName)
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    throw new Error(`${fieldName} must be a valid date.`)
+  }
+
+  const date = new Date(`${value}T12:00:00.000Z`)
+
+  if (Number.isNaN(date.getTime())) {
+    throw new Error(`${fieldName} must be a valid date.`)
+  }
+
+  return date
+}
+
 const formatRegistrationDate = (date: Date) => registrationDateFormatter.format(date)
 
 const createPendingRegistrationUsage = async ({
@@ -507,6 +523,7 @@ export const createAssociationContributionAssessmentAction = async (
 
   try {
     const totalAmount = getPositiveDollarAmountFromForm(formData, 'totalAmount')
+    const dueDate = getRequiredDateFromForm(formData, 'dueDate')
 
     const vestedMembers = await db.member.findMany({
       select: {
@@ -532,6 +549,7 @@ export const createAssociationContributionAssessmentAction = async (
     await db.associationContributionAssessment.create({
       data: {
         amountPerVestedMember,
+        dueDate,
         totalAmount,
         totalVestedMembers: vestedMembers.length,
         groups: {

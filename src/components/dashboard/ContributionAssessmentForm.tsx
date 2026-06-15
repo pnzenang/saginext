@@ -2,7 +2,7 @@
 
 import { useActionState } from 'react'
 
-import { DollarSign } from 'lucide-react'
+import { CalendarDays, DollarSign } from 'lucide-react'
 
 import { SubmitButton } from '@/components/forms/Buttons'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -36,7 +36,7 @@ const ContributionAssessmentForm = ({ vestedMembersCount }: ContributionAssessme
       </CardHeader>
       <CardContent className='py-5'>
         <div className='grid gap-4'>
-          <div className='grid gap-4 md:grid-cols-3 md:items-end'>
+          <div className='grid gap-4 md:grid-cols-4 md:items-end'>
             <form action={formAction} className='contents'>
               <div className='grid gap-2'>
                 <Label htmlFor='totalAmount'>Monthly contribution total</Label>
@@ -50,6 +50,20 @@ const ContributionAssessmentForm = ({ vestedMembersCount }: ContributionAssessme
                     min='0.01'
                     step='0.01'
                     placeholder='0.00'
+                    className='border-primary/40 bg-background pl-9 text-foreground'
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className='grid gap-2'>
+                <Label htmlFor='dueDate'>Contribution due date</Label>
+                <div className='relative'>
+                  <CalendarDays className='text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2' />
+                  <Input
+                    id='dueDate'
+                    name='dueDate'
+                    type='date'
                     className='border-primary/40 bg-background pl-9 text-foreground'
                     required
                   />

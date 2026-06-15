@@ -17,6 +17,7 @@ export type AssociationContributionSummary = {
   amountVerified: number
   balance: number
   associationCode: string
+  dueDate: string | null
   existingBalance: number
   manualBalanceAdjustment: number
   vestedContributionCredit: number
@@ -81,6 +82,7 @@ export const fetchAssociationContributionSummary = async (
     amountVerified,
     associationCode,
     balance: Number((amountVerified + manualBalanceAdjustment - amountOwed).toFixed(2)),
+    dueDate: latestAssessment?.dueDate?.toISOString() ?? null,
     existingBalance,
     manualBalanceAdjustment,
     vestedContributionCredit: 0,

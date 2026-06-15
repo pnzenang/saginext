@@ -107,6 +107,7 @@ model AssociationContributionAssessment {
   totalAmount           Decimal                                  @db.Decimal(10, 2)
   totalVestedMembers    Int
   amountPerVestedMember Decimal                                  @db.Decimal(10, 2)
+  dueDate               DateTime?
   createdAt             DateTime                                 @default(now())
   updatedAt             DateTime                                 @updatedAt
   groups                AssociationContributionAssessmentGroup[]

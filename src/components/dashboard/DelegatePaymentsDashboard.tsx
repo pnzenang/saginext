@@ -25,6 +25,10 @@ const monthFormatter = new Intl.DateTimeFormat('en-US', {
   month: 'long'
 })
 
+const dateFormatter = new Intl.DateTimeFormat('en-US', {
+  dateStyle: 'medium'
+})
+
 const sagiPaymentUrl =
   'https://enroll.zellepay.com/qr-codes?data=eyJuYW1lIjoiUEFUUklDRSIsImFjdGlvbiI6InBheW1lbnQiLCJ0b2tlbiI6IjQ0MzUzMTU4NTIifQ=='
 
@@ -154,6 +158,11 @@ const DelegatePaymentsDashboard = ({
               {currentContribution.vestedMembersCount} vested member(s) x{' '}
               {currencyFormatter.format(currentContribution.amountPerVestedMember)}
             </p>
+            {currentContribution.dueDate ? (
+              <p className='text-primary/80 mt-2 text-sm font-extrabold break-words'>
+                Due {dateFormatter.format(new Date(currentContribution.dueDate))}
+              </p>
+            ) : null}
           </div>
           <div className='border-primary/20 bg-primary/10 text-primary flex h-full min-w-0 flex-col rounded-md border px-3 py-3 sm:px-4'>
             <p className='text-lg font-extrabold break-words sm:text-xl'>
