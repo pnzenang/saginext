@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-import { ChevronRight, UserCog, Users } from 'lucide-react'
+import { ChevronRight, UserCog } from 'lucide-react'
 
 import { auth } from '@clerk/nextjs/server'
 
@@ -30,17 +30,9 @@ const sidebarDropdownClass = `my-1 h-auto min-h-12 py-2 text-base transition-col
 const sidebarSubLinkClass =
   'hover:bg-primary hover:text-primary-foreground active:bg-primary active:text-primary-foreground focus:bg-primary focus:text-primary-foreground data-[active=true]:bg-primary data-[active=true]:text-primary-foreground [&>svg]:text-current'
 
-const memberLabels = new Set([
-  'death announcement',
-  'remove member',
-  'removed members',
-  'all deceased members'
-])
-
 const isAdminItem = (item: MenuItem) =>
   item.href.startsWith('/admin-') || item.label.trim().toLowerCase().startsWith('admin')
 
-const isMemberItem = (item: MenuItem) => memberLabels.has(item.label.trim().toLowerCase())
 const getAdminLabel = (label: string) => label.trim().replace(/^admin\s+/i, '')
 
 const SidebarLinkItem = ({ item }: { item: MenuItem }) => (
@@ -102,9 +94,7 @@ const SidebarDropdownMenu = ({
 const SidebarGroupedMenuItems = async ({ data, groupLabel }: { data: MenuItem[]; groupLabel?: string }) => {
   const { userId } = await auth()
   const isAdminUser = userId === process.env.ADMIN_USER_ID
-  const memberItems = data.filter(isMemberItem)
   const adminItems = isAdminUser ? data.filter(isAdminItem) : []
-  const firstMemberItemIndex = data.findIndex(isMemberItem)
   const firstAdminItemIndex = data.findIndex(isAdminItem)
 
   return (
@@ -113,12 +103,6 @@ const SidebarGroupedMenuItems = async ({ data, groupLabel }: { data: MenuItem[];
       <SidebarGroupContent>
         <SidebarMenu>
           {data.map((item, index) => {
-            if (isMemberItem(item)) {
-              if (index !== firstMemberItemIndex) return null
-
-              return <SidebarDropdownMenu key='members-menu' icon={Users} title='Delegate Pages' items={memberItems} />
-            }
-
             if (isAdminItem(item)) {
               if (!isAdminUser || index !== firstAdminItemIndex) return null
 
