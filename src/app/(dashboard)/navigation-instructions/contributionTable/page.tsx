@@ -20,8 +20,7 @@ const tableDetails = [
   {
     icon: HeartHandshake,
     title: 'Name of the deceased member',
-    description:
-      'The table shows the member who passed away and for whom the monthly contribution is being collected.'
+    description: 'The table shows the member who passed away and for whom the monthly contribution is being collected.'
   },
   {
     icon: CalendarDays,
@@ -67,7 +66,7 @@ const commonMistakes = [
 
 const ContributionTable = () => {
   return (
-    <section className='max-w-9xl mx-auto flex w-full flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8'>
+    <section className='max-w-9xl mx-auto flex w-full flex-col gap-6 px-3 py-4 sm:px-6 sm:py-6 lg:px-8'>
       <div className='bg-card rounded-lg border p-6 shadow-sm sm:p-8'>
         <Badge className='mb-4 w-fit' variant='secondary'>
           Contribution Table Instructions
@@ -80,8 +79,8 @@ const ContributionTable = () => {
             <div className='text-muted-foreground mt-4 max-w-4xl space-y-3 text-base leading-7'>
               <p>
                 The Contribution Table gives delegates the details they need for the monthly contribution. It explains
-                who the contribution is for, when and where the death occurred, how much the family will receive, and how
-                much each group is expected to contribute.
+                who the contribution is for, when and where the death occurred, how much the family will receive, and
+                how much each group is expected to contribute.
               </p>
               <p>
                 Use this table before sending payment so your group understands the purpose of the contribution and the

@@ -32,7 +32,7 @@ const RemoveMember = async ({ params }: { params: { id: string } }) => {
     <section className='mt-16 flex flex-col'>
       <div className='mt-4 flex flex-row items-center'>
         <IoIosWarning size={60} className='text-red-500' />
-        <h1 className='text-3xl font-semibold text-red-600 capitalize sm:text-6xl'> member Removal </h1>
+        <h1 className='text-3xl font-semibold text-red-600 capitalize md:text-4xl lg:text-5xl'> member Removal </h1>
       </div>
       <div>
         {!isWithdrawalBlocked ? (
@@ -43,7 +43,7 @@ const RemoveMember = async ({ params }: { params: { id: string } }) => {
         ) : null}
       </div>
 
-      <div className='border-destructive rounded-lg border bg-red-800/40 p-8'>
+      <div className='border-destructive rounded-lg border bg-red-800/40 p-3 sm:p-8'>
         <FormContainer action={createRemovedMemberAction}>
           <div>
             <input type='hidden' name='id' value={id} />

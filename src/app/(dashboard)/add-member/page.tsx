@@ -15,7 +15,7 @@ const AddMember = async () => {
 
   return (
     <section className='mt-16 flex flex-col'>
-      <h1 className='my-5 text-2xl font-semibold capitalize sm:text-6xl'> add new member</h1>
+      <h1 className='my-5 text-2xl font-semibold capitalize md:text-4xl lg:text-5xl'> add new member</h1>
       <p className='pb-4 text-sm sm:text-lg'>
         <span className='text-primary font-bold'>Please read first: </span>
         Adding members is the first step toward their registration, the waiting period is at least 60 days within witch,{' '}
@@ -30,7 +30,7 @@ const AddMember = async () => {
         payments of the members you are registering.{' '}
         <span className='text-primary font-bold'>Not following these steps may delay your registration.</span>
       </p>
-      <div className='border-primary bg-muted rounded-lg border p-8'>
+      <div className='border-primary bg-muted rounded-lg border p-3 sm:p-8'>
         <FormContainer action={createMemberAction}>
           <div className='mt-4 grid gap-4 md:grid-cols-3'>
             <FormInput

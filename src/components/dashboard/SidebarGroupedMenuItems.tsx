@@ -19,10 +19,10 @@ import {
 import type { MenuItem } from '@/utils/types'
 
 const sidebarLinkClass =
-  'data-[state=open]:text-primary focus:bg-primary my-1 py-1 transition-all duration-500 hover:ml-5 focus:text-neutral-50'
+  'data-[state=open]:text-primary focus:bg-primary my-1 min-h-11 py-2 text-base transition-colors duration-200 focus:text-neutral-50 md:min-h-8 md:py-1 md:text-sm md:hover:ml-3'
 
 const sidebarDropdownClass =
-  'data-[state=open]:text-primary focus:bg-primary my-1 h-auto py-2 transition-all duration-500 hover:ml-5 focus:text-neutral-50 [&[data-state=open]>svg:last-child]:rotate-90'
+  'data-[state=open]:text-primary focus:bg-primary my-1 h-auto min-h-12 py-2 text-base transition-colors duration-200 focus:text-neutral-50 md:min-h-10 md:text-sm md:hover:ml-3 [&[data-state=open]>svg:last-child]:rotate-90'
 
 const memberLabels = new Set([
   'add member',
@@ -104,7 +104,7 @@ const SidebarGroupedMenuItems = async ({ data, groupLabel }: { data: MenuItem[];
   const firstAdminItemIndex = data.findIndex(isAdminItem)
 
   return (
-    <SidebarGroup className='justify-center pt-16'>
+    <SidebarGroup className='justify-center pt-3 md:pt-16'>
       {groupLabel && <SidebarGroupLabel>{groupLabel}</SidebarGroupLabel>}
       <SidebarGroupContent>
         <SidebarMenu>

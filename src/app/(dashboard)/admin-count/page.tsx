@@ -70,7 +70,7 @@ const Counts = async () => {
 
   return (
     <div className='py-8 sm:py-10 print:py-0'>
-      <div className='max-w-9xl mx-auto w-full px-4 sm:px-6 lg:px-8 print:px-0'>
+      <div className='max-w-9xl mx-auto w-full px-2 sm:px-6 lg:px-8 print:px-0'>
         <div className='mb-6'>
           <h1 className='text-xl font-semibold tracking-normal md:text-4xl'>Member Counts by Association Code</h1>
         </div>
@@ -157,7 +157,9 @@ const Counts = async () => {
                   </div>
                 </div>
               ) : (
-                <div className='text-muted-foreground rounded-md border p-8 text-center'>No member counts found.</div>
+                <div className='text-muted-foreground rounded-md border p-4 text-center sm:p-8'>
+                  No member counts found.
+                </div>
               )}
             </div>
 

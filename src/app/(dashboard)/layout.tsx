@@ -6,7 +6,6 @@ import Link from 'next/link'
 
 import SidebarGroupedMenuItems from '@/components/dashboard/SidebarGroupedMenuItems'
 import { ModeToggle } from '@/components/layout/mode-toggle/mode-toggle'
-import { ModeToggleSmall } from '@/components/layout/mode-toggle/mode-toggle-small'
 import LogoSmall from '@/components/logoSmall'
 import { Card, CardContent } from '@/components/ui/card'
 import {
@@ -24,7 +23,7 @@ import { pagesItems } from '@/utils/links'
 const PagesLayout = ({ children }: Readonly<{ children: ReactNode }>) => {
   return (
     <>
-      <div className='bg-muted flex min-h-dvh w-full'>
+      <div className='bg-muted flex min-h-dvh w-full overflow-x-hidden'>
         <SidebarProvider>
           <Sidebar collapsible='icon' className='**:data-[slot=sidebar-inner]:bg-muted border-r-0!'>
             <SidebarHeader>
@@ -42,14 +41,16 @@ const PagesLayout = ({ children }: Readonly<{ children: ReactNode }>) => {
               <SidebarGroupedMenuItems data={pagesItems} />
             </SidebarContent>
           </Sidebar>
-          <div className='flex flex-1 flex-col'>
-            <header className='bg-muted sticky top-0 z-50 flex items-center justify-between gap-6 px-4 py-4 sm:px-6'>
-              <div className='flex items-center gap-4'>
-                <SidebarTrigger className='text-primary font-extrabold [&_svg]:size-6!' />
-                <LogoSmall className='size-10 sm:hidden' />
+          <div className='flex min-w-0 flex-1 flex-col'>
+            <header className='bg-muted sticky top-0 z-50 flex items-center justify-between gap-2 px-2 py-2 sm:gap-6 sm:px-6 sm:py-4'>
+              <div className='flex min-w-0 items-center gap-2 sm:gap-4'>
+                <SidebarTrigger className='text-primary size-10 font-extrabold md:size-7 [&_svg]:size-6!' />
+                <LogoSmall className='size-9 shrink-0 sm:hidden' />
               </div>
-              <div className='text-primary font-bold sm:text-2xl'>SAGI-USA</div>
-              <div className='mx=auto flex items-center justify-center gap-x-3'>
+              <div className='text-primary hidden min-w-0 truncate font-bold min-[360px]:block sm:text-2xl'>
+                SAGI-USA
+              </div>
+              <div className='flex shrink-0 items-center justify-center gap-x-2 sm:gap-x-3'>
                 <ModeToggle />
 
                 <ClerkProvider>
@@ -57,10 +58,10 @@ const PagesLayout = ({ children }: Readonly<{ children: ReactNode }>) => {
                 </ClerkProvider>
               </div>
             </header>
-            <main className='size-full flex-1 px-4 py-6 sm:px-6'>
-              <Card className='h-full'>
-                <CardContent className='h-full'>
-                  <main className='flex flex-1 flex-col *:scroll-mt-20'>{children}</main>
+            <main className='size-full min-w-0 flex-1 px-1 py-2 sm:px-6 sm:py-6'>
+              <Card className='min-h-full overflow-hidden rounded-lg sm:rounded-xl'>
+                <CardContent className='h-full px-2 sm:px-6'>
+                  <main className='flex min-w-0 flex-1 flex-col *:scroll-mt-20'>{children}</main>
                 </CardContent>
               </Card>
             </main>

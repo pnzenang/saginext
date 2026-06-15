@@ -8,11 +8,14 @@ const Profile = async () => {
   const profile = await fetchProfile()
 
   return (
-    <section className='mt-16 flex flex-col'>
-      <h1 className='my-8 text-2xl font-semibold capitalize sm:text-6xl'> association/family/group profile</h1>
-      <div className='border-primary bg-primary/15 rounded-lg border p-8'>
+    <section className='mt-16 flex max-w-full min-w-0 flex-col overflow-hidden'>
+      <h1 className='my-8 text-2xl font-semibold break-words capitalize md:text-4xl lg:text-5xl'>
+        {' '}
+        association/family/group profile
+      </h1>
+      <div className='border-primary bg-primary/15 max-w-full min-w-0 overflow-hidden rounded-lg border p-3 sm:p-8'>
         <FormContainer action={updateProfileAction}>
-          <div className='mt-4 grid gap-4 md:grid-cols-2'>
+          <div className='mt-4 grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2'>
             <FormInput
               type='text'
               name='associationName'
@@ -26,7 +29,7 @@ const Profile = async () => {
               defaultValue={profile.associationCode}
             />
           </div>
-          <div className='mt-4 grid gap-4 md:grid-cols-3'>
+          <div className='mt-4 grid min-w-0 grid-cols-1 gap-4 md:grid-cols-3'>
             <FormInput
               type='text'
               name='firstDelegateFullName'
@@ -46,7 +49,7 @@ const Profile = async () => {
               defaultValue={profile.firstDelegateEmail}
             />
           </div>
-          <div className='mt-4 grid gap-4 md:grid-cols-3'>
+          <div className='mt-4 grid min-w-0 grid-cols-1 gap-4 md:grid-cols-3'>
             <FormInput
               type='text'
               name='secondDelegateFullName'
@@ -66,7 +69,7 @@ const Profile = async () => {
               defaultValue={profile.secondDelegateEmail}
             />
           </div>
-          <div className='mt-4 grid gap-4 md:grid-cols-3'>
+          <div className='mt-4 grid min-w-0 grid-cols-1 gap-4 md:grid-cols-3'>
             <FormInput
               type='text'
               name='thirdDelegateFullName'
@@ -86,7 +89,7 @@ const Profile = async () => {
               defaultValue={profile.thirdDelegateEmail}
             />
           </div>
-          <div className='mt-4 grid gap-4 md:grid-cols-3'>
+          <div className='mt-4 grid min-w-0 grid-cols-1 gap-4 md:grid-cols-3'>
             <SubmitButton text='Update Profile' className='mt-3 w-full' />
           </div>
         </FormContainer>

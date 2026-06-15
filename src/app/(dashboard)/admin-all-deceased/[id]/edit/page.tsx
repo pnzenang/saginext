@@ -34,9 +34,12 @@ const EditCaseStatus = async ({ params }: { params: { id: string } }) => {
   return (
     <section className='mt-16 flex flex-col'>
       <div className='my-4 flex flex-col'>
-        <h1 className='text-xl font-semibold text-purple-600 capitalize sm:text-6xl'> Edit Case Status (Admin) </h1>
+        <h1 className='text-xl font-semibold text-purple-600 capitalize md:text-4xl lg:text-5xl'>
+          {' '}
+          Edit Case Status (Admin){' '}
+        </h1>
       </div>
-      <div className='rounded-lg border border-purple-800 bg-purple-300/50 p-8'>
+      <div className='rounded-lg border border-purple-800 bg-purple-300/50 p-3 sm:p-8'>
         <FormContainer action={updateDeceasedMemberDetailsActionAdmin}>
           <div>
             <input type='hidden' name='id' value={id} />

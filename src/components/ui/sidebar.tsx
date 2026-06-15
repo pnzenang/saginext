@@ -167,7 +167,7 @@ function Sidebar({
           data-sidebar='sidebar'
           data-slot='sidebar'
           data-mobile='true'
-          className='bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden'
+          className='bg-sidebar text-sidebar-foreground w-[min(var(--sidebar-width),calc(100vw-1rem))] max-w-[calc(100vw-1rem)] p-0 [&>button]:hidden'
           style={
             {
               '--sidebar-width': SIDEBAR_WIDTH_MOBILE
@@ -242,7 +242,7 @@ function SidebarTrigger({ className, onClick, ...props }: React.ComponentProps<t
       data-slot='sidebar-trigger'
       variant='ghost'
       size='icon'
-      className={cn('size-7', className)}
+      className={cn('size-9 md:size-7', className)}
       onClick={event => {
         onClick?.(event)
         toggleSidebar()

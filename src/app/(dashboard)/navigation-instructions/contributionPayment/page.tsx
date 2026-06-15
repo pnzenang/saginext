@@ -70,7 +70,7 @@ const avoidMistakes = [
 
 const ContributionPayment = () => {
   return (
-    <section className='max-w-9xl mx-auto flex w-full flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8'>
+    <section className='max-w-9xl mx-auto flex w-full flex-col gap-6 px-3 py-4 sm:px-6 sm:py-6 lg:px-8'>
       <div className='bg-card rounded-lg border p-6 shadow-sm sm:p-8'>
         <Badge className='mb-4 w-fit' variant='secondary'>
           Contribution Payment Instructions
@@ -225,8 +225,8 @@ const ContributionPayment = () => {
         </CardHeader>
         <CardContent>
           <p className='text-muted-foreground text-sm leading-6'>
-            The amount in the Contribution Table, the amount sent through Zelle, the 4-letter code in the Zelle memo, and
-            the information reported in the Contribution Payment form should all match.
+            The amount in the Contribution Table, the amount sent through Zelle, the 4-letter code in the Zelle memo,
+            and the information reported in the Contribution Payment form should all match.
           </p>
         </CardContent>
       </Card>

@@ -15,8 +15,8 @@ const FormInput = (props: FormInputProps) => {
   const { label, type, name, defaultValue, placeholder, value, readOnly } = props
 
   return (
-    <div className='mb-2'>
-      <Label htmlFor={name} className='mb-1 capitalize'>
+    <div className='mb-2 min-w-0'>
+      <Label htmlFor={name} className='mb-1 break-words capitalize'>
         {label || name}
       </Label>
       <Input

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 
 import { Inter, Lora, Roboto_Mono } from 'next/font/google'
 import type { Metadata } from 'next'
+
 import { Toaster } from '@/components/ui/sonner'
 import { ThemeProvider } from '@/components/theme-provider'
 import { TooltipProvider } from '@/components/ui/tooltip'
@@ -113,7 +114,7 @@ const RootLayout = ({ children }: Readonly<{ children: ReactNode }>) => {
       className={cn(inter.variable, lora.variable, robotoMono.variable, 'flex min-h-full w-full scroll-smooth')}
       suppressHydrationWarning
     >
-      <body className='flex min-h-full w-full flex-auto flex-col'>
+      <body className='flex min-h-full w-full flex-auto flex-col overflow-x-hidden'>
         <ThemeProvider attribute='class' enableSystem={false} disableTransitionOnChange>
           <TooltipProvider>
             <main>{children}</main>

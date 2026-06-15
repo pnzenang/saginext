@@ -52,6 +52,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { usePagination } from '@/hooks/use-pagination'
 
 import { cn } from '@/lib/utils'
+import { getTableCellLabel } from '@/utils/table'
 
 declare module '@tanstack/react-table' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -214,9 +215,9 @@ const InvoiceDatatable = ({ data }: { data: Item[] }) => {
   })
 
   return (
-    <div className='w-full'>
+    <div className='w-full min-w-0 overflow-hidden'>
       <div className='border-b'>
-        <div className='flex gap-6 p-6 max-lg:flex-col lg:items-center lg:justify-between'>
+        <div className='flex flex-col gap-4 p-4 sm:p-6 lg:flex-row lg:items-center lg:justify-between'>
           <div className='flex items-center gap-4'>
             <div className='flex items-center gap-2'>
               <Label htmlFor='#rowSelect' className='text-muted-foreground text-base font-normal max-sm:sr-only'>
@@ -228,7 +229,7 @@ const InvoiceDatatable = ({ data }: { data: Item[] }) => {
                   table.setPageSize(Number(value))
                 }}
               >
-                <SelectTrigger id='rowSelect' className='w-fit whitespace-nowrap'>
+                <SelectTrigger id='rowSelect' className='w-full whitespace-nowrap sm:w-fit'>
                   <SelectValue placeholder='Select number of results' />
                 </SelectTrigger>
                 <SelectContent className='[&_*[role=option]]:pr-8 [&_*[role=option]]:pl-2 [&_*[role=option]>span]:right-2 [&_*[role=option]>span]:left-auto'>
@@ -241,12 +242,12 @@ const InvoiceDatatable = ({ data }: { data: Item[] }) => {
               </Select>
             </div>
           </div>
-          <div className='flex flex-1 flex-wrap items-center gap-4 lg:justify-end'>
+          <div className='flex w-full flex-1 flex-wrap items-center gap-4 lg:justify-end'>
             <Filter column={table.getColumn('client')!} />
             {/* <Filter column={table.getColumn('status')!} /> */}
           </div>
         </div>
-        <Table>
+        <Table mobileCards>
           <TableHeader>
             {table.getHeaderGroups().map(headerGroup => (
               <TableRow key={headerGroup.id} className='h-20 border-t'>
@@ -293,11 +294,16 @@ const InvoiceDatatable = ({ data }: { data: Item[] }) => {
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map(row => (
                 <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'} className='hover:bg-transparent'>
-                  {row.getVisibleCells().map(cell => (
-                    <TableCell key={cell.id} className='h-20 first:pl-4'>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
+                  {row.getVisibleCells().map(cell => {
+                    const cellLabel = getTableCellLabel(cell)
+
+                    return (
+                      <TableCell key={cell.id} data-label={cellLabel} className='h-20 first:pl-4'>
+                        <span className='sr-only'>{cellLabel}: </span>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    )
+                  })}
                 </TableRow>
               ))
             ) : (
@@ -311,8 +317,8 @@ const InvoiceDatatable = ({ data }: { data: Item[] }) => {
         </Table>
       </div>
 
-      <div className='flex items-center justify-between gap-3 px-6 py-4 max-sm:flex-col md:max-lg:flex-col'>
-        <p className='text-muted-foreground text-sm whitespace-nowrap' aria-live='polite'>
+      <div className='flex items-center justify-between gap-3 px-4 py-3 max-sm:flex-col max-sm:items-stretch sm:px-6 sm:py-4 md:max-lg:flex-col'>
+        <p className='text-muted-foreground text-sm sm:whitespace-nowrap' aria-live='polite'>
           Showing{' '}
           <span>
             {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to{' '}
@@ -328,7 +334,7 @@ const InvoiceDatatable = ({ data }: { data: Item[] }) => {
           of <span>{table.getRowCount().toString()} entries</span>
         </p>
 
-        <div>
+        <div className='w-full sm:w-auto'>
           <Pagination>
             <PaginationContent>
               <PaginationItem>
@@ -340,7 +346,7 @@ const InvoiceDatatable = ({ data }: { data: Item[] }) => {
                   aria-label='Go to previous page'
                 >
                   <ChevronLeftIcon aria-hidden='true' />
-                  Previous
+                  <span className='max-sm:hidden'>Previous</span>
                 </Button>
               </PaginationItem>
 
@@ -381,7 +387,7 @@ const InvoiceDatatable = ({ data }: { data: Item[] }) => {
                   disabled={!table.getCanNextPage()}
                   aria-label='Go to next page'
                 >
-                  Next
+                  <span className='max-sm:hidden'>Next</span>
                   <ChevronRightIcon aria-hidden='true' />
                 </Button>
               </PaginationItem>
@@ -420,7 +426,7 @@ function Filter({ column }: { column: Column<any, unknown> }) {
 
   if (filterVariant === 'select') {
     return (
-      <div className='w-full max-w-2xs'>
+      <div className='w-full sm:max-w-2xs'>
         <Label htmlFor={`${id}-select`} className='sr-only'>
           {columnHeader}
         </Label>
@@ -447,7 +453,7 @@ function Filter({ column }: { column: Column<any, unknown> }) {
   }
 
   return (
-    <div className='w-full max-w-2xs'>
+    <div className='w-full sm:max-w-2xs'>
       <Label htmlFor={`${id}-input`} className='sr-only'>
         {columnHeader}
       </Label>

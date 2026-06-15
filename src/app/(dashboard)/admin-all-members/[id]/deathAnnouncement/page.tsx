@@ -31,13 +31,16 @@ const DeathAnnouncement = async ({ params }: { params: { id: string } }) => {
       <div className='mb-5'>
         <div className='my-1 flex flex-row'>
           <TiWarning className='size-8 items-center text-purple-500 sm:size-15' />
-          <h1 className='text-2xl font-semibold text-purple-600 capitalize sm:text-6xl'> Death Announcement </h1>
+          <h1 className='text-2xl font-semibold text-purple-600 capitalize md:text-4xl lg:text-5xl'>
+            {' '}
+            Death Announcement{' '}
+          </h1>
         </div>
         <p className='text-xs text-purple-500 sm:text-lg'>
           Check your entry well before submission, the process is not reversible.
         </p>
       </div>
-      <div className='rounded-lg border border-purple-800 bg-purple-300/50 p-8'>
+      <div className='rounded-lg border border-purple-800 bg-purple-300/50 p-3 sm:p-8'>
         <FormContainer action={createDeceasedMemberActionAdmin}>
           <div>
             <input type='hidden' name='id' value={id} />

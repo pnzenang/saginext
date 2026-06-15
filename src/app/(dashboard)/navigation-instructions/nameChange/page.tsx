@@ -37,7 +37,7 @@ const documentationRules = [
 
 const NameChange = () => {
   return (
-    <section className='max-w-9xl mx-auto flex w-full flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8'>
+    <section className='max-w-9xl mx-auto flex w-full flex-col gap-6 px-3 py-4 sm:px-6 sm:py-6 lg:px-8'>
       <div className='bg-card rounded-lg border p-6 shadow-sm sm:p-8'>
         <Badge className='mb-4 w-fit' variant='secondary'>
           Name Change Instructions
@@ -50,8 +50,8 @@ const NameChange = () => {
             <div className='text-muted-foreground mt-4 max-w-4xl space-y-3 text-base leading-7'>
               <p>
                 All name changes and name corrections should be reported through the sidebar link named Name Change &
-                Documentations. This keeps every request in one place so the admin team can review and update the
-                member record correctly.
+                Documentations. This keeps every request in one place so the admin team can review and update the member
+                record correctly.
               </p>
               <p>
                 If the request is only an error correction, such as a typo, misspelling, missing letter, or other small

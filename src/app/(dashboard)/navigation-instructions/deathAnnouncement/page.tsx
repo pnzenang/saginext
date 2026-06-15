@@ -35,8 +35,7 @@ const announcementSteps = [
   {
     icon: Ellipsis,
     title: 'Choose death announcement',
-    description:
-      'Click the three-dot menu at the end of the member row and choose the death announcement option.'
+    description: 'Click the three-dot menu at the end of the member row and choose the death announcement option.'
   },
   {
     icon: ClipboardCheck,
@@ -86,7 +85,7 @@ const beforeSubmittingItems = [
 
 const DeathAnnouncement = () => {
   return (
-    <section className='max-w-9xl mx-auto flex w-full flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8'>
+    <section className='max-w-9xl mx-auto flex w-full flex-col gap-6 px-3 py-4 sm:px-6 sm:py-6 lg:px-8'>
       <div className='grid gap-6 lg:grid-cols-[0.95fr_1.05fr] lg:items-center'>
         <div className='bg-card flex flex-col justify-center rounded-lg border p-6 shadow-sm sm:p-8'>
           <Badge className='mb-4 w-fit border-purple-200 bg-purple-50 text-purple-700' variant='outline'>
@@ -100,8 +99,8 @@ const DeathAnnouncement = () => {
             person from the active member list to the deceased-member records.
           </p>
           <p className='text-muted-foreground mt-3 max-w-3xl text-base leading-7'>
-            This action should be handled with care. Once submitted, the active member record is deleted from All Members,
-            a deceased-member record is created, and the case begins in review.
+            This action should be handled with care. Once submitted, the active member record is deleted from All
+            Members, a deceased-member record is created, and the case begins in review.
           </p>
           <div className='mt-6 flex flex-col gap-3 sm:flex-row'>
             <Button asChild>

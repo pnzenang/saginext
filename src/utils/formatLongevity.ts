@@ -1,13 +1,13 @@
 import day, { type ConfigType } from 'dayjs'
 
-const formatLongevityUnit = (value: number, unit: string) => `${value} ${unit}${value === 1 ? '' : 's'}`
+const formatLongevityUnit = (value: number, unit: string) => `${value} ${unit}`
 
 export const formatLongevity = (startDate: ConfigType, endDate: ConfigType = new Date()) => {
   const start = day(startDate).startOf('day')
   const end = day(endDate).startOf('day')
 
   if (!start.isValid() || !end.isValid() || start.valueOf() > end.valueOf()) {
-    return '0 years, 0 months, and 0 days'
+    return '0 d'
   }
 
   const years = end.diff(start, 'year')
@@ -16,9 +16,11 @@ export const formatLongevity = (startDate: ConfigType, endDate: ConfigType = new
   const afterMonths = afterYears.add(months, 'month')
   const days = end.diff(afterMonths, 'day')
 
-  return [
-    formatLongevityUnit(years, 'year'),
-    formatLongevityUnit(months, 'month'),
-    `and ${formatLongevityUnit(days, 'day')}`
-  ].join(', ')
+  const longevityParts = [
+    years > 0 ? formatLongevityUnit(years, 'yr') : null,
+    months > 0 ? formatLongevityUnit(months, 'mo') : null,
+    formatLongevityUnit(days, 'd')
+  ].filter(Boolean)
+
+  return longevityParts.join(', ')
 }

@@ -59,6 +59,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { usePagination } from '@/hooks/use-pagination'
 
 import { cn } from '@/lib/utils'
+import { getTableCellLabel } from '@/utils/table'
 import { formatLongevity } from '@/utils/formatLongevity'
 import { type MemberType } from '@/utils/types'
 
@@ -307,16 +308,16 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
   })
 
   return (
-    <div className='border-primary w-full rounded border'>
+    <div className='border-primary w-full min-w-0 overflow-hidden rounded-lg border'>
       <div className='border-b'>
-        <div className='flex flex-col gap-4 border-b p-6'>
-          <span className='text-2xl font-semibold sm:text-4xl lg:text-6xl'>All Active Members</span>
-          <div className='flex items-center justify-between gap-3 px-6 py-4 max-sm:flex-col'>
-            <p className='text-primary text-sm font-extrabold whitespace-nowrap' aria-live='polite'>
+        <div className='flex flex-col gap-4 border-b p-4 sm:p-6'>
+          <span className='text-xl leading-tight font-semibold sm:text-3xl lg:text-5xl'>All Active Members</span>
+          <div className='flex items-center justify-between gap-3 py-2 max-sm:flex-col max-sm:items-stretch sm:px-6 sm:py-4'>
+            <p className='text-primary text-sm font-extrabold sm:whitespace-nowrap' aria-live='polite'>
               <span>{table.getRowCount().toString()} Member(s) Found</span>
             </p>
 
-            <div>
+            <div className='w-full sm:w-auto'>
               <Pagination>
                 <PaginationContent>
                   <PaginationItem>
@@ -381,8 +382,8 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
             {/* <Filter column={table.getColumn('dateOfBirth')!} /> */}
           </div>
         </div>
-        <div className='flex items-start gap-4 p-6 max-sm:flex-col sm:items-center sm:justify-between'>
-          <div className='flex w-6/7 flex-col justify-start gap-2 sm:flex-row sm:items-center'>
+        <div className='flex items-start gap-4 p-4 max-sm:flex-col sm:items-center sm:justify-between sm:p-6'>
+          <div className='grid w-full grid-cols-1 gap-2 sm:grid-cols-2 xl:flex xl:items-center'>
             <Filter column={table.getColumn('associationCode')!} />
             <Filter column={table.getColumn('lastAndMiddleNames')!} />
             {/* <Filter column={table.getColumn('middleName')!} /> */}
@@ -390,7 +391,7 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
             <Filter column={table.getColumn('delegateRecommendation')!} />
             <Filter column={table.getColumn('memberStatus')!} />
           </div>
-          <div className='flex items-center gap-4 sm:justify-between'>
+          <div className='flex w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-between'>
             <div className='flex items-center gap-2'>
               <Label htmlFor='#rowSelect' className=''>
                 Show
@@ -401,7 +402,7 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
                   table.setPageSize(Number(value))
                 }}
               >
-                <SelectTrigger id='rowSelect' className='w-fit whitespace-nowrap'>
+                <SelectTrigger id='rowSelect' className='w-full whitespace-nowrap sm:w-fit'>
                   <SelectValue placeholder='Select number of results' />
                 </SelectTrigger>
                 <SelectContent className='[&_*[role=option]]:pr-8 [&_*[role=option]]:pl-2 [&_*[role=option]>span]:right-2 [&_*[role=option]>span]:left-auto'>
@@ -415,7 +416,7 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button className='bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40'>
+                <Button className='bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40 w-full sm:w-auto'>
                   <UploadIcon />
                   Export
                 </Button>
@@ -438,7 +439,7 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
             </DropdownMenu>
           </div>
         </div>
-        <Table>
+        <Table mobileCards>
           <TableHeader>
             {table.getHeaderGroups().map(headerGroup => (
               <TableRow key={headerGroup.id} className='bg-primary hover:bg-primary/80 h-14 border-t'>
@@ -485,11 +486,20 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map(row => (
                 <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'} className='hover:bg-primary/30'>
-                  {row.getVisibleCells().map(cell => (
-                    <TableCell key={cell.id} className='h-14 first:w-12.5 first:pl-4 last:w-29 last:px-4'>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
+                  {row.getVisibleCells().map(cell => {
+                    const cellLabel = getTableCellLabel(cell)
+
+                    return (
+                      <TableCell
+                        key={cell.id}
+                        data-label={cellLabel}
+                        className='h-14 first:w-12.5 first:pl-4 last:w-29 last:px-4'
+                      >
+                        <span className='sr-only'>{cellLabel}: </span>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    )
+                  })}
                 </TableRow>
               ))
             ) : (
@@ -533,7 +543,7 @@ function Filter({ column }: { column: Column<any, unknown> }) {
 
   if (filterVariant === 'select') {
     return (
-      <div className='border-primary w-full max-w-2xs space-y-2 rounded border border-dashed'>
+      <div className='border-primary w-full space-y-2 rounded border border-dashed sm:max-w-2xs'>
         {/* <Label htmlFor={`${id}-select`}>Select {columnHeader}</Label> */}
         <Select
           value={columnFilterValue?.toString() ?? 'all'}
@@ -558,7 +568,7 @@ function Filter({ column }: { column: Column<any, unknown> }) {
   }
 
   return (
-    <div className='border-primary w-full max-w-2xs rounded border'>
+    <div className='border-primary w-full rounded border sm:max-w-2xs'>
       <Label htmlFor={`${id}-input`} className='sr-only'>
         {columnHeader}
       </Label>

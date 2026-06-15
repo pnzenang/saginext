@@ -34,14 +34,14 @@ const RemoveMember = async ({ params }: { params: { id: string } }) => {
       <div className='mb-5'>
         <div className='my-1 flex flex-row'>
           <TiWarning className='size-8 items-center text-red-500 sm:size-15' />
-          <h1 className='text-2xl font-semibold text-red-600 capitalize sm:text-6xl'> member Removal </h1>
+          <h1 className='text-2xl font-semibold text-red-600 capitalize md:text-4xl lg:text-5xl'> member Removal </h1>
         </div>
         <p className='text-xs text-red-500 sm:text-lg'>
           Check your entry well before submission. If this removal is a mistake, you can restore the member from Removed
           Members within 48 hours.
         </p>
       </div>
-      <div className='border-destructive rounded-lg border bg-red-800/40 p-8'>
+      <div className='border-destructive rounded-lg border bg-red-800/40 p-3 sm:p-8'>
         <FormContainer action={createRemovedMemberActionAdmin}>
           <div>
             <input type='hidden' name='id' value={id} />

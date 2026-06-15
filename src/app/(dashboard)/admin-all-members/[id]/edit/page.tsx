@@ -35,7 +35,7 @@ const EditMemberDetailPage = async ({ params }: { params: { id: string } }) => {
   return (
     <section className='mt-16 flex flex-col'>
       <div className='my-4 flex flex-col'>
-        <h1 className='text-primary text-3xl font-semibold capitalize sm:text-6xl'>
+        <h1 className='text-primary text-3xl font-semibold capitalize md:text-4xl lg:text-5xl'>
           {' '}
           view and update member&apos;s details (Admin)
         </h1>
@@ -43,7 +43,7 @@ const EditMemberDetailPage = async ({ params }: { params: { id: string } }) => {
           Here you can change the member&apos;s name, date of birth, beneficiary&apos;s names, or country of residence.
         </p>
       </div>
-      <div className='border-primary bg-muted rounded-lg border p-8'>
+      <div className='border-primary bg-muted rounded-lg border p-3 sm:p-8'>
         <FormContainer action={updateMemberDetailsActionAdmin}>
           <div>
             <input type='hidden' name='id' value={id} />

@@ -39,14 +39,17 @@ const DeathAnnouncement = async ({ params }: { params: { id: string } }) => {
       <div className='my-4 flex flex-col'>
         <div className='flex flex-row items-center'>
           <IoIosWarning size={60} className='text-purple-500' />
-          <h1 className='text-2xl font-semibold text-purple-600 capitalize sm:text-6xl'> death announcement </h1>
+          <h1 className='text-2xl font-semibold text-purple-600 capitalize md:text-4xl lg:text-5xl'>
+            {' '}
+            death announcement{' '}
+          </h1>
         </div>
         <p className='text-xs text-purple-500 sm:text-lg'>
           Check your entry well before submission, the process is not reversible once submitted. Sorry for the loss of
           your member.
         </p>
       </div>
-      <div className='rounded-lg border border-purple-800 bg-purple-300/50 p-8'>
+      <div className='rounded-lg border border-purple-800 bg-purple-300/50 p-3 sm:p-8'>
         <FormContainer action={createDeceasedMemberAction}>
           <div>
             <input type='hidden' name='id' value={id} />
