@@ -51,8 +51,6 @@ type DelegatePaymentsDashboardProps = {
 
 type PaymentFormProps = {
   action: typeof saveAssociationContributionPaymentAction
-  amountExpected: number
-  amountSent: number
   fieldLabel: string
   submitText: string
 }
@@ -64,10 +62,9 @@ const initialState = {
 const zelleReminder =
   'Send the Zelle first, then enter the exact amount here. Include your 4-letter association code in the Zelle memo.'
 
-const PaymentForm = ({ action, amountExpected, amountSent, fieldLabel, submitText }: PaymentFormProps) => {
+const PaymentForm = ({ action, fieldLabel, submitText }: PaymentFormProps) => {
   const [state, formAction] = useActionState(action, initialState)
   const amountInputId = useId()
-  const cardIsComplete = amountExpected <= 0 || amountSent >= amountExpected
 
   useEffect(() => {
     if (state.message) toast(state.message)
@@ -76,12 +73,7 @@ const PaymentForm = ({ action, amountExpected, amountSent, fieldLabel, submitTex
   return (
     <form
       action={formAction}
-      className={cn(
-        'h-full min-w-0 rounded-md border px-3 py-3 sm:px-4',
-        cardIsComplete
-          ? 'border-green-600/20 bg-green-600/10 text-green-700 dark:text-green-300'
-          : 'border-red-600/20 bg-red-600/10 text-red-700 dark:text-red-300'
-      )}
+      className='border-secondary bg-secondary text-secondary-foreground h-full min-w-0 rounded-md border px-3 py-3 sm:px-4'
     >
       <div className='grid gap-3'>
         <div className='grid gap-2'>
@@ -191,8 +183,9 @@ const DelegatePaymentsDashboard = ({
           <div className='border-primary/20 bg-primary/10 text-primary flex h-full min-w-0 flex-col justify-center rounded-md border px-3 py-3 sm:px-4'>
             <p className='text-lg font-extrabold break-words sm:text-xl'>Payment instructions</p>
             <p className='text-primary/80 mt-1 text-sm font-semibold break-words'>
-              Scan or click the QR code to send payment by Zelle. Add {associationCode} in the memo so the payment can
-              be matched to your association, then record the contribution or registration amount sent.
+              Scan or click the QR code to send payment by Zelle. Add{' '}
+              <strong className='font-extrabold'>Sagicam-{associationCode}</strong> in the memo so the payment can be
+              matched to your association, then record the contribution or registration amount sent.
             </p>
           </div>
         </div>
@@ -200,15 +193,11 @@ const DelegatePaymentsDashboard = ({
         <div className='grid h-full min-w-0 auto-rows-fr gap-4'>
           <PaymentForm
             action={saveAssociationContributionPaymentAction}
-            amountExpected={monthlyContributionAmount}
-            amountSent={Math.max(currentContribution.amountReceived, currentContribution.amountVerified)}
             fieldLabel='Contribution amount sent'
             submitText='Add Contribution Amount Sent'
           />
           <PaymentForm
             action={saveAssociationRegistrationPaymentAction}
-            amountExpected={registrationPaymentAmount}
-            amountSent={Math.max(currentRegistrationPayment.amountReceived, currentRegistrationPayment.amountVerified)}
             fieldLabel='Registration amount sent'
             submitText='Add Registration Amount Sent'
           />
@@ -220,7 +209,7 @@ const DelegatePaymentsDashboard = ({
             <div className='mt-2 grid gap-1.5 text-sm font-semibold'>
               <SummaryRow label='Amount Sent' value={currentContribution.amountReceived} />
               <SummaryRow label='Amount Verified by SAGI' value={currentContribution.amountVerified} />
-              <SummaryRow label='Contribution Owed' value={currentContribution.amountOwed} />
+              <SummaryRow label='Contribution Dues' value={currentContribution.amountOwed} />
               <SummaryRow label='Existing Balance' value={currentContribution.existingBalance} />
               {currentContribution.manualBalanceAdjustment > 0 ? (
                 <SummaryRow label='Balance Adjustment' value={currentContribution.manualBalanceAdjustment} />

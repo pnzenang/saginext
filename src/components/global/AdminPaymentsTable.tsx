@@ -60,7 +60,7 @@ const contributionColumns: AdminPaymentColumn[] = [
   { key: 'associationName', label: 'Association' },
   { key: 'associationCode', label: 'Code' },
   { key: 'vestedMembers', label: 'Vested', align: 'right', format: 'number' },
-  { key: 'amountExpected', label: 'Contribution Owed', align: 'right', format: 'currency' },
+  { key: 'amountExpected', label: 'Contribution Dues', align: 'right', format: 'currency' },
   { key: 'amountSent', label: 'Contribution Sent', align: 'right', format: 'currency' },
   { key: 'amountVerified', label: 'Verified', align: 'right', format: 'currency' },
   { key: 'balance', label: 'Contribution Balance', align: 'right', format: 'currency' }
