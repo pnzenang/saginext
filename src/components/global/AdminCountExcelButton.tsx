@@ -31,17 +31,17 @@ type AdminCountExcelButtonProps = {
 const AdminCountExcelButton = ({ counts, totals }: AdminCountExcelButtonProps) => {
   const exportToExcel = () => {
     const worksheetData = [
-      ['Association Name', 'Association Code', 'Vested', 'Pending', 'Awaiting', 'Delinquent', 'Total'],
+      ['Association Name', 'Association Code', 'Vested', 'Awaiting', 'Pending', 'Delinquent', 'Total'],
       ...counts.map(item => [
         item.associationName,
         item.associationCode,
         item.vested,
-        item.pending,
         item.awaitingPublication,
+        item.pending,
         item.notInGoodStanding,
         item.total
       ]),
-      ['Total', '', totals.vested, totals.pending, totals.awaitingPublication, totals.notInGoodStanding, totals.total]
+      ['Total', '', totals.vested, totals.awaitingPublication, totals.pending, totals.notInGoodStanding, totals.total]
     ]
 
     const worksheet = XLSX.utils.aoa_to_sheet(worksheetData)

@@ -11,18 +11,21 @@ import {
   SidebarGroupContent,
   SidebarMenu,
   SidebarMenuItem,
-  SidebarMenuButton,
   SidebarMenuSub,
-  SidebarMenuSubButton,
   SidebarMenuSubItem
 } from '../ui/sidebar'
 import type { MenuItem } from '@/utils/types'
+import { SidebarActiveDropdownButton, SidebarActiveMenuButton, SidebarActiveSubButton } from './SidebarActiveMenuButton'
 
-const sidebarLinkClass =
-  'data-[state=open]:text-primary focus:bg-primary my-1 min-h-11 py-2 text-base transition-colors duration-200 focus:text-neutral-50 md:min-h-8 md:py-1 md:text-sm md:hover:ml-3'
+const primarySidebarStateClass =
+  'hover:bg-primary hover:text-primary-foreground active:bg-primary active:text-primary-foreground focus:bg-primary focus:text-primary-foreground data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[state=open]:bg-primary data-[state=open]:text-primary-foreground [&>svg]:text-current'
 
-const sidebarDropdownClass =
-  'data-[state=open]:text-primary focus:bg-primary my-1 h-auto min-h-12 py-2 text-base transition-colors duration-200 focus:text-neutral-50 md:min-h-10 md:text-sm md:hover:ml-3 [&[data-state=open]>svg:last-child]:rotate-90'
+const sidebarLinkClass = `my-1 min-h-11 py-2 text-base transition-colors duration-200 md:min-h-8 md:py-1 md:text-sm md:hover:ml-3 ${primarySidebarStateClass}`
+
+const sidebarDropdownClass = `my-1 h-auto min-h-12 py-2 text-base transition-colors duration-200 md:min-h-10 md:text-sm md:hover:ml-3 [&[data-state=open]>svg:last-child]:rotate-90 ${primarySidebarStateClass}`
+
+const sidebarSubLinkClass =
+  'hover:bg-primary hover:text-primary-foreground active:bg-primary active:text-primary-foreground focus:bg-primary focus:text-primary-foreground data-[active=true]:bg-primary data-[active=true]:text-primary-foreground [&>svg]:text-current'
 
 const memberLabels = new Set([
   'add member',
@@ -41,12 +44,12 @@ const getAdminLabel = (label: string) => label.trim().replace(/^admin\s+/i, '')
 
 const SidebarLinkItem = ({ item }: { item: MenuItem }) => (
   <SidebarMenuItem>
-    <SidebarMenuButton tooltip={item.label} asChild className={sidebarLinkClass}>
+    <SidebarActiveMenuButton tooltip={item.label} href={item.href} className={sidebarLinkClass}>
       <Link href={item.href}>
         <item.icon />
         <span className='truncate capitalize'>{item.label}</span>
       </Link>
-    </SidebarMenuButton>
+    </SidebarActiveMenuButton>
   </SidebarMenuItem>
 )
 
@@ -59,34 +62,40 @@ const SidebarDropdownMenu = ({
 }: {
   icon: MenuItem['icon']
   title: string
-  subtitle: string
+  subtitle?: string
   items: MenuItem[]
   formatLabel?: (label: string) => string
 }) => (
   <Collapsible asChild>
     <SidebarMenuItem>
       <CollapsibleTrigger asChild>
-        <SidebarMenuButton tooltip={title} className={sidebarDropdownClass}>
+        <SidebarActiveDropdownButton
+          title={title}
+          itemHrefs={items.map(item => item.href)}
+          className={sidebarDropdownClass}
+        >
           <Icon />
           <span className='flex min-w-0 flex-col'>
             <span className='truncate capitalize'>{title}</span>
-            <span className='text-muted-foreground truncate text-xs font-normal normal-case group-data-[collapsible=icon]:hidden'>
-              {subtitle}
-            </span>
+            {subtitle ? (
+              <span className='text-muted-foreground truncate text-xs font-normal normal-case group-data-[collapsible=icon]:hidden'>
+                {subtitle}
+              </span>
+            ) : null}
           </span>
           <ChevronRight className='ml-auto transition-transform duration-200' />
-        </SidebarMenuButton>
+        </SidebarActiveDropdownButton>
       </CollapsibleTrigger>
       <CollapsibleContent>
         <SidebarMenuSub>
           {items.map(item => (
             <SidebarMenuSubItem key={item.href}>
-              <SidebarMenuSubButton asChild>
+              <SidebarActiveSubButton href={item.href} className={sidebarSubLinkClass}>
                 <Link href={item.href}>
                   <item.icon />
                   <span className='truncate capitalize'>{formatLabel(item.label)}</span>
                 </Link>
-              </SidebarMenuSubButton>
+              </SidebarActiveSubButton>
             </SidebarMenuSubItem>
           ))}
         </SidebarMenuSub>
@@ -112,15 +121,7 @@ const SidebarGroupedMenuItems = async ({ data, groupLabel }: { data: MenuItem[];
             if (isMemberItem(item)) {
               if (index !== firstMemberItemIndex) return null
 
-              return (
-                <SidebarDropdownMenu
-                  key='members-menu'
-                  icon={Users}
-                  title='Members'
-                  subtitle='The various member pages'
-                  items={memberItems}
-                />
-              )
+              return <SidebarDropdownMenu key='members-menu' icon={Users} title='Delegate Pages' items={memberItems} />
             }
 
             if (isAdminItem(item)) {

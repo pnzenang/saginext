@@ -58,6 +58,9 @@ import { usePagination } from '@/hooks/use-pagination'
 import { cn } from '@/lib/utils'
 import { getTableCellLabel } from '@/utils/table'
 import { formatLongevity } from '@/utils/formatLongevity'
+import DelegatePaymentsDashboard from '@/components/dashboard/DelegatePaymentsDashboard'
+import type { AssociationContributionSummary } from '@/utils/sagi-contribution-summary'
+import type { AssociationRegistrationSummary } from '@/utils/sagi-registration-summary'
 import { memberStatus, type MemberType } from '@/utils/types'
 
 declare module '@tanstack/react-table' {
@@ -221,7 +224,27 @@ const columns: ColumnDef<MemberType>[] = [
   }
 ]
 
-const MembersDataTable = ({ data }: { data: MemberType[] }) => {
+type MembershipSummary = {
+  awaiting: number
+  delinquent: number
+  pending: number
+  total: number
+  vested: number
+}
+
+const MembersDataTable = ({
+  associationCode,
+  currentContribution,
+  currentRegistrationPayment,
+  data,
+  membershipSummary
+}: {
+  associationCode: string
+  currentContribution: AssociationContributionSummary
+  currentRegistrationPayment: AssociationRegistrationSummary
+  data: MemberType[]
+  membershipSummary: MembershipSummary
+}) => {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
 
   const pageSize = 200
@@ -437,6 +460,12 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
               )
             })}
           </div>
+          <DelegatePaymentsDashboard
+            associationCode={associationCode}
+            currentContribution={currentContribution}
+            currentRegistrationPayment={currentRegistrationPayment}
+            membershipSummary={membershipSummary}
+          />
           <div className='flex items-center justify-between gap-3 py-2 max-sm:flex-col max-sm:items-stretch sm:px-6 sm:py-4'>
             <p className='text-primary text-sm font-extrabold sm:whitespace-nowrap' aria-live='polite'>
               <span>{formatNumber(table.getRowCount())} Member(s) Found</span>

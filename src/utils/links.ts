@@ -129,5 +129,15 @@ export const pagesItems: MenuItem[] = [
     icon: UserCog,
     label: 'Admin Count ',
     href: '/admin-count'
+  },
+  {
+    icon: Wallet,
+    label: 'Admin Contribution Payments',
+    href: '/admin-contribution-payments'
+  },
+  {
+    icon: WalletCards,
+    label: 'Admin Registration Payments',
+    href: '/admin-registration-payments'
   }
 ]

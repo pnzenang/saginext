@@ -1,7 +1,5 @@
 'use server'
 
-import { error } from 'console'
-
 import { currentUser, clerkClient } from '@clerk/nextjs/server'
 
 import { redirect } from 'next/navigation'
@@ -19,9 +17,28 @@ import {
 } from './schemas'
 import { Prisma } from '@/generated/prisma/client'
 import { memberStatus } from './types'
+import {
+  contributionBalanceAdjustmentType,
+  contributionCreditPerVestedMember,
+  fetchAssociationContributionSummary,
+  fetchLatestAssociationContributionAssessment
+} from './sagi-contribution-summary'
+import { registrationBalanceAdjustmentType, registrationFeePerEligibleMember } from './sagi-registration-summary'
+import { contributionPaymentAlertType, registrationPaymentAlertType } from './payment-constants'
 
 const randomMatriculation = customAlphabet('1234567890', 6)
 const MEMBER_REMOVAL_RESTORE_WINDOW_MS = 48 * 60 * 60 * 1000
+
+const currencyFormatter = new Intl.NumberFormat('en-US', {
+  currency: 'USD',
+  style: 'currency'
+})
+
+const registrationDateFormatter = new Intl.DateTimeFormat('en-US', {
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric'
+})
 
 const getAuthUser = async () => {
   const user = await currentUser()
@@ -39,6 +56,235 @@ const renderError = (error: unknown): { message: string } => {
   console.log(error)
 
   return { message: error instanceof Error ? error.message : 'An error occurred' }
+}
+
+const decimalToNumber = (value: unknown) => Number(value ?? 0)
+
+const getRequiredFormValue = (formData: FormData, fieldName: string) => {
+  const value = formData.get(fieldName)
+
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    throw new Error(`${fieldName} is required`)
+  }
+
+  return value.trim()
+}
+
+const getPositiveDollarAmountFromForm = (formData: FormData, fieldName: string) => {
+  const amount = Number(getRequiredFormValue(formData, fieldName))
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new Error('Enter a payment amount greater than zero.')
+  }
+
+  return Number(amount.toFixed(2))
+}
+
+const formatRegistrationDate = (date: Date) => registrationDateFormatter.format(date)
+
+const createPendingRegistrationUsage = async ({
+  associationCode,
+  memberMatriculationNumber
+}: {
+  associationCode: string
+  memberMatriculationNumber: string
+}) => {
+  await db.associationRegistrationUsage.upsert({
+    create: {
+      amountUsed: registrationFeePerEligibleMember,
+      associationCode,
+      memberMatriculationNumber
+    },
+    update: {
+      amountUsed: registrationFeePerEligibleMember,
+      associationCode
+    },
+    where: {
+      memberMatriculationNumber
+    }
+  })
+}
+
+const syncPendingRegistrationUsage = async ({
+  associationCode,
+  memberMatriculationNumber,
+  nextStatus,
+  previousMatriculationNumber,
+  previousStatus
+}: {
+  associationCode: string
+  memberMatriculationNumber: string
+  nextStatus: string
+  previousMatriculationNumber: string
+  previousStatus: string
+}) => {
+  if (nextStatus !== memberStatus.Pending) {
+    return
+  }
+
+  if (previousStatus === memberStatus.Pending && previousMatriculationNumber !== memberMatriculationNumber) {
+    const updatedUsage = await db.associationRegistrationUsage.updateMany({
+      data: {
+        amountUsed: registrationFeePerEligibleMember,
+        associationCode,
+        memberMatriculationNumber
+      },
+      where: {
+        memberMatriculationNumber: previousMatriculationNumber
+      }
+    })
+
+    if (updatedUsage.count > 0) {
+      return
+    }
+  }
+
+  await createPendingRegistrationUsage({ associationCode, memberMatriculationNumber })
+}
+
+const createVestedContributionCredit = async ({
+  associationCode,
+  memberMatriculationNumber
+}: {
+  associationCode: string
+  memberMatriculationNumber: string
+}) => {
+  await db.associationContributionCredit.upsert({
+    create: {
+      amountCredited: contributionCreditPerVestedMember,
+      associationCode,
+      memberMatriculationNumber
+    },
+    update: {
+      amountCredited: contributionCreditPerVestedMember,
+      associationCode
+    },
+    where: {
+      memberMatriculationNumber
+    }
+  })
+}
+
+const removeVestedContributionCredit = async (memberMatriculationNumber: string) => {
+  await db.associationContributionCredit.deleteMany({
+    where: {
+      memberMatriculationNumber
+    }
+  })
+}
+
+const updateVestedContributionCredit = async ({
+  associationCode,
+  memberMatriculationNumber,
+  previousMatriculationNumber
+}: {
+  associationCode: string
+  memberMatriculationNumber: string
+  previousMatriculationNumber: string
+}) => {
+  await db.associationContributionCredit.updateMany({
+    data: {
+      amountCredited: contributionCreditPerVestedMember,
+      associationCode,
+      memberMatriculationNumber
+    },
+    where: {
+      memberMatriculationNumber: previousMatriculationNumber
+    }
+  })
+}
+
+const syncVestedContributionCredit = async ({
+  associationCode,
+  memberMatriculationNumber,
+  nextStatus,
+  previousMatriculationNumber,
+  previousStatus
+}: {
+  associationCode: string
+  memberMatriculationNumber: string
+  nextStatus: string
+  previousMatriculationNumber: string
+  previousStatus: string
+}) => {
+  if (previousStatus !== memberStatus.Vested && nextStatus === memberStatus.Vested) {
+    await createVestedContributionCredit({ associationCode, memberMatriculationNumber })
+
+    return
+  }
+
+  if (previousStatus === memberStatus.Vested && nextStatus === memberStatus.Vested) {
+    await updateVestedContributionCredit({
+      associationCode,
+      memberMatriculationNumber,
+      previousMatriculationNumber
+    })
+
+    return
+  }
+
+  if (previousStatus === memberStatus.Vested && nextStatus !== memberStatus.Vested) {
+    await removeVestedContributionCredit(previousMatriculationNumber)
+  }
+}
+
+const addDeceasedMemberContributionUsage = async (associationCode: string) => {
+  await db.associationContributionUsage.upsert({
+    create: {
+      amountUsed: contributionCreditPerVestedMember,
+      associationCode
+    },
+    update: {
+      amountUsed: {
+        increment: contributionCreditPerVestedMember
+      }
+    },
+    where: {
+      associationCode
+    }
+  })
+}
+
+const assertAdminUser = async () => {
+  const user = await currentUser()
+
+  if (!user) {
+    throw new Error('You must be logged in to access this route')
+  }
+
+  if (user.id !== process.env.ADMIN_USER_ID) {
+    throw new Error('Admin privileges are required for this action')
+  }
+
+  return user
+}
+
+const getCurrentAssociationCode = async (clerkId: string) => {
+  const profile = await db.profile.findUnique({
+    where: {
+      clerkId
+    },
+    select: {
+      associationCode: true
+    }
+  })
+
+  if (!profile) {
+    throw new Error('Association profile not found.')
+  }
+
+  return profile.associationCode
+}
+
+const revalidatePaymentViews = () => {
+  revalidatePath('/admin-contribution-payments')
+  revalidatePath('/admin-registration-payments')
+  revalidatePath('/admin-all-members')
+  revalidatePath('/contributions')
+  revalidatePath('/registrationsPayments')
+  revalidatePath('/all-members')
+  revalidatePath('/financial-position')
+  revalidatePath('/admin-count')
 }
 
 const assertMemberCanBeWithdrawn = async (memberId: string) => {
@@ -141,14 +387,24 @@ export const createMemberAction = async (provState: any, formData: FormData): Pr
   try {
     const rawData = Object.fromEntries(formData)
     const validatedFields = validateWithZodSchema(memberSchema, rawData)
+    const memberMatriculationNumber = `AS${validatedFields.associationCode}${randomMatriculation()}`
 
     await db.member.create({
       data: {
         ...validatedFields,
         clerkId: user.id,
-        memberMatriculationNumber: `AS${validatedFields.associationCode}${randomMatriculation()}`
+        memberMatriculationNumber
       }
     })
+
+    if (validatedFields.memberStatus === memberStatus.Pending) {
+      await createPendingRegistrationUsage({
+        associationCode: validatedFields.associationCode,
+        memberMatriculationNumber
+      })
+    }
+
+    revalidatePaymentViews()
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2002') {
@@ -246,15 +502,20 @@ export const fetchMemberStatusCountsByAssociationCode = async () => {
     }
   }
 
-  const countsByAssociationCode = counts.reduce<Record<string, {
-    associationCode: string
-    associationName: string
-    vested: number
-    pending: number
-    awaitingPublication: number
-    notInGoodStanding: number
-    total: number
-  }>>((acc, item) => {
+  const countsByAssociationCode = counts.reduce<
+    Record<
+      string,
+      {
+        associationCode: string
+        associationName: string
+        vested: number
+        pending: number
+        awaitingPublication: number
+        notInGoodStanding: number
+        total: number
+      }
+    >
+  >((acc, item) => {
     const associationCode = item.associationCode
 
     acc[associationCode] ??= {
@@ -282,6 +543,424 @@ export const fetchMemberStatusCountsByAssociationCode = async () => {
   return Object.values(countsByAssociationCode)
 }
 
+export const createAssociationContributionAssessmentAction = async (
+  prevState: any,
+  formData: FormData
+): Promise<{ message: string }> => {
+  await assertAdminUser()
+
+  try {
+    const totalAmount = getPositiveDollarAmountFromForm(formData, 'totalAmount')
+
+    const vestedMembers = await db.member.findMany({
+      select: {
+        associationCode: true
+      },
+      where: {
+        memberStatus: memberStatus.Vested
+      }
+    })
+
+    if (vestedMembers.length === 0) {
+      throw new Error('No vested members were found.')
+    }
+
+    const vestedMembersByCode = vestedMembers.reduce((counts, member) => {
+      counts.set(member.associationCode, (counts.get(member.associationCode) ?? 0) + 1)
+
+      return counts
+    }, new Map<string, number>())
+
+    const amountPerVestedMember = Number((totalAmount / vestedMembers.length).toFixed(2))
+
+    await db.associationContributionAssessment.create({
+      data: {
+        amountPerVestedMember,
+        totalAmount,
+        totalVestedMembers: vestedMembers.length,
+        groups: {
+          create: Array.from(vestedMembersByCode.entries()).map(([associationCode, vestedMembersCount]) => ({
+            amountOwed: Number((amountPerVestedMember * vestedMembersCount).toFixed(2)),
+            associationCode,
+            vestedMembersCount
+          }))
+        }
+      }
+    })
+
+    revalidatePaymentViews()
+
+    return {
+      message: `Distributed ${currencyFormatter.format(totalAmount)} across ${vestedMembers.length} vested members. Each vested member is ${currencyFormatter.format(amountPerVestedMember)}.`
+    }
+  } catch (error) {
+    return renderError(error)
+  }
+}
+
+export const resetAssociationContributionCalculationAction = async (): Promise<{ message: string }> => {
+  await assertAdminUser()
+
+  try {
+    const latestAssessment = await fetchLatestAssociationContributionAssessment()
+
+    if (!latestAssessment) {
+      return { message: 'No contribution calculation found to reset.' }
+    }
+
+    const associationContributionPayments = await db.associationContributionPayment.findMany({
+      where: {
+        OR: [{ amountSent: { gt: 0 } }, { amountVerified: { gt: 0 } }]
+      }
+    })
+
+    const affectedAssociationCodes = Array.from(
+      new Set([
+        ...latestAssessment.groups.map(group => group.associationCode),
+        ...associationContributionPayments.map(payment => payment.associationCode)
+      ])
+    )
+
+    const contributionSummaries = await Promise.all(
+      affectedAssociationCodes.map(associationCode => fetchAssociationContributionSummary(associationCode))
+    )
+
+    const balanceAdjustments = contributionSummaries.map(summary => {
+      return {
+        amount: Number(Math.max(summary.balance, 0).toFixed(2)),
+        associationCode: summary.associationCode
+      }
+    })
+
+    await db.$transaction([
+      db.associationContributionPayment.updateMany({
+        data: {
+          amountSent: 0,
+          amountVerified: 0,
+          lastSubmittedAt: null,
+          verifiedAt: null
+        },
+        where: {
+          associationCode: {
+            in: associationContributionPayments.map(payment => payment.associationCode)
+          }
+        }
+      }),
+      ...balanceAdjustments.map(adjustment =>
+        db.associationBalanceAdjustment.upsert({
+          create: {
+            amount: adjustment.amount,
+            associationCode: adjustment.associationCode,
+            balanceType: contributionBalanceAdjustmentType
+          },
+          update: {
+            amount: adjustment.amount
+          },
+          where: {
+            associationCode_balanceType: {
+              associationCode: adjustment.associationCode,
+              balanceType: contributionBalanceAdjustmentType
+            }
+          }
+        })
+      ),
+      db.associationContributionAssessment.deleteMany()
+    ])
+
+    revalidatePaymentViews()
+
+    return {
+      message: 'Contribution calculation reset successfully. Positive balances were kept and payments were cleared.'
+    }
+  } catch (error) {
+    return renderError(error)
+  }
+}
+
+export const saveAssociationContributionPaymentAction = async (
+  prevState: any,
+  formData: FormData
+): Promise<{ message: string }> => {
+  const user = await getAuthUser()
+
+  try {
+    const associationCode = await getCurrentAssociationCode(user.id)
+    const amountSent = getPositiveDollarAmountFromForm(formData, 'amountSent')
+    const submittedAt = new Date()
+
+    const payment = await db.associationContributionPayment.upsert({
+      create: {
+        amountSent,
+        associationCode,
+        lastSubmittedAt: submittedAt
+      },
+      update: {
+        amountSent: {
+          increment: amountSent
+        },
+        lastSubmittedAt: submittedAt
+      },
+      where: {
+        associationCode
+      }
+    })
+
+    revalidatePaymentViews()
+
+    return {
+      message: `Added contribution payment: ${currencyFormatter.format(amountSent)}. Total sent: ${currencyFormatter.format(decimalToNumber(payment.amountSent))}.`
+    }
+  } catch (error) {
+    return renderError(error)
+  }
+}
+
+export const saveAssociationRegistrationPaymentAction = async (
+  prevState: any,
+  formData: FormData
+): Promise<{ message: string }> => {
+  const user = await getAuthUser()
+
+  try {
+    const associationCode = await getCurrentAssociationCode(user.id)
+    const amountSent = getPositiveDollarAmountFromForm(formData, 'amountSent')
+    const submittedAt = new Date()
+
+    const payment = await db.associationRegistrationPayment.upsert({
+      create: {
+        amountSent,
+        associationCode,
+        lastSubmittedAt: submittedAt
+      },
+      update: {
+        amountSent: {
+          increment: amountSent
+        },
+        lastSubmittedAt: submittedAt
+      },
+      where: {
+        associationCode
+      }
+    })
+
+    revalidatePaymentViews()
+
+    return {
+      message: `Added registration payment: ${currencyFormatter.format(amountSent)}. Total awaiting verification: ${currencyFormatter.format(decimalToNumber(payment.amountSent))}.`
+    }
+  } catch (error) {
+    return renderError(error)
+  }
+}
+
+export const verifyAssociationContributionPaymentAction = async (formData: FormData): Promise<void> => {
+  await assertAdminUser()
+
+  try {
+    const associationCode = getRequiredFormValue(formData, 'associationCode')
+
+    const payment = await db.associationContributionPayment.findUnique({
+      where: {
+        associationCode
+      }
+    })
+
+    if (!payment) {
+      throw new Error('No contribution payment found for this association code.')
+    }
+
+    const amountSent = decimalToNumber(payment.amountSent)
+
+    if (amountSent <= 0) {
+      throw new Error('No contribution amount sent to verify.')
+    }
+
+    await db.associationContributionPayment.update({
+      data: {
+        amountVerified: amountSent,
+        verifiedAt: new Date()
+      },
+      where: {
+        associationCode
+      }
+    })
+
+    revalidatePaymentViews()
+  } catch (error) {
+    renderError(error)
+  }
+}
+
+const addAssociationBalanceAdjustment = async (formData: FormData, balanceType: string): Promise<void> => {
+  await assertAdminUser()
+
+  try {
+    const associationCode = getRequiredFormValue(formData, 'associationCode')
+    const amount = getPositiveDollarAmountFromForm(formData, 'balanceAmount')
+
+    await db.associationBalanceAdjustment.upsert({
+      create: {
+        amount,
+        associationCode,
+        balanceType
+      },
+      update: {
+        amount: {
+          increment: amount
+        }
+      },
+      where: {
+        associationCode_balanceType: {
+          associationCode,
+          balanceType
+        }
+      }
+    })
+
+    revalidatePaymentViews()
+  } catch (error) {
+    renderError(error)
+  }
+}
+
+export const addAssociationContributionBalanceAdjustmentAction = async (formData: FormData): Promise<void> => {
+  await addAssociationBalanceAdjustment(formData, contributionBalanceAdjustmentType)
+}
+
+export const resetAssociationContributionPaymentAction = async (formData: FormData): Promise<void> => {
+  await assertAdminUser()
+
+  try {
+    const associationCode = getRequiredFormValue(formData, 'associationCode')
+
+    await db.associationContributionPayment.upsert({
+      create: {
+        amountSent: 0,
+        amountVerified: 0,
+        associationCode,
+        lastSubmittedAt: null,
+        verifiedAt: null
+      },
+      update: {
+        amountSent: 0,
+        amountVerified: 0,
+        lastSubmittedAt: null,
+        verifiedAt: null
+      },
+      where: {
+        associationCode
+      }
+    })
+
+    revalidatePaymentViews()
+  } catch (error) {
+    renderError(error)
+  }
+}
+
+export const addAssociationRegistrationBalanceAdjustmentAction = async (formData: FormData): Promise<void> => {
+  await addAssociationBalanceAdjustment(formData, registrationBalanceAdjustmentType)
+}
+
+export const verifyAssociationRegistrationPaymentAction = async (formData: FormData): Promise<void> => {
+  await assertAdminUser()
+
+  try {
+    const associationCode = getRequiredFormValue(formData, 'associationCode')
+
+    const payment = await db.associationRegistrationPayment.findUnique({
+      where: {
+        associationCode
+      }
+    })
+
+    if (!payment) {
+      throw new Error('No registration payment found for this association code.')
+    }
+
+    const amountSent = decimalToNumber(payment.amountSent)
+
+    if (amountSent <= 0) {
+      throw new Error('No registration amount sent to verify.')
+    }
+
+    await db.associationRegistrationPayment.update({
+      data: {
+        amountSent: 0,
+        amountVerified: {
+          increment: amountSent
+        },
+        verifiedAt: new Date()
+      },
+      where: {
+        associationCode
+      }
+    })
+
+    revalidatePaymentViews()
+  } catch (error) {
+    renderError(error)
+  }
+}
+
+export const resetAssociationRegistrationPaymentAction = async (formData: FormData): Promise<void> => {
+  await assertAdminUser()
+
+  try {
+    const associationCode = getRequiredFormValue(formData, 'associationCode')
+
+    await db.associationRegistrationPayment.upsert({
+      create: {
+        amountSent: 0,
+        amountVerified: 0,
+        associationCode,
+        lastSubmittedAt: null,
+        verifiedAt: null
+      },
+      update: {
+        amountSent: 0,
+        amountVerified: 0,
+        lastSubmittedAt: null,
+        verifiedAt: null
+      },
+      where: {
+        associationCode
+      }
+    })
+
+    revalidatePaymentViews()
+  } catch (error) {
+    renderError(error)
+  }
+}
+
+const resetPaymentAlert = async (alertType: string): Promise<void> => {
+  await assertAdminUser()
+
+  await db.paymentAlertReset.upsert({
+    create: {
+      alertType,
+      resetAt: new Date()
+    },
+    update: {
+      resetAt: new Date()
+    },
+    where: {
+      alertType
+    }
+  })
+
+  revalidatePaymentViews()
+}
+
+export const resetContributionPaymentAlertAction = async (): Promise<void> => {
+  await resetPaymentAlert(contributionPaymentAlertType)
+}
+
+export const resetRegistrationPaymentAlertAction = async (): Promise<void> => {
+  await resetPaymentAlert(registrationPaymentAlertType)
+}
+
 export const fetchSingleMemberDetails = async (memberId: string) => {
   const user = await currentUser()
 
@@ -298,11 +977,12 @@ export const fetchSingleMemberDetails = async (memberId: string) => {
 }
 
 export const fetchSingleMemberDetailsAdmin = async (memberId: string) => {
-  const user = await currentUser()
+  await currentUser()
 
   const member = await db.member.findUnique({
     where: {
       id: memberId
+
       // clerkId: user?.id
     }
   })
@@ -311,11 +991,22 @@ export const fetchSingleMemberDetailsAdmin = async (memberId: string) => {
 
   return member
 }
+
 export const updateMemberDetailsAction = async (prevState: any, formData: FormData) => {
   try {
     const memberId = formData.get('id') as string
     const rawData = Object.fromEntries(formData)
     const validatedFields = validateWithZodSchema(memberSchema, rawData)
+
+    const currentMember = await db.member.findUnique({
+      where: {
+        id: memberId
+      },
+      select: {
+        memberMatriculationNumber: true,
+        memberStatus: true
+      }
+    })
 
     await db.member.update({
       where: {
@@ -325,7 +1016,27 @@ export const updateMemberDetailsAction = async (prevState: any, formData: FormDa
         ...validatedFields
       }
     })
+
+    if (currentMember) {
+      await syncPendingRegistrationUsage({
+        associationCode: validatedFields.associationCode,
+        memberMatriculationNumber: currentMember.memberMatriculationNumber,
+        nextStatus: validatedFields.memberStatus,
+        previousMatriculationNumber: currentMember.memberMatriculationNumber,
+        previousStatus: currentMember.memberStatus
+      })
+
+      await syncVestedContributionCredit({
+        associationCode: validatedFields.associationCode,
+        memberMatriculationNumber: currentMember.memberMatriculationNumber,
+        nextStatus: validatedFields.memberStatus,
+        previousMatriculationNumber: currentMember.memberMatriculationNumber,
+        previousStatus: currentMember.memberStatus
+      })
+    }
+
     revalidatePath(`all-members/${memberId}/edit`)
+    revalidatePaymentViews()
 
     // return { message: `Member Details Updated Successfully` }
   } catch (error) {
@@ -334,11 +1045,22 @@ export const updateMemberDetailsAction = async (prevState: any, formData: FormDa
 
   redirect('/all-members')
 }
+
 export const updateMemberDetailsActionAdmin = async (prevState: any, formData: FormData) => {
   try {
     const memberId = formData.get('id') as string
     const rawData = Object.fromEntries(formData)
     const validatedFields = validateWithZodSchema(memberSchema, rawData)
+
+    const currentMember = await db.member.findUnique({
+      where: {
+        id: memberId
+      },
+      select: {
+        memberMatriculationNumber: true,
+        memberStatus: true
+      }
+    })
 
     await db.member.update({
       where: {
@@ -348,7 +1070,27 @@ export const updateMemberDetailsActionAdmin = async (prevState: any, formData: F
         ...validatedFields
       }
     })
+
+    if (currentMember) {
+      await syncPendingRegistrationUsage({
+        associationCode: validatedFields.associationCode,
+        memberMatriculationNumber: currentMember.memberMatriculationNumber,
+        nextStatus: validatedFields.memberStatus,
+        previousMatriculationNumber: currentMember.memberMatriculationNumber,
+        previousStatus: currentMember.memberStatus
+      })
+
+      await syncVestedContributionCredit({
+        associationCode: validatedFields.associationCode,
+        memberMatriculationNumber: currentMember.memberMatriculationNumber,
+        nextStatus: validatedFields.memberStatus,
+        previousMatriculationNumber: currentMember.memberMatriculationNumber,
+        previousStatus: currentMember.memberStatus
+      })
+    }
+
     revalidatePath(`admin-all-members/${memberId}/edit`)
+    revalidatePaymentViews()
 
     // return { message: `Member Details Updated Successfully` }
   } catch (error) {
@@ -360,6 +1102,7 @@ export const updateMemberDetailsActionAdmin = async (prevState: any, formData: F
         }
       }
     }
+
     return renderError(error)
   }
 
@@ -486,8 +1229,9 @@ export const fetchRemovedMembersAction = async () => {
 
   return removedMembers
 }
+
 export const fetchRemovedMembersActionAdmin = async () => {
-  const user = await getAuthUser()
+  await getAuthUser()
 
   const removedMembers = await db.removedMember.findMany({
     where: {
@@ -556,6 +1300,20 @@ export const restoreRemovedMemberAction = async (prevState: { removedMemberId: s
       })
     ])
 
+    if (removedMember.memberStatus === memberStatus.Pending) {
+      await createPendingRegistrationUsage({
+        associationCode: removedMember.associationCode,
+        memberMatriculationNumber: removedMember.memberMatriculationNumber
+      })
+    }
+
+    if (removedMember.memberStatus === memberStatus.Vested) {
+      await createVestedContributionCredit({
+        associationCode: removedMember.associationCode,
+        memberMatriculationNumber: removedMember.memberMatriculationNumber
+      })
+    }
+
     revalidatePath('/removed-members')
     revalidatePath('/all-members')
     revalidatePath('/admin-all-removed')
@@ -579,17 +1337,38 @@ export const createDeceasedMemberAction = async (provState: any, formData: FormD
     const rawData = Object.fromEntries(formData)
     const validatedFields = validateWithZodSchema(DeceasedMemberSchema, rawData)
 
-    await db.deceasedMember.create({
-      data: {
-        ...validatedFields,
+    const member = await db.member.findUnique({
+      where: {
+        id: memberId,
         clerkId: user.id
       }
     })
-    await db.member.delete({
-      where: {
-        id: memberId
-      }
-    })
+
+    if (!member) {
+      throw new Error('Member not found')
+    }
+
+    if (member.memberStatus !== memberStatus.Vested) {
+      throw new Error('Only vested members can be moved to deceased members.')
+    }
+
+    await db.$transaction([
+      db.deceasedMember.create({
+        data: {
+          ...validatedFields,
+          registrationDate: formatRegistrationDate(member.createdAt),
+          clerkId: user.id
+        }
+      }),
+      db.member.delete({
+        where: {
+          id: memberId
+        }
+      })
+    ])
+
+    await addDeceasedMemberContributionUsage(member.associationCode)
+    revalidatePaymentViews()
   } catch (error) {
     return renderError(error)
   }
@@ -598,7 +1377,7 @@ export const createDeceasedMemberAction = async (provState: any, formData: FormD
 }
 
 export const fetchDeceasedMembersAction = async () => {
-  const user = await getAuthUser()
+  await getAuthUser()
 
   const deceasedMember = await db.deceasedMember.findMany({
     where: {
@@ -609,6 +1388,7 @@ export const fetchDeceasedMembersAction = async () => {
 
   return deceasedMember
 }
+
 export const createDeceasedMemberActionAdmin = async (
   provState: any,
   formData: FormData
@@ -620,17 +1400,37 @@ export const createDeceasedMemberActionAdmin = async (
     const rawData = Object.fromEntries(formData)
     const validatedFields = validateWithZodSchema(DeceasedMemberSchema, rawData)
 
-    await db.deceasedMember.create({
-      data: {
-        ...validatedFields,
-        clerkId: user.id
-      }
-    })
-    await db.member.delete({
+    const member = await db.member.findUnique({
       where: {
         id: memberId
       }
     })
+
+    if (!member) {
+      throw new Error('Member not found')
+    }
+
+    if (member.memberStatus !== memberStatus.Vested) {
+      throw new Error('Only vested members can be moved to deceased members.')
+    }
+
+    await db.$transaction([
+      db.deceasedMember.create({
+        data: {
+          ...validatedFields,
+          registrationDate: formatRegistrationDate(member.createdAt),
+          clerkId: user.id
+        }
+      }),
+      db.member.delete({
+        where: {
+          id: memberId
+        }
+      })
+    ])
+
+    await addDeceasedMemberContributionUsage(member.associationCode)
+    revalidatePaymentViews()
   } catch (error) {
     return renderError(error)
   }
@@ -639,7 +1439,7 @@ export const createDeceasedMemberActionAdmin = async (
 }
 
 export const fetchDeceasedMembersActionAdmin = async () => {
-  const user = await getAuthUser()
+  await getAuthUser()
 
   const deceasedMember = await db.deceasedMember.findMany({
     where: {
@@ -665,9 +1465,9 @@ export const deleteRemovedMemberAction = async (prevState: { removedMemberId: st
     revalidatePath('/removed-members')
 
     return { message: 'deleted member removed ' }
-  } catch (error) {}
-
-  return renderError(error)
+  } catch (error) {
+    return renderError(error)
+  }
 }
 
 export const deleteDeceasedMemberAction = async (prevState: { deceasedMemberId: string }) => {
@@ -684,9 +1484,9 @@ export const deleteDeceasedMemberAction = async (prevState: { deceasedMemberId: 
     revalidatePath('/deceased-members')
 
     return { message: 'deceased member removed ' }
-  } catch (error) {}
-
-  return renderError(error)
+  } catch (error) {
+    return renderError(error)
+  }
 }
 
 export const fetchSingleDeceasedMemberDetails = async (deceasedMemberId: string) => {

@@ -13,76 +13,182 @@ datasource db {
 }
 
 model Profile {
-  id String @id @default(uuid())
-  clerkId String @unique
-  associationName String
-  associationCode String @unique
-  firstDelegateFullName String
-  firstDelegatePhoneNumber String
-  firstDelegateEmail String
-  secondDelegateFullName String
+  id                        String   @id @default(uuid())
+  clerkId                   String   @unique
+  associationName           String
+  associationCode           String   @unique
+  firstDelegateFullName     String
+  firstDelegatePhoneNumber  String
+  firstDelegateEmail        String
+  secondDelegateFullName    String
   secondDelegatePhoneNumber String
-  secondDelegateEmail String
-  thirdDelegateFullName String
-  thirdDelegatePhoneNumber String
-  thirdDelegateEmail String
-  createdAt DateTime @default(now())
-  updateAt DateTime @updatedAt
-
+  secondDelegateEmail       String
+  thirdDelegateFullName     String
+  thirdDelegatePhoneNumber  String
+  thirdDelegateEmail        String
+  createdAt                 DateTime @default(now())
+  updateAt                  DateTime @updatedAt
 }
 
 model Member {
-  id String @id @default(uuid())
-  clerkId String
-  firstName String
-  lastAndMiddleNames String
+  id                        String   @id @default(uuid())
+  clerkId                   String
+  firstName                 String
+  lastAndMiddleNames        String
   // middleName String
-  dateOfBirth String
-  countryOfResidence String @map("countryOfBirth")
+  dateOfBirth               String
+  countryOfResidence        String   @map("countryOfBirth")
   memberMatriculationNumber String
-  delegateRecommendation String
-  memberStatus String
-  nameOfBeneficiary String
-  associationName String
-  associationCode String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  delegateRecommendation    String
+  memberStatus              String
+  nameOfBeneficiary         String
+  associationName           String
+  associationCode           String
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
   @@unique([firstName, lastAndMiddleNames, dateOfBirth, delegateRecommendation])
 }
-model RemovedMember {
-  id String @id @default(uuid())
-  originalMemberId String?
-  clerkId String
-  firstName String
-  lastAndMiddleNames String
-  dateOfBirth String
-  countryOfResidence String @map("countryOfBirth")
-  memberMatriculationNumber String
-  registrationDate String
-  associationName String?
-  associationCode String
-  nameOfBeneficiary String?
-  delegateRecommendation String?
-  memberStatus String?
-  reasonForLeaving String
-  originalMemberCreatedAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-model DeceasedMember {
-  id String @id @default(uuid())
-  clerkId String
-  firstName String
-  lastAndMiddleNames String
-  countryOfResidence String @map("countryOfBirth")
-  memberMatriculationNumber String
-  registrationDate String
-  nameOfBeneficiary String
-  associationName String
-  dateOfDeath String
-  placeOfDeath String
-  contributionStatus String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
+model RemovedMember {
+  id                        String    @id @default(uuid())
+  originalMemberId          String?
+  clerkId                   String
+  firstName                 String
+  lastAndMiddleNames        String
+  dateOfBirth               String
+  countryOfResidence        String    @map("countryOfBirth")
+  memberMatriculationNumber String
+  registrationDate          String
+  associationName           String?
+  associationCode           String
+  nameOfBeneficiary         String?
+  delegateRecommendation    String?
+  memberStatus              String?
+  reasonForLeaving          String
+  originalMemberCreatedAt   DateTime?
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+}
+
+model DeceasedMember {
+  id                        String   @id @default(uuid())
+  clerkId                   String
+  firstName                 String
+  lastAndMiddleNames        String
+  countryOfResidence        String   @map("countryOfBirth")
+  memberMatriculationNumber String
+  registrationDate          String
+  nameOfBeneficiary         String
+  associationName           String
+  dateOfDeath               String
+  placeOfDeath              String
+  contributionStatus        String
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+}
+
+model AssociationContributionPayment {
+  id              String    @id @default(uuid())
+  associationCode String    @unique
+  amountSent      Decimal   @db.Decimal(10, 2)
+  amountVerified  Decimal   @default(0) @db.Decimal(10, 2)
+  lastSubmittedAt DateTime?
+  verifiedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([associationCode])
+  @@index([lastSubmittedAt])
+}
+
+model AssociationContributionAssessment {
+  id                    String                                   @id @default(uuid())
+  totalAmount           Decimal                                  @db.Decimal(10, 2)
+  totalVestedMembers    Int
+  amountPerVestedMember Decimal                                  @db.Decimal(10, 2)
+  createdAt             DateTime                                 @default(now())
+  updatedAt             DateTime                                 @updatedAt
+  groups                AssociationContributionAssessmentGroup[]
+}
+
+model AssociationContributionAssessmentGroup {
+  id                 String                            @id @default(uuid())
+  assessmentId       String
+  associationCode    String
+  vestedMembersCount Int
+  amountOwed         Decimal                           @db.Decimal(10, 2)
+  createdAt          DateTime                          @default(now())
+  updatedAt          DateTime                          @updatedAt
+  assessment         AssociationContributionAssessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@unique([assessmentId, associationCode])
+  @@index([associationCode])
+}
+
+model AssociationContributionUsage {
+  id              String   @id @default(uuid())
+  associationCode String   @unique
+  amountUsed      Decimal  @default(0) @db.Decimal(10, 2)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([associationCode])
+}
+
+model AssociationContributionCredit {
+  id                        String   @id @default(uuid())
+  associationCode           String
+  memberMatriculationNumber String   @unique
+  amountCredited            Decimal  @default(20) @db.Decimal(10, 2)
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  @@index([associationCode])
+}
+
+model AssociationRegistrationUsage {
+  id                        String   @id @default(uuid())
+  associationCode           String
+  memberMatriculationNumber String   @unique
+  amountUsed                Decimal  @default(20) @db.Decimal(10, 2)
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  @@index([associationCode])
+}
+
+model AssociationBalanceAdjustment {
+  id              String   @id @default(uuid())
+  associationCode String
+  balanceType     String
+  amount          Decimal  @default(0) @db.Decimal(10, 2)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([associationCode, balanceType])
+  @@index([associationCode])
+  @@index([balanceType])
+}
+
+model AssociationRegistrationPayment {
+  id              String    @id @default(uuid())
+  associationCode String    @unique
+  amountSent      Decimal   @db.Decimal(10, 2)
+  amountVerified  Decimal   @default(0) @db.Decimal(10, 2)
+  lastSubmittedAt DateTime?
+  verifiedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([associationCode])
+  @@index([lastSubmittedAt])
+}
+
+model PaymentAlertReset {
+  id        String   @id @default(uuid())
+  alertType String   @unique
+  resetAt   DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

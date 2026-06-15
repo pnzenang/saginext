@@ -1,6 +1,9 @@
 import Image from 'next/image'
 import Link from 'next/link'
 
+import PaymentAmountFormCard from '@/components/global/PaymentAmountFormCard'
+import { saveAssociationContributionPaymentAction } from '@/utils/actions'
+
 const ContributionPayments = () => {
   return (
     <section>
@@ -9,6 +12,14 @@ const ContributionPayments = () => {
         contribution payment form with group details. After submitting the form, keep your payment confirmation until
         the payment appears in the Contribution record.
       </p>
+
+      <PaymentAmountFormCard
+        action={saveAssociationContributionPaymentAction}
+        amountLabel='Contribution amount sent'
+        description='Enter the amount your association sent through Zelle so the admin can verify it.'
+        title='Record Contribution Payment'
+      />
+
       <div className='flex flex-col justify-center gap-3 sm:flex-row'>
         <Link href='https://enroll.zellepay.com/qr-codes?data=eyJuYW1lIjoiUEFUUklDRSIsImFjdGlvbiI6InBheW1lbnQiLCJ0b2tlbiI6IjQ0MzUzMTU4NTIifQ=='>
           <Image
@@ -20,11 +31,9 @@ const ContributionPayments = () => {
         </Link>
 
         <iframe
-          // id='JotFormIFrame-261231251869053'
           title='CONTRIBUTION SUBMISSION'
           allow='geolocation; microphone; camera; fullscreen; payment'
           src='https://form.jotform.com/261476766025059'
-          // scrolling='Yes'
           width='750'
           height='300'
         ></iframe>
