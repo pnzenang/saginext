@@ -31,8 +31,6 @@ const sidebarSubLinkClass =
   'hover:bg-primary hover:text-primary-foreground active:bg-primary active:text-primary-foreground focus:bg-primary focus:text-primary-foreground data-[active=true]:bg-primary data-[active=true]:text-primary-foreground [&>svg]:text-current'
 
 const memberLabels = new Set([
-  'add member',
-  'all members',
   'death announcement',
   'remove member',
   'removed members',
