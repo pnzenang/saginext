@@ -1,5 +1,7 @@
 'use server'
 
+import { randomUUID } from 'crypto'
+
 import { currentUser, clerkClient } from '@clerk/nextjs/server'
 
 import { redirect } from 'next/navigation'
@@ -937,18 +939,14 @@ export const resetAssociationRegistrationPaymentAction = async (formData: FormDa
 const resetPaymentAlert = async (alertType: string): Promise<void> => {
   await assertAdminUser()
 
-  await db.paymentAlertReset.upsert({
-    create: {
-      alertType,
-      resetAt: new Date()
-    },
-    update: {
-      resetAt: new Date()
-    },
-    where: {
-      alertType
-    }
-  })
+  const resetAt = new Date()
+
+  await db.$executeRaw`
+    INSERT INTO "PaymentAlertReset" ("id", "alertType", "resetAt", "updatedAt")
+    VALUES (${randomUUID()}, ${alertType}, ${resetAt}, ${resetAt})
+    ON CONFLICT ("alertType")
+    DO UPDATE SET "resetAt" = ${resetAt}, "updatedAt" = ${resetAt}
+  `
 
   revalidatePaymentViews()
 }

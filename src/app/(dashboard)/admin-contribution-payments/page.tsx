@@ -93,11 +93,12 @@ const AdminContributionPayments = async () => {
         associationName: true
       }
     }),
-    db.paymentAlertReset.findUnique({
-      where: {
-        alertType: contributionPaymentAlertType
-      }
-    })
+    db.$queryRaw<{ resetAt: Date }[]>`
+      SELECT "resetAt"
+      FROM "PaymentAlertReset"
+      WHERE "alertType" = ${contributionPaymentAlertType}
+      LIMIT 1
+    `
   ])
 
   const profilesByCode = new Map(profiles.map(profile => [profile.associationCode, profile]))
@@ -135,7 +136,7 @@ const AdminContributionPayments = async () => {
   )
 
   const contributionSummaryByCode = new Map(contributionSummaries.map(summary => [summary.associationCode, summary]))
-  const contributionPaymentAlertResetAt = paymentAlertReset?.resetAt ?? defaultPaymentAlertResetAt
+  const contributionPaymentAlertResetAt = paymentAlertReset[0]?.resetAt ?? defaultPaymentAlertResetAt
 
   const contributionPaymentAlerts: PaymentSubmissionAlert[] = payments
     .filter(

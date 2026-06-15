@@ -4,7 +4,7 @@ import { ChevronRight, UserCog, Users } from 'lucide-react'
 
 import { auth } from '@clerk/nextjs/server'
 
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible'
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -18,11 +18,14 @@ import type { MenuItem } from '@/utils/types'
 import { SidebarActiveDropdownButton, SidebarActiveMenuButton, SidebarActiveSubButton } from './SidebarActiveMenuButton'
 
 const primarySidebarStateClass =
-  'hover:bg-primary hover:text-primary-foreground active:bg-primary active:text-primary-foreground focus:bg-primary focus:text-primary-foreground data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[state=open]:bg-primary data-[state=open]:text-primary-foreground [&>svg]:text-current'
+  'hover:bg-primary hover:text-primary-foreground active:bg-primary active:text-primary-foreground focus:bg-primary focus:text-primary-foreground data-[active=true]:bg-primary data-[active=true]:text-primary-foreground [&>svg]:text-current'
+
+const primarySidebarInteractiveClass =
+  'hover:bg-primary hover:text-primary-foreground active:bg-primary active:text-primary-foreground focus:bg-primary focus:text-primary-foreground [&>svg]:text-current'
 
 const sidebarLinkClass = `my-1 min-h-11 py-2 text-base transition-colors duration-200 md:min-h-8 md:py-1 md:text-sm md:hover:ml-3 ${primarySidebarStateClass}`
 
-const sidebarDropdownClass = `my-1 h-auto min-h-12 py-2 text-base transition-colors duration-200 md:min-h-10 md:text-sm md:hover:ml-3 [&[data-state=open]>svg:last-child]:rotate-90 ${primarySidebarStateClass}`
+const sidebarDropdownClass = `my-1 h-auto min-h-12 py-2 text-base transition-colors duration-200 md:min-h-10 md:text-sm md:hover:ml-3 [&[data-state=open]>svg:last-child]:rotate-90 ${primarySidebarInteractiveClass}`
 
 const sidebarSubLinkClass =
   'hover:bg-primary hover:text-primary-foreground active:bg-primary active:text-primary-foreground focus:bg-primary focus:text-primary-foreground data-[active=true]:bg-primary data-[active=true]:text-primary-foreground [&>svg]:text-current'
@@ -68,24 +71,18 @@ const SidebarDropdownMenu = ({
 }) => (
   <Collapsible asChild>
     <SidebarMenuItem>
-      <CollapsibleTrigger asChild>
-        <SidebarActiveDropdownButton
-          title={title}
-          itemHrefs={items.map(item => item.href)}
-          className={sidebarDropdownClass}
-        >
-          <Icon />
-          <span className='flex min-w-0 flex-col'>
-            <span className='truncate capitalize'>{title}</span>
-            {subtitle ? (
-              <span className='text-muted-foreground truncate text-xs font-normal normal-case group-data-[collapsible=icon]:hidden'>
-                {subtitle}
-              </span>
-            ) : null}
-          </span>
-          <ChevronRight className='ml-auto transition-transform duration-200' />
-        </SidebarActiveDropdownButton>
-      </CollapsibleTrigger>
+      <SidebarActiveDropdownButton title={title} className={sidebarDropdownClass}>
+        <Icon />
+        <span className='flex min-w-0 flex-col'>
+          <span className='truncate capitalize'>{title}</span>
+          {subtitle ? (
+            <span className='text-muted-foreground truncate text-xs font-normal normal-case group-data-[collapsible=icon]:hidden'>
+              {subtitle}
+            </span>
+          ) : null}
+        </span>
+        <ChevronRight className='ml-auto transition-transform duration-200' />
+      </SidebarActiveDropdownButton>
       <CollapsibleContent>
         <SidebarMenuSub>
           {items.map(item => (

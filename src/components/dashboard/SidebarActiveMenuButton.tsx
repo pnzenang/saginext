@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 
 import { usePathname } from 'next/navigation'
 
+import { CollapsibleTrigger } from '@/components/ui/collapsible'
 import { SidebarMenuButton, SidebarMenuSubButton } from '@/components/ui/sidebar'
 
 const isCurrentHref = (pathname: string, href: string) => pathname === href || pathname.startsWith(`${href}/`)
@@ -31,21 +32,18 @@ export const SidebarActiveMenuButton = ({
 export const SidebarActiveDropdownButton = ({
   children,
   className,
-  itemHrefs,
   title
 }: {
   children: ReactNode
   className?: string
-  itemHrefs: string[]
   title: string
 }) => {
-  const pathname = usePathname()
-  const isActive = itemHrefs.some(href => isCurrentHref(pathname, href))
-
   return (
-    <SidebarMenuButton tooltip={title} isActive={isActive} className={className}>
-      {children}
-    </SidebarMenuButton>
+    <CollapsibleTrigger asChild>
+      <SidebarMenuButton tooltip={title} className={className}>
+        {children}
+      </SidebarMenuButton>
+    </CollapsibleTrigger>
   )
 }
 
