@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { fetchProfile } from '@/utils/actions'
+import { fetchProfile } from '@/utils/profile-actions'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Card } from '@/components/ui/card'

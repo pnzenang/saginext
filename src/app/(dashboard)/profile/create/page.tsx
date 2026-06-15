@@ -5,8 +5,8 @@ import { redirect } from 'next/navigation'
 import { SubmitButton } from '@/components/forms/Buttons'
 import FormContainer from '@/components/forms/FormContainer'
 import FormInput from '@/components/forms/FormInput'
-import { createProfileAction } from '@/utils/actions'
 import MaskPhoneInput from '@/components/forms/MaskPhoneInput'
+import { createProfileAction } from '@/utils/profile-actions'
 
 const CreateProfilePage = async () => {
   const user = await currentUser()

@@ -2,7 +2,7 @@ import { SubmitButton } from '@/components/forms/Buttons'
 import FormContainer from '@/components/forms/FormContainer'
 import FormInput from '@/components/forms/FormInput'
 import MaskPhoneInput from '@/components/forms/MaskPhoneInput'
-import { fetchProfile, updateProfileAction } from '@/utils/actions'
+import { fetchProfile, updateProfileAction } from '@/utils/profile-actions'
 
 const Profile = async () => {
   const profile = await fetchProfile()

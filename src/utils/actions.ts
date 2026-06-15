@@ -2,7 +2,7 @@
 
 import { randomUUID } from 'crypto'
 
-import { currentUser, clerkClient } from '@clerk/nextjs/server'
+import { auth } from '@clerk/nextjs/server'
 
 import { redirect } from 'next/navigation'
 
@@ -13,7 +13,6 @@ import db from './db'
 import {
   DeceasedMemberSchema,
   memberSchema,
-  profileSchema,
   RemovedMemberSchema,
   validateWithZodSchema
 } from './schemas'
@@ -27,6 +26,11 @@ import {
 } from './sagi-contribution-summary'
 import { registrationBalanceAdjustmentType, registrationFeePerEligibleMember } from './sagi-registration-summary'
 import { contributionPaymentAlertType, registrationPaymentAlertType } from './payment-constants'
+import {
+  createProfileAction as createProfileActionBase,
+  fetchProfile as fetchProfileBase,
+  updateProfileAction as updateProfileActionBase
+} from './profile-actions'
 
 const randomMatriculation = customAlphabet('1234567890', 6)
 const MEMBER_REMOVAL_RESTORE_WINDOW_MS = 48 * 60 * 60 * 1000
@@ -43,15 +47,24 @@ const registrationDateFormatter = new Intl.DateTimeFormat('en-US', {
 })
 
 const getAuthUser = async () => {
-  const user = await currentUser()
+  const { userId } = await auth()
 
-  if (!user) {
+  if (!userId) {
     throw new Error('You must be login to access this route')
   }
 
-  if (!user.privateMetadata.hasProfile) redirect('/profile/create')
+  const profile = await db.profile.findUnique({
+    where: {
+      clerkId: userId
+    },
+    select: {
+      id: true
+    }
+  })
 
-  return user
+  if (!profile) redirect('/profile/create')
+
+  return { id: userId }
 }
 
 const renderError = (error: unknown): { message: string } => {
@@ -248,17 +261,17 @@ const addDeceasedMemberContributionUsage = async (associationCode: string) => {
 }
 
 const assertAdminUser = async () => {
-  const user = await currentUser()
+  const { userId } = await auth()
 
-  if (!user) {
+  if (!userId) {
     throw new Error('You must be logged in to access this route')
   }
 
-  if (user.id !== process.env.ADMIN_USER_ID) {
+  if (userId !== process.env.ADMIN_USER_ID) {
     throw new Error('Admin privileges are required for this action')
   }
 
-  return user
+  return { id: userId }
 }
 
 const getCurrentAssociationCode = async (clerkId: string) => {
@@ -312,75 +325,16 @@ const assertMemberCanBeWithdrawn = async (memberId: string) => {
 const isWithinMemberRemovalRestoreWindow = (createdAt: Date) =>
   Date.now() - createdAt.getTime() <= MEMBER_REMOVAL_RESTORE_WINDOW_MS
 
-export const createProfileAction = async (prevState: any, formData: FormData) => {
-  try {
-    const user = await currentUser()
-
-    if (!user) throw new Error('Please login to create a profile')
-
-    console.log(user)
-
-    const rawData = Object.fromEntries(formData)
-    const validatedFields = validateWithZodSchema(profileSchema, rawData)
-
-    await db.profile.create({
-      data: {
-        clerkId: user.id,
-        ...validatedFields
-      }
-    })
-    ;(await clerkClient()).users.updateUserMetadata(user.id, {
-      privateMetadata: {
-        hasProfile: true
-      }
-    })
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2002') {
-        return { message: 'The association Code you picked is already taken, choose a different code' }
-      }
-    }
-
-    return renderError(error)
-  }
-
-  redirect('/navigation-instructions')
+export async function createProfileAction(prevState: any, formData: FormData) {
+  return createProfileActionBase(prevState, formData)
 }
 
-export const fetchProfile = async () => {
-  const user = await getAuthUser()
-
-  const profile = await db.profile.findUnique({
-    where: {
-      clerkId: user.id
-    }
-  })
-
-  if (!profile) redirect('/profile/create')
-
-  return profile
+export async function fetchProfile() {
+  return fetchProfileBase()
 }
 
-export const updateProfileAction = async (prevState: any, formData: FormData): Promise<{ message: string }> => {
-  const user = await getAuthUser()
-
-  try {
-    const rawData = Object.fromEntries(formData)
-
-    const validatedFields = validateWithZodSchema(profileSchema, rawData)
-
-    await db.profile.update({
-      where: {
-        clerkId: user.id
-      },
-      data: validatedFields
-    })
-    revalidatePath('/profile')
-
-    return { message: 'Profile updated successfully' }
-  } catch (error) {
-    return renderError(error)
-  }
+export async function updateProfileAction(prevState: any, formData: FormData): Promise<{ message: string }> {
+  return updateProfileActionBase(prevState, formData)
 }
 
 export const createMemberAction = async (provState: any, formData: FormData): Promise<{ message: string }> => {
@@ -960,12 +914,12 @@ export const resetRegistrationPaymentAlertAction = async (): Promise<void> => {
 }
 
 export const fetchSingleMemberDetails = async (memberId: string) => {
-  const user = await currentUser()
+  const user = await getAuthUser()
 
   const member = await db.member.findUnique({
     where: {
       id: memberId,
-      clerkId: user?.id
+      clerkId: user.id
     }
   })
 
@@ -975,7 +929,7 @@ export const fetchSingleMemberDetails = async (memberId: string) => {
 }
 
 export const fetchSingleMemberDetailsAdmin = async (memberId: string) => {
-  await currentUser()
+  await getAuthUser()
 
   const member = await db.member.findUnique({
     where: {
@@ -1488,12 +1442,12 @@ export const deleteDeceasedMemberAction = async (prevState: { deceasedMemberId: 
 }
 
 export const fetchSingleDeceasedMemberDetails = async (deceasedMemberId: string) => {
-  const user = await currentUser()
+  const user = await getAuthUser()
 
   const deceasedMember = await db.deceasedMember.findUnique({
     where: {
       id: deceasedMemberId,
-      clerkId: user?.id
+      clerkId: user.id
     }
   })
 

@@ -1,7 +1,6 @@
 import * as z from 'zod'
 import type { ZodSchema } from 'zod'
 
-import prisma from './db'
 import { contributionStatus, delegateRecommendation, memberStatus, reasonForLeaving } from './types'
 
 export const profileSchema = z.object({

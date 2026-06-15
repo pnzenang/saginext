@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { fetchProfile } from '@/utils/actions'
+import { fetchProfile } from '@/utils/profile-actions'
 
 const InternalRules = async () => {
   const user = await fetchProfile()
