@@ -13,8 +13,7 @@ import {
 } from '@/utils/actions'
 import {
   fetchAssociationRegistrationSummary,
-  registrationBalanceAdjustmentType,
-  registrationFeePerEligibleMember
+  registrationBalanceAdjustmentType
 } from '@/utils/sagi-registration-summary'
 import { registrationPaymentAlertType } from '@/utils/payment-constants'
 import { memberStatus } from '@/utils/types'
@@ -143,28 +142,28 @@ const AdminRegistrationPayments = async () => {
   const registrationSummaryByCode = new Map(registrationSummaries.map(summary => [summary.associationCode, summary]))
   const registrationPaymentAlertResetAt = paymentAlertReset[0]?.resetAt ?? defaultPaymentAlertResetAt
 
-  const registrationPaymentAlerts: PaymentSubmissionAlert[] = payments
-    .filter(
-      payment =>
-        decimalToNumber(payment.amountSent) > 0 &&
-        Boolean(payment.lastSubmittedAt) &&
-        payment.lastSubmittedAt! > registrationPaymentAlertResetAt
-    )
-    .map(payment => {
-      const profile = profilesByCode.get(payment.associationCode)
+  const registrationPaymentAlerts: PaymentSubmissionAlert[] = payments.flatMap(payment => {
+    const amountSent =
+      registrationSummaryByCode.get(payment.associationCode)?.amountReceived ?? decimalToNumber(payment.amountSent)
 
-      const associationName =
-        profile?.associationName.trim() ||
-        memberAssociationNamesByCode.get(payment.associationCode) ||
-        payment.associationCode
+    if (amountSent <= 0 || !payment.lastSubmittedAt || payment.lastSubmittedAt <= registrationPaymentAlertResetAt) {
+      return []
+    }
 
-      return {
-        amount: decimalToNumber(payment.amountSent),
+    const profile = profilesByCode.get(payment.associationCode)
+
+    const associationName =
+      profile?.associationName.trim() || memberAssociationNamesByCode.get(payment.associationCode) || payment.associationCode
+
+    return [
+      {
+        amount: amountSent,
         associationCode: payment.associationCode,
         associationName,
         submittedAt: payment.lastSubmittedAt!
       }
-    })
+    ]
+  })
 
   const rows: AdminPaymentRow[] = associationCodes.map(associationCode => {
     const profile = profilesByCode.get(associationCode)
@@ -179,10 +178,8 @@ const AdminRegistrationPayments = async () => {
       vestedMembers: 0
     }
 
-    const amountExpected = statusCounts.pendingMembers * registrationFeePerEligibleMember
-
     return {
-      amountExpected,
+      amountExpected: registrationSummary?.balanceDues ?? 0,
       amountSent: registrationSummary?.amountReceived ?? 0,
       amountVerified: registrationSummary?.amountVerified ?? 0,
       associationCode,
@@ -221,7 +218,7 @@ const AdminRegistrationPayments = async () => {
         <h1 className='text-xl font-semibold tracking-normal md:text-4xl'>Admin Registration Payments</h1>
         <p className='text-muted-foreground mt-2 max-w-4xl text-sm leading-6 sm:text-base'>
           Review registration payments recorded by associations, verify received amounts, and compare them against the
-          current pending-member registration fees.
+          current registration fees.
         </p>
       </div>
 

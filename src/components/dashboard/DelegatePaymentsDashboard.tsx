@@ -114,7 +114,7 @@ const SummaryRow = ({ label, value }: { label: string; value: number }) => (
 const BalanceRow = ({ balance }: { balance: number }) => (
   <div
     className={cn(
-      'mt-2 flex items-start justify-between gap-4 text-base font-extrabold',
+      'mt-2 flex items-start justify-between gap-4 text-xl font-extrabold sm:text-2xl',
       balance >= 0 ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'
     )}
   >
@@ -131,12 +131,11 @@ const BalanceRow = ({ balance }: { balance: number }) => (
 const DelegatePaymentsDashboard = ({
   associationCode,
   currentContribution,
-  currentRegistrationPayment,
-  membershipSummary
+  currentRegistrationPayment
 }: DelegatePaymentsDashboardProps) => {
   const currentMonthName = monthFormatter.format(new Date())
   const monthlyContributionAmount = currentContribution.amountOwed
-  const registrationPaymentAmount = membershipSummary.pending * registrationFeePerEligibleMember
+  const registrationMembersCount = Math.round(currentRegistrationPayment.balanceDues / registrationFeePerEligibleMember)
 
   return (
     <div className='w-full pb-4'>
@@ -158,10 +157,10 @@ const DelegatePaymentsDashboard = ({
           </div>
           <div className='border-primary/20 bg-primary/10 text-primary flex h-full min-w-0 flex-col rounded-md border px-3 py-3 sm:px-4'>
             <p className='text-lg font-extrabold break-words sm:text-xl'>
-              Your Registration Dues: {currencyFormatter.format(registrationPaymentAmount)}
+              Your Registration Dues: {currencyFormatter.format(currentRegistrationPayment.balanceDues)}
             </p>
             <p className='text-primary/80 mt-1 text-sm font-semibold break-words'>
-              {membershipSummary.pending} pending member(s) x{' '}
+              {registrationMembersCount} registered member(s) x{' '}
               {currencyFormatter.format(registrationFeePerEligibleMember)}
             </p>
           </div>
@@ -226,7 +225,7 @@ const DelegatePaymentsDashboard = ({
             <div className='mt-2 grid gap-1.5 text-sm font-semibold'>
               <SummaryRow label='Amount Sent' value={currentRegistrationPayment.amountReceived} />
               <SummaryRow label='Amount Verified by SAGI' value={currentRegistrationPayment.amountVerified} />
-              <SummaryRow label='Balance Dues' value={currentRegistrationPayment.balanceDues} />
+              <SummaryRow label='Used for Registration' value={currentRegistrationPayment.balanceDues} />
               {currentRegistrationPayment.manualBalanceAdjustment > 0 ? (
                 <SummaryRow label='Balance Adjustment' value={currentRegistrationPayment.manualBalanceAdjustment} />
               ) : null}

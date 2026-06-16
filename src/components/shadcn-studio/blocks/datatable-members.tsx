@@ -1,5 +1,6 @@
 'use client'
 
+import type { ReactNode } from 'react'
 import { useId, useMemo, useState } from 'react'
 
 import type { Column, ColumnDef, ColumnFiltersState, PaginationState, RowData } from '@tanstack/react-table'
@@ -16,12 +17,14 @@ import {
 } from '@tanstack/react-table'
 import {
   AlertTriangle,
+  ArrowRight,
   ArrowUpDown,
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   ChevronUpIcon,
   Clock,
+  CircleDollarSign,
   Cross,
   Ellipsis,
   FileSpreadsheetIcon,
@@ -56,6 +59,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { usePagination } from '@/hooks/use-pagination'
 import { cn } from '@/lib/utils'
+import { registrationFeePerEligibleMember } from '@/utils/payment-constants'
+import type { AssociationContributionSummary } from '@/utils/sagi-contribution-summary'
+import type { AssociationRegistrationSummary } from '@/utils/sagi-registration-summary'
 import { getTableCellLabel } from '@/utils/table'
 import { formatLongevity } from '@/utils/formatLongevity'
 import { memberStatus, type MemberType } from '@/utils/types'
@@ -69,6 +75,17 @@ declare module '@tanstack/react-table' {
 
 const numberFormatter = new Intl.NumberFormat('en-US')
 const formatNumber = (value: number) => numberFormatter.format(value)
+
+const currencyFormatter = new Intl.NumberFormat('en-US', {
+  currency: 'USD',
+  style: 'currency'
+})
+
+const monthFormatter = new Intl.DateTimeFormat('en-US', {
+  month: 'long'
+})
+
+const formatCurrency = (value: number) => currencyFormatter.format(value)
 
 const getVisibleMatriculationNumber = (status: unknown, matriculationNumber: unknown) => {
   if (status === memberStatus.Pending || status === memberStatus.Awaiting) return 'Pending'
@@ -221,7 +238,102 @@ const columns: ColumnDef<MemberType>[] = [
   }
 ]
 
-const MembersDataTable = ({ data }: { data: MemberType[] }) => {
+const PaymentSummaryRow = ({ label, value }: { label: ReactNode; value: number }) => (
+  <div className='text-primary/80 flex items-start justify-between gap-4'>
+    <span className='min-w-0 break-words'>{label}</span>
+    <span className='shrink-0 text-right tabular-nums'>{formatCurrency(value)}</span>
+  </div>
+)
+
+const PaymentRouteCard = ({
+  amount,
+  cta,
+  description,
+  details,
+  href,
+  title
+}: {
+  amount: number
+  cta: string
+  description: ReactNode
+  details: ReactNode
+  href: string
+  title: string
+}) => (
+  <div className='border-primary/20 bg-primary/10 text-primary flex h-full min-w-0 flex-col rounded-md border px-3 py-3 sm:px-4'>
+    <p className='flex items-center gap-2 text-lg font-extrabold break-words sm:text-xl'>
+      <CircleDollarSign className='size-5 shrink-0' aria-hidden='true' />
+      {title}: {formatCurrency(amount)}
+    </p>
+    <p className='text-primary/80 mt-1 text-sm font-semibold break-words'>{description}</p>
+    <div className='text-primary/80 mt-3 grid gap-1.5 text-xs font-semibold'>{details}</div>
+    <Button asChild className='mt-4 w-fit'>
+      <Link href={href}>
+        {cta}
+        <ArrowRight aria-hidden='true' />
+      </Link>
+    </Button>
+  </div>
+)
+
+const AssociationPaymentNavigationCards = ({
+  currentContribution,
+  currentRegistrationPayment
+}: {
+  currentContribution: AssociationContributionSummary
+  currentRegistrationPayment: AssociationRegistrationSummary
+}) => {
+  const currentMonthName = monthFormatter.format(new Date())
+  const registrationMembersCount = Math.round(currentRegistrationPayment.balanceDues / registrationFeePerEligibleMember)
+
+  return (
+    <div className='grid w-full grid-cols-1 items-stretch gap-4 lg:grid-cols-2'>
+      <PaymentRouteCard
+        amount={currentContribution.amountOwed}
+        cta='Go to contribution payment'
+        description={
+          <>
+            {currentContribution.vestedMembersCount} vested member(s) x{' '}
+            {formatCurrency(currentContribution.amountPerVestedMember)}
+          </>
+        }
+        details={
+          <>
+            <PaymentSummaryRow label='Sent' value={currentContribution.amountReceived} />
+            <PaymentSummaryRow label='Verified' value={currentContribution.amountVerified} />
+          </>
+        }
+        href='/contributions'
+        title={`${currentMonthName}'s Contribution`}
+      />
+      <PaymentRouteCard
+        amount={currentRegistrationPayment.balanceDues}
+        cta='Go to registration payment'
+        description={
+          <>
+            {registrationMembersCount} registered member(s) x {formatCurrency(registrationFeePerEligibleMember)}
+          </>
+        }
+        details={
+          <>
+            <PaymentSummaryRow label='Sent' value={currentRegistrationPayment.amountReceived} />
+            <PaymentSummaryRow label='Verified' value={currentRegistrationPayment.amountVerified} />
+          </>
+        }
+        href='/registrationsPayments'
+        title='Registration Payment'
+      />
+    </div>
+  )
+}
+
+type MembersDataTableProps = {
+  currentContribution: AssociationContributionSummary
+  currentRegistrationPayment: AssociationRegistrationSummary
+  data: MemberType[]
+}
+
+const MembersDataTable = ({ currentContribution, currentRegistrationPayment, data }: MembersDataTableProps) => {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
 
   const pageSize = 200
@@ -436,6 +548,12 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
                 </Card>
               )
             })}
+          </div>
+          <div className='w-full pb-2'>
+            <AssociationPaymentNavigationCards
+              currentContribution={currentContribution}
+              currentRegistrationPayment={currentRegistrationPayment}
+            />
           </div>
           <div className='flex items-center justify-between gap-3 py-2 max-sm:flex-col max-sm:items-stretch sm:px-6 sm:py-4'>
             <p className='text-primary text-sm font-extrabold sm:whitespace-nowrap' aria-live='polite'>

@@ -176,7 +176,6 @@ const PaymentControls = ({
 }) => {
   const balanceAmountInputId = useId()
   const hasSubmittedPayment = row.amountSent > 0
-  const hasPaymentValues = row.amountSent > 0 || row.amountVerified > 0
 
   return (
     <div className={cn('grid w-56 max-w-full gap-2', showAdjustment ? 'grid-cols-2' : 'grid-cols-1')}>
@@ -194,7 +193,7 @@ const PaymentControls = ({
             type='submit'
             size='xs'
             variant='destructive'
-            disabled={!hasPaymentValues}
+            disabled={!hasSubmittedPayment}
             className='h-8 w-full px-2'
           >
             <RotateCcw className='size-3' />

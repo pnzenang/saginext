@@ -10,12 +10,7 @@ import { revalidatePath } from 'next/cache'
 import { customAlphabet } from 'nanoid'
 
 import db from './db'
-import {
-  DeceasedMemberSchema,
-  memberSchema,
-  RemovedMemberSchema,
-  validateWithZodSchema
-} from './schemas'
+import { DeceasedMemberSchema, memberSchema, RemovedMemberSchema, validateWithZodSchema } from './schemas'
 import { Prisma } from '@/generated/prisma/client'
 import { memberStatus } from './types'
 import {
@@ -31,6 +26,7 @@ import {
   fetchProfile as fetchProfileBase,
   updateProfileAction as updateProfileActionBase
 } from './profile-actions'
+import { associationPaymentLedgerEventTypes, associationPaymentTypes } from './sagi-payment-ledger'
 
 const randomMatriculation = customAlphabet('1234567890', 6)
 const MEMBER_REMOVAL_RESTORE_WINDOW_MS = 48 * 60 * 60 * 1000
@@ -74,6 +70,155 @@ const renderError = (error: unknown): { message: string } => {
 }
 
 const decimalToNumber = (value: unknown) => Number(value ?? 0)
+const roundCurrencyAmount = (amount: number) => Number(amount.toFixed(2))
+
+const createMissingVerifiedLedgerEntry = async ({
+  amountVerified,
+  associationCode,
+  createdBy,
+  paymentType,
+  tx,
+  verifiedAt
+}: {
+  amountVerified: number
+  associationCode: string
+  createdBy: string
+  paymentType: string
+  tx: Prisma.TransactionClient
+  verifiedAt: Date | null
+}) => {
+  if (amountVerified <= 0 || !verifiedAt) {
+    return
+  }
+
+  const verifiedLedgerTotal = await tx.associationPaymentLedgerEntry.aggregate({
+    _sum: {
+      amount: true
+    },
+    where: {
+      associationCode,
+      eventType: associationPaymentLedgerEventTypes.verified,
+      paymentType
+    }
+  })
+
+  const missingVerifiedAmount = roundCurrencyAmount(amountVerified - decimalToNumber(verifiedLedgerTotal._sum.amount))
+
+  if (missingVerifiedAmount <= 0) {
+    return
+  }
+
+  await tx.associationPaymentLedgerEntry.create({
+    data: {
+      amount: missingVerifiedAmount,
+      associationCode,
+      createdAt: verifiedAt,
+      createdBy,
+      eventType: associationPaymentLedgerEventTypes.verified,
+      note: `${paymentType} payment verified by SAGI before payment history was recorded.`,
+      paymentType
+    }
+  })
+}
+
+const createMissingSubmittedLedgerEntry = async ({
+  amountSubmitted,
+  associationCode,
+  createdBy,
+  paymentType,
+  submittedAt,
+  tx
+}: {
+  amountSubmitted: number
+  associationCode: string
+  createdBy: string
+  paymentType: string
+  submittedAt: Date | null
+  tx: Prisma.TransactionClient
+}) => {
+  if (amountSubmitted <= 0 || !submittedAt) {
+    return
+  }
+
+  const submittedLedgerTotal = await tx.associationPaymentLedgerEntry.aggregate({
+    _sum: {
+      amount: true
+    },
+    where: {
+      associationCode,
+      eventType: associationPaymentLedgerEventTypes.submitted,
+      paymentType
+    }
+  })
+
+  const missingSubmittedAmount = roundCurrencyAmount(amountSubmitted - decimalToNumber(submittedLedgerTotal._sum.amount))
+
+  if (missingSubmittedAmount <= 0) {
+    return
+  }
+
+  await tx.associationPaymentLedgerEntry.create({
+    data: {
+      amount: missingSubmittedAmount,
+      associationCode,
+      createdAt: submittedAt,
+      createdBy,
+      eventType: associationPaymentLedgerEventTypes.submitted,
+      note: `${paymentType} payment submitted before payment history was recorded.`,
+      paymentType
+    }
+  })
+}
+
+type PaymentHistorySnapshot = {
+  amountSent: unknown
+  amountVerified: unknown
+  associationCode: string
+  createdAt: Date
+  verifiedAt: Date | null
+}
+
+const getSubmittedAmountForPaymentHistory = (payment: PaymentHistorySnapshot, paymentType: string) => {
+  if (paymentType === associationPaymentTypes.registration) {
+    return roundCurrencyAmount(decimalToNumber(payment.amountSent) + decimalToNumber(payment.amountVerified))
+  }
+
+  return decimalToNumber(payment.amountSent)
+}
+
+const createMissingPaymentHistoryLedgerEntries = async ({
+  createdBy,
+  payment,
+  paymentType,
+  tx
+}: {
+  createdBy: string
+  payment: PaymentHistorySnapshot | null
+  paymentType: string
+  tx: Prisma.TransactionClient
+}) => {
+  if (!payment) {
+    return
+  }
+
+  await createMissingSubmittedLedgerEntry({
+    amountSubmitted: getSubmittedAmountForPaymentHistory(payment, paymentType),
+    associationCode: payment.associationCode,
+    createdBy,
+    paymentType,
+    submittedAt: payment.createdAt,
+    tx
+  })
+
+  await createMissingVerifiedLedgerEntry({
+    amountVerified: decimalToNumber(payment.amountVerified),
+    associationCode: payment.associationCode,
+    createdBy,
+    paymentType,
+    tx,
+    verifiedAt: payment.verifiedAt
+  })
+}
 
 const getRequiredFormValue = (formData: FormData, fieldName: string) => {
   const value = formData.get(fieldName)
@@ -519,7 +664,7 @@ export const createAssociationContributionAssessmentAction = async (
   prevState: any,
   formData: FormData
 ): Promise<{ message: string }> => {
-  await assertAdminUser()
+  const user = await assertAdminUser()
 
   try {
     const totalAmount = getPositiveDollarAmountFromForm(formData, 'totalAmount')
@@ -546,20 +691,35 @@ export const createAssociationContributionAssessmentAction = async (
 
     const amountPerVestedMember = Number((totalAmount / vestedMembers.length).toFixed(2))
 
-    await db.associationContributionAssessment.create({
-      data: {
-        amountPerVestedMember,
-        dueDate,
-        totalAmount,
-        totalVestedMembers: vestedMembers.length,
-        groups: {
-          create: Array.from(vestedMembersByCode.entries()).map(([associationCode, vestedMembersCount]) => ({
-            amountOwed: Number((amountPerVestedMember * vestedMembersCount).toFixed(2)),
-            associationCode,
-            vestedMembersCount
-          }))
+    const groupEntries = Array.from(vestedMembersByCode.entries()).map(([associationCode, vestedMembersCount]) => ({
+      amountOwed: Number((amountPerVestedMember * vestedMembersCount).toFixed(2)),
+      associationCode,
+      vestedMembersCount
+    }))
+
+    await db.$transaction(async tx => {
+      await tx.associationContributionAssessment.create({
+        data: {
+          amountPerVestedMember,
+          dueDate,
+          totalAmount,
+          totalVestedMembers: vestedMembers.length,
+          groups: {
+            create: groupEntries
+          }
         }
-      }
+      })
+
+      await tx.associationPaymentLedgerEntry.createMany({
+        data: groupEntries.map(group => ({
+          amount: group.amountOwed,
+          associationCode: group.associationCode,
+          createdBy: user.id,
+          eventType: associationPaymentLedgerEventTypes.dueOffset,
+          note: `Contribution due created for ${group.vestedMembersCount} vested member(s).`,
+          paymentType: associationPaymentTypes.contribution
+        }))
+      })
     })
 
     revalidatePaymentViews()
@@ -573,7 +733,7 @@ export const createAssociationContributionAssessmentAction = async (
 }
 
 export const resetAssociationContributionCalculationAction = async (): Promise<{ message: string }> => {
-  await assertAdminUser()
+  const user = await assertAdminUser()
 
   try {
     const latestAssessment = await fetchLatestAssociationContributionAssessment()
@@ -599,15 +759,24 @@ export const resetAssociationContributionCalculationAction = async (): Promise<{
       affectedAssociationCodes.map(associationCode => fetchAssociationContributionSummary(associationCode))
     )
 
-    const balanceAdjustments = contributionSummaries.map(summary => {
-      return {
-        amount: Number(Math.max(summary.balance, 0).toFixed(2)),
-        associationCode: summary.associationCode
-      }
-    })
+    const balanceAdjustments = contributionSummaries.map(summary => ({
+      amount: Number((summary.balance - summary.amountVerified).toFixed(2)),
+      associationCode: summary.associationCode
+    }))
 
-    await db.$transaction([
-      db.associationContributionPayment.updateMany({
+    await db.$transaction(async tx => {
+      await Promise.all(
+        associationContributionPayments.map(payment =>
+          createMissingPaymentHistoryLedgerEntries({
+            createdBy: user.id,
+            payment,
+            paymentType: associationPaymentTypes.contribution,
+            tx
+          })
+        )
+      )
+
+      await tx.associationContributionPayment.updateMany({
         data: {
           amountSent: 0,
           amountVerified: 0,
@@ -619,32 +788,36 @@ export const resetAssociationContributionCalculationAction = async (): Promise<{
             in: associationContributionPayments.map(payment => payment.associationCode)
           }
         }
-      }),
-      ...balanceAdjustments.map(adjustment =>
-        db.associationBalanceAdjustment.upsert({
-          create: {
-            amount: adjustment.amount,
-            associationCode: adjustment.associationCode,
-            balanceType: contributionBalanceAdjustmentType
-          },
-          update: {
-            amount: adjustment.amount
-          },
-          where: {
-            associationCode_balanceType: {
+      })
+
+      await Promise.all(
+        balanceAdjustments.map(adjustment =>
+          tx.associationBalanceAdjustment.upsert({
+            create: {
+              amount: adjustment.amount,
               associationCode: adjustment.associationCode,
               balanceType: contributionBalanceAdjustmentType
+            },
+            update: {
+              amount: adjustment.amount
+            },
+            where: {
+              associationCode_balanceType: {
+                associationCode: adjustment.associationCode,
+                balanceType: contributionBalanceAdjustmentType
+              }
             }
-          }
-        })
-      ),
-      db.associationContributionAssessment.deleteMany()
-    ])
+          })
+        )
+      )
+
+      await tx.associationContributionAssessment.deleteMany()
+    })
 
     revalidatePaymentViews()
 
     return {
-      message: 'Contribution calculation reset successfully. Positive balances were kept and payments were cleared.'
+      message: 'Contribution calculation reset successfully. Balances and payment history were kept.'
     }
   } catch (error) {
     return renderError(error)
@@ -662,21 +835,36 @@ export const saveAssociationContributionPaymentAction = async (
     const amountSent = getPositiveDollarAmountFromForm(formData, 'amountSent')
     const submittedAt = new Date()
 
-    const payment = await db.associationContributionPayment.upsert({
-      create: {
-        amountSent,
-        associationCode,
-        lastSubmittedAt: submittedAt
-      },
-      update: {
-        amountSent: {
-          increment: amountSent
+    const payment = await db.$transaction(async tx => {
+      const payment = await tx.associationContributionPayment.upsert({
+        create: {
+          amountSent,
+          associationCode,
+          lastSubmittedAt: submittedAt
         },
-        lastSubmittedAt: submittedAt
-      },
-      where: {
-        associationCode
-      }
+        update: {
+          amountSent: {
+            increment: amountSent
+          },
+          lastSubmittedAt: submittedAt
+        },
+        where: {
+          associationCode
+        }
+      })
+
+      await tx.associationPaymentLedgerEntry.create({
+        data: {
+          amount: amountSent,
+          associationCode,
+          createdBy: user.id,
+          eventType: associationPaymentLedgerEventTypes.submitted,
+          note: 'Contribution payment submitted by association.',
+          paymentType: associationPaymentTypes.contribution
+        }
+      })
+
+      return payment
     })
 
     revalidatePaymentViews()
@@ -700,21 +888,36 @@ export const saveAssociationRegistrationPaymentAction = async (
     const amountSent = getPositiveDollarAmountFromForm(formData, 'amountSent')
     const submittedAt = new Date()
 
-    const payment = await db.associationRegistrationPayment.upsert({
-      create: {
-        amountSent,
-        associationCode,
-        lastSubmittedAt: submittedAt
-      },
-      update: {
-        amountSent: {
-          increment: amountSent
+    const payment = await db.$transaction(async tx => {
+      const payment = await tx.associationRegistrationPayment.upsert({
+        create: {
+          amountSent,
+          associationCode,
+          lastSubmittedAt: submittedAt
         },
-        lastSubmittedAt: submittedAt
-      },
-      where: {
-        associationCode
-      }
+        update: {
+          amountSent: {
+            increment: amountSent
+          },
+          lastSubmittedAt: submittedAt
+        },
+        where: {
+          associationCode
+        }
+      })
+
+      await tx.associationPaymentLedgerEntry.create({
+        data: {
+          amount: amountSent,
+          associationCode,
+          createdBy: user.id,
+          eventType: associationPaymentLedgerEventTypes.submitted,
+          note: 'Registration payment submitted by association.',
+          paymentType: associationPaymentTypes.registration
+        }
+      })
+
+      return payment
     })
 
     revalidatePaymentViews()
@@ -728,7 +931,7 @@ export const saveAssociationRegistrationPaymentAction = async (
 }
 
 export const verifyAssociationContributionPaymentAction = async (formData: FormData): Promise<void> => {
-  await assertAdminUser()
+  const user = await assertAdminUser()
 
   try {
     const associationCode = getRequiredFormValue(formData, 'associationCode')
@@ -744,19 +947,43 @@ export const verifyAssociationContributionPaymentAction = async (formData: FormD
     }
 
     const amountSent = decimalToNumber(payment.amountSent)
+    const amountVerified = decimalToNumber(payment.amountVerified)
+    const amountToVerify = Number((amountSent - amountVerified).toFixed(2))
 
-    if (amountSent <= 0) {
-      throw new Error('No contribution amount sent to verify.')
+    if (amountToVerify <= 0) {
+      throw new Error('No new contribution amount sent to verify.')
     }
 
-    await db.associationContributionPayment.update({
-      data: {
-        amountVerified: amountSent,
-        verifiedAt: new Date()
-      },
-      where: {
-        associationCode
-      }
+    await db.$transaction(async tx => {
+      await createMissingVerifiedLedgerEntry({
+        amountVerified,
+        associationCode,
+        createdBy: user.id,
+        paymentType: associationPaymentTypes.contribution,
+        tx,
+        verifiedAt: payment.verifiedAt
+      })
+
+      await tx.associationContributionPayment.update({
+        data: {
+          amountVerified: amountSent,
+          verifiedAt: new Date()
+        },
+        where: {
+          associationCode
+        }
+      })
+
+      await tx.associationPaymentLedgerEntry.create({
+        data: {
+          amount: amountToVerify,
+          associationCode,
+          createdBy: user.id,
+          eventType: associationPaymentLedgerEventTypes.verified,
+          note: 'Contribution payment verified by SAGI.',
+          paymentType: associationPaymentTypes.contribution
+        }
+      })
     })
 
     revalidatePaymentViews()
@@ -766,29 +993,42 @@ export const verifyAssociationContributionPaymentAction = async (formData: FormD
 }
 
 const addAssociationBalanceAdjustment = async (formData: FormData, balanceType: string): Promise<void> => {
-  await assertAdminUser()
+  const user = await assertAdminUser()
 
   try {
     const associationCode = getRequiredFormValue(formData, 'associationCode')
     const amount = getPositiveDollarAmountFromForm(formData, 'balanceAmount')
 
-    await db.associationBalanceAdjustment.upsert({
-      create: {
-        amount,
-        associationCode,
-        balanceType
-      },
-      update: {
-        amount: {
-          increment: amount
-        }
-      },
-      where: {
-        associationCode_balanceType: {
+    await db.$transaction(async tx => {
+      await tx.associationBalanceAdjustment.upsert({
+        create: {
+          amount,
           associationCode,
           balanceType
+        },
+        update: {
+          amount: {
+            increment: amount
+          }
+        },
+        where: {
+          associationCode_balanceType: {
+            associationCode,
+            balanceType
+          }
         }
-      }
+      })
+
+      await tx.associationPaymentLedgerEntry.create({
+        data: {
+          amount,
+          associationCode,
+          createdBy: user.id,
+          eventType: associationPaymentLedgerEventTypes.manualAdjustment,
+          note: `${balanceType} balance manually adjusted by SAGI.`,
+          paymentType: balanceType
+        }
+      })
     })
 
     revalidatePaymentViews()
@@ -802,28 +1042,43 @@ export const addAssociationContributionBalanceAdjustmentAction = async (formData
 }
 
 export const resetAssociationContributionPaymentAction = async (formData: FormData): Promise<void> => {
-  await assertAdminUser()
+  const user = await assertAdminUser()
 
   try {
     const associationCode = getRequiredFormValue(formData, 'associationCode')
 
-    await db.associationContributionPayment.upsert({
-      create: {
-        amountSent: 0,
-        amountVerified: 0,
-        associationCode,
-        lastSubmittedAt: null,
-        verifiedAt: null
-      },
-      update: {
-        amountSent: 0,
-        amountVerified: 0,
-        lastSubmittedAt: null,
-        verifiedAt: null
-      },
+    const currentPayment = await db.associationContributionPayment.findUnique({
       where: {
         associationCode
       }
+    })
+
+    await db.$transaction(async tx => {
+      await createMissingPaymentHistoryLedgerEntries({
+        createdBy: user.id,
+        payment: currentPayment,
+        paymentType: associationPaymentTypes.contribution,
+        tx
+      })
+
+      await tx.associationContributionPayment.upsert({
+        create: {
+          amountSent: 0,
+          amountVerified: 0,
+          associationCode,
+          lastSubmittedAt: null,
+          verifiedAt: null
+        },
+        update: {
+          amountSent: 0,
+          amountVerified: 0,
+          lastSubmittedAt: null,
+          verifiedAt: null
+        },
+        where: {
+          associationCode
+        }
+      })
     })
 
     revalidatePaymentViews()
@@ -837,7 +1092,7 @@ export const addAssociationRegistrationBalanceAdjustmentAction = async (formData
 }
 
 export const verifyAssociationRegistrationPaymentAction = async (formData: FormData): Promise<void> => {
-  await assertAdminUser()
+  const user = await assertAdminUser()
 
   try {
     const associationCode = getRequiredFormValue(formData, 'associationCode')
@@ -853,22 +1108,45 @@ export const verifyAssociationRegistrationPaymentAction = async (formData: FormD
     }
 
     const amountSent = decimalToNumber(payment.amountSent)
+    const amountVerified = decimalToNumber(payment.amountVerified)
 
     if (amountSent <= 0) {
       throw new Error('No registration amount sent to verify.')
     }
 
-    await db.associationRegistrationPayment.update({
-      data: {
-        amountSent: 0,
-        amountVerified: {
-          increment: amountSent
+    await db.$transaction(async tx => {
+      await createMissingVerifiedLedgerEntry({
+        amountVerified,
+        associationCode,
+        createdBy: user.id,
+        paymentType: associationPaymentTypes.registration,
+        tx,
+        verifiedAt: payment.verifiedAt
+      })
+
+      await tx.associationRegistrationPayment.update({
+        data: {
+          amountSent: 0,
+          amountVerified: {
+            increment: amountSent
+          },
+          verifiedAt: new Date()
         },
-        verifiedAt: new Date()
-      },
-      where: {
-        associationCode
-      }
+        where: {
+          associationCode
+        }
+      })
+
+      await tx.associationPaymentLedgerEntry.create({
+        data: {
+          amount: amountSent,
+          associationCode,
+          createdBy: user.id,
+          eventType: associationPaymentLedgerEventTypes.verified,
+          note: 'Registration payment verified by SAGI.',
+          paymentType: associationPaymentTypes.registration
+        }
+      })
     })
 
     revalidatePaymentViews()
@@ -878,28 +1156,43 @@ export const verifyAssociationRegistrationPaymentAction = async (formData: FormD
 }
 
 export const resetAssociationRegistrationPaymentAction = async (formData: FormData): Promise<void> => {
-  await assertAdminUser()
+  const user = await assertAdminUser()
 
   try {
     const associationCode = getRequiredFormValue(formData, 'associationCode')
 
-    await db.associationRegistrationPayment.upsert({
-      create: {
-        amountSent: 0,
-        amountVerified: 0,
-        associationCode,
-        lastSubmittedAt: null,
-        verifiedAt: null
-      },
-      update: {
-        amountSent: 0,
-        amountVerified: 0,
-        lastSubmittedAt: null,
-        verifiedAt: null
-      },
+    const currentPayment = await db.associationRegistrationPayment.findUnique({
       where: {
         associationCode
       }
+    })
+
+    await db.$transaction(async tx => {
+      await createMissingPaymentHistoryLedgerEntries({
+        createdBy: user.id,
+        payment: currentPayment,
+        paymentType: associationPaymentTypes.registration,
+        tx
+      })
+
+      await tx.associationRegistrationPayment.upsert({
+        create: {
+          amountSent: 0,
+          amountVerified: 0,
+          associationCode,
+          lastSubmittedAt: null,
+          verifiedAt: null
+        },
+        update: {
+          amountSent: 0,
+          amountVerified: 0,
+          lastSubmittedAt: null,
+          verifiedAt: null
+        },
+        where: {
+          associationCode
+        }
+      })
     })
 
     revalidatePaymentViews()
@@ -1098,32 +1391,43 @@ export const createRemovedMemberAction = async (provState: any, formData: FormDa
 
     if (!member) throw new Error('Member not found')
 
-    await db.$transaction([
-      db.removedMember.create({
+    await db.$transaction(async tx => {
+      await tx.removedMember.create({
         data: {
-          originalMemberId: member.id,
+          associationCode: member.associationCode,
+          associationName: member.associationName,
           clerkId: member.clerkId,
+          countryOfResidence: member.countryOfResidence,
+          dateOfBirth: member.dateOfBirth,
+          delegateRecommendation: member.delegateRecommendation,
           firstName: member.firstName,
           lastAndMiddleNames: member.lastAndMiddleNames,
-          dateOfBirth: member.dateOfBirth,
-          countryOfResidence: member.countryOfResidence,
           memberMatriculationNumber: member.memberMatriculationNumber,
-          registrationDate: validatedFields.registrationDate,
-          associationName: member.associationName,
-          associationCode: member.associationCode,
-          nameOfBeneficiary: member.nameOfBeneficiary,
-          delegateRecommendation: member.delegateRecommendation,
           memberStatus: member.memberStatus,
+          nameOfBeneficiary: member.nameOfBeneficiary,
+          originalMemberCreatedAt: member.createdAt,
+          originalMemberId: member.id,
           reasonForLeaving: validatedFields.reasonForLeaving,
-          originalMemberCreatedAt: member.createdAt
+          registrationDate: validatedFields.registrationDate
         }
-      }),
-      db.member.delete({
+      })
+
+      if (member.memberStatus === memberStatus.Pending) {
+        await tx.associationRegistrationUsage.deleteMany({
+          where: {
+            memberMatriculationNumber: member.memberMatriculationNumber
+          }
+        })
+      }
+
+      await tx.member.delete({
         where: {
           id: memberId
         }
       })
-    ])
+    })
+
+    revalidatePaymentViews()
   } catch (error) {
     return renderError(error)
   }
@@ -1154,32 +1458,43 @@ export const createRemovedMemberActionAdmin = async (
 
     if (!member) throw new Error('Member not found')
 
-    await db.$transaction([
-      db.removedMember.create({
+    await db.$transaction(async tx => {
+      await tx.removedMember.create({
         data: {
-          originalMemberId: member.id,
+          associationCode: member.associationCode,
+          associationName: member.associationName,
           clerkId: member.clerkId,
+          countryOfResidence: member.countryOfResidence,
+          dateOfBirth: member.dateOfBirth,
+          delegateRecommendation: member.delegateRecommendation,
           firstName: member.firstName,
           lastAndMiddleNames: member.lastAndMiddleNames,
-          dateOfBirth: member.dateOfBirth,
-          countryOfResidence: member.countryOfResidence,
           memberMatriculationNumber: member.memberMatriculationNumber,
-          registrationDate: validatedFields.registrationDate,
-          associationName: member.associationName,
-          associationCode: member.associationCode,
-          nameOfBeneficiary: member.nameOfBeneficiary,
-          delegateRecommendation: member.delegateRecommendation,
           memberStatus: member.memberStatus,
+          nameOfBeneficiary: member.nameOfBeneficiary,
+          originalMemberCreatedAt: member.createdAt,
+          originalMemberId: member.id,
           reasonForLeaving: validatedFields.reasonForLeaving,
-          originalMemberCreatedAt: member.createdAt
+          registrationDate: validatedFields.registrationDate
         }
-      }),
-      db.member.delete({
+      })
+
+      if (member.memberStatus === memberStatus.Pending) {
+        await tx.associationRegistrationUsage.deleteMany({
+          where: {
+            memberMatriculationNumber: member.memberMatriculationNumber
+          }
+        })
+      }
+
+      await tx.member.delete({
         where: {
           id: memberId
         }
       })
-    ])
+    })
+
+    revalidatePaymentViews()
   } catch (error) {
     return renderError(error)
   }

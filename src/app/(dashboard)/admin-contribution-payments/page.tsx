@@ -138,28 +138,28 @@ const AdminContributionPayments = async () => {
   const contributionSummaryByCode = new Map(contributionSummaries.map(summary => [summary.associationCode, summary]))
   const contributionPaymentAlertResetAt = paymentAlertReset[0]?.resetAt ?? defaultPaymentAlertResetAt
 
-  const contributionPaymentAlerts: PaymentSubmissionAlert[] = payments
-    .filter(
-      payment =>
-        decimalToNumber(payment.amountSent) > 0 &&
-        Boolean(payment.lastSubmittedAt) &&
-        payment.lastSubmittedAt! > contributionPaymentAlertResetAt
-    )
-    .map(payment => {
-      const profile = profilesByCode.get(payment.associationCode)
+  const contributionPaymentAlerts: PaymentSubmissionAlert[] = payments.flatMap(payment => {
+    const amountSent =
+      contributionSummaryByCode.get(payment.associationCode)?.amountReceived ?? decimalToNumber(payment.amountSent)
 
-      const associationName =
-        profile?.associationName.trim() ||
-        memberAssociationNamesByCode.get(payment.associationCode) ||
-        payment.associationCode
+    if (amountSent <= 0 || !payment.lastSubmittedAt || payment.lastSubmittedAt <= contributionPaymentAlertResetAt) {
+      return []
+    }
 
-      return {
-        amount: decimalToNumber(payment.amountSent),
+    const profile = profilesByCode.get(payment.associationCode)
+
+    const associationName =
+      profile?.associationName.trim() || memberAssociationNamesByCode.get(payment.associationCode) || payment.associationCode
+
+    return [
+      {
+        amount: amountSent,
         associationCode: payment.associationCode,
         associationName,
         submittedAt: payment.lastSubmittedAt!
       }
-    })
+    ]
+  })
 
   const rows: AdminPaymentRow[] = associationCodes.map(associationCode => {
     const profile = profilesByCode.get(associationCode)

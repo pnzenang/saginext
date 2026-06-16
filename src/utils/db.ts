@@ -6,7 +6,10 @@ const globalForPrisma = global as unknown as {
   prisma?: PrismaClient
 }
 
-let prisma = globalForPrisma.prisma
+const hasCurrentPrismaDelegates = (client?: PrismaClient) =>
+  Boolean(client && 'associationPaymentLedgerEntry' in (client as unknown as Record<string, unknown>))
+
+let prisma = hasCurrentPrismaDelegates(globalForPrisma.prisma) ? globalForPrisma.prisma : undefined
 
 export const getDb = () => {
   if (!prisma) {

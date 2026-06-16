@@ -2,7 +2,7 @@ import { unstable_noStore as noStore } from 'next/cache'
 
 import db from './db'
 import { registrationFeePerEligibleMember } from './payment-constants'
-import { memberStatus } from './types'
+import { associationPaymentTypes, fetchAssociationPaymentLedgerTotals } from './sagi-payment-ledger'
 
 export const registrationBalanceAdjustmentType = 'registration'
 export { registrationFeePerEligibleMember } from './payment-constants'
@@ -18,15 +18,42 @@ export type AssociationRegistrationSummary = {
   associationCode: string
   balance: number
   balanceDues: number
+  lastSubmittedAt: string | null
   manualBalanceAdjustment: number
+  pendingMemberAddedAt: string | null
+  pendingMemberDueDays: {
+    addedAt: string
+    amount: number
+    memberNames: string[]
+  }[]
+  pendingMemberNames: string[]
+  verifiedAt: string | null
 }
 
 const decimalToNumber = (value: unknown) => Number(value ?? 0)
 
 export const fetchRegistrationUsedMemberCount = async (associationCode: string) => {
-  return db.associationRegistrationUsage.count({
+  const registrationUsages = await db.associationRegistrationUsage.findMany({
+    select: {
+      memberMatriculationNumber: true
+    },
     where: {
       associationCode
+    }
+  })
+
+  const memberMatriculationNumbers = registrationUsages.map(usage => usage.memberMatriculationNumber)
+
+  if (memberMatriculationNumbers.length === 0) {
+    return 0
+  }
+
+  return db.member.count({
+    where: {
+      associationCode,
+      memberMatriculationNumber: {
+        in: memberMatriculationNumbers
+      }
     }
   })
 }
@@ -39,16 +66,19 @@ export const fetchAssociationRegistrationSummary = async (
     noStore()
   }
 
-  const [payment, pendingMembersCount, balanceAdjustment] = await Promise.all([
+  const [payment, registrationUsages, balanceAdjustment, paymentLedgerTotals] = await Promise.all([
     db.associationRegistrationPayment.findUnique({
       where: {
         associationCode
       }
     }),
-    db.member.count({
+    db.associationRegistrationUsage.findMany({
+      select: {
+        amountUsed: true,
+        memberMatriculationNumber: true
+      },
       where: {
-        associationCode,
-        memberStatus: memberStatus.Pending
+        associationCode
       }
     }),
     db.associationBalanceAdjustment.findUnique({
@@ -58,12 +88,64 @@ export const fetchAssociationRegistrationSummary = async (
           balanceType: registrationBalanceAdjustmentType
         }
       }
+    }),
+    fetchAssociationPaymentLedgerTotals(associationCode, associationPaymentTypes.registration, {
+      noStore: options.noStore
     })
   ])
 
-  const balanceDues = Number((pendingMembersCount * registrationFeePerEligibleMember).toFixed(2))
-  const amountVerified = decimalToNumber(payment?.amountVerified)
+  const registrationUsageByMemberNumber = new Map(
+    registrationUsages.map(usage => [usage.memberMatriculationNumber, decimalToNumber(usage.amountUsed)])
+  )
+
+  const memberMatriculationNumbers = Array.from(registrationUsageByMemberNumber.keys())
+
+  const registrationMembers =
+    memberMatriculationNumbers.length > 0
+      ? await db.member.findMany({
+          orderBy: {
+            createdAt: 'desc'
+          },
+          select: {
+            firstName: true,
+            lastAndMiddleNames: true,
+            createdAt: true,
+            memberMatriculationNumber: true
+          },
+          where: {
+            associationCode,
+            memberMatriculationNumber: {
+              in: memberMatriculationNumbers
+            }
+          }
+        })
+      : []
+
+  const registrationMembersWithAmounts = registrationMembers.map(member => ({
+    ...member,
+    amountUsed: registrationUsageByMemberNumber.get(member.memberMatriculationNumber) ?? registrationFeePerEligibleMember
+  }))
+
+  const balanceDues = Number(
+    registrationMembersWithAmounts.reduce((total, member) => total + member.amountUsed, 0).toFixed(2)
+  )
+
+  const amountVerified = paymentLedgerTotals.amountVerified
   const manualBalanceAdjustment = decimalToNumber(balanceAdjustment?.amount)
+  const pendingMember = registrationMembersWithAmounts[0]
+
+  const pendingMemberDueDaysByDate = registrationMembersWithAmounts.reduce((groups, member) => {
+    const dateKey = member.createdAt.toISOString().slice(0, 10)
+    const memberName = [member.firstName, member.lastAndMiddleNames].filter(Boolean).join(' ')
+
+    groups.set(dateKey, {
+      addedAt: `${dateKey}T12:00:00.000Z`,
+      amount: (groups.get(dateKey)?.amount ?? 0) + member.amountUsed,
+      memberNames: [...(groups.get(dateKey)?.memberNames ?? []), memberName]
+    })
+
+    return groups
+  }, new Map<string, { addedAt: string; amount: number; memberNames: string[] }>())
 
   return {
     amountReceived: decimalToNumber(payment?.amountSent),
@@ -72,6 +154,13 @@ export const fetchAssociationRegistrationSummary = async (
     associationCode,
     balance: Number((amountVerified + manualBalanceAdjustment - balanceDues).toFixed(2)),
     balanceDues,
-    manualBalanceAdjustment
+    lastSubmittedAt: payment?.lastSubmittedAt?.toISOString() ?? null,
+    manualBalanceAdjustment,
+    pendingMemberAddedAt: pendingMember?.createdAt.toISOString() ?? null,
+    pendingMemberDueDays: Array.from(pendingMemberDueDaysByDate.values()),
+    pendingMemberNames: registrationMembersWithAmounts.map(member =>
+      [member.firstName, member.lastAndMiddleNames].filter(Boolean).join(' ')
+    ),
+    verifiedAt: payment?.verifiedAt?.toISOString() ?? null
   }
 }
