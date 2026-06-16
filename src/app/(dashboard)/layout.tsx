@@ -58,10 +58,10 @@ const PagesLayout = ({ children }: Readonly<{ children: ReactNode }>) => {
                 </ClerkProvider>
               </div>
             </header>
-            <main className='size-full min-w-0 flex-1 px-1 py-2 sm:px-6 sm:py-6'>
-              <Card className='min-h-full overflow-hidden rounded-lg sm:rounded-xl'>
-                <CardContent className='h-full px-2 sm:px-6'>
-                  <main className='flex min-w-0 flex-1 flex-col *:scroll-mt-20'>{children}</main>
+            <main className='size-full min-w-0 flex-1 overflow-x-hidden px-1 py-2 sm:px-6 sm:py-6'>
+              <Card className='min-h-full w-full max-w-full min-w-0 overflow-hidden rounded-lg sm:rounded-xl'>
+                <CardContent className='h-full min-w-0 px-2 sm:px-6'>
+                  <main className='flex w-full min-w-0 flex-1 flex-col *:scroll-mt-20'>{children}</main>
                 </CardContent>
               </Card>
             </main>
