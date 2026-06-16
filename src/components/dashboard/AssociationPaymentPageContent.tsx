@@ -455,16 +455,12 @@ const AssociationPaymentPageContent = (props: AssociationPaymentPageContentProps
   const amountVerifiedSummaryRow = {
     dateGroups: amountVerifiedDateGroups,
     id: 'amount-verified',
-    label: 'Amount Verified by SAGI',
+    label: 'Amount Verified SAGI',
     meta: amountVerifiedDateGroups.length > 0 ? undefined : amountVerifiedMeta,
     value: amountVerifiedValue
   }
 
-  const historySummaryColumns = [
-    dueSummaryRows,
-    [amountSentSummaryRow],
-    [amountVerifiedSummaryRow]
-  ]
+  const historySummaryColumns = [dueSummaryRows, [amountSentSummaryRow], [amountVerifiedSummaryRow]]
 
   return (
     <section className='space-y-6 py-8 sm:py-10'>
@@ -526,7 +522,7 @@ const AssociationPaymentPageContent = (props: AssociationPaymentPageContentProps
           {isContributionPayment ? (
             <SummaryCard title='Contribution payment summary' balance={props.contribution.balance}>
               <SummaryRow label='Amount Sent' value={props.contribution.amountReceived} />
-              <SummaryRow label='Amount Verified by SAGI' value={props.contribution.amountVerified} />
+              <SummaryRow label='Amount Verified SAGI' value={props.contribution.amountVerified} />
               <SummaryRow label='Contribution Dues' value={props.contribution.amountOwed} />
               <SummaryRow label='Existing Balance' value={props.contribution.existingBalance} />
               {props.contribution.manualBalanceAdjustment > 0 ? (
@@ -536,7 +532,7 @@ const AssociationPaymentPageContent = (props: AssociationPaymentPageContentProps
           ) : (
             <SummaryCard title='Registration payment summary' balance={props.registration.balance}>
               <SummaryRow label='Amount Sent' value={props.registration.amountReceived} />
-              <SummaryRow label='Amount Verified by SAGI' value={props.registration.amountVerified} />
+              <SummaryRow label='Amount Verified SAGI' value={props.registration.amountVerified} />
               <SummaryRow label='Used for Registration' value={props.registration.balanceDues} />
               {props.registration.manualBalanceAdjustment > 0 ? (
                 <SummaryRow label='Balance Adjustment' value={props.registration.manualBalanceAdjustment} />

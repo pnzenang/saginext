@@ -207,7 +207,7 @@ const DelegatePaymentsDashboard = ({
             <p className='text-lg font-extrabold break-words sm:text-xl'>Contribution payment summary</p>
             <div className='mt-2 grid gap-1.5 text-sm font-semibold'>
               <SummaryRow label='Amount Sent' value={currentContribution.amountReceived} />
-              <SummaryRow label='Amount Verified by SAGI' value={currentContribution.amountVerified} />
+              <SummaryRow label='Amount Verified SAGI' value={currentContribution.amountVerified} />
               <SummaryRow label='Contribution Dues' value={currentContribution.amountOwed} />
               <SummaryRow label='Existing Balance' value={currentContribution.existingBalance} />
               {currentContribution.manualBalanceAdjustment > 0 ? (
@@ -224,7 +224,7 @@ const DelegatePaymentsDashboard = ({
             <p className='text-lg font-extrabold break-words sm:text-xl'>Registration payment summary</p>
             <div className='mt-2 grid gap-1.5 text-sm font-semibold'>
               <SummaryRow label='Amount Sent' value={currentRegistrationPayment.amountReceived} />
-              <SummaryRow label='Amount Verified by SAGI' value={currentRegistrationPayment.amountVerified} />
+              <SummaryRow label='Amount Verified SAGI' value={currentRegistrationPayment.amountVerified} />
               <SummaryRow label='Used for Registration' value={currentRegistrationPayment.balanceDues} />
               {currentRegistrationPayment.manualBalanceAdjustment > 0 ? (
                 <SummaryRow label='Balance Adjustment' value={currentRegistrationPayment.manualBalanceAdjustment} />

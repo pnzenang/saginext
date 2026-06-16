@@ -79,15 +79,17 @@ const Counts = async () => {
             const Icon = status.icon
 
             return (
-              <Card key={status.label} className={`gap-2 py-4 ${status.cardClassName}`}>
-                <CardHeader className='pb-0'>
-                  <CardTitle className={`flex items-center gap-2 text-sm font-medium ${status.colorClassName}`}>
+              <Card key={status.label} className={`gap-1 py-2 sm:py-3 ${status.cardClassName}`}>
+                <CardHeader className='px-3 pb-0 sm:px-4'>
+                  <CardTitle
+                    className={`flex items-center gap-2 text-xs font-medium sm:text-sm ${status.colorClassName}`}
+                  >
                     <Icon className='size-4 shrink-0' aria-hidden='true' />
                     {status.label}
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <p className={`text-3xl font-extrabold lg:text-4xl ${status.colorClassName}`}>
+                <CardContent className='px-3 sm:px-4'>
+                  <p className={`text-2xl leading-none font-extrabold lg:text-3xl ${status.colorClassName}`}>
                     {formatNumber(status.value)}
                   </p>
                 </CardContent>
