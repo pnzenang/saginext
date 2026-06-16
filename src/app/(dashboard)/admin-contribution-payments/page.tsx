@@ -149,7 +149,9 @@ const AdminContributionPayments = async () => {
     const profile = profilesByCode.get(payment.associationCode)
 
     const associationName =
-      profile?.associationName.trim() || memberAssociationNamesByCode.get(payment.associationCode) || payment.associationCode
+      profile?.associationName.trim() ||
+      memberAssociationNamesByCode.get(payment.associationCode) ||
+      payment.associationCode
 
     return [
       {
@@ -200,10 +202,10 @@ const AdminContributionPayments = async () => {
   const totalVestedMembers = vestedCounts.reduce((total, item) => total + item._count._all, 0)
 
   return (
-    <section className='space-y-6 py-8 sm:py-10'>
-      <div>
-        <h1 className='text-xl font-semibold tracking-normal md:text-4xl'>Admin Contribution Payments</h1>
-        <p className='text-muted-foreground mt-2 max-w-4xl text-sm leading-6 sm:text-base'>
+    <section className='flex w-full min-w-0 flex-col gap-6 overflow-hidden py-8 sm:py-10'>
+      <div className='min-w-0'>
+        <h1 className='text-xl font-semibold tracking-normal break-words md:text-4xl'>Admin Contribution Payments</h1>
+        <p className='text-muted-foreground mt-2 max-w-4xl text-sm leading-6 break-words sm:text-base'>
           Review contribution payments recorded by associations, verify received amounts, and compare balances against
           the latest contribution calculation
           {latestContributionAssessment
@@ -225,11 +227,11 @@ const AdminContributionPayments = async () => {
 
       <ContributionAssessmentForm vestedMembersCount={totalVestedMembers} />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Contribution Payment Records</CardTitle>
+      <Card className='w-full max-w-full min-w-0 overflow-hidden'>
+        <CardHeader className='min-w-0'>
+          <CardTitle className='break-words'>Contribution Payment Records</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className='min-w-0'>
           <AdminPaymentsTable
             kind='contribution'
             rows={rows}

@@ -178,7 +178,9 @@ const PaymentControls = ({
   const hasSubmittedPayment = row.amountSent > 0
 
   return (
-    <div className={cn('grid w-56 max-w-full gap-2', showAdjustment ? 'grid-cols-2' : 'grid-cols-1')}>
+    <div
+      className={cn('grid w-56 max-w-full min-w-0 gap-2 max-sm:w-full', showAdjustment ? 'grid-cols-2' : 'grid-cols-1')}
+    >
       <div className='grid gap-1.5'>
         <form action={verifyAction}>
           <input type='hidden' name='associationCode' value={row.associationCode} />
@@ -264,8 +266,8 @@ const AdminPaymentsTable = ({
   }
 
   return (
-    <div className='border-border w-full overflow-hidden rounded-lg border'>
-      <div className='hidden w-full overflow-x-auto lg:block'>
+    <div className='border-border w-full max-w-full min-w-0 overflow-hidden rounded-lg border'>
+      <div className='hidden w-full min-w-0 overflow-x-auto lg:block'>
         <Table
           className='table-fixed text-xs [&_td]:whitespace-normal [&_th]:whitespace-normal'
           style={{
@@ -404,18 +406,21 @@ const AdminPaymentsTable = ({
         </Table>
       </div>
 
-      <div className='grid gap-3 p-3 lg:hidden'>
+      <div className='grid w-full min-w-0 gap-3 p-3 lg:hidden'>
         {sortedRows.length === 0 ? (
           <div className='text-muted-foreground rounded-md border px-4 py-10 text-center text-sm'>
             No payment records found.
           </div>
         ) : (
           sortedRows.map(row => (
-            <article key={row.associationCode} className='bg-background rounded-md border shadow-sm'>
-              <div className='flex items-start justify-between gap-4 border-b px-4 py-3'>
-                <div>
-                  <h2 className='font-extrabold'>{row.associationName}</h2>
-                  <p className='text-muted-foreground text-xs'>{row.associationCode}</p>
+            <article
+              key={row.associationCode}
+              className='bg-background w-full max-w-full min-w-0 overflow-hidden rounded-md border shadow-sm'
+            >
+              <div className='flex min-w-0 flex-col gap-3 border-b px-4 py-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4'>
+                <div className='min-w-0'>
+                  <h2 className='font-extrabold break-words'>{row.associationName}</h2>
+                  <p className='text-muted-foreground text-xs break-words'>{row.associationCode}</p>
                 </div>
                 <PaymentControls
                   adjustAction={adjustAction}
@@ -425,15 +430,17 @@ const AdminPaymentsTable = ({
                   showAdjustment={showAdjustment}
                 />
               </div>
-              <div className='grid gap-2 px-4 py-3 text-sm'>
+              <div className='grid min-w-0 gap-2 px-4 py-3 text-sm'>
                 {tableColumns
                   .filter(column => !['associationName', 'associationCode'].includes(column.key))
                   .map(column => (
-                    <div key={column.key} className='flex items-start justify-between gap-4'>
-                      <span className='text-muted-foreground text-xs font-semibold uppercase'>{column.label}</span>
+                    <div key={column.key} className='grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-4'>
+                      <span className='text-muted-foreground min-w-0 text-xs font-semibold break-words uppercase'>
+                        {column.label}
+                      </span>
                       <span
                         className={cn(
-                          'text-right font-extrabold tabular-nums',
+                          'min-w-0 text-right font-extrabold tabular-nums',
                           column.align === 'right' && 'text-base',
                           getValueClassName(row, column)
                         )}
@@ -443,9 +450,11 @@ const AdminPaymentsTable = ({
                     </div>
                   ))}
                 {balanceColumn ? (
-                  <div className='flex items-start justify-between gap-4 border-t pt-3'>
-                    <span className='text-muted-foreground text-xs font-semibold uppercase'>{balanceColumn.label}</span>
-                    <BalanceCard balance={row.balance} />
+                  <div className='grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-4 border-t pt-3'>
+                    <span className='text-muted-foreground min-w-0 text-xs font-semibold break-words uppercase'>
+                      {balanceColumn.label}
+                    </span>
+                    <BalanceCard balance={row.balance} className='max-w-full min-w-0' />
                   </div>
                 ) : null}
               </div>
