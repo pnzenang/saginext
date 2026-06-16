@@ -82,10 +82,10 @@ const Counts = async () => {
               <Card key={status.label} className={`gap-1 py-2 sm:py-3 ${status.cardClassName}`}>
                 <CardHeader className='px-3 pb-0 sm:px-4'>
                   <CardTitle
-                    className={`flex items-center gap-2 text-xs font-medium sm:text-sm ${status.colorClassName}`}
+                    className={`flex w-full items-center justify-between gap-2 text-xs font-medium sm:text-sm ${status.colorClassName}`}
                   >
+                    <span>{status.label}</span>
                     <Icon className='size-4 shrink-0' aria-hidden='true' />
-                    {status.label}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className='px-3 sm:px-4'>
