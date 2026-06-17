@@ -713,7 +713,7 @@ const MembersDataTable = ({ currentContribution, currentRegistrationPayment, dat
                       key={header.id}
                       style={{ width: `${header.getSize()}px` }}
                       className={cn(
-                        'font-extrabold text-white first:pl-4 last:px-4',
+                        'font-extrabold text-white first:pl-4 last:px-4 md:max-lg:px-1 md:max-lg:first:pl-2 md:max-lg:last:px-2',
                         getResponsiveColumnClassName(header.column.id)
                       )}
                     >
@@ -761,7 +761,7 @@ const MembersDataTable = ({ currentContribution, currentRegistrationPayment, dat
                         key={cell.id}
                         data-label={cellLabel}
                         className={cn(
-                          'h-14 first:w-12.5 first:pl-4 last:w-29 last:px-4',
+                          'h-14 first:w-12.5 first:pl-4 last:w-29 last:px-4 md:max-lg:px-1 md:max-lg:first:pl-2 md:max-lg:last:px-2',
                           getResponsiveColumnClassName(cell.column.id)
                         )}
                       >
