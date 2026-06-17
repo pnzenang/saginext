@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 
-import { ArrowUpRightIcon, CalendarDaysIcon, SearchIcon } from 'lucide-react'
+import { ArrowUpRightIcon, CalendarDaysIcon, SearchIcon, XIcon } from 'lucide-react'
 
 import Link from 'next/link'
 
@@ -150,6 +150,18 @@ const BlogSection = ({ posts }: { posts: PostMetadata[] }) => {
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                 />
+                {searchQuery ? (
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    size='icon-xs'
+                    className='text-muted-foreground hover:text-foreground absolute top-1/2 right-2 -translate-y-1/2 rounded-full'
+                    onClick={() => setSearchQuery('')}
+                    aria-label='Clear article search'
+                  >
+                    <XIcon className='size-3.5' />
+                  </Button>
+                ) : null}
               </div>
             </div>
 

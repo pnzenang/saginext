@@ -32,7 +32,8 @@ import {
   ShieldCheck,
   Trash2,
   UploadIcon,
-  Users
+  Users,
+  XIcon
 } from 'lucide-react'
 import Link from 'next/link'
 import Papa from 'papaparse'
@@ -678,6 +679,7 @@ function Filter({ column }: { column: Column<any, unknown> }) {
   const columnFilterValue = column.getFilterValue()
   const { filterVariant } = column.columnDef.meta ?? {}
   const columnHeader = typeof column.columnDef.header === 'string' ? column.columnDef.header : ''
+  const filterValue = (columnFilterValue ?? '') as string
 
   const sortedUniqueValues = useMemo(() => {
     if (filterVariant === 'range') return []
@@ -730,8 +732,8 @@ function Filter({ column }: { column: Column<any, unknown> }) {
       <div className='relative'>
         <Input
           id={`${id}-input`}
-          className='peer pl-9'
-          value={(columnFilterValue ?? '') as string}
+          className='peer pr-9 pl-9'
+          value={filterValue}
           onChange={e => column.setFilterValue(e.target.value)}
           placeholder={`Search ${columnHeader.toLowerCase()}`}
           type='text'
@@ -739,6 +741,18 @@ function Filter({ column }: { column: Column<any, unknown> }) {
         <div className='text-muted-foreground/80 pointer-events-none absolute inset-y-0 left-0 flex items-center justify-center pl-3 peer-disabled:opacity-50'>
           <SearchIcon size={16} />
         </div>
+        {filterValue ? (
+          <Button
+            type='button'
+            variant='ghost'
+            size='icon-xs'
+            className='text-muted-foreground hover:text-foreground absolute top-1/2 right-1.5 -translate-y-1/2 rounded-full'
+            onClick={() => column.setFilterValue(undefined)}
+            aria-label={`Clear ${columnHeader.toLowerCase()} search`}
+          >
+            <XIcon className='size-3.5' />
+          </Button>
+        ) : null}
       </div>
     </div>
   )
