@@ -703,7 +703,7 @@ const MembersDataTable = ({ currentContribution, currentRegistrationPayment, dat
             </DropdownMenu>
           </div>
         </div>
-        <Table mobileCards>
+        <Table mobileCards className='md:max-lg:text-xs'>
           <TableHeader>
             {table.getHeaderGroups().map(headerGroup => (
               <TableRow key={headerGroup.id} className='bg-primary hover:bg-primary/80 h-14 border-t'>
