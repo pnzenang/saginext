@@ -363,6 +363,14 @@ const MembersDataTable = ({ currentContribution, currentRegistrationPayment, dat
     onPaginationChange: setPagination
   })
 
+  const hasMatriculationColumn = Boolean(table.getColumn('memberMatriculationNumber'))
+
+  const getResponsiveColumnClassName = (columnId: string) =>
+    cn(
+      hasMatriculationColumn && columnId === 'associationCode' && 'md:hidden lg:table-cell',
+      hasMatriculationColumn && columnId === 'memberMatriculationNumber' && 'md:pl-4 lg:pl-2'
+    )
+
   const summaryTotals = table.getCoreRowModel().rows.reduce(
     (acc, row) => {
       const status = row.getValue('memberStatus')
@@ -704,7 +712,10 @@ const MembersDataTable = ({ currentContribution, currentRegistrationPayment, dat
                     <TableHead
                       key={header.id}
                       style={{ width: `${header.getSize()}px` }}
-                      className='font-extrabold text-white first:pl-4 last:px-4'
+                      className={cn(
+                        'font-extrabold text-white first:pl-4 last:px-4',
+                        getResponsiveColumnClassName(header.column.id)
+                      )}
                     >
                       {header.isPlaceholder ? null : header.column.getCanSort() ? (
                         <div
@@ -749,7 +760,10 @@ const MembersDataTable = ({ currentContribution, currentRegistrationPayment, dat
                       <TableCell
                         key={cell.id}
                         data-label={cellLabel}
-                        className='h-14 first:w-12.5 first:pl-4 last:w-29 last:px-4'
+                        className={cn(
+                          'h-14 first:w-12.5 first:pl-4 last:w-29 last:px-4',
+                          getResponsiveColumnClassName(cell.column.id)
+                        )}
                       >
                         <span className='sr-only'>{cellLabel}: </span>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
