@@ -89,11 +89,11 @@ export const pagesItems: MenuItem[] = [
     label: 'Contribution Table',
     href: '/contribution-table'
   },
-  {
-    icon: WalletMinimal,
-    label: ' Financial Positions',
-    href: '/financial-position'
-  },
+  // {
+  //   icon: WalletMinimal,
+  //   label: ' Financial Positions',
+  //   href: '/financial-position'
+  // },
 
   {
     icon: FileStack,
