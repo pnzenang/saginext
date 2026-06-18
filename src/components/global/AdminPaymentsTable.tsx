@@ -67,7 +67,6 @@ const contributionColumns: AdminPaymentColumn[] = [
 ]
 
 const registrationColumns: AdminPaymentColumn[] = [
-  { key: 'associationName', label: 'Association' },
   { key: 'associationCode', label: 'Code' },
   { key: 'vestedMembers', label: 'Vested', align: 'right', format: 'number' },
   { key: 'awaitingPublication', label: 'Awaiting', align: 'right', format: 'number' },
@@ -207,16 +206,15 @@ const PaymentControls = ({
         <form action={adjustAction} className='grid gap-1.5'>
           <input type='hidden' name='associationCode' value={row.associationCode} />
           <label htmlFor={balanceAmountInputId} className='sr-only'>
-            Amount to add to balance
+            Balance adjustment amount
           </label>
           <Input
             id={balanceAmountInputId}
             name='balanceAmount'
             type='number'
             inputMode='decimal'
-            min='0.01'
             step='0.01'
-            placeholder='0.00'
+            placeholder='+/- 0.00'
             className='h-8 px-2 text-xs'
             required
           />

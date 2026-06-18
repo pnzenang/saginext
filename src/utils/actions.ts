@@ -240,6 +240,16 @@ const getPositiveDollarAmountFromForm = (formData: FormData, fieldName: string) 
   return Number(amount.toFixed(2))
 }
 
+const getSignedDollarAmountFromForm = (formData: FormData, fieldName: string) => {
+  const amount = Number(getRequiredFormValue(formData, fieldName))
+
+  if (!Number.isFinite(amount) || amount === 0) {
+    throw new Error('Enter a positive or negative adjustment amount.')
+  }
+
+  return Number(amount.toFixed(2))
+}
+
 const getRequiredDateFromForm = (formData: FormData, fieldName: string) => {
   const value = getRequiredFormValue(formData, fieldName)
 
@@ -997,7 +1007,7 @@ const addAssociationBalanceAdjustment = async (formData: FormData, balanceType: 
 
   try {
     const associationCode = getRequiredFormValue(formData, 'associationCode')
-    const amount = getPositiveDollarAmountFromForm(formData, 'balanceAmount')
+    const amount = getSignedDollarAmountFromForm(formData, 'balanceAmount')
 
     await db.$transaction(async tx => {
       await tx.associationBalanceAdjustment.upsert({
