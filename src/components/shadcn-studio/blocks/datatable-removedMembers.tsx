@@ -21,7 +21,7 @@ import {
   XIcon
 } from 'lucide-react'
 
-import type { Column, ColumnDef, ColumnFiltersState, PaginationState, RowData } from '@tanstack/react-table'
+import type { Column, ColumnDef, PaginationState, RowData } from '@tanstack/react-table'
 import {
   flexRender,
   getCoreRowModel,
@@ -50,6 +50,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
+import { usePersistentColumnFilters } from '@/hooks/use-persistent-column-filters'
 import { usePagination } from '@/hooks/use-pagination'
 
 import { cn } from '@/lib/utils'
@@ -189,7 +190,7 @@ const columns: ColumnDef<RemovedMemberType>[] = [
 ]
 
 const RemovedMembersDataTable = ({ data }: { data: RemovedMemberType[] }) => {
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  const [columnFilters, setColumnFilters] = usePersistentColumnFilters('sagi:removed-members:columnFilters')
 
   const pageSize = 100
 

@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react'
 import { useId, useMemo, useState } from 'react'
 
-import type { Column, ColumnDef, ColumnFiltersState, PaginationState, RowData } from '@tanstack/react-table'
+import type { Column, ColumnDef, PaginationState, RowData } from '@tanstack/react-table'
 import {
   flexRender,
   getCoreRowModel,
@@ -58,6 +58,7 @@ import { Label } from '@/components/ui/label'
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem } from '@/components/ui/pagination'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { usePersistentColumnFilters } from '@/hooks/use-persistent-column-filters'
 import { usePagination } from '@/hooks/use-pagination'
 import { cn } from '@/lib/utils'
 import { registrationFeePerEligibleMember } from '@/utils/payment-constants'
@@ -335,7 +336,7 @@ type MembersDataTableProps = {
 }
 
 const MembersDataTable = ({ currentContribution, currentRegistrationPayment, data }: MembersDataTableProps) => {
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  const [columnFilters, setColumnFilters] = usePersistentColumnFilters('sagi:all-members:columnFilters')
 
   const pageSize = 200
 

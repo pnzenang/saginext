@@ -19,7 +19,7 @@ import {
   XIcon
 } from 'lucide-react'
 
-import type { Column, ColumnDef, ColumnFiltersState, PaginationState, RowData } from '@tanstack/react-table'
+import type { Column, ColumnDef, PaginationState, RowData } from '@tanstack/react-table'
 import {
   flexRender,
   getCoreRowModel,
@@ -51,6 +51,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
 import { usePagination } from '@/hooks/use-pagination'
+import { usePersistentColumnFilters } from '@/hooks/use-persistent-column-filters'
 
 import { cn } from '@/lib/utils'
 import { getTableCellLabel } from '@/utils/table'
@@ -181,7 +182,7 @@ const columns: ColumnDef<Item>[] = [
 ]
 
 const InvoiceDatatable = ({ data }: { data: Item[] }) => {
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  const [columnFilters, setColumnFilters] = usePersistentColumnFilters('sagi:invoice-demo:columnFilters')
 
   const pageSize = 5
 
