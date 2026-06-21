@@ -1113,7 +1113,7 @@ export const addAssociationContributionSentAdjustmentAction = async (formData: F
           associationCode,
           createdBy: user.id,
           eventType: associationPaymentLedgerEventTypes.submitted,
-          note: 'Contribution sent manually adjusted by SAGI.',
+          note: 'Contribution payment found by SAGI.',
           paymentType: associationPaymentTypes.contribution
         }
       })

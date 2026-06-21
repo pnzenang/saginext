@@ -45,6 +45,14 @@ const formatDate = (date: string) => dateFormatter.format(new Date(date))
 const formatDateTime = (date: string) => dateTimeFormatter.format(new Date(date))
 const roundCurrencyAmount = (amount: number) => Number(amount.toFixed(2))
 
+const isPaymentFoundEntry = (entry: Pick<AssociationPaymentLedgerEntry, 'note'>) =>
+  entry.note?.toLowerCase().includes('payment found') || entry.note?.toLowerCase().includes('sent manually adjusted')
+
+const getSubmittedPaymentMeta = (entry: AssociationPaymentLedgerEntry, formatter: (date: string) => string) =>
+  `${isPaymentFoundEntry(entry) ? 'Payment found' : 'Payment submitted'} ${formatter(entry.createdAt)}`
+
+const getVerifiedPaymentMeta = (date: string, formatter: (date: string) => string) => `Verified on: ${formatter(date)}`
+
 const sagiPaymentUrl =
   'https://enroll.zellepay.com/qr-codes?data=eyJuYW1lIjoiUEFUUklDRSIsImFjdGlvbiI6InBheW1lbnQiLCJ0b2tlbiI6IjQ0MzUzMTU4NTIifQ=='
 
@@ -252,11 +260,20 @@ const getVerifiedPaymentGroupsLinkedToSubmittedPayments = (
   amountVerified: number
 ): PaymentDateGroup[] => {
   let remainingVerifiedAmount = roundCurrencyAmount(amountVerified)
-  const verifiedGroupsByDay = new Map<string, number>()
 
-  const sortedSubmittedEntries = [...submittedEntries].sort(
-    (firstEntry, secondEntry) => new Date(firstEntry.createdAt).getTime() - new Date(secondEntry.createdAt).getTime()
-  )
+  const verifiedGroupsBySource = new Map<
+    string,
+    {
+      amount: number
+      meta: string
+    }
+  >()
+
+  const sortedSubmittedEntries = [...submittedEntries]
+    .filter(entry => entry.amount > 0)
+    .sort(
+      (firstEntry, secondEntry) => new Date(firstEntry.createdAt).getTime() - new Date(secondEntry.createdAt).getTime()
+    )
 
   sortedSubmittedEntries.forEach(entry => {
     if (remainingVerifiedAmount <= 0) {
@@ -264,18 +281,28 @@ const getVerifiedPaymentGroupsLinkedToSubmittedPayments = (
     }
 
     const dayKey = entry.createdAt.slice(0, 10)
+    const sourceLabel = isPaymentFoundEntry(entry) ? 'Payment found' : 'Payment submitted'
+    const groupKey = `${sourceLabel}:${dayKey}`
     const linkedAmount = roundCurrencyAmount(Math.min(entry.amount, remainingVerifiedAmount))
 
+    const currentGroup = verifiedGroupsBySource.get(groupKey) ?? {
+      amount: 0,
+      meta: `${sourceLabel} ${formatDate(`${dayKey}T12:00:00.000Z`)}`
+    }
+
     remainingVerifiedAmount = roundCurrencyAmount(remainingVerifiedAmount - linkedAmount)
-    verifiedGroupsByDay.set(dayKey, roundCurrencyAmount((verifiedGroupsByDay.get(dayKey) ?? 0) + linkedAmount))
+    verifiedGroupsBySource.set(groupKey, {
+      ...currentGroup,
+      amount: roundCurrencyAmount(currentGroup.amount + linkedAmount)
+    })
   })
 
-  return Array.from(verifiedGroupsByDay.entries())
-    .sort(([firstDay], [secondDay]) => secondDay.localeCompare(firstDay))
-    .map(([dayKey, amount]) => ({
-      amount,
-      id: `amount-verified-linked-${dayKey}`,
-      meta: `Payment submitted ${formatDate(`${dayKey}T12:00:00.000Z`)}`
+  return Array.from(verifiedGroupsBySource.entries())
+    .sort(([firstKey], [secondKey]) => secondKey.localeCompare(firstKey))
+    .map(([groupKey, group]) => ({
+      amount: group.amount,
+      id: `amount-verified-linked-${groupKey}`,
+      meta: group.meta
     }))
 }
 
@@ -332,9 +359,13 @@ const AssociationPaymentPageContent = (props: AssociationPaymentPageContentProps
   const amountSentDate = latestSubmittedPayment?.createdAt ?? lastSubmittedAt
   const amountVerifiedDate = latestVerifiedPayment?.createdAt ?? verifiedAt
 
-  const amountSentMeta = amountSentDate ? `Payment submitted ${formatDateTime(amountSentDate)}` : undefined
+  const amountSentMeta = latestSubmittedPayment
+    ? getSubmittedPaymentMeta(latestSubmittedPayment, formatDateTime)
+    : amountSentDate
+      ? `Payment submitted ${formatDateTime(amountSentDate)}`
+      : undefined
 
-  const amountVerifiedMeta = amountVerifiedDate ? `Payment verified ${formatDateTime(amountVerifiedDate)}` : undefined
+  const amountVerifiedMeta = amountVerifiedDate ? getVerifiedPaymentMeta(amountVerifiedDate, formatDateTime) : undefined
 
   const amountSentValue = isContributionPayment ? props.contribution.amountReceived : props.registration.amountReceived
 
@@ -347,7 +378,7 @@ const AssociationPaymentPageContent = (props: AssociationPaymentPageContentProps
   const submittedPaymentEntries = submittedPaymentLedgerEntries.map(entry => ({
     amount: entry.amount,
     id: entry.id,
-    meta: `Payment submitted ${formatDateTime(entry.createdAt)}`
+    meta: getSubmittedPaymentMeta(entry, formatDateTime)
   }))
 
   const amountSentSummaryEntries =
@@ -395,7 +426,7 @@ const AssociationPaymentPageContent = (props: AssociationPaymentPageContentProps
       ? {
           amount: legacyVerifiedAmount,
           id: `amount-verified-legacy-${verifiedAt}`,
-          meta: `Payment verified ${formatDate(verifiedAt)}`
+          meta: getVerifiedPaymentMeta(verifiedAt, formatDate)
         }
       : null
 
@@ -407,7 +438,7 @@ const AssociationPaymentPageContent = (props: AssociationPaymentPageContentProps
             {
               amount: amountVerifiedValue,
               id: `amount-verified-${amountVerifiedDate}`,
-              meta: `Payment verified ${formatDate(amountVerifiedDate)}`
+              meta: getVerifiedPaymentMeta(amountVerifiedDate, formatDate)
             }
           ]
         : []
