@@ -170,22 +170,25 @@ const BalanceCard = ({ balance, className }: { balance: number; className?: stri
   </div>
 )
 
-const ContributionSentAdjustmentForm = ({
+const PaymentSentAdjustmentForm = ({
   action,
   className,
+  kind,
   row
 }: {
   action: (formData: FormData) => Promise<void>
   className?: string
+  kind: PaymentKind
   row: AdminPaymentRow
 }) => {
   const sentAmountInputId = useId()
+  const paymentLabel = kind === 'contribution' ? 'Contribution' : 'Registration'
 
   return (
     <form action={action} className={cn('grid min-w-0 gap-1.5', className)}>
       <input type='hidden' name='associationCode' value={row.associationCode} />
       <label htmlFor={sentAmountInputId} className='sr-only'>
-        Contribution sent adjustment amount
+        {paymentLabel} sent adjustment amount
       </label>
       <Input
         id={sentAmountInputId}
@@ -285,7 +288,7 @@ const AdminPaymentsTable = ({
   const columns = getColumns(kind)
   const balanceColumn = columns.find(column => column.key === 'balance')
   const showAdjustment = true
-  const showSentAdjustment = kind === 'contribution' && Boolean(sentAdjustmentAction)
+  const showSentAdjustment = Boolean(sentAdjustmentAction)
   const tableColumns = columns.filter(column => column.key !== 'balance')
   const tableWidthRem = getTableWidthRem(tableColumns, showSentAdjustment, balanceColumn)
   const [sortKey, setSortKey] = useState<SortKey>('associationCode')
@@ -406,7 +409,7 @@ const AdminPaymentsTable = ({
                     <Fragment key={column.key}>
                       {shouldRenderSentAdjustmentBeforeColumn(column, showSentAdjustment) && sentAdjustmentAction ? (
                         <TableCell key='sentAdjustment' className='w-36 min-w-36 px-2 py-3 align-middle'>
-                          <ContributionSentAdjustmentForm action={sentAdjustmentAction} row={row} />
+                          <PaymentSentAdjustmentForm action={sentAdjustmentAction} kind={kind} row={row} />
                         </TableCell>
                       ) : null}
                       <TableCell
@@ -513,7 +516,7 @@ const AdminPaymentsTable = ({
                           <span className='text-muted-foreground min-w-0 text-xs font-semibold break-words uppercase'>
                             Adjust Sent
                           </span>
-                          <ContributionSentAdjustmentForm action={sentAdjustmentAction} row={row} />
+                          <PaymentSentAdjustmentForm action={sentAdjustmentAction} kind={kind} row={row} />
                         </div>
                       ) : null}
                       <div key={column.key} className='grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-4'>

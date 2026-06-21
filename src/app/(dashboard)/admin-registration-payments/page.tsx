@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import db from '@/utils/db'
 import {
   addAssociationRegistrationBalanceAdjustmentAction,
+  addAssociationRegistrationSentAdjustmentAction,
   resetRegistrationPaymentAlertAction,
   resetAssociationRegistrationPaymentAction,
   verifyAssociationRegistrationPaymentAction
@@ -240,6 +241,7 @@ const AdminRegistrationPayments = async () => {
             rows={rows}
             totals={totals}
             adjustAction={addAssociationRegistrationBalanceAdjustmentAction}
+            sentAdjustmentAction={addAssociationRegistrationSentAdjustmentAction}
             verifyAction={verifyAssociationRegistrationPaymentAction}
             resetAction={resetAssociationRegistrationPaymentAction}
           />

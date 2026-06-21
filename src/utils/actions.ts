@@ -1175,6 +1175,76 @@ export const addAssociationRegistrationBalanceAdjustmentAction = async (formData
   await addAssociationBalanceAdjustment(formData, registrationBalanceAdjustmentType)
 }
 
+export const addAssociationRegistrationSentAdjustmentAction = async (formData: FormData): Promise<void> => {
+  const user = await assertAdminUser()
+
+  try {
+    const associationCode = getRequiredFormValue(formData, 'associationCode')
+    const amount = getSignedDollarAmountFromForm(formData, 'sentAmount')
+
+    await db.$transaction(async tx => {
+      const payment = await tx.associationRegistrationPayment.findUnique({
+        where: {
+          associationCode
+        }
+      })
+
+      const currentAmountSent = decimalToNumber(payment?.amountSent)
+      const currentAmountVerified = decimalToNumber(payment?.amountVerified)
+      const nextAmountSent = roundCurrencyAmount(currentAmountSent + amount)
+
+      if (nextAmountSent < 0) {
+        throw new Error('Registration sent cannot be less than zero.')
+      }
+
+      if (payment) {
+        await createMissingSubmittedLedgerEntry({
+          amountSubmitted: roundCurrencyAmount(currentAmountSent + currentAmountVerified),
+          associationCode,
+          createdBy: user.id,
+          paymentType: associationPaymentTypes.registration,
+          submittedAt: payment.createdAt,
+          tx
+        })
+
+        await tx.associationRegistrationPayment.update({
+          data: {
+            amountSent: nextAmountSent
+          },
+          where: {
+            associationCode
+          }
+        })
+      } else {
+        await tx.associationRegistrationPayment.create({
+          data: {
+            amountSent: nextAmountSent,
+            amountVerified: 0,
+            associationCode,
+            lastSubmittedAt: null,
+            verifiedAt: null
+          }
+        })
+      }
+
+      await tx.associationPaymentLedgerEntry.create({
+        data: {
+          amount,
+          associationCode,
+          createdBy: user.id,
+          eventType: associationPaymentLedgerEventTypes.submitted,
+          note: 'Registration payment found by SAGI.',
+          paymentType: associationPaymentTypes.registration
+        }
+      })
+    })
+
+    revalidatePaymentViews()
+  } catch (error) {
+    renderError(error)
+  }
+}
+
 export const verifyAssociationRegistrationPaymentAction = async (formData: FormData): Promise<void> => {
   const user = await assertAdminUser()
 
