@@ -172,6 +172,7 @@ type PaymentLedgerHistoryCardProps = {
 
 type PaymentDateGroup = {
   amount: number
+  connector?: string
   id: string
   meta: string
   names?: string[]
@@ -216,7 +217,7 @@ const PaymentSummaryCard = ({ row }: { row: PaymentSummaryRow }) => {
                     <span className='shrink-0 text-xs font-semibold tabular-nums'>
                       {currencyFormatter.format(group.amount)}
                     </span>
-                    <span className='text-xs'>for</span>
+                    <span className='text-xs'>{group.connector ?? 'for'}</span>
                     <span className='min-w-0 text-xs break-words'>{group.meta}</span>
                   </p>
                   {group.names && group.names.length > 0 ? (
@@ -261,7 +262,7 @@ const getVerifiedPaymentGroupsLinkedToSubmittedPayments = (
 ): PaymentDateGroup[] => {
   let remainingVerifiedAmount = roundCurrencyAmount(amountVerified)
 
-  const verifiedGroupsBySource = new Map<
+  const verifiedGroupsByDay = new Map<
     string,
     {
       amount: number
@@ -281,27 +282,26 @@ const getVerifiedPaymentGroupsLinkedToSubmittedPayments = (
     }
 
     const dayKey = entry.createdAt.slice(0, 10)
-    const sourceLabel = isPaymentFoundEntry(entry) ? 'Payment found' : 'Payment submitted'
-    const groupKey = `${sourceLabel}:${dayKey}`
     const linkedAmount = roundCurrencyAmount(Math.min(entry.amount, remainingVerifiedAmount))
 
-    const currentGroup = verifiedGroupsBySource.get(groupKey) ?? {
+    const currentGroup = verifiedGroupsByDay.get(dayKey) ?? {
       amount: 0,
-      meta: `${sourceLabel} ${formatDate(`${dayKey}T12:00:00.000Z`)}`
+      meta: formatDate(`${dayKey}T12:00:00.000Z`)
     }
 
     remainingVerifiedAmount = roundCurrencyAmount(remainingVerifiedAmount - linkedAmount)
-    verifiedGroupsBySource.set(groupKey, {
+    verifiedGroupsByDay.set(dayKey, {
       ...currentGroup,
       amount: roundCurrencyAmount(currentGroup.amount + linkedAmount)
     })
   })
 
-  return Array.from(verifiedGroupsBySource.entries())
-    .sort(([firstKey], [secondKey]) => secondKey.localeCompare(firstKey))
-    .map(([groupKey, group]) => ({
+  return Array.from(verifiedGroupsByDay.entries())
+    .sort(([firstDay], [secondDay]) => secondDay.localeCompare(firstDay))
+    .map(([dayKey, group]) => ({
       amount: group.amount,
-      id: `amount-verified-linked-${groupKey}`,
+      connector: 'Amount Verified',
+      id: `amount-verified-linked-${dayKey}`,
       meta: group.meta
     }))
 }
