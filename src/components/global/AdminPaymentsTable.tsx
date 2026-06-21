@@ -51,6 +51,7 @@ type AdminPaymentsTableProps = {
   adjustAction: (formData: FormData) => Promise<void>
   kind: PaymentKind
   rows: AdminPaymentRow[]
+  sentAdjustmentAction?: (formData: FormData) => Promise<void>
   totals: AdminPaymentTotals
   verifyAction: (formData: FormData) => Promise<void>
   resetAction: (formData: FormData) => Promise<void>
@@ -79,7 +80,7 @@ const registrationColumns: AdminPaymentColumn[] = [
 
 const getColumns = (kind: PaymentKind) => (kind === 'contribution' ? contributionColumns : registrationColumns)
 
-const actionColumnWidthRem = 14
+const getActionColumnWidthRem = (showSentAdjustment: boolean) => (showSentAdjustment ? 18 : 14)
 
 const columnWidthRemByKey: Record<SortKey, number> = {
   amountExpected: 9,
@@ -104,9 +105,15 @@ const getColumnSizeClassName = (column: AdminPaymentColumn) => {
 
 const getColumnWidthRem = (column: AdminPaymentColumn) => columnWidthRemByKey[column.key]
 
-const getTableWidthRem = (tableColumns: AdminPaymentColumn[], balanceColumn?: AdminPaymentColumn) =>
-  tableColumns.reduce((totalWidth, column) => totalWidth + getColumnWidthRem(column), actionColumnWidthRem) +
-  (balanceColumn ? getColumnWidthRem(balanceColumn) : 0)
+const getTableWidthRem = (
+  tableColumns: AdminPaymentColumn[],
+  showSentAdjustment: boolean,
+  balanceColumn?: AdminPaymentColumn
+) =>
+  tableColumns.reduce(
+    (totalWidth, column) => totalWidth + getColumnWidthRem(column),
+    getActionColumnWidthRem(showSentAdjustment)
+  ) + (balanceColumn ? getColumnWidthRem(balanceColumn) : 0)
 
 const getSortIcon = (isActive: boolean, direction: SortDirection) => {
   if (!isActive) return <ArrowUpDown className='size-3.5' />
@@ -164,21 +171,29 @@ const PaymentControls = ({
   adjustAction,
   resetAction,
   row,
+  sentAdjustmentAction,
   showAdjustment,
   verifyAction
 }: {
   adjustAction: (formData: FormData) => Promise<void>
   resetAction: (formData: FormData) => Promise<void>
   row: AdminPaymentRow
+  sentAdjustmentAction?: (formData: FormData) => Promise<void>
   showAdjustment: boolean
   verifyAction: (formData: FormData) => Promise<void>
 }) => {
   const balanceAmountInputId = useId()
+  const sentAmountInputId = useId()
   const hasSubmittedPayment = row.amountSent > 0
+  const showSentAdjustment = Boolean(sentAdjustmentAction)
 
   return (
     <div
-      className={cn('grid w-56 max-w-full min-w-0 gap-2 max-sm:w-full', showAdjustment ? 'grid-cols-2' : 'grid-cols-1')}
+      className={cn(
+        'grid max-w-full min-w-0 gap-2 max-sm:w-full max-sm:grid-cols-1',
+        showSentAdjustment ? 'w-72 grid-cols-3' : 'w-56',
+        showAdjustment && !showSentAdjustment ? 'grid-cols-2' : !showSentAdjustment && 'grid-cols-1'
+      )}
     >
       <div className='grid gap-1.5'>
         <form action={verifyAction}>
@@ -202,6 +217,28 @@ const PaymentControls = ({
           </Button>
         </form>
       </div>
+      {sentAdjustmentAction ? (
+        <form action={sentAdjustmentAction} className='grid gap-1.5'>
+          <input type='hidden' name='associationCode' value={row.associationCode} />
+          <label htmlFor={sentAmountInputId} className='sr-only'>
+            Contribution sent adjustment amount
+          </label>
+          <Input
+            id={sentAmountInputId}
+            name='sentAmount'
+            type='number'
+            inputMode='decimal'
+            step='0.01'
+            placeholder='+/- 0.00'
+            className='h-8 px-2 text-xs'
+            required
+          />
+          <Button type='submit' size='xs' variant='outline' className='h-8 w-full px-2'>
+            <Plus className='size-3' />
+            Sent
+          </Button>
+        </form>
+      ) : null}
       {showAdjustment ? (
         <form action={adjustAction} className='grid gap-1.5'>
           <input type='hidden' name='associationCode' value={row.associationCode} />
@@ -233,14 +270,18 @@ const AdminPaymentsTable = ({
   kind,
   resetAction,
   rows,
+  sentAdjustmentAction,
   totals,
   verifyAction
 }: AdminPaymentsTableProps) => {
   const columns = getColumns(kind)
   const balanceColumn = columns.find(column => column.key === 'balance')
   const showAdjustment = true
+  const showSentAdjustment = kind === 'contribution' && Boolean(sentAdjustmentAction)
   const tableColumns = columns.filter(column => column.key !== 'balance')
-  const tableWidthRem = getTableWidthRem(tableColumns, balanceColumn)
+  const actionColumnWidthRem = getActionColumnWidthRem(showSentAdjustment)
+  const actionColumnClassName = showSentAdjustment ? 'w-72 min-w-72' : 'w-56 min-w-56'
+  const tableWidthRem = getTableWidthRem(tableColumns, showSentAdjustment, balanceColumn)
   const [sortKey, setSortKey] = useState<SortKey>('associationCode')
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
 
@@ -309,7 +350,9 @@ const AdminPaymentsTable = ({
                   </TableHead>
                 )
               })}
-              <TableHead className='text-primary-foreground h-14 w-56 min-w-56 px-2 text-center'>Actions</TableHead>
+              <TableHead className={cn('text-primary-foreground h-14 px-2 text-center', actionColumnClassName)}>
+                Actions
+              </TableHead>
               {balanceColumn ? (
                 <TableHead
                   aria-sort={
@@ -353,12 +396,13 @@ const AdminPaymentsTable = ({
                       {formatValue(row, column)}
                     </TableCell>
                   ))}
-                  <TableCell className='w-56 min-w-56 px-2 py-3'>
+                  <TableCell className={cn('px-2 py-3', actionColumnClassName)}>
                     <PaymentControls
                       adjustAction={adjustAction}
                       row={row}
                       verifyAction={verifyAction}
                       resetAction={resetAction}
+                      sentAdjustmentAction={showSentAdjustment ? sentAdjustmentAction : undefined}
                       showAdjustment={showAdjustment}
                     />
                   </TableCell>
@@ -392,7 +436,7 @@ const AdminPaymentsTable = ({
                         : ''}
                   </TableCell>
                 ))}
-                <TableCell className='w-56 min-w-56' />
+                <TableCell className={actionColumnClassName} />
                 {balanceColumn ? (
                   <TableCell className='w-40 min-w-40 px-2 py-3 text-right align-middle'>
                     <BalanceCard balance={totals.balance} className='h-[4.375rem] w-full justify-center' />
@@ -425,6 +469,7 @@ const AdminPaymentsTable = ({
                   row={row}
                   verifyAction={verifyAction}
                   resetAction={resetAction}
+                  sentAdjustmentAction={showSentAdjustment ? sentAdjustmentAction : undefined}
                   showAdjustment={showAdjustment}
                 />
               </div>

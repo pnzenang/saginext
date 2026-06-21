@@ -1051,6 +1051,80 @@ export const addAssociationContributionBalanceAdjustmentAction = async (formData
   await addAssociationBalanceAdjustment(formData, contributionBalanceAdjustmentType)
 }
 
+export const addAssociationContributionSentAdjustmentAction = async (formData: FormData): Promise<void> => {
+  const user = await assertAdminUser()
+
+  try {
+    const associationCode = getRequiredFormValue(formData, 'associationCode')
+    const amount = getSignedDollarAmountFromForm(formData, 'sentAmount')
+
+    await db.$transaction(async tx => {
+      const payment = await tx.associationContributionPayment.findUnique({
+        where: {
+          associationCode
+        }
+      })
+
+      const currentAmountSent = decimalToNumber(payment?.amountSent)
+      const currentAmountVerified = decimalToNumber(payment?.amountVerified)
+      const nextAmountSent = roundCurrencyAmount(currentAmountSent + amount)
+
+      if (nextAmountSent < currentAmountVerified) {
+        throw new Error('Contribution sent cannot be less than the amount already verified.')
+      }
+
+      if (nextAmountSent < 0) {
+        throw new Error('Contribution sent cannot be less than zero.')
+      }
+
+      if (payment) {
+        await createMissingSubmittedLedgerEntry({
+          amountSubmitted: currentAmountSent,
+          associationCode,
+          createdBy: user.id,
+          paymentType: associationPaymentTypes.contribution,
+          submittedAt: payment.createdAt,
+          tx
+        })
+
+        await tx.associationContributionPayment.update({
+          data: {
+            amountSent: nextAmountSent
+          },
+          where: {
+            associationCode
+          }
+        })
+      } else {
+        await tx.associationContributionPayment.create({
+          data: {
+            amountSent: nextAmountSent,
+            amountVerified: 0,
+            associationCode,
+            lastSubmittedAt: null,
+            verifiedAt: null
+          }
+        })
+      }
+
+      await tx.associationPaymentLedgerEntry.create({
+        data: {
+          amount,
+          associationCode,
+          createdBy: user.id,
+          eventType: associationPaymentLedgerEventTypes.submitted,
+          note: 'Contribution sent manually adjusted by SAGI.',
+          paymentType: associationPaymentTypes.contribution
+        }
+      })
+    })
+
+    revalidatePaymentViews()
+  } catch (error) {
+    renderError(error)
+  }
+}
+
 export const resetAssociationContributionPaymentAction = async (formData: FormData): Promise<void> => {
   const user = await assertAdminUser()
 
