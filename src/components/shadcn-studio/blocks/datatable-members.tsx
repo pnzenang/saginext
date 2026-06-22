@@ -1,9 +1,9 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { useId, useMemo, useState } from 'react'
+import { useEffect, useId, useMemo, useState } from 'react'
 
-import type { Column, ColumnDef, PaginationState, RowData } from '@tanstack/react-table'
+import type { Column, ColumnDef, ColumnFiltersState, PaginationState, RowData, Row } from '@tanstack/react-table'
 import {
   flexRender,
   getCoreRowModel,
@@ -95,6 +95,40 @@ const getVisibleMatriculationNumber = (status: unknown, matriculationNumber: unk
   return String(matriculationNumber ?? '')
 }
 
+const nameFilterIds = new Set(['firstName', 'lastAndMiddleNames'])
+
+const mergeNameColumnFilters = (filters: ColumnFiltersState) => {
+  const legacyNameFilters = filters.filter(filter => nameFilterIds.has(filter.id))
+
+  if (legacyNameFilters.length === 0) return filters
+
+  const nextFilters = filters.filter(filter => filter.id !== 'name' && !nameFilterIds.has(filter.id))
+  const existingNameFilter = filters.find(filter => filter.id === 'name')
+
+  const nameSearchValue = [existingNameFilter?.value, ...legacyNameFilters.map(filter => filter.value)]
+    .map(value => String(value ?? '').trim())
+    .filter(Boolean)
+    .join(' ')
+
+  if (!nameSearchValue) return nextFilters
+
+  return [...nextFilters, { id: 'name', value: nameSearchValue }]
+}
+
+const filterName = (row: Row<MemberType>, columnId: string, filterValue: unknown) => {
+  const searchTerms = String(filterValue ?? '')
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean)
+
+  if (searchTerms.length === 0) return true
+
+  const name = String(row.getValue(columnId) ?? '').toLowerCase()
+
+  return searchTerms.every(term => name.includes(term))
+}
+
 const columns: ColumnDef<MemberType>[] = [
   {
     header: 'Code',
@@ -148,6 +182,12 @@ const columns: ColumnDef<MemberType>[] = [
       </div>
     ),
     size: 100
+  },
+  {
+    id: 'name',
+    header: 'Name',
+    accessorFn: row => `${row.lastAndMiddleNames} ${row.firstName}`,
+    filterFn: filterName
   },
 
   {
@@ -345,9 +385,18 @@ const MembersDataTable = ({ currentContribution, currentRegistrationPayment, dat
     pageSize: pageSize
   })
 
+  useEffect(() => {
+    setColumnFilters(currentFilters => mergeNameColumnFilters(currentFilters))
+  }, [columnFilters, setColumnFilters])
+
   const table = useReactTable({
     data,
     columns,
+    initialState: {
+      columnVisibility: {
+        name: false
+      }
+    },
     state: {
       columnFilters,
       pagination
@@ -674,9 +723,7 @@ const MembersDataTable = ({ currentContribution, currentRegistrationPayment, dat
         <div className='flex items-start gap-4 p-4 max-sm:flex-col sm:items-center sm:justify-between sm:p-6'>
           <div className='grid w-full grid-cols-1 gap-2 sm:grid-cols-2 xl:flex xl:items-center'>
             <Filter column={table.getColumn('associationCode')!} />
-            <Filter column={table.getColumn('lastAndMiddleNames')!} />
-            {/* <Filter column={table.getColumn('middleName')!} /> */}
-            <Filter column={table.getColumn('firstName')!} />
+            <Filter column={table.getColumn('name')!} />
 
             <Filter column={table.getColumn('delegateRecommendation')!} />
             <Filter column={table.getColumn('memberStatus')!} />
@@ -777,7 +824,7 @@ const MembersDataTable = ({ currentContribution, currentRegistrationPayment, dat
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className='h-24 text-center'>
+                <TableCell colSpan={table.getVisibleLeafColumns().length} className='h-24 text-center'>
                   No Member Found, add members.
                 </TableCell>
               </TableRow>
@@ -797,7 +844,7 @@ function Filter({ column }: { column: Column<any, unknown> }) {
   const { filterVariant } = column.columnDef.meta ?? {}
   const columnHeader = typeof column.columnDef.header === 'string' ? column.columnDef.header : ''
   const filterValue = (columnFilterValue ?? '') as string
-  const searchLabel = column.id === 'lastAndMiddleNames' ? 'last or middle name' : columnHeader.toLowerCase()
+  const searchLabel = column.id === 'name' ? 'name' : columnHeader.toLowerCase()
 
   const sortedUniqueValues = useMemo(() => {
     if (filterVariant === 'range') return []
