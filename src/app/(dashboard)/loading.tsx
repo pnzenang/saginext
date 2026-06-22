@@ -2,7 +2,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 
 const DashboardLoading = () => {
   return (
-    <section className='flex w-full min-w-0 flex-col gap-6 overflow-hidden py-8 sm:py-10' aria-busy='true'>
+    <section className='flex min-h-full w-full min-w-0 flex-col gap-6 overflow-hidden py-8 sm:py-10' aria-busy='true'>
       <div className='min-w-0 space-y-3'>
         <Skeleton className='h-8 w-full max-w-80 md:h-10' />
         <Skeleton className='h-4 w-full max-w-3xl' />

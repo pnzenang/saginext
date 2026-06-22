@@ -2,9 +2,9 @@ import DataTableLoading from '@/components/global/DataTableLoading'
 
 const Loading = () => {
   return (
-    <div className='mt-16'>
+    <section className='min-h-full w-full pt-16'>
       <DataTableLoading columnCount={10} />
-    </div>
+    </section>
   )
 }
 

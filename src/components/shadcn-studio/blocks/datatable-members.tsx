@@ -844,7 +844,7 @@ function Filter({ column }: { column: Column<any, unknown> }) {
   const { filterVariant } = column.columnDef.meta ?? {}
   const columnHeader = typeof column.columnDef.header === 'string' ? column.columnDef.header : ''
   const filterValue = (columnFilterValue ?? '') as string
-  const searchLabel = column.id === 'name' ? 'name' : columnHeader.toLowerCase()
+  const searchLabel = column.id === 'name' ? 'names' : columnHeader.toLowerCase()
 
   const sortedUniqueValues = useMemo(() => {
     if (filterVariant === 'range') return []

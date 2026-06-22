@@ -8,7 +8,7 @@ interface DataTableLoadingProps {
 
 const DataTableLoading = ({ columnCount, rowCount = 10 }: DataTableLoadingProps) => {
   return (
-    <div className='w-full space-y-3 overflow-auto'>
+    <div className='flex min-h-full w-full flex-col space-y-3 overflow-auto' aria-busy='true'>
       <div className='flex w-full items-center justify-between space-x-2 overflow-auto p-1'>
         <div className='flex flex-1 items-center space-x-2'>
           <Skeleton className='h-7 w-37.5 lg:w-62.5' />
@@ -16,7 +16,7 @@ const DataTableLoading = ({ columnCount, rowCount = 10 }: DataTableLoadingProps)
         </div>
         <Skeleton className='ml-auto hidden h-7 w-17.5 lg:flex' />
       </div>
-      <div className='rounded-md border'>
+      <div className='min-h-0 flex-1 rounded-md border'>
         <Table>
           <TableHeader>
             {Array.from({ length: 1 }).map((_, i) => (

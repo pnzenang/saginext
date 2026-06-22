@@ -4,10 +4,10 @@ import { cva, type VariantProps } from 'class-variance-authority'
 
 import { cn } from '@/lib/utils'
 
-const shellVariants = cva('grid items-center gap-8 pt-6 pb-8 md:py-8', {
+const shellVariants = cva('grid min-h-full w-full content-start gap-8 pt-6 pb-8 md:py-8', {
   variants: {
     variant: {
-      default: 'container',
+      default: '',
       sidebar: '',
       centered: 'mx-auto mt-20 mb-16 max-w-md justify-center',
       markdown: 'container max-w-3xl gap-0 py-8 md:py-10 lg:py-10'
