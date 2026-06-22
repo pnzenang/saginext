@@ -11,7 +11,6 @@ import {
   Users,
   Wallet,
   WalletCards,
-  WalletMinimal,
   CreditCard,
   List,
   Megaphone,
@@ -89,6 +88,7 @@ export const pagesItems: MenuItem[] = [
     label: 'Contribution Table',
     href: '/contribution-table'
   },
+
   // {
   //   icon: WalletMinimal,
   //   label: ' Financial Positions',
