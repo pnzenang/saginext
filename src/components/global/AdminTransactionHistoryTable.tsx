@@ -30,12 +30,10 @@ const currencyFormatter = new Intl.NumberFormat('en-US', {
 
 export type AdminTransactionHistoryRow = {
   amountAdjusted: number | null
-  amountDueOffset: number | null
   amountReset: number | null
   amountSubmitted: number | null
   amountVerified: number | null
   associationCode: string
-  associationName: string
   createdAt: string
   createdAtLabel: string
   createdBy: string
@@ -50,7 +48,6 @@ export type AdminTransactionHistoryRow = {
 
 export type AdminTransactionHistoryTotals = {
   amountAdjusted: number
-  amountDueOffset: number
   amountReset: number
   amountSubmitted: number
   amountVerified: number
@@ -69,13 +66,11 @@ type AdminTransactionHistoryColumn = {
 const columns: AdminTransactionHistoryColumn[] = [
   { key: 'createdAt', label: 'Date' },
   { key: 'associationCode', label: 'Code' },
-  { key: 'associationName', label: 'Association' },
   { key: 'paymentType', label: 'Type' },
   { key: 'eventType', label: 'Action' },
   { key: 'amountSubmitted', label: 'Amount set by association', align: 'right' },
   { key: 'amountAdjusted', label: 'Amount adjusted', align: 'right' },
   { key: 'amountVerified', label: 'Amount verified', align: 'right' },
-  { key: 'amountDueOffset', label: 'Due offset', align: 'right' },
   { key: 'amountReset', label: 'Reset', align: 'right' },
   { key: 'note', label: 'Note' }
 ]
@@ -84,12 +79,10 @@ const pageSizeOptions = [10, 25, 50, 100]
 
 const exportColumnWidths: Partial<Record<SortKey, number>> = {
   amountAdjusted: 18,
-  amountDueOffset: 16,
   amountReset: 14,
   amountSubmitted: 28,
   amountVerified: 18,
   associationCode: 18,
-  associationName: 32,
   createdAt: 22,
   eventType: 24,
   note: 42,
@@ -99,16 +92,14 @@ const exportColumnWidths: Partial<Record<SortKey, number>> = {
 
 const columnWidths: Partial<Record<SortKey, number>> = {
   amountAdjusted: 9,
-  amountDueOffset: 8,
   amountReset: 6,
-  amountSubmitted: 10,
-  amountVerified: 9,
-  associationCode: 6,
-  associationName: 12,
-  createdAt: 10,
-  eventType: 11,
-  note: 12,
-  paymentType: 7
+  amountSubmitted: 14,
+  amountVerified: 11,
+  associationCode: 8,
+  createdAt: 12,
+  eventType: 13,
+  note: 18,
+  paymentType: 9
 }
 
 const roundCurrencyAmount = (amount: number) => Number(amount.toFixed(2))
@@ -151,7 +142,6 @@ const getAmountClassName = (amount: number | null) =>
 
 const getEventBadgeClassName = (eventType: string) =>
   ({
-    due_offset: 'border-purple-500/30 bg-purple-500/10 text-purple-700 dark:text-purple-300',
     manual_adjustment: 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300',
     reset: 'border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-300',
     submitted: 'border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-300',
@@ -168,7 +158,6 @@ const getTransactionTotals = (rows: AdminTransactionHistoryRow[]): AdminTransact
   rows.reduce(
     (currentTotals, row) => {
       currentTotals.amountAdjusted = roundCurrencyAmount(currentTotals.amountAdjusted + (row.amountAdjusted ?? 0))
-      currentTotals.amountDueOffset = roundCurrencyAmount(currentTotals.amountDueOffset + (row.amountDueOffset ?? 0))
       currentTotals.amountReset = roundCurrencyAmount(currentTotals.amountReset + (row.amountReset ?? 0))
       currentTotals.amountSubmitted = roundCurrencyAmount(currentTotals.amountSubmitted + (row.amountSubmitted ?? 0))
       currentTotals.amountVerified = roundCurrencyAmount(currentTotals.amountVerified + (row.amountVerified ?? 0))
@@ -178,7 +167,6 @@ const getTransactionTotals = (rows: AdminTransactionHistoryRow[]): AdminTransact
     },
     {
       amountAdjusted: 0,
-      amountDueOffset: 0,
       amountReset: 0,
       amountSubmitted: 0,
       amountVerified: 0,
@@ -234,16 +222,7 @@ const AdminTransactionHistoryTable = ({
     if (!normalizedSearch) return rows
 
     return rows.filter(row =>
-      [
-        row.associationCode,
-        row.associationName,
-        row.createdAtLabel,
-        row.createdBy,
-        row.eventType,
-        row.note,
-        row.paymentType,
-        row.source
-      ]
+      [row.associationCode, row.createdAtLabel, row.createdBy, row.eventType, row.note, row.paymentType, row.source]
         .join(' ')
         .toLowerCase()
         .includes(normalizedSearch)
@@ -315,28 +294,24 @@ const AdminTransactionHistoryTable = ({
       [
         'Date',
         'Association code',
-        'Association',
         'Payment type',
         'Action',
         'Source',
         'Amount set by association',
         'Amount adjusted',
         'Amount verified',
-        'Due offset',
         'Reset',
         'Note'
       ],
       ...exportRows.map(row => [
         row.createdAtLabel,
         row.associationCode,
-        row.associationName,
         row.paymentType,
         row.eventType,
         row.source,
         row.amountSubmitted ?? '',
         row.amountAdjusted ?? '',
         row.amountVerified ?? '',
-        row.amountDueOffset ?? '',
         row.amountReset ?? '',
         row.note
       ]),
@@ -346,11 +321,9 @@ const AdminTransactionHistoryTable = ({
         '',
         '',
         '',
-        '',
         exportTotals.amountSubmitted,
         exportTotals.amountAdjusted,
         exportTotals.amountVerified,
-        exportTotals.amountDueOffset,
         exportTotals.amountReset,
         `${exportTotals.transactionCount} transaction(s)`
       ]
@@ -361,14 +334,12 @@ const AdminTransactionHistoryTable = ({
     worksheet['!cols'] = [
       { wch: exportColumnWidths.createdAt },
       { wch: exportColumnWidths.associationCode },
-      { wch: exportColumnWidths.associationName },
       { wch: exportColumnWidths.paymentType },
       { wch: exportColumnWidths.eventType },
       { wch: exportColumnWidths.source },
       { wch: exportColumnWidths.amountSubmitted },
       { wch: exportColumnWidths.amountAdjusted },
       { wch: exportColumnWidths.amountVerified },
-      { wch: exportColumnWidths.amountDueOffset },
       { wch: exportColumnWidths.amountReset },
       { wch: exportColumnWidths.note }
     ]
@@ -381,7 +352,7 @@ const AdminTransactionHistoryTable = ({
 
   return (
     <div className='max-w-full min-w-0 space-y-4'>
-      <div className='grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6'>
+      <div className='grid gap-3 sm:grid-cols-2 xl:grid-cols-5'>
         <SummaryStat label='Transactions' value={visibleTotals.transactionCount} />
         <SummaryStat
           label='Amount set by associations'
@@ -389,7 +360,6 @@ const AdminTransactionHistoryTable = ({
         />
         <SummaryStat label='Amount adjusted' value={currencyFormatter.format(visibleTotals.amountAdjusted)} />
         <SummaryStat label='Amount verified' value={currencyFormatter.format(visibleTotals.amountVerified)} />
-        <SummaryStat label='Due offset' value={currencyFormatter.format(visibleTotals.amountDueOffset)} />
         <SummaryStat label='Reset' value={currencyFormatter.format(visibleTotals.amountReset)} />
       </div>
 
@@ -402,7 +372,7 @@ const AdminTransactionHistoryTable = ({
             id='transaction-history-search'
             value={search}
             onChange={event => handleSearchChange(event.target.value)}
-            placeholder='Search association, code, type, action, or note'
+            placeholder='Search code, type, action, or note'
             className='bg-background h-10 w-full text-sm font-semibold'
           />
         </form>
@@ -487,9 +457,6 @@ const AdminTransactionHistoryTable = ({
                     <TableCell className='font-extrabold' style={getColumnStyle('associationCode')}>
                       {row.associationCode}
                     </TableCell>
-                    <TableCell className='text-sm font-semibold' style={getColumnStyle('associationName')}>
-                      {row.associationName || '-'}
-                    </TableCell>
                     <TableCell className='text-sm font-semibold' style={getColumnStyle('paymentType')}>
                       <Badge
                         variant='outline'
@@ -518,11 +485,6 @@ const AdminTransactionHistoryTable = ({
                     <TableCell className='text-right' style={getColumnStyle('amountVerified')}>
                       <span className={getAmountClassName(row.amountVerified)}>{formatAmount(row.amountVerified)}</span>
                     </TableCell>
-                    <TableCell className='text-right' style={getColumnStyle('amountDueOffset')}>
-                      <span className={getAmountClassName(row.amountDueOffset)}>
-                        {formatAmount(row.amountDueOffset)}
-                      </span>
-                    </TableCell>
                     <TableCell className='text-right' style={getColumnStyle('amountReset')}>
                       <span className={getAmountClassName(row.amountReset)}>{formatAmount(row.amountReset)}</span>
                     </TableCell>
@@ -540,7 +502,6 @@ const AdminTransactionHistoryTable = ({
                     Total
                   </TableCell>
                   <TableCell style={getColumnStyle('associationCode')} />
-                  <TableCell style={getColumnStyle('associationName')} />
                   <TableCell style={getColumnStyle('paymentType')} />
                   <TableCell className='font-semibold' style={getColumnStyle('eventType')}>
                     {visibleTotals.transactionCount} transaction(s)
@@ -553,9 +514,6 @@ const AdminTransactionHistoryTable = ({
                   </TableCell>
                   <TableCell className='text-right font-extrabold' style={getColumnStyle('amountVerified')}>
                     {currencyFormatter.format(visibleTotals.amountVerified)}
-                  </TableCell>
-                  <TableCell className='text-right font-extrabold' style={getColumnStyle('amountDueOffset')}>
-                    {currencyFormatter.format(visibleTotals.amountDueOffset)}
                   </TableCell>
                   <TableCell className='text-right font-extrabold' style={getColumnStyle('amountReset')}>
                     {currencyFormatter.format(visibleTotals.amountReset)}
@@ -580,7 +538,6 @@ const AdminTransactionHistoryTable = ({
                 <div className='flex flex-col gap-2 border-b px-3 py-3 sm:flex-row sm:items-start sm:justify-between sm:px-4'>
                   <div className='min-w-0'>
                     <div className='text-lg font-extrabold'>{row.associationCode}</div>
-                    <div className='text-sm font-semibold break-words'>{row.associationName || '-'}</div>
                   </div>
                   <div className='text-muted-foreground shrink-0 text-left text-xs font-semibold sm:text-right'>
                     {row.createdAtLabel}
@@ -624,11 +581,6 @@ const AdminTransactionHistoryTable = ({
                     label='Amount verified'
                     value={formatAmount(row.amountVerified)}
                     valueClassName={getAmountClassName(row.amountVerified)}
-                  />
-                  <MobileValue
-                    label='Due offset'
-                    value={formatAmount(row.amountDueOffset)}
-                    valueClassName={getAmountClassName(row.amountDueOffset)}
                   />
                   <MobileValue
                     label='Reset'

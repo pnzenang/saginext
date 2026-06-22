@@ -13,7 +13,6 @@ const paymentTypeLabels: Record<string, string> = {
 }
 
 const eventTypeLabels: Record<string, string> = {
-  [associationPaymentLedgerEventTypes.dueOffset]: 'Due offset',
   [associationPaymentLedgerEventTypes.manualAdjustment]: 'Amount adjusted',
   [associationPaymentLedgerEventTypes.reset]: 'Reset',
   [associationPaymentLedgerEventTypes.submitted]: 'Amount set by association',
@@ -21,7 +20,6 @@ const eventTypeLabels: Record<string, string> = {
 }
 
 const historyEventTypes = [
-  associationPaymentLedgerEventTypes.dueOffset,
   associationPaymentLedgerEventTypes.manualAdjustment,
   associationPaymentLedgerEventTypes.reset,
   associationPaymentLedgerEventTypes.submitted,
@@ -52,49 +50,14 @@ const isAssociationSubmittedAmount = (eventType: string, note?: string | null) =
 const AdminTransactionHistory = async () => {
   noStore()
 
-  const [ledgerEntries, profiles, memberAssociationNames] = await Promise.all([
-    db.associationPaymentLedgerEntry.findMany({
-      orderBy: {
-        createdAt: 'desc'
-      },
-      where: {
-        eventType: {
-          in: historyEventTypes
-        }
+  const ledgerEntries = await db.associationPaymentLedgerEntry.findMany({
+    orderBy: {
+      createdAt: 'desc'
+    },
+    where: {
+      eventType: {
+        in: historyEventTypes
       }
-    }),
-    db.profile.findMany({
-      select: {
-        associationCode: true,
-        associationName: true
-      }
-    }),
-    db.member.findMany({
-      orderBy: {
-        associationName: 'asc'
-      },
-      select: {
-        associationCode: true,
-        associationName: true
-      }
-    })
-  ])
-
-  const associationNamesByCode = new Map<string, string>()
-
-  memberAssociationNames.forEach(member => {
-    const associationName = member.associationName.trim()
-
-    if (associationName && !associationNamesByCode.has(member.associationCode)) {
-      associationNamesByCode.set(member.associationCode, associationName)
-    }
-  })
-
-  profiles.forEach(profile => {
-    const associationName = profile.associationName.trim()
-
-    if (associationName) {
-      associationNamesByCode.set(profile.associationCode, associationName)
     }
   })
 
@@ -105,12 +68,10 @@ const AdminTransactionHistory = async () => {
 
     return {
       amountAdjusted: entry.eventType === associationPaymentLedgerEventTypes.manualAdjustment ? amount : null,
-      amountDueOffset: entry.eventType === associationPaymentLedgerEventTypes.dueOffset ? amount : null,
       amountReset: entry.eventType === associationPaymentLedgerEventTypes.reset ? amount : null,
       amountSubmitted: entry.eventType === associationPaymentLedgerEventTypes.submitted ? amount : null,
       amountVerified: entry.eventType === associationPaymentLedgerEventTypes.verified ? amount : null,
       associationCode: entry.associationCode,
-      associationName: associationNamesByCode.get(entry.associationCode) ?? entry.associationCode,
       createdAt: entry.createdAt.toISOString(),
       createdAtLabel: dateTimeFormatter.format(entry.createdAt),
       createdBy: entry.createdBy ?? '',
@@ -127,7 +88,6 @@ const AdminTransactionHistory = async () => {
   const totals: AdminTransactionHistoryTotals = rows.reduce(
     (currentTotals, row) => {
       currentTotals.amountAdjusted = roundCurrencyAmount(currentTotals.amountAdjusted + (row.amountAdjusted ?? 0))
-      currentTotals.amountDueOffset = roundCurrencyAmount(currentTotals.amountDueOffset + (row.amountDueOffset ?? 0))
       currentTotals.amountReset = roundCurrencyAmount(currentTotals.amountReset + (row.amountReset ?? 0))
       currentTotals.amountSubmitted = roundCurrencyAmount(currentTotals.amountSubmitted + (row.amountSubmitted ?? 0))
       currentTotals.amountVerified = roundCurrencyAmount(currentTotals.amountVerified + (row.amountVerified ?? 0))
@@ -137,7 +97,6 @@ const AdminTransactionHistory = async () => {
     },
     {
       amountAdjusted: 0,
-      amountDueOffset: 0,
       amountReset: 0,
       amountSubmitted: 0,
       amountVerified: 0,
@@ -151,8 +110,8 @@ const AdminTransactionHistory = async () => {
         <div className='min-w-0'>
           <h1 className='text-4xl font-semibold tracking-normal'>SAGI-USA Transaction History</h1>
           <p className='text-muted-foreground mt-2 text-sm'>
-            All association payment transactions with submitted, adjusted, due offset, reset, and SAGI-USA verified
-            amounts separated by column.
+            All association payment transactions with submitted, adjusted, reset, and SAGI-USA verified amounts
+            separated by column.
           </p>
         </div>
       </div>
