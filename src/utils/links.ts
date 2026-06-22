@@ -12,6 +12,7 @@ import {
   Wallet,
   WalletCards,
   CreditCard,
+  History,
   List,
   Megaphone,
   Table,
@@ -139,5 +140,10 @@ export const pagesItems: MenuItem[] = [
     icon: WalletCards,
     label: 'Admin Registration Payments',
     href: '/admin-registration-payments'
+  },
+  {
+    icon: History,
+    label: 'Admin Transaction History',
+    href: '/admin-transaction-history'
   }
 ]
