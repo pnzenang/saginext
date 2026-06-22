@@ -7,6 +7,8 @@ import {
   ArrowUp,
   ArrowUpDown,
   CheckCircle2,
+  ChevronLeftIcon,
+  ChevronRightIcon,
   FileSpreadsheetIcon,
   Plus,
   RotateCcw,
@@ -17,7 +19,9 @@ import * as XLSX from 'xlsx'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem } from '@/components/ui/pagination'
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { usePagination } from '@/hooks/use-pagination'
 import { cn } from '@/lib/utils'
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
@@ -103,6 +107,7 @@ const getExportColumns = (kind: PaymentKind) => {
 
 const actionColumnWidthRem = 14
 const sentAdjustmentColumnWidthRem = 9
+const paymentRowsPerPage = 10
 
 const columnWidthRemByKey: Record<SortKey, number> = {
   amountExpected: 9,
@@ -361,6 +366,7 @@ const AdminPaymentsTable = ({
   const [sortKey, setSortKey] = useState<SortKey>('associationCode')
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
   const [searchQuery, setSearchQuery] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
   const searchInputId = useId()
 
   const filteredRows = useMemo(() => filterPaymentRows(rows, searchQuery), [rows, searchQuery])
@@ -378,6 +384,23 @@ const AdminPaymentsTable = ({
     [searchQuery, sortedRows, totals]
   )
 
+  const totalPages = Math.max(1, Math.ceil(sortedRows.length / paymentRowsPerPage))
+  const activePage = Math.min(currentPage, totalPages)
+
+  const paginatedRows = useMemo(() => {
+    const startIndex = (activePage - 1) * paymentRowsPerPage
+
+    return sortedRows.slice(startIndex, startIndex + paymentRowsPerPage)
+  }, [activePage, sortedRows])
+
+  const currentPageTotals = useMemo(() => getPaymentTotals(paginatedRows), [paginatedRows])
+
+  const { pages, showLeftEllipsis, showRightEllipsis } = usePagination({
+    currentPage: activePage,
+    totalPages,
+    paginationItemsToDisplay: 3
+  })
+
   const searchLabel = kind === 'contribution' ? 'contribution payments' : 'registration payments'
 
   const exportPageToExcel = () => {
@@ -385,15 +408,15 @@ const AdminPaymentsTable = ({
 
     const worksheetData = [
       exportColumns.map(column => column.label),
-      ...sortedRows.map(row => exportColumns.map(column => getRawExportValue(row, column))),
+      ...paginatedRows.map(row => exportColumns.map(column => getRawExportValue(row, column))),
       exportColumns.map((column, index) => {
         if (index === 0) return 'Total'
 
         if (
-          column.key in displayedTotals &&
-          typeof displayedTotals[column.key as keyof AdminPaymentTotals] === 'number'
+          column.key in currentPageTotals &&
+          typeof currentPageTotals[column.key as keyof AdminPaymentTotals] === 'number'
         ) {
-          return Number(displayedTotals[column.key as keyof AdminPaymentTotals])
+          return Number(currentPageTotals[column.key as keyof AdminPaymentTotals])
         }
 
         return ''
@@ -443,7 +466,10 @@ const AdminPaymentsTable = ({
               id={searchInputId}
               type='search'
               value={searchQuery}
-              onChange={event => setSearchQuery(event.target.value)}
+              onChange={event => {
+                setSearchQuery(event.target.value)
+                setCurrentPage(1)
+              }}
               placeholder='Search association or code'
               className='pr-9 pl-9'
             />
@@ -456,7 +482,10 @@ const AdminPaymentsTable = ({
                 variant='ghost'
                 size='icon-xs'
                 className='text-muted-foreground hover:text-foreground absolute top-1/2 right-1.5 -translate-y-1/2 rounded-full'
-                onClick={() => setSearchQuery('')}
+                onClick={() => {
+                  setSearchQuery('')
+                  setCurrentPage(1)
+                }}
                 aria-label={`Clear ${searchLabel} search`}
               >
                 <XIcon className='size-3.5' />
@@ -468,7 +497,7 @@ const AdminPaymentsTable = ({
           type='button'
           size='sm'
           onClick={exportPageToExcel}
-          disabled={sortedRows.length === 0}
+          disabled={paginatedRows.length === 0}
           className='w-full sm:w-auto'
         >
           <FileSpreadsheetIcon />
@@ -563,7 +592,7 @@ const AdminPaymentsTable = ({
                 </TableCell>
               </TableRow>
             ) : (
-              sortedRows.map(row => (
+              paginatedRows.map(row => (
                 <TableRow key={row.associationCode} className='odd:bg-muted/30 even:bg-background h-[5.875rem]'>
                   {tableColumns.map(column => (
                     <Fragment key={column.key}>
@@ -649,7 +678,7 @@ const AdminPaymentsTable = ({
             No payment records found.
           </div>
         ) : (
-          sortedRows.map(row => (
+          paginatedRows.map(row => (
             <article
               key={row.associationCode}
               className='bg-background w-full max-w-full min-w-0 overflow-hidden rounded-md border shadow-sm'
@@ -709,6 +738,78 @@ const AdminPaymentsTable = ({
           ))
         )}
       </div>
+      {sortedRows.length > paymentRowsPerPage ? (
+        <div className='flex flex-col items-center justify-between gap-3 border-t p-3 sm:flex-row print:hidden'>
+          <p className='text-muted-foreground text-sm' aria-live='polite'>
+            Showing {(activePage - 1) * paymentRowsPerPage + 1}-
+            {Math.min(activePage * paymentRowsPerPage, sortedRows.length)} of {sortedRows.length}
+          </p>
+          <Pagination className='w-auto justify-end'>
+            <PaginationContent>
+              <PaginationItem>
+                <Button
+                  type='button'
+                  variant='ghost'
+                  onClick={() => setCurrentPage(Math.max(1, activePage - 1))}
+                  disabled={activePage === 1}
+                  className='disabled:pointer-events-none disabled:opacity-50'
+                  aria-label='Go to previous page'
+                >
+                  <ChevronLeftIcon aria-hidden='true' className='text-primary' />
+                  <span className='text-primary max-sm:hidden'>Previous</span>
+                </Button>
+              </PaginationItem>
+
+              {showLeftEllipsis ? (
+                <PaginationItem>
+                  <PaginationEllipsis />
+                </PaginationItem>
+              ) : null}
+
+              {pages.map(page => {
+                const isActive = page === activePage
+
+                return (
+                  <PaginationItem key={page}>
+                    <Button
+                      type='button'
+                      size='icon'
+                      className={cn(
+                        !isActive &&
+                          'bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40'
+                      )}
+                      onClick={() => setCurrentPage(page)}
+                      aria-current={isActive ? 'page' : undefined}
+                    >
+                      {page}
+                    </Button>
+                  </PaginationItem>
+                )
+              })}
+
+              {showRightEllipsis ? (
+                <PaginationItem>
+                  <PaginationEllipsis />
+                </PaginationItem>
+              ) : null}
+
+              <PaginationItem>
+                <Button
+                  type='button'
+                  variant='ghost'
+                  onClick={() => setCurrentPage(Math.min(totalPages, activePage + 1))}
+                  disabled={activePage === totalPages}
+                  className='disabled:pointer-events-none disabled:opacity-50'
+                  aria-label='Go to next page'
+                >
+                  <span className='text-primary max-sm:hidden'>Next</span>
+                  <ChevronRightIcon aria-hidden='true' className='text-primary' />
+                </Button>
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      ) : null}
     </div>
   )
 }

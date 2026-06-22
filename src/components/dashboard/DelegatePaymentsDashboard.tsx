@@ -111,22 +111,26 @@ const SummaryRow = ({ label, value }: { label: string; value: number }) => (
   </div>
 )
 
-const BalanceRow = ({ balance }: { balance: number }) => (
-  <div
-    className={cn(
-      'mt-2 flex items-start justify-between gap-4 text-xl font-extrabold sm:text-2xl',
-      balance >= 0 ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'
-    )}
-  >
-    <span className='min-w-0 break-words'>
-      Balance{' '}
-      {balance >= 0 ? (
-        <span className='text-[10px] leading-tight font-medium'>(To be used for upcoming payments)</span>
-      ) : null}
-    </span>
-    <span className='shrink-0 text-right tabular-nums'>{currencyFormatter.format(balance)}</span>
-  </div>
-)
+const BalanceRow = ({ balance }: { balance: number }) => {
+  const hasReserve = balance >= 0
+
+  return (
+    <div
+      className={cn(
+        'mt-2 flex items-start justify-between gap-4 text-xl font-extrabold sm:text-2xl',
+        hasReserve ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'
+      )}
+    >
+      <span className='min-w-0 break-words'>
+        {hasReserve ? 'Reserve' : 'Deficit'}{' '}
+        <span className='text-[10px] leading-tight font-medium'>
+          {hasReserve ? '(To be used for upcoming payments)' : '(Not In Good Standing)'}
+        </span>
+      </span>
+      <span className='shrink-0 text-right tabular-nums'>{currencyFormatter.format(balance)}</span>
+    </div>
+  )
+}
 
 const DelegatePaymentsDashboard = ({
   associationCode,
