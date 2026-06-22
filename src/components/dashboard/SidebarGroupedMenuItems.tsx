@@ -108,13 +108,12 @@ const SidebarGroupedMenuItems = async ({ data, groupLabel }: { data: MenuItem[];
 
               return (
                 <SidebarDropdownMenu
-                  key='admin-menu'
-                  icon={UserCog}
-                  title='Admin'
-                  subtitle='The various admin pages'
-                  items={adminItems}
-                  formatLabel={getAdminLabel}
-                />
+	                  key='admin-menu'
+	                  icon={UserCog}
+	                  title='Admin'
+	                  items={adminItems}
+	                  formatLabel={getAdminLabel}
+	                />
               )
             }
 

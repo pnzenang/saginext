@@ -2,7 +2,18 @@
 
 import { Fragment, useId, useMemo, useState } from 'react'
 
-import { ArrowDown, ArrowUp, ArrowUpDown, CheckCircle2, Plus, RotateCcw } from 'lucide-react'
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  CheckCircle2,
+  FileSpreadsheetIcon,
+  Plus,
+  RotateCcw,
+  SearchIcon,
+  XIcon
+} from 'lucide-react'
+import * as XLSX from 'xlsx'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -80,6 +91,16 @@ const registrationColumns: AdminPaymentColumn[] = [
 
 const getColumns = (kind: PaymentKind) => (kind === 'contribution' ? contributionColumns : registrationColumns)
 
+const getExportColumns = (kind: PaymentKind) => {
+  const columns = getColumns(kind)
+
+  if (kind === 'registration') {
+    return [{ key: 'associationName', label: 'Association' } satisfies AdminPaymentColumn, ...columns]
+  }
+
+  return columns
+}
+
 const actionColumnWidthRem = 14
 const sentAdjustmentColumnWidthRem = 9
 
@@ -142,6 +163,52 @@ const formatValue = (row: AdminPaymentRow, column: AdminPaymentColumn) => {
 
   return String(value ?? '')
 }
+
+const getRawExportValue = (row: AdminPaymentRow, column: AdminPaymentColumn) => {
+  const value = row[column.key]
+
+  if (column.key === 'associationName') return String(value ?? '').trim() || row.associationCode
+  if (column.format === 'currency' || column.format === 'number') return Number(value ?? 0)
+
+  return String(value ?? '')
+}
+
+const getSearchablePaymentRowText = (row: AdminPaymentRow) =>
+  [row.associationName, row.associationCode].join(' ').toLowerCase()
+
+const filterPaymentRows = (rows: AdminPaymentRow[], searchQuery: string) => {
+  const searchTerms = searchQuery.trim().toLowerCase().split(/\s+/).filter(Boolean)
+
+  if (searchTerms.length === 0) return rows
+
+  return rows.filter(row => {
+    const searchableText = getSearchablePaymentRowText(row)
+
+    return searchTerms.every(term => searchableText.includes(term))
+  })
+}
+
+const getPaymentTotals = (rows: AdminPaymentRow[]): AdminPaymentTotals =>
+  rows.reduce(
+    (currentTotals, row) => ({
+      amountExpected: (currentTotals.amountExpected ?? 0) + (row.amountExpected ?? 0),
+      amountSent: currentTotals.amountSent + row.amountSent,
+      amountVerified: currentTotals.amountVerified + row.amountVerified,
+      awaitingPublication: (currentTotals.awaitingPublication ?? 0) + (row.awaitingPublication ?? 0),
+      balance: currentTotals.balance + row.balance,
+      pendingMembers: (currentTotals.pendingMembers ?? 0) + (row.pendingMembers ?? 0),
+      vestedMembers: currentTotals.vestedMembers + row.vestedMembers
+    }),
+    {
+      amountExpected: 0,
+      amountSent: 0,
+      amountVerified: 0,
+      awaitingPublication: 0,
+      balance: 0,
+      pendingMembers: 0,
+      vestedMembers: 0
+    }
+  )
 
 const getValueClassName = (row: AdminPaymentRow, column: AdminPaymentColumn) => {
   if (column.key === 'amountSent' && row.amountSent > 0) return 'text-green-700 dark:text-green-300'
@@ -293,14 +360,59 @@ const AdminPaymentsTable = ({
   const tableWidthRem = getTableWidthRem(tableColumns, showSentAdjustment, balanceColumn)
   const [sortKey, setSortKey] = useState<SortKey>('associationCode')
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
+  const [searchQuery, setSearchQuery] = useState('')
+  const searchInputId = useId()
+
+  const filteredRows = useMemo(() => filterPaymentRows(rows, searchQuery), [rows, searchQuery])
 
   const sortedRows = useMemo(() => {
-    return [...rows].sort((firstRow, secondRow) => {
+    return [...filteredRows].sort((firstRow, secondRow) => {
       const comparison = compareValues(firstRow[sortKey], secondRow[sortKey])
 
       return sortDirection === 'asc' ? comparison : -comparison
     })
-  }, [rows, sortDirection, sortKey])
+  }, [filteredRows, sortDirection, sortKey])
+
+  const displayedTotals = useMemo(
+    () => (searchQuery.trim() ? getPaymentTotals(sortedRows) : totals),
+    [searchQuery, sortedRows, totals]
+  )
+
+  const searchLabel = kind === 'contribution' ? 'contribution payments' : 'registration payments'
+
+  const exportPageToExcel = () => {
+    const exportColumns = getExportColumns(kind)
+
+    const worksheetData = [
+      exportColumns.map(column => column.label),
+      ...sortedRows.map(row => exportColumns.map(column => getRawExportValue(row, column))),
+      exportColumns.map((column, index) => {
+        if (index === 0) return 'Total'
+
+        if (
+          column.key in displayedTotals &&
+          typeof displayedTotals[column.key as keyof AdminPaymentTotals] === 'number'
+        ) {
+          return Number(displayedTotals[column.key as keyof AdminPaymentTotals])
+        }
+
+        return ''
+      })
+    ]
+
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData)
+
+    worksheet['!cols'] = exportColumns.map(column => ({
+      wch: column.key === 'associationName' ? 34 : column.format === 'currency' ? 18 : 14
+    }))
+
+    const workbook = XLSX.utils.book_new()
+    const worksheetName = kind === 'contribution' ? 'Contribution Payments' : 'Registration Payments'
+    const filePrefix = kind === 'contribution' ? 'admin-contribution-payments' : 'admin-registration-payments'
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, worksheetName)
+    XLSX.writeFile(workbook, `${filePrefix}-${new Date().toISOString().split('T')[0]}.xlsx`)
+  }
 
   const handleSort = (nextSortKey: SortKey) => {
     if (nextSortKey === sortKey) {
@@ -315,6 +427,54 @@ const AdminPaymentsTable = ({
 
   return (
     <div className='border-border w-full max-w-full min-w-0 overflow-hidden rounded-lg border'>
+      <div className='flex flex-col gap-3 border-b p-3 sm:flex-row sm:items-center sm:justify-between print:hidden'>
+        <form
+          role='search'
+          className='w-full max-w-md'
+          onSubmit={event => {
+            event.preventDefault()
+          }}
+        >
+          <label htmlFor={searchInputId} className='sr-only'>
+            Search {searchLabel}
+          </label>
+          <div className='relative'>
+            <Input
+              id={searchInputId}
+              type='search'
+              value={searchQuery}
+              onChange={event => setSearchQuery(event.target.value)}
+              placeholder='Search association or code'
+              className='pr-9 pl-9'
+            />
+            <div className='text-muted-foreground/80 pointer-events-none absolute inset-y-0 left-0 flex items-center justify-center pl-3'>
+              <SearchIcon className='size-4' aria-hidden='true' />
+            </div>
+            {searchQuery ? (
+              <Button
+                type='button'
+                variant='ghost'
+                size='icon-xs'
+                className='text-muted-foreground hover:text-foreground absolute top-1/2 right-1.5 -translate-y-1/2 rounded-full'
+                onClick={() => setSearchQuery('')}
+                aria-label={`Clear ${searchLabel} search`}
+              >
+                <XIcon className='size-3.5' />
+              </Button>
+            ) : null}
+          </div>
+        </form>
+        <Button
+          type='button'
+          size='sm'
+          onClick={exportPageToExcel}
+          disabled={sortedRows.length === 0}
+          className='w-full sm:w-auto'
+        >
+          <FileSpreadsheetIcon />
+          Export Page
+        </Button>
+      </div>
       <div className='hidden w-full min-w-0 overflow-x-auto lg:block'>
         <Table
           className='table-fixed text-xs [&_td]:whitespace-normal [&_th]:whitespace-normal'
@@ -462,10 +622,11 @@ const AdminPaymentsTable = ({
                     >
                       {column.key === 'associationCode'
                         ? 'Total'
-                        : column.key in totals && typeof totals[column.key as keyof AdminPaymentTotals] === 'number'
+                        : column.key in displayedTotals &&
+                            typeof displayedTotals[column.key as keyof AdminPaymentTotals] === 'number'
                           ? column.format === 'currency'
-                            ? currencyFormatter.format(Number(totals[column.key as keyof AdminPaymentTotals]))
-                            : Number(totals[column.key as keyof AdminPaymentTotals]).toLocaleString('en-US')
+                            ? currencyFormatter.format(Number(displayedTotals[column.key as keyof AdminPaymentTotals]))
+                            : Number(displayedTotals[column.key as keyof AdminPaymentTotals]).toLocaleString('en-US')
                           : ''}
                     </TableCell>
                   </Fragment>
@@ -473,7 +634,7 @@ const AdminPaymentsTable = ({
                 <TableCell className='w-56 min-w-56' />
                 {balanceColumn ? (
                   <TableCell className='w-40 min-w-40 px-2 py-3 text-right align-middle'>
-                    <BalanceCard balance={totals.balance} className='h-[4.375rem] w-full justify-center' />
+                    <BalanceCard balance={displayedTotals.balance} className='h-[4.375rem] w-full justify-center' />
                   </TableCell>
                 ) : null}
               </TableRow>

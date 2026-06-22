@@ -1,11 +1,13 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useId, useMemo, useState } from 'react'
 
-import { ArrowUpDown, ChevronDown, ChevronUp } from 'lucide-react'
+import { ArrowUpDown, ChevronDown, ChevronUp, SearchIcon, XIcon } from 'lucide-react'
 
 import AdminCountExcelButton from '@/components/global/AdminCountExcelButton'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { cn } from '@/lib/utils'
 
@@ -78,6 +80,39 @@ const getNextDirection = (sort: SortState, key: SortKey): SortDirection => {
   return sort.direction === 'asc' ? 'desc' : 'asc'
 }
 
+const getSearchableCountRowText = (row: AdminCountRow) =>
+  [row.associationName, row.associationCode].join(' ').toLowerCase()
+
+const filterCountRows = (counts: AdminCountRow[], searchQuery: string) => {
+  const searchTerms = searchQuery.trim().toLowerCase().split(/\s+/).filter(Boolean)
+
+  if (searchTerms.length === 0) return counts
+
+  return counts.filter(row => {
+    const searchableText = getSearchableCountRowText(row)
+
+    return searchTerms.every(term => searchableText.includes(term))
+  })
+}
+
+const getCountTotals = (counts: AdminCountRow[]): AdminCountTotals =>
+  counts.reduce(
+    (acc, item) => ({
+      vested: acc.vested + item.vested,
+      pending: acc.pending + item.pending,
+      awaitingPublication: acc.awaitingPublication + item.awaitingPublication,
+      notInGoodStanding: acc.notInGoodStanding + item.notInGoodStanding,
+      total: acc.total + item.total
+    }),
+    {
+      vested: 0,
+      pending: 0,
+      awaitingPublication: 0,
+      notInGoodStanding: 0,
+      total: 0
+    }
+  )
+
 const SortIcon = ({ active, direction }: { active: boolean; direction: SortDirection }) => {
   if (!active) return <ArrowUpDown className='size-3.5 opacity-70 print:hidden' aria-hidden='true' />
 
@@ -88,11 +123,15 @@ const SortIcon = ({ active, direction }: { active: boolean; direction: SortDirec
 
 const AdminCountBreakdown = ({ counts, totals }: AdminCountBreakdownProps) => {
   const [sort, setSort] = useState<SortState>({ key: 'associationCode', direction: 'asc' })
+  const [searchQuery, setSearchQuery] = useState('')
+  const searchInputId = useId()
+
+  const filteredCounts = useMemo(() => filterCountRows(counts, searchQuery), [counts, searchQuery])
 
   const sortedCounts = useMemo(() => {
     const directionMultiplier = sort.direction === 'asc' ? 1 : -1
 
-    return [...counts].sort((left, right) => {
+    return [...filteredCounts].sort((left, right) => {
       const primarySort = compareValues(left, right, sort.key) * directionMultiplier
 
       if (primarySort !== 0) return primarySort
@@ -103,7 +142,12 @@ const AdminCountBreakdown = ({ counts, totals }: AdminCountBreakdownProps) => {
 
       return compareValues(left, right, 'associationCode')
     })
-  }, [counts, sort])
+  }, [filteredCounts, sort])
+
+  const displayedTotals = useMemo(
+    () => (searchQuery.trim() ? getCountTotals(sortedCounts) : totals),
+    [searchQuery, sortedCounts, totals]
+  )
 
   const handleSort = (key: SortKey) => {
     setSort(currentSort => ({
@@ -114,8 +158,44 @@ const AdminCountBreakdown = ({ counts, totals }: AdminCountBreakdownProps) => {
 
   return (
     <>
-      <div className='mb-6 flex justify-end'>
-        <AdminCountExcelButton counts={sortedCounts} totals={totals} />
+      <div className='mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between print:hidden'>
+        <form
+          role='search'
+          className='w-full max-w-md'
+          onSubmit={event => {
+            event.preventDefault()
+          }}
+        >
+          <label htmlFor={searchInputId} className='sr-only'>
+            Search member counts
+          </label>
+          <div className='relative'>
+            <Input
+              id={searchInputId}
+              type='search'
+              value={searchQuery}
+              onChange={event => setSearchQuery(event.target.value)}
+              placeholder='Search association or code'
+              className='pr-9 pl-9'
+            />
+            <div className='text-muted-foreground/80 pointer-events-none absolute inset-y-0 left-0 flex items-center justify-center pl-3'>
+              <SearchIcon className='size-4' aria-hidden='true' />
+            </div>
+            {searchQuery ? (
+              <Button
+                type='button'
+                variant='ghost'
+                size='icon-xs'
+                className='text-muted-foreground hover:text-foreground absolute top-1/2 right-1.5 -translate-y-1/2 rounded-full'
+                onClick={() => setSearchQuery('')}
+                aria-label='Clear member counts search'
+              >
+                <XIcon className='size-3.5' />
+              </Button>
+            ) : null}
+          </div>
+        </form>
+        <AdminCountExcelButton counts={sortedCounts} totals={displayedTotals} />
       </div>
 
       <Card className='print:border-0 print:shadow-none'>
@@ -163,17 +243,21 @@ const AdminCountBreakdown = ({ counts, totals }: AdminCountBreakdownProps) => {
                 <div className='bg-muted p-5 text-base font-black'>
                   <div className='mb-3 flex items-center justify-between gap-3'>
                     <span>Total</span>
-                    <span className='text-primary text-lg'>{formatNumber(totals.total)}</span>
+                    <span className='text-primary text-lg'>{formatNumber(displayedTotals.total)}</span>
                   </div>
                   <div className='grid grid-cols-2 gap-2 text-sm'>
                     <span className='font-bold text-green-600 dark:text-green-400'>
-                      Vested: {formatNumber(totals.vested)}
+                      Vested: {formatNumber(displayedTotals.vested)}
                     </span>
                     <span className='text-blue-600 dark:text-blue-400'>
-                      Awaiting: {formatNumber(totals.awaitingPublication)}
+                      Awaiting: {formatNumber(displayedTotals.awaitingPublication)}
                     </span>
-                    <span className='text-amber-600 dark:text-amber-400'>Pending: {formatNumber(totals.pending)}</span>
-                    <span className='text-destructive'>Delinquent: {formatNumber(totals.notInGoodStanding)}</span>
+                    <span className='text-amber-600 dark:text-amber-400'>
+                      Pending: {formatNumber(displayedTotals.pending)}
+                    </span>
+                    <span className='text-destructive'>
+                      Delinquent: {formatNumber(displayedTotals.notInGoodStanding)}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -268,19 +352,19 @@ const AdminCountBreakdown = ({ counts, totals }: AdminCountBreakdownProps) => {
                       Total
                     </TableCell>
                     <TableCell className='px-1 py-5 text-right font-black text-green-600 lg:px-2 dark:text-green-400'>
-                      {formatNumber(totals.vested)}
+                      {formatNumber(displayedTotals.vested)}
                     </TableCell>
                     <TableCell className='px-1 py-5 text-right font-black text-blue-600 lg:px-2 dark:text-blue-400'>
-                      {formatNumber(totals.awaitingPublication)}
+                      {formatNumber(displayedTotals.awaitingPublication)}
                     </TableCell>
                     <TableCell className='px-1 py-5 text-right font-black text-amber-600 lg:px-2 dark:text-amber-400'>
-                      {formatNumber(totals.pending)}
+                      {formatNumber(displayedTotals.pending)}
                     </TableCell>
                     <TableCell className='text-destructive px-1 py-5 text-right font-black lg:px-2'>
-                      {formatNumber(totals.notInGoodStanding)}
+                      {formatNumber(displayedTotals.notInGoodStanding)}
                     </TableCell>
                     <TableCell className='text-primary px-2 py-5 text-right text-lg font-black lg:px-3 lg:text-xl'>
-                      {formatNumber(totals.total)}
+                      {formatNumber(displayedTotals.total)}
                     </TableCell>
                   </TableRow>
                 </TableFooter>
