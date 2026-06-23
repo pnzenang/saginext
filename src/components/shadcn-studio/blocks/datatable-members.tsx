@@ -66,6 +66,7 @@ import { registrationFeePerEligibleMember } from '@/utils/payment-constants'
 import type { AssociationContributionSummary } from '@/utils/sagi-contribution-summary'
 import type { AssociationRegistrationSummary } from '@/utils/sagi-registration-summary'
 import { getTableCellLabel } from '@/utils/table'
+import { getSelectFilterValues } from '@/utils/table-filter-values'
 import { formatLongevity } from '@/utils/formatLongevity'
 import { memberStatus, type MemberType } from '@/utils/types'
 
@@ -871,17 +872,7 @@ function Filter({ column }: { column: Column<any, unknown> }) {
   const sortedUniqueValues = useMemo(() => {
     if (filterVariant === 'range') return []
 
-    const values = Array.from(column.getFacetedUniqueValues().keys())
-
-    const flattenedValues = values.reduce((acc: string[], curr) => {
-      if (Array.isArray(curr)) {
-        return [...acc, ...curr]
-      }
-
-      return [...acc, curr]
-    }, [])
-
-    return Array.from(new Set(flattenedValues)).sort()
+    return getSelectFilterValues(column.getFacetedUniqueValues().keys())
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [column.getFacetedUniqueValues(), filterVariant])
 

@@ -72,6 +72,7 @@ import { usePagination } from '@/hooks/use-pagination'
 
 import { cn } from '@/lib/utils'
 import { getTableCellLabel } from '@/utils/table'
+import { getSelectFilterValues } from '@/utils/table-filter-values'
 
 import { contributionStatus, type DeceasedMemberType } from '@/utils/types'
 import { deleteDeceasedMemberAction } from '@/utils/actions'
@@ -666,17 +667,7 @@ function Filter({ column }: { column: Column<any, unknown> }) {
   const sortedUniqueValues = useMemo(() => {
     if (filterVariant === 'range') return []
 
-    const values = Array.from(column.getFacetedUniqueValues().keys())
-
-    const flattenedValues = values.reduce((acc: string[], curr) => {
-      if (Array.isArray(curr)) {
-        return [...acc, ...curr]
-      }
-
-      return [...acc, curr]
-    }, [])
-
-    return Array.from(new Set(flattenedValues)).sort()
+    return getSelectFilterValues(column.getFacetedUniqueValues().keys())
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [column.getFacetedUniqueValues(), filterVariant])
 

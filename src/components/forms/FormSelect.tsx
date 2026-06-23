@@ -9,6 +9,8 @@ type FormSelectProps = {
 }
 
 const FormSelect = ({ name, items, label, defaultValue }: FormSelectProps) => {
+  const selectItems = items.map(item => item.trim()).filter(Boolean)
+
   return (
     <div>
       <Label className='mb-1 capitalize'>{label || name}</Label>
@@ -17,7 +19,7 @@ const FormSelect = ({ name, items, label, defaultValue }: FormSelectProps) => {
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          {items.map(item => {
+          {selectItems.map(item => {
             return (
               <SelectItem key={item} value={item}>
                 {item}
