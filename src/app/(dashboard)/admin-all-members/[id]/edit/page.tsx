@@ -1,15 +1,10 @@
-import { date } from 'zod'
-
 import { SubmitButton } from '@/components/forms/Buttons'
 import FormContainer from '@/components/forms/FormContainer'
 import FormInput from '@/components/forms/FormInput'
 import FormSelect from '@/components/forms/FormSelect'
 
 import {
-  fetchProfile,
   fetchSingleMemberDetailsAdmin,
-  updateDeceasedMemberDetailsAction,
-  updateDeceasedMemberDetailsActionAdmin,
   updateMemberDetailsActionAdmin
 } from '@/utils/actions'
 import { delegateRecommendation, memberStatus } from '@/utils/types'
@@ -24,13 +19,10 @@ const EditMemberDetailPage = async ({ params }: { params: { id: string } }) => {
     lastAndMiddleNames,
     dateOfBirth,
     countryOfResidence,
-    clerkId,
     nameOfBeneficiary,
     associationCode,
     associationName
   } = member
-
-  const profile = await fetchProfile()
 
   return (
     <section className='mt-16 flex flex-col'>

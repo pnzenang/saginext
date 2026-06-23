@@ -564,7 +564,7 @@ export const fetchMembers = async () => {
 }
 
 export const fetchMembersForAdmin = async () => {
-  await getAuthUser()
+  await assertAdminUser()
 
   const members = await db.member.findMany({
     // where: {},
@@ -575,7 +575,7 @@ export const fetchMembersForAdmin = async () => {
 }
 
 export const fetchMemberStatusCountsByAssociationCode = async () => {
-  await getAuthUser()
+  await assertAdminUser()
 
   const counts = await db.member.groupBy({
     by: ['associationCode', 'memberStatus'],
@@ -1394,7 +1394,7 @@ export const fetchSingleMemberDetails = async (memberId: string) => {
 }
 
 export const fetchSingleMemberDetailsAdmin = async (memberId: string) => {
-  await getAuthUser()
+  await assertAdminUser()
 
   const member = await db.member.findUnique({
     where: {
@@ -1464,6 +1464,8 @@ export const updateMemberDetailsAction = async (prevState: any, formData: FormDa
 }
 
 export const updateMemberDetailsActionAdmin = async (prevState: any, formData: FormData) => {
+  await assertAdminUser()
+
   try {
     const memberId = formData.get('id') as string
     const rawData = Object.fromEntries(formData)
@@ -1593,11 +1595,9 @@ export const createRemovedMemberActionAdmin = async (
   provState: any,
   formData: FormData
 ): Promise<{ message: string }> => {
-  const user = await getAuthUser()
+  await assertAdminUser()
 
   try {
-    if (user.id !== process.env.ADMIN_USER_ID) throw new Error('Admin privileges are required to remove this member')
-
     const memberId = formData.get('id') as string
     const rawData = Object.fromEntries(formData)
     const validatedFields = validateWithZodSchema(RemovedMemberSchema, rawData)
@@ -1670,7 +1670,7 @@ export const fetchRemovedMembersAction = async () => {
 }
 
 export const fetchRemovedMembersActionAdmin = async () => {
-  await getAuthUser()
+  await assertAdminUser()
 
   const removedMembers = await db.removedMember.findMany({
     where: {
@@ -1832,7 +1832,7 @@ export const createDeceasedMemberActionAdmin = async (
   provState: any,
   formData: FormData
 ): Promise<{ message: string }> => {
-  const user = await getAuthUser()
+  const user = await assertAdminUser()
 
   try {
     const memberId = formData.get('id') as string
@@ -1878,7 +1878,7 @@ export const createDeceasedMemberActionAdmin = async (
 }
 
 export const fetchDeceasedMembersActionAdmin = async () => {
-  await getAuthUser()
+  await assertAdminUser()
 
   const deceasedMember = await db.deceasedMember.findMany({
     where: {
@@ -1943,6 +1943,20 @@ export const fetchSingleDeceasedMemberDetails = async (deceasedMemberId: string)
   return deceasedMember
 }
 
+export const fetchSingleDeceasedMemberDetailsAdmin = async (deceasedMemberId: string) => {
+  await assertAdminUser()
+
+  const deceasedMember = await db.deceasedMember.findUnique({
+    where: {
+      id: deceasedMemberId
+    }
+  })
+
+  if (!deceasedMember) redirect('/admin-all-deceased')
+
+  return deceasedMember
+}
+
 export const updateDeceasedMemberDetailsAction = async (prevState: any, formData: FormData) => {
   try {
     const deceasedMemberId = formData.get('id') as string
@@ -1968,6 +1982,8 @@ export const updateDeceasedMemberDetailsAction = async (prevState: any, formData
 }
 
 export const updateDeceasedMemberDetailsActionAdmin = async (prevState: any, formData: FormData) => {
+  await assertAdminUser()
+
   try {
     const deceasedMemberId = formData.get('id') as string
     const rawData = Object.fromEntries(formData)

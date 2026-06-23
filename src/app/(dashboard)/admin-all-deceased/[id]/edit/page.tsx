@@ -2,11 +2,8 @@ import { SubmitButton } from '@/components/forms/Buttons'
 import FormContainer from '@/components/forms/FormContainer'
 import FormInput from '@/components/forms/FormInput'
 import FormSelect from '@/components/forms/FormSelect'
-import MaskDateInput from '@/components/forms/MaskDateInput'
 import {
-  createDeceasedMemberAction,
-  fetchProfile,
-  fetchSingleDeceasedMemberDetails,
+  fetchSingleDeceasedMemberDetailsAdmin,
   updateDeceasedMemberDetailsActionAdmin
 } from '@/utils/actions'
 import { contributionStatus } from '@/utils/types'
@@ -14,7 +11,7 @@ import { contributionStatus } from '@/utils/types'
 const EditCaseStatus = async ({ params }: { params: { id: string } }) => {
   const { id } = await params
 
-  const deceasedMember = await fetchSingleDeceasedMemberDetails(id)
+  const deceasedMember = await fetchSingleDeceasedMemberDetailsAdmin(id)
 
   const {
     firstName,
@@ -28,8 +25,6 @@ const EditCaseStatus = async ({ params }: { params: { id: string } }) => {
     associationName,
     createdAt
   } = deceasedMember
-
-  // const profile = await fetchProfile()
 
   return (
     <section className='mt-16 flex flex-col'>

@@ -5,7 +5,7 @@ import { SubmitButton } from '@/components/forms/Buttons'
 import FormContainer from '@/components/forms/FormContainer'
 import FormInput from '@/components/forms/FormInput'
 import FormSelect from '@/components/forms/FormSelect'
-import { createRemovedMemberActionAdmin, fetchProfile, fetchSingleMemberDetailsAdmin } from '@/utils/actions'
+import { createRemovedMemberActionAdmin, fetchSingleMemberDetailsAdmin } from '@/utils/actions'
 import { memberStatus, reasonForLeaving } from '@/utils/types'
 
 const RemoveMember = async ({ params }: { params: { id: string } }) => {
@@ -25,7 +25,6 @@ const RemoveMember = async ({ params }: { params: { id: string } }) => {
     memberStatus: currentMemberStatus
   } = member
 
-  await fetchProfile()
   const currentDay = new Date().getDate()
   const isWithdrawalBlocked = currentMemberStatus === memberStatus.Vested && currentDay >= 6 && currentDay <= 25
 

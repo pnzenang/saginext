@@ -1,12 +1,14 @@
+import { BsSignStopFill } from 'react-icons/bs'
+import { TiWarning } from 'react-icons/ti'
+
 import { SubmitButton } from '@/components/forms/Buttons'
 import FormContainer from '@/components/forms/FormContainer'
 import FormInput from '@/components/forms/FormInput'
 import FormSelect from '@/components/forms/FormSelect'
 import MaskDateInput from '@/components/forms/MaskDateInput'
-import { createDeceasedMemberActionAdmin, fetchProfile, fetchSingleMemberDetailsAdmin } from '@/utils/actions'
+import { createDeceasedMemberActionAdmin, fetchSingleMemberDetailsAdmin } from '@/utils/actions'
 import { contributionStatus, memberStatus } from '@/utils/types'
-import { TiWarning } from 'react-icons/ti'
-import { BsSignStopFill } from 'react-icons/bs'
+
 const DeathAnnouncement = async ({ params }: { params: { id: string } }) => {
   const { id } = await params
 
@@ -15,16 +17,12 @@ const DeathAnnouncement = async ({ params }: { params: { id: string } }) => {
   const {
     firstName,
     lastAndMiddleNames,
-    dateOfBirth,
     countryOfResidence,
-    clerkId,
     nameOfBeneficiary,
     memberMatriculationNumber,
     createdAt,
     associationCode
   } = member
-
-  const profile = await fetchProfile()
 
   return (
     <section className='mt-16 flex flex-col'>

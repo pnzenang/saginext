@@ -1,14 +1,10 @@
-import React from 'react'
-import { Suspense } from 'react'
-
 import { Card } from '@/components/ui/card'
 
 import MembersDataTable from '@/components/shadcn-studio/blocks/database-adminAllRemoved'
-import { fetchMembersForAdmin, fetchProfile, fetchRemovedMembersActionAdmin } from '@/utils/actions'
+import { fetchRemovedMembersActionAdmin } from '@/utils/actions'
 
 const DataTablePreview = async () => {
   const members = await fetchRemovedMembersActionAdmin()
-  const users = await fetchProfile()
 
   return (
     <div className='py-8 sm:py-10'>
