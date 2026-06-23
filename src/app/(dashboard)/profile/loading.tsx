@@ -17,7 +17,7 @@ const FieldSkeleton = ({ labelWidth }: { labelWidth: string }) => (
 export default function ProfileLoading() {
   return (
     <section
-      className='mx-auto flex min-h-full w-full max-w-6xl min-w-0 flex-col overflow-hidden py-8 sm:py-10'
+      className='flex min-h-full w-full min-w-0 flex-col overflow-hidden py-8 sm:py-10'
       aria-busy='true'
     >
       <Skeleton className='mb-6 h-8 w-full max-w-96 md:h-12 lg:h-14' />

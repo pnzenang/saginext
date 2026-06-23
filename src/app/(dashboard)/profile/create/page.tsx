@@ -14,7 +14,7 @@ const CreateProfilePage = async () => {
   if (user?.privateMetadata?.hasProfile) redirect('/all-members')
 
   return (
-    <section className='mx-auto flex w-full max-w-6xl min-w-0 flex-col overflow-hidden py-8 sm:py-10'>
+    <section className='flex w-full min-w-0 flex-col overflow-hidden py-8 sm:py-10'>
       <h1 className='mb-6 text-2xl leading-tight font-semibold break-words capitalize md:text-4xl lg:text-5xl'>
         create association profile
       </h1>
