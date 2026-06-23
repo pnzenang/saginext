@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-import { UserButton, ClerkProvider } from '@clerk/nextjs'
+import { UserButton } from '@clerk/nextjs'
 
 import Link from 'next/link'
 
@@ -53,9 +53,7 @@ const PagesLayout = ({ children }: Readonly<{ children: ReactNode }>) => {
               <div className='flex shrink-0 items-center justify-center gap-x-2 sm:gap-x-3'>
                 <ModeToggle />
 
-                <ClerkProvider>
-                  <UserButton />
-                </ClerkProvider>
+                <UserButton />
               </div>
             </header>
             <main className='size-full min-w-0 flex-1 overflow-x-hidden px-1 py-2 sm:px-6 sm:py-6'>

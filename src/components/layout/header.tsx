@@ -4,18 +4,17 @@ import { useEffect, useState } from 'react'
 
 import Link from 'next/link'
 
-import { PrimarySwipeButton } from '@/components/ui/swipe-button'
+import { LogIn } from 'lucide-react'
+
 import type { Navigation } from '@/components/blocks/header-navigation'
-
-import { ModeToggle } from '@/components/layout/mode-toggle'
-
 import { HeaderNavigation, HeaderNavigationSmallScreen } from '@/components/blocks/header-navigation'
+import { ModeToggle } from '@/components/layout/mode-toggle'
+import { PrimarySwipeButton } from '@/components/ui/swipe-button'
 
 import { cn } from '@/lib/utils'
 
 import Logo from '@/components/logo'
 import LogoSmall from '../logoSmall'
-import { LogIn } from 'lucide-react'
 
 type HeaderProps = {
   navigationData: Navigation[]
@@ -68,13 +67,13 @@ const Header = ({ navigationData, className }: HeaderProps) => {
 
           {/* Get started Button */}
           <PrimarySwipeButton className='rounded-full max-lg:hidden' asChild>
-            <Link href='/profile/create'>Login</Link>
+            <Link href='/sign-in'>Login</Link>
           </PrimarySwipeButton>
 
           {/* Navigation for small screens */}
           <div className='flex gap-3 lg:hidden'>
             <PrimarySwipeButton className=':hidden flex items-center rounded-full' asChild size='icon'>
-              <Link href='/profile/create'>
+              <Link href='/sign-in'>
                 <LogIn />
               </Link>
             </PrimarySwipeButton>

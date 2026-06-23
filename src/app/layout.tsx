@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 
+import { ClerkProvider } from '@clerk/nextjs'
 import { Inter, Lora, Roboto_Mono } from 'next/font/google'
 import type { Metadata } from 'next'
 
@@ -115,12 +116,14 @@ const RootLayout = ({ children }: Readonly<{ children: ReactNode }>) => {
       suppressHydrationWarning
     >
       <body className='flex min-h-full w-full flex-auto flex-col overflow-x-hidden'>
-        <ThemeProvider attribute='class' enableSystem={false} disableTransitionOnChange>
-          <TooltipProvider>
-            <main>{children}</main>
-            <Toaster />
-          </TooltipProvider>
-        </ThemeProvider>
+        <ClerkProvider>
+          <ThemeProvider attribute='class' enableSystem={false} disableTransitionOnChange>
+            <TooltipProvider>
+              <main>{children}</main>
+              <Toaster />
+            </TooltipProvider>
+          </ThemeProvider>
+        </ClerkProvider>
       </body>
     </html>
   )
