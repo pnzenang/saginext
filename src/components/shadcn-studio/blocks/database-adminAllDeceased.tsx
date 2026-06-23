@@ -76,6 +76,7 @@ import { getTableCellLabel } from '@/utils/table'
 import { contributionStatus, type DeceasedMemberType } from '@/utils/types'
 import { deleteDeceasedMemberAction } from '@/utils/actions'
 import FormContainer from '@/components/forms/FormContainer'
+import PaginationControls from '@/components/global/PaginationControls'
 
 declare module '@tanstack/react-table' {
   interface ColumnMeta<TData extends RowData, TValue> {
@@ -631,6 +632,22 @@ const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
             )}
           </TableBody>
         </Table>
+        <div className='flex justify-center border-t border-purple-500/30 p-4 sm:justify-end sm:p-6'>
+          <PaginationControls
+            activePage={table.getState().pagination.pageIndex + 1}
+            canNext={table.getCanNextPage()}
+            canPrevious={table.getCanPreviousPage()}
+            getPageButtonClassName={() => 'bg-purple-500 hover:bg-purple-400'}
+            iconClassName='text-purple-500'
+            labelClassName='text-purple-500 max-sm:hidden'
+            onNext={() => table.nextPage()}
+            onPageChange={page => table.setPageIndex(page - 1)}
+            onPrevious={() => table.previousPage()}
+            pages={pages}
+            showLeftEllipsis={showLeftEllipsis}
+            showRightEllipsis={showRightEllipsis}
+          />
+        </div>
       </div>
     </div>
   )

@@ -39,6 +39,7 @@ import Link from 'next/link'
 
 import { id } from 'zod/v4/locales'
 
+import PaginationControls from '@/components/global/PaginationControls'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 
@@ -513,6 +514,27 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
             )}
           </TableBody>
         </Table>
+        <div className='flex justify-center border-t p-4 sm:justify-end sm:p-6'>
+          <PaginationControls
+            activePage={table.getState().pagination.pageIndex + 1}
+            canNext={table.getCanNextPage()}
+            canPrevious={table.getCanPreviousPage()}
+            getPageButtonClassName={isActive =>
+              cn(
+                !isActive &&
+                  'bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-red-300/40'
+              )
+            }
+            iconClassName='text-primary'
+            labelClassName='text-primary max-sm:hidden'
+            onNext={() => table.nextPage()}
+            onPageChange={page => table.setPageIndex(page - 1)}
+            onPrevious={() => table.previousPage()}
+            pages={pages}
+            showLeftEllipsis={showLeftEllipsis}
+            showRightEllipsis={showRightEllipsis}
+          />
+        </div>
       </div>
     </div>
   )

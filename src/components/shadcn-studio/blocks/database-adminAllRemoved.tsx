@@ -71,6 +71,7 @@ import type { RemovedMemberType } from '@/utils/types'
 import { type MemberType } from '@/utils/types'
 import { deleteRemovedMemberAction } from '@/utils/actions'
 import FormContainer from '@/components/forms/FormContainer'
+import PaginationControls from '@/components/global/PaginationControls'
 import RestoreRemovedMemberButton from '@/components/global/RestoreRemovedMemberButton'
 
 declare module '@tanstack/react-table' {
@@ -509,6 +510,22 @@ const RemovedMembersDataTable = ({ data }: { data: RemovedMemberType[] }) => {
             )}
           </TableBody>
         </Table>
+        <div className='flex justify-center border-t border-red-400/30 p-4 sm:justify-end sm:p-6'>
+          <PaginationControls
+            activePage={table.getState().pagination.pageIndex + 1}
+            canNext={table.getCanNextPage()}
+            canPrevious={table.getCanPreviousPage()}
+            getPageButtonClassName={() => 'bg-red-400 hover:bg-red-300'}
+            iconClassName='text-red-400'
+            labelClassName='text-red-400 max-sm:hidden'
+            onNext={() => table.nextPage()}
+            onPageChange={page => table.setPageIndex(page - 1)}
+            onPrevious={() => table.previousPage()}
+            pages={pages}
+            showLeftEllipsis={showLeftEllipsis}
+            showRightEllipsis={showRightEllipsis}
+          />
+        </div>
       </div>
     </div>
   )
