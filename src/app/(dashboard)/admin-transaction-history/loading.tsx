@@ -1,10 +1,5 @@
-import DataTableLoading from '@/components/global/DataTableLoading'
-import { Shell } from '@/components/global/Shell'
+import { TransactionHistoryPageSkeleton } from '@/components/global/PageLoadingSkeletons'
 
 export default function Loading() {
-  return (
-    <Shell>
-      <DataTableLoading columnCount={6} />
-    </Shell>
-  )
+  return <TransactionHistoryPageSkeleton />
 }

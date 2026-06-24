@@ -1,10 +1,5 @@
-import DataTableLoading from '@/components/global/DataTableLoading'
-import { Shell } from '@/components/global/Shell'
+import { ProfileFormPageSkeleton } from '@/components/global/PageLoadingSkeletons'
 
 export default function IndexLoading() {
-  return (
-    <Shell>
-      <DataTableLoading columnCount={3} />
-    </Shell>
-  )
+  return <ProfileFormPageSkeleton titleWidth='max-w-lg' tone='muted' />
 }

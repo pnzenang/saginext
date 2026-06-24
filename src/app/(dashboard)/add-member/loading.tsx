@@ -1,10 +1,5 @@
-import DataTableLoading from '@/components/global/DataTableLoading'
-import { Shell } from '@/components/global/Shell'
+import { MemberFormPageSkeleton } from '@/components/global/PageLoadingSkeletons'
 
 export default function IndexLoading() {
-  return (
-    <Shell>
-      <DataTableLoading columnCount={3} />
-    </Shell>
-  )
+  return <MemberFormPageSkeleton fieldCount={9} titleWidth='max-w-md' />
 }

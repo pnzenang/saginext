@@ -1,11 +1,7 @@
-import DataTableLoading from '@/components/global/DataTableLoading'
+import { AdminPaymentPageSkeleton } from '@/components/global/PageLoadingSkeletons'
 
 const Loading = () => {
-  return (
-    <section className='min-h-full w-full pt-16'>
-      <DataTableLoading columnCount={8} />
-    </section>
-  )
+  return <AdminPaymentPageSkeleton columnCount={9} showAssessment titleWidth='max-w-xl' />
 }
 
 export default Loading

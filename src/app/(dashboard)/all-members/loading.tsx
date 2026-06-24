@@ -1,12 +1,14 @@
-import DataTableLoading from '@/components/global/DataTableLoading'
-import { Shell } from '@/components/global/Shell'
+import { MemberTablePageSkeleton } from '@/components/global/PageLoadingSkeletons'
 
 export default function IndexLoading() {
   return (
-    <Shell>
-      <DataTableLoading columnCount={3} />
-    </Shell>
+    <MemberTablePageSkeleton
+      columnCount={8}
+      filterCount={4}
+      showExportPage
+      showPaymentCards
+      showSummaryCards
+      titleClassName='max-w-96'
+    />
   )
 }
-
-
