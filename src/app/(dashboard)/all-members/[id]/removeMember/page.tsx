@@ -104,7 +104,7 @@ const RemoveMember = async ({ params }: { params: { id: string } }) => {
                 <BsSignStopFill className='size-8 items-center text-red-500' />{' '}
                 <h1 className='text-center text-sm font-semibold text-red-500 sm:text-lg'>
                   SAGI prevents withdrawal of vested members between the 7th and the 25th of each month. Resume
-                  withdrawal on or after the 26th, or before the 7th.
+                  withdrawal on or after the 26th, and before the 7th.
                 </h1>
               </div>
             )}
