@@ -26,7 +26,7 @@ const RemoveMember = async ({ params }: { params: { id: string } }) => {
   } = member
 
   const currentDay = new Date().getDate()
-  const isWithdrawalBlocked = currentMemberStatus === memberStatus.Vested && currentDay >= 5 && currentDay <= 25
+  const isWithdrawalBlocked = currentMemberStatus === memberStatus.Vested && currentDay >= 6 && currentDay <= 24
 
   return (
     <section className='mt-16 flex flex-col'>

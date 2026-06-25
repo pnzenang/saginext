@@ -486,7 +486,7 @@ const assertMemberCanBeWithdrawn = async (memberId: string) => {
   })
 
   const currentDay = new Date().getDate()
-  const isWithdrawalBlocked = member?.memberStatus === memberStatus.Vested && currentDay >= 5 && currentDay <= 24
+  const isWithdrawalBlocked = member?.memberStatus === memberStatus.Vested && currentDay >= 6 && currentDay <= 24
 
   if (isWithdrawalBlocked) {
     throw new Error(
