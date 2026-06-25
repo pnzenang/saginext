@@ -151,7 +151,9 @@ const createMissingSubmittedLedgerEntry = async ({
     }
   })
 
-  const missingSubmittedAmount = roundCurrencyAmount(amountSubmitted - decimalToNumber(submittedLedgerTotal._sum.amount))
+  const missingSubmittedAmount = roundCurrencyAmount(
+    amountSubmitted - decimalToNumber(submittedLedgerTotal._sum.amount)
+  )
 
   if (missingSubmittedAmount <= 0) {
     return
@@ -484,11 +486,11 @@ const assertMemberCanBeWithdrawn = async (memberId: string) => {
   })
 
   const currentDay = new Date().getDate()
-  const isWithdrawalBlocked = member?.memberStatus === memberStatus.Vested && currentDay >= 7 && currentDay <= 25
+  const isWithdrawalBlocked = member?.memberStatus === memberStatus.Vested && currentDay >= 5 && currentDay <= 24
 
   if (isWithdrawalBlocked) {
     throw new Error(
-      'SAGI prevents withdrawal of vested members between the 7th and the 25th of each month. Resume withdrawal on or after the 26th, or before the 7th.'
+      'SAGI prevents withdrawal of vested members between the 6th and the 24th of each month. Resume withdrawal on or after the 25th, and before the 6th.'
     )
   }
 }
