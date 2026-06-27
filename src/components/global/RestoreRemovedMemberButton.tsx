@@ -45,15 +45,11 @@ const RestoreRemovedMemberButton = ({ removedMember }: { removedMember: RemovedM
   const hasDetails = hasRestoreDetails(removedMember)
   const timeRemaining = getRestoreTimeRemaining(removedMember, now)
   const canRestore = hasDetails && timeRemaining > 0
-  const isExpired = hasDetails && timeRemaining <= 0
 
-  const buttonClass = canRestore
-    ? 'border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800'
-    : 'border-red-200 text-red-700 opacity-100 hover:bg-red-50 hover:text-red-800 disabled:opacity-80'
+  const buttonClass = 'border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800'
 
-  const tooltipClass = canRestore
-    ? 'border border-emerald-200 bg-emerald-50 text-emerald-800 shadow-sm [&>svg]:bg-emerald-50 [&>svg]:fill-emerald-50'
-    : undefined
+  const tooltipClass =
+    'border border-emerald-200 bg-emerald-50 text-emerald-800 shadow-sm [&>svg]:bg-emerald-50 [&>svg]:fill-emerald-50'
 
   useEffect(() => {
     if (!isOpen) return
@@ -85,7 +81,7 @@ const RestoreRemovedMemberButton = ({ removedMember }: { removedMember: RemovedM
     if (open) setNow(Date.now())
   }
 
-  if (isExpired) return null
+  if (!canRestore) return null
 
   return (
     <TooltipProvider delayDuration={150}>
@@ -97,7 +93,6 @@ const RestoreRemovedMemberButton = ({ removedMember }: { removedMember: RemovedM
                 type='submit'
                 size='sm'
                 variant='outline'
-                disabled={!canRestore}
                 className={buttonClass}
                 aria-label='Restore removed member'
               >
@@ -118,11 +113,6 @@ const RestoreRemovedMemberButton = ({ removedMember }: { removedMember: RemovedM
               <p>{memberName} can be restored within 48 hours of removal.</p>
               <p className='font-semibold'>Time remaining: {formatTimeRemaining(timeRemaining)}</p>
             </>
-          )}
-          {!hasDetails && (
-            <p className='font-semibold'>
-              {memberName} cannot be restored because the original restoration details are missing.
-            </p>
           )}
         </TooltipContent>
       </Tooltip>
