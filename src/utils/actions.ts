@@ -2010,6 +2010,8 @@ const getNextCancelledMemberTransferRefreshAt = (requests: { status: string; upd
   return nextRefreshAt ? new Date(nextRefreshAt).toISOString() : null
 }
 
+const normalizeAssociationCode = (associationCode: string) => associationCode.trim().toUpperCase()
+
 const getTransferredMemberMatriculationNumber = ({
   initiatingAssociationCode,
   memberMatriculationNumber,
@@ -2046,6 +2048,9 @@ export const fetchMemberTransferPageAction = async () => {
         memberStatus: true
       },
       where: {
+        associationCode: {
+          not: profile.associationCode
+        },
         clerkId: {
           not: profile.clerkId
         },
@@ -2110,8 +2115,6 @@ export const submitMemberTransferRequestAction = async (
   prevState: any,
   formData: FormData
 ): Promise<{ message: string }> => {
-  const user = await getAuthUser()
-
   try {
     const memberId = getRequiredFormValue(formData, 'memberId')
     const receivingAssociation = await fetchProfile()
@@ -2135,7 +2138,10 @@ export const submitMemberTransferRequestAction = async (
       throw new Error('Member not found.')
     }
 
-    if (member.clerkId === user.id || member.associationCode === receivingAssociation.associationCode) {
+    const memberAssociationCode = normalizeAssociationCode(member.associationCode)
+    const receivingAssociationCode = normalizeAssociationCode(receivingAssociation.associationCode)
+
+    if (memberAssociationCode === receivingAssociationCode) {
       throw new Error('This member is already in your delegate association.')
     }
 
@@ -2143,14 +2149,13 @@ export const submitMemberTransferRequestAction = async (
       throw new Error('Transfer is not allowed on non-vested members. Only vested members can be transferred.')
     }
 
-    const releasingAssociation = await db.profile.findFirst({
+    const releasingAssociation = await db.profile.findUnique({
       select: {
         associationCode: true,
         clerkId: true
       },
       where: {
-        associationCode: member.associationCode,
-        clerkId: member.clerkId
+        associationCode: memberAssociationCode
       }
     })
 
@@ -2236,17 +2241,28 @@ export const reviewIncomingMemberTransferRequestAction = async (
       throw new Error('This transfer request has already been reviewed by the current delegate.')
     }
 
-    await db.memberTransferRequest.update({
-      data: {
-        receivingReviewedAt: new Date(),
-        receivingReviewedBy: user.id,
-        rejectionReason: status === 'receiving_delegate_rejected' ? rejectionReason : null,
-        status
-      },
-      where: {
-        id: request.id
-      }
-    })
+    await db.$transaction([
+      db.member.updateMany({
+        data: {
+          clerkId: request.initiatingClerkId
+        },
+        where: {
+          associationCode: request.initiatingAssociationCode,
+          id: request.memberId
+        }
+      }),
+      db.memberTransferRequest.update({
+        data: {
+          receivingReviewedAt: new Date(),
+          receivingReviewedBy: user.id,
+          rejectionReason: status === 'receiving_delegate_rejected' ? rejectionReason : null,
+          status
+        },
+        where: {
+          id: request.id
+        }
+      })
+    ])
 
     revalidateMemberTransferViews()
 
@@ -2372,10 +2388,7 @@ export const reviewAdminMemberTransferRequestAction = async (
       throw new Error('Receiving delegate association profile is no longer available.')
     }
 
-    if (
-      request.member.clerkId !== request.initiatingClerkId ||
-      request.member.associationCode !== request.initiatingAssociationCode
-    ) {
+    if (request.member.associationCode !== request.initiatingAssociationCode) {
       throw new Error('This member no longer belongs to the current delegate association.')
     }
 
