@@ -560,7 +560,8 @@ const sendDeathAnnouncementAcknowledgmentToDelegate = async (associationCode: st
     const delegateProfile = await db.profile.findUnique({
       select: {
         associationCode: true,
-        firstDelegateEmail: true
+        firstDelegateEmail: true,
+        secondDelegateEmail: true
       },
       where: {
         associationCode: normalizedAssociationCode
@@ -575,9 +576,21 @@ const sendDeathAnnouncementAcknowledgmentToDelegate = async (associationCode: st
       return
     }
 
+    const delegateEmails = Array.from(
+      new Set([delegateProfile.firstDelegateEmail, delegateProfile.secondDelegateEmail].map(email => email.trim()))
+    ).filter(Boolean)
+
+    if (delegateEmails.length === 0) {
+      console.error('Unable to send death announcement acknowledgment email: delegate emails not found', {
+        associationCode: normalizedAssociationCode
+      })
+
+      return
+    }
+
     await sendDeathAnnouncementAcknowledgmentEmail({
       associationCode: delegateProfile.associationCode,
-      delegateEmail: delegateProfile.firstDelegateEmail
+      delegateEmails
     })
   } catch (emailError) {
     console.error('Unable to send death announcement acknowledgment email', emailError)
@@ -2784,6 +2797,7 @@ export const createDeceasedMemberAction = async (provState: any, formData: FormD
 
     await addDeceasedMemberContributionUsage(member.associationCode)
     revalidatePaymentViews()
+    revalidateDeathDocumentationViews()
     await sendDeathAnnouncementAcknowledgmentToDelegate(member.associationCode)
   } catch (error) {
     return renderError(error)
@@ -2853,6 +2867,7 @@ export const createDeceasedMemberActionAdmin = async (
 
     await addDeceasedMemberContributionUsage(member.associationCode)
     revalidatePaymentViews()
+    revalidateDeathDocumentationViews()
     await sendDeathAnnouncementAcknowledgmentToDelegate(member.associationCode)
   } catch (error) {
     return renderError(error)

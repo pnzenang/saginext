@@ -10,7 +10,7 @@ type SendEmailOptions = {
   html: string
   subject: string
   text: string
-  to: string
+  to: string | string[]
 }
 
 type SendMemberAdditionAcknowledgmentEmailOptions = {
@@ -24,7 +24,7 @@ type SendMemberAdditionAcknowledgmentEmailOptions = {
 
 type SendDeathAnnouncementAcknowledgmentEmailOptions = {
   associationCode: string
-  delegateEmail: string
+  delegateEmails: string[]
 }
 
 const escapeHtml = (value: string) =>
@@ -165,7 +165,7 @@ export const sendMemberAdditionAcknowledgmentEmail = async ({
 
 export const sendDeathAnnouncementAcknowledgmentEmail = async ({
   associationCode,
-  delegateEmail
+  delegateEmails
 }: SendDeathAnnouncementAcknowledgmentEmailOptions) => {
   const delegateLabel = `${associationCode} Delegates`
   const safeDelegateLabel = escapeHtml(delegateLabel)
@@ -201,6 +201,6 @@ export const sendDeathAnnouncementAcknowledgmentEmail = async ({
       'Thank you,',
       'SAGI'
     ].join('\n'),
-    to: delegateEmail
+    to: delegateEmails
   })
 }

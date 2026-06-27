@@ -2,6 +2,7 @@ import { CheckCircle2, Download, FileText, ShieldCheck, Upload, XCircle } from '
 
 import FormContainer from '@/components/forms/FormContainer'
 import { SubmitButton } from '@/components/forms/Buttons'
+import RestoreDeceasedMemberButton from '@/components/global/RestoreDeceasedMemberButton'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -327,9 +328,12 @@ const DeceasedMemberDocumentationCard = ({
               <span>Place of death: {deceasedMember.placeOfDeath}</span>
             </div>
           </div>
-          <Badge variant={uploadedCount === requiredDocumentTypes.length ? 'default' : 'secondary'} className='shrink-0'>
-            {uploadedCount} / {requiredDocumentTypes.length} uploaded
-          </Badge>
+          <div className='flex shrink-0 flex-wrap items-center gap-2'>
+            <RestoreDeceasedMemberButton deceasedMember={deceasedMember} />
+            <Badge variant={uploadedCount === requiredDocumentTypes.length ? 'default' : 'secondary'}>
+              {uploadedCount} / {requiredDocumentTypes.length} uploaded
+            </Badge>
+          </div>
         </div>
       </CardHeader>
       <CardContent className='px-4 py-4 sm:px-6'>
