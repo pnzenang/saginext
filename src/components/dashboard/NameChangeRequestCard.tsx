@@ -90,27 +90,29 @@ const AdminReviewControls = ({ request }: { request: NameChangeRequestCardData }
         <FormContainer action={reviewNameChangeRequestAction} className='grid gap-2' refreshOnMessage>
           <input type='hidden' name='requestId' value={request.id} />
           <input type='hidden' name='status' value='documentation_requested' />
+          <SubmitButton
+            text='Request documentation'
+            className='h-8 w-full bg-blue-700 px-3 text-xs normal-case hover:bg-blue-800'
+          />
           <Textarea
             name='rejectionReason'
             placeholder='Documentation note for delegate'
             defaultValue={request.rejectionReason ?? ''}
-            className='min-h-16 text-xs'
-          />
-          <SubmitButton
-            text='Request documentation'
-            className='h-8 w-full bg-blue-700 px-3 text-xs normal-case hover:bg-blue-800'
+            required
+            className='min-h-20 w-full text-xs'
           />
         </FormContainer>
         <FormContainer action={reviewNameChangeRequestAction} className='grid gap-2' refreshOnMessage>
           <input type='hidden' name='requestId' value={request.id} />
           <input type='hidden' name='status' value='rejected' />
+          <SubmitButton text='Reject' className='h-8 w-full bg-red-700 px-3 text-xs normal-case hover:bg-red-800' />
           <Textarea
             name='rejectionReason'
             placeholder='Reason if rejected'
             defaultValue={request.rejectionReason ?? ''}
-            className='min-h-16 text-xs'
+            required
+            className='min-h-20 w-full text-xs'
           />
-          <SubmitButton text='Reject' className='h-8 w-full bg-red-700 px-3 text-xs normal-case hover:bg-red-800' />
         </FormContainer>
       </div>
     </div>

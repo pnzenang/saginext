@@ -1849,6 +1849,10 @@ export const reviewNameChangeRequestAction = async (
       throw new Error('Select a valid review decision.')
     }
 
+    if (['documentation_requested', 'rejected'].includes(status) && !rejectionReason) {
+      throw new Error('Add a note before requesting documentation or rejecting the name change.')
+    }
+
     const request = await db.nameChangeRequest.findUnique({
       where: {
         id: requestId
@@ -1871,7 +1875,7 @@ export const reviewNameChangeRequestAction = async (
       await db.nameChangeRequest.update({
         data: {
           documentRequired: true,
-          rejectionReason: rejectionReason || 'Please upload official documentation for this name change.',
+          rejectionReason,
           reviewedAt: new Date(),
           reviewedBy: user.id,
           status
@@ -1912,7 +1916,7 @@ export const reviewNameChangeRequestAction = async (
     } else {
       await db.nameChangeRequest.update({
         data: {
-          rejectionReason: rejectionReason || 'Please submit corrected information or documentation.',
+          rejectionReason,
           reviewedAt: new Date(),
           reviewedBy: user.id,
           status
