@@ -6,13 +6,24 @@ import { auth } from '@clerk/nextjs/server'
 
 import { redirect } from 'next/navigation'
 
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, unstable_noStore as noStore } from 'next/cache'
 import { customAlphabet } from 'nanoid'
 
 import db from './db'
 import { DeceasedMemberSchema, memberSchema, RemovedMemberSchema, validateWithZodSchema } from './schemas'
 import { Prisma } from '@/generated/prisma/client'
-import { memberStatus } from './types'
+import {
+  deceasedMemberDocumentLabels,
+  deceasedMemberDocumentStatuses,
+  deceasedMemberDocumentTypes,
+  memberStatus,
+  memberTransferRequestStatuses,
+  nameChangeRequestStatuses,
+  type DeceasedMemberDocumentStatus,
+  type DeceasedMemberDocumentType,
+  type MemberTransferRequestStatus,
+  type NameChangeRequestStatus
+} from './types'
 import {
   contributionBalanceAdjustmentType,
   contributionCreditPerVestedMember,
@@ -30,6 +41,18 @@ import { associationPaymentLedgerEventTypes, associationPaymentTypes } from './s
 
 const randomMatriculation = customAlphabet('1234567890', 6)
 const MEMBER_REMOVAL_RESTORE_WINDOW_MS = 48 * 60 * 60 * 1000
+const maxDocumentationFileSize = 20 * 1024 * 1024
+
+const allowedDeceasedMemberDocumentMimeTypes = new Set([
+  'application/pdf',
+  'image/heic',
+  'image/heif',
+  'image/jpeg',
+  'image/png',
+  'image/webp'
+])
+
+const allowedDeceasedMemberDocumentExtensions = new Set(['.heic', '.heif', '.jpeg', '.jpg', '.pdf', '.png', '.webp'])
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   currency: 'USD',
@@ -230,6 +253,54 @@ const getRequiredFormValue = (formData: FormData, fieldName: string) => {
   }
 
   return value.trim()
+}
+
+const isDeceasedMemberDocumentType = (value: string): value is DeceasedMemberDocumentType =>
+  deceasedMemberDocumentTypes.includes(value as DeceasedMemberDocumentType)
+
+const isDeceasedMemberDocumentStatus = (value: string): value is DeceasedMemberDocumentStatus =>
+  deceasedMemberDocumentStatuses.includes(value as DeceasedMemberDocumentStatus)
+
+const isNameChangeRequestStatus = (value: string): value is NameChangeRequestStatus =>
+  nameChangeRequestStatuses.includes(value as NameChangeRequestStatus)
+
+const isMemberTransferRequestStatus = (value: string): value is MemberTransferRequestStatus =>
+  memberTransferRequestStatuses.includes(value as MemberTransferRequestStatus)
+
+const getFileExtension = (fileName: string) => {
+  const extensionStart = fileName.lastIndexOf('.')
+
+  return extensionStart >= 0 ? fileName.slice(extensionStart).toLowerCase() : ''
+}
+
+const isAllowedDeceasedMemberDocumentFile = (file: File) =>
+  allowedDeceasedMemberDocumentMimeTypes.has(file.type) ||
+  allowedDeceasedMemberDocumentExtensions.has(getFileExtension(file.name))
+
+const getSafeDocumentFileName = (file: File, documentType: DeceasedMemberDocumentType) => {
+  const fileName = file.name.trim()
+
+  if (!fileName) return deceasedMemberDocumentLabels[documentType]
+
+  return fileName.slice(0, 180)
+}
+
+const getSafeUploadedFileName = (file: File, fallbackFileName: string) => {
+  const fileName = file.name.trim()
+
+  if (!fileName) return fallbackFileName
+
+  return fileName.slice(0, 180)
+}
+
+const getUppercaseFormName = (formData: FormData, fieldName: string) => {
+  const value = getRequiredFormValue(formData, fieldName).toUpperCase()
+
+  if (value.length < 2) {
+    throw new Error(`${fieldName} should be at least 2 characters.`)
+  }
+
+  return value
 }
 
 const getPositiveDollarAmountFromForm = (formData: FormData, fieldName: string) => {
@@ -473,6 +544,24 @@ const revalidatePaymentViews = () => {
   revalidatePath('/all-members')
   revalidatePath('/financial-position')
   revalidatePath('/admin-count')
+}
+
+const revalidateDeathDocumentationViews = () => {
+  revalidatePath('/admin-all-deceased')
+  revalidatePath('/death-documentations')
+  revalidatePath('/deceased-members')
+}
+
+const revalidateNameChangeDocumentationViews = () => {
+  revalidatePath('/admin-all-members')
+  revalidatePath('/admin-name-changes')
+  revalidatePath('/all-members')
+  revalidatePath('/name-modification')
+}
+
+const revalidateMemberTransferViews = () => {
+  revalidatePath('/admin-member-transfers')
+  revalidatePath('/member-transfer')
 }
 
 const assertMemberCanBeWithdrawn = async (memberId: string) => {
@@ -1530,6 +1619,812 @@ export const updateMemberDetailsActionAdmin = async (prevState: any, formData: F
   redirect('/admin-all-members')
 }
 
+export const fetchNameChangeDocumentationPageAction = async () => {
+  const user = await getAuthUser()
+
+  const members = await db.member.findMany({
+    orderBy: [{ associationCode: 'asc' }, { lastAndMiddleNames: 'asc' }, { firstName: 'asc' }],
+    select: {
+      associationCode: true,
+      firstName: true,
+      id: true,
+      lastAndMiddleNames: true,
+      memberMatriculationNumber: true
+    },
+    where: { clerkId: user.id }
+  })
+
+  const requests = await db.nameChangeRequest
+    .findMany({
+      include: {
+        member: {
+          select: {
+            firstName: true,
+            lastAndMiddleNames: true,
+            memberMatriculationNumber: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      where: { clerkId: user.id }
+    })
+    .catch(error => {
+      console.error('Unable to load name change requests', error)
+
+      return []
+    })
+
+  return { members, requests }
+}
+
+export const fetchAdminNameChangeRequestsAction = async () => {
+  await assertAdminUser()
+
+  return db.nameChangeRequest
+    .findMany({
+      include: {
+        member: {
+          select: {
+            firstName: true,
+            lastAndMiddleNames: true,
+            memberMatriculationNumber: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    })
+    .catch(error => {
+      console.error('Unable to load admin name change requests', error)
+
+      return []
+    })
+}
+
+export const submitNameChangeRequestAction = async (
+  prevState: any,
+  formData: FormData
+): Promise<{ message: string }> => {
+  const user = await getAuthUser()
+
+  try {
+    const memberId = String(formData.get('memberId') ?? '').trim()
+    const requestedFirstName = getUppercaseFormName(formData, 'requestedFirstName')
+    const requestedLastAndMiddleNames = getUppercaseFormName(formData, 'requestedLastAndMiddleNames')
+
+    if (!memberId) {
+      throw new Error('Select a member before submitting the name change.')
+    }
+
+    const member = await db.member.findUnique({
+      select: {
+        associationCode: true,
+        clerkId: true,
+        firstName: true,
+        id: true,
+        lastAndMiddleNames: true
+      },
+      where: {
+        id: memberId
+      }
+    })
+
+    if (!member) {
+      throw new Error('Member not found.')
+    }
+
+    const isAdminUser = user.id === process.env.ADMIN_USER_ID
+
+    if (!isAdminUser && member.clerkId !== user.id) {
+      throw new Error('You can only request name changes for members from your own account.')
+    }
+
+    if (member.firstName === requestedFirstName && member.lastAndMiddleNames === requestedLastAndMiddleNames) {
+      throw new Error('Enter a new name before submitting the request.')
+    }
+
+    const pendingRequest = await db.nameChangeRequest.findFirst({
+      select: {
+        id: true
+      },
+      where: {
+        memberId: member.id,
+        status: {
+          in: ['submitted', 'documentation_requested']
+        }
+      }
+    })
+
+    if (pendingRequest) {
+      throw new Error('This member already has a name change request waiting for admin review.')
+    }
+
+    await db.nameChangeRequest.create({
+      data: {
+        associationCode: member.associationCode,
+        clerkId: member.clerkId,
+        currentFirstName: member.firstName,
+        currentLastAndMiddleNames: member.lastAndMiddleNames,
+        documentRequired: false,
+        id: randomUUID(),
+        memberId: member.id,
+        reason: 'typo_or_error',
+        requestedFirstName,
+        requestedLastAndMiddleNames,
+        status: 'submitted'
+      }
+    })
+
+    revalidateNameChangeDocumentationViews()
+
+    return { message: 'Name change request submitted for admin review' }
+  } catch (error) {
+    return renderError(error)
+  }
+}
+
+export const uploadNameChangeDocumentationAction = async (
+  prevState: any,
+  formData: FormData
+): Promise<{ message: string }> => {
+  const user = await getAuthUser()
+
+  try {
+    const requestId = getRequiredFormValue(formData, 'requestId')
+    const file = formData.get('documentFile')
+
+    if (!(file instanceof File) || file.size <= 0) {
+      throw new Error('Please choose the requested documentation.')
+    }
+
+    if (file.size > maxDocumentationFileSize) {
+      throw new Error('The file is too large. Please upload a file that is 20 MB or smaller.')
+    }
+
+    if (!isAllowedDeceasedMemberDocumentFile(file)) {
+      throw new Error('Please upload a PDF, JPG, PNG, WEBP, HEIC, or HEIF file.')
+    }
+
+    const request = await db.nameChangeRequest.findUnique({
+      select: {
+        clerkId: true,
+        id: true,
+        status: true
+      },
+      where: {
+        id: requestId
+      }
+    })
+
+    if (!request) {
+      throw new Error('Name change request not found.')
+    }
+
+    const isAdminUser = user.id === process.env.ADMIN_USER_ID
+
+    if (!isAdminUser && request.clerkId !== user.id) {
+      throw new Error('You can only upload documentation for name changes from your own account.')
+    }
+
+    if (request.status !== 'documentation_requested') {
+      throw new Error('Documentation has not been requested for this name change.')
+    }
+
+    await db.nameChangeRequest.update({
+      data: {
+        documentRequired: true,
+        fileData: Buffer.from(await file.arrayBuffer()),
+        fileName: getSafeUploadedFileName(file, 'Official name change document'),
+        fileSize: file.size,
+        mimeType: file.type || 'application/octet-stream',
+        rejectionReason: null,
+        reviewedAt: null,
+        reviewedBy: null,
+        status: 'submitted'
+      },
+      where: {
+        id: request.id
+      }
+    })
+
+    revalidateNameChangeDocumentationViews()
+
+    return { message: 'Name change documentation uploaded successfully' }
+  } catch (error) {
+    return renderError(error)
+  }
+}
+
+export const reviewNameChangeRequestAction = async (
+  prevState: any,
+  formData: FormData
+): Promise<{ message: string }> => {
+  const user = await assertAdminUser()
+
+  try {
+    const requestId = getRequiredFormValue(formData, 'requestId')
+    const status = getRequiredFormValue(formData, 'status')
+    const rejectionReason = String(formData.get('rejectionReason') ?? '').trim()
+
+    if (!isNameChangeRequestStatus(status) || status === 'submitted') {
+      throw new Error('Select a valid review decision.')
+    }
+
+    const request = await db.nameChangeRequest.findUnique({
+      where: {
+        id: requestId
+      }
+    })
+
+    if (!request) {
+      throw new Error('Name change request not found.')
+    }
+
+    if (request.status !== 'submitted') {
+      throw new Error('This name change request has already been reviewed.')
+    }
+
+    if (status === 'approved' && request.documentRequired && !request.fileData) {
+      throw new Error('Documentation is required before approving this name change.')
+    }
+
+    if (status === 'documentation_requested') {
+      await db.nameChangeRequest.update({
+        data: {
+          documentRequired: true,
+          rejectionReason: rejectionReason || 'Please upload official documentation for this name change.',
+          reviewedAt: new Date(),
+          reviewedBy: user.id,
+          status
+        },
+        where: {
+          id: request.id
+        }
+      })
+
+      revalidateNameChangeDocumentationViews()
+
+      return { message: 'Name change documentation requested' }
+    }
+
+    if (status === 'approved') {
+      await db.$transaction([
+        db.member.update({
+          data: {
+            firstName: request.requestedFirstName,
+            lastAndMiddleNames: request.requestedLastAndMiddleNames
+          },
+          where: {
+            id: request.memberId
+          }
+        }),
+        db.nameChangeRequest.update({
+          data: {
+            rejectionReason: null,
+            reviewedAt: new Date(),
+            reviewedBy: user.id,
+            status
+          },
+          where: {
+            id: request.id
+          }
+        })
+      ])
+    } else {
+      await db.nameChangeRequest.update({
+        data: {
+          rejectionReason: rejectionReason || 'Please submit corrected information or documentation.',
+          reviewedAt: new Date(),
+          reviewedBy: user.id,
+          status
+        },
+        where: {
+          id: request.id
+        }
+      })
+    }
+
+    revalidatePaymentViews()
+    revalidateNameChangeDocumentationViews()
+
+    return { message: `Name change request ${status}` }
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      return { message: 'A member with these identifying details already exists.' }
+    }
+
+    return renderError(error)
+  }
+}
+
+export const deleteNameChangeRequestAction = async (prevState: { requestId: string }) => {
+  const user = await getAuthUser()
+  const { requestId } = prevState
+
+  try {
+    const request = await db.nameChangeRequest.findUnique({
+      where: {
+        id: requestId
+      }
+    })
+
+    if (!request) {
+      throw new Error('Name change request not found.')
+    }
+
+    const isAdminUser = user.id === process.env.ADMIN_USER_ID
+
+    if (!isAdminUser && request.clerkId !== user.id) {
+      throw new Error('You can only remove name change requests from your own account.')
+    }
+
+    await db.nameChangeRequest.delete({
+      where: {
+        id: request.id
+      }
+    })
+
+    revalidateNameChangeDocumentationViews()
+
+    return { message: 'Name change request removed successfully' }
+  } catch (error) {
+    return renderError(error)
+  }
+}
+
+const openMemberTransferRequestStatuses: MemberTransferRequestStatus[] = [
+  'receiving_delegate_pending',
+  'receiving_delegate_approved'
+]
+
+const canCancelMemberTransferRequestStatus = (status: string) =>
+  isMemberTransferRequestStatus(status) && status !== 'admin_approved' && status !== 'cancelled'
+
+const CANCELLED_MEMBER_TRANSFER_CARD_VISIBILITY_MS = 5 * 60 * 1000
+
+const getVisibleMemberTransferRequestWhere = () => ({
+  OR: [
+    {
+      status: {
+        not: 'cancelled'
+      }
+    },
+    {
+      updatedAt: {
+        gte: new Date(Date.now() - CANCELLED_MEMBER_TRANSFER_CARD_VISIBILITY_MS)
+      }
+    }
+  ]
+})
+
+const getNextCancelledMemberTransferRefreshAt = (requests: { status: string; updatedAt: Date }[]) => {
+  const nextRefreshAt = requests
+    .filter(request => request.status === 'cancelled')
+    .map(request => request.updatedAt.getTime() + CANCELLED_MEMBER_TRANSFER_CARD_VISIBILITY_MS)
+    .filter(refreshAt => refreshAt > Date.now())
+    .sort((firstRefreshAt, secondRefreshAt) => firstRefreshAt - secondRefreshAt)[0]
+
+  return nextRefreshAt ? new Date(nextRefreshAt).toISOString() : null
+}
+
+const getTransferredMemberMatriculationNumber = ({
+  initiatingAssociationCode,
+  memberMatriculationNumber,
+  receivingAssociationCode
+}: {
+  initiatingAssociationCode: string
+  memberMatriculationNumber: string
+  receivingAssociationCode: string
+}) => {
+  const initiatingPrefix = `AS${initiatingAssociationCode}`
+
+  if (!memberMatriculationNumber.startsWith(initiatingPrefix)) {
+    throw new Error('This member matriculation number does not match the current association code.')
+  }
+
+  return `AS${receivingAssociationCode}${memberMatriculationNumber.slice(initiatingPrefix.length)}`
+}
+
+export const fetchMemberTransferPageAction = async () => {
+  noStore()
+
+  const profile = await fetchProfile()
+  const visibleMemberTransferRequestWhere = getVisibleMemberTransferRequestWhere()
+
+  const [members, requests] = await Promise.all([
+    db.member.findMany({
+      orderBy: [{ lastAndMiddleNames: 'asc' }, { firstName: 'asc' }],
+      select: {
+        associationCode: true,
+        firstName: true,
+        id: true,
+        lastAndMiddleNames: true,
+        memberMatriculationNumber: true,
+        memberStatus: true
+      },
+      where: {
+        clerkId: {
+          not: profile.clerkId
+        },
+        memberStatus: memberStatus.Vested
+      }
+    }),
+    db.memberTransferRequest.findMany({
+      include: {
+        member: {
+          select: {
+            associationCode: true,
+            firstName: true,
+            lastAndMiddleNames: true,
+            memberMatriculationNumber: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      where: {
+        AND: [
+          {
+            OR: [{ initiatingClerkId: profile.clerkId }, { receivingClerkId: profile.clerkId }]
+          },
+          visibleMemberTransferRequestWhere
+        ]
+      }
+    })
+  ])
+
+  return {
+    members,
+    nextCancelledTransferRefreshAt: getNextCancelledMemberTransferRefreshAt(requests),
+    profile,
+    requests
+  }
+}
+
+export const fetchAdminMemberTransferPageAction = async () => {
+  noStore()
+  await assertAdminUser()
+
+  const requests = await db.memberTransferRequest.findMany({
+    include: {
+      member: {
+        select: {
+          associationCode: true,
+          clerkId: true,
+          firstName: true,
+          lastAndMiddleNames: true,
+          memberMatriculationNumber: true
+        }
+      }
+    },
+    orderBy: { createdAt: 'desc' },
+    where: getVisibleMemberTransferRequestWhere()
+  })
+
+  return { nextCancelledTransferRefreshAt: getNextCancelledMemberTransferRefreshAt(requests), requests }
+}
+
+export const submitMemberTransferRequestAction = async (
+  prevState: any,
+  formData: FormData
+): Promise<{ message: string }> => {
+  const user = await getAuthUser()
+
+  try {
+    const memberId = getRequiredFormValue(formData, 'memberId')
+    const receivingAssociation = await fetchProfile()
+
+    const member = await db.member.findUnique({
+      select: {
+        associationCode: true,
+        clerkId: true,
+        firstName: true,
+        id: true,
+        lastAndMiddleNames: true,
+        memberMatriculationNumber: true,
+        memberStatus: true
+      },
+      where: {
+        id: memberId
+      }
+    })
+
+    if (!member) {
+      throw new Error('Member not found.')
+    }
+
+    if (member.clerkId === user.id || member.associationCode === receivingAssociation.associationCode) {
+      throw new Error('This member is already in your delegate association.')
+    }
+
+    if (member.memberStatus !== memberStatus.Vested) {
+      throw new Error('Transfer is not allowed on non-vested members. Only vested members can be transferred.')
+    }
+
+    const releasingAssociation = await db.profile.findFirst({
+      select: {
+        associationCode: true,
+        clerkId: true
+      },
+      where: {
+        associationCode: member.associationCode,
+        clerkId: member.clerkId
+      }
+    })
+
+    if (!releasingAssociation) {
+      throw new Error('Current delegate association profile was not found.')
+    }
+
+    const openRequest = await db.memberTransferRequest.findFirst({
+      select: {
+        id: true
+      },
+      where: {
+        memberId: member.id,
+        status: {
+          in: openMemberTransferRequestStatuses
+        }
+      }
+    })
+
+    if (openRequest) {
+      throw new Error('This member already has a member transfer request in progress.')
+    }
+
+    await db.memberTransferRequest.create({
+      data: {
+        currentFirstName: member.firstName,
+        currentLastAndMiddleNames: member.lastAndMiddleNames,
+        initiatingAssociationCode: releasingAssociation.associationCode,
+        initiatingClerkId: releasingAssociation.clerkId,
+        memberId: member.id,
+        memberMatriculationNumber: member.memberMatriculationNumber,
+        receivingAssociationCode: receivingAssociation.associationCode,
+        receivingClerkId: receivingAssociation.clerkId,
+        status: 'receiving_delegate_pending'
+      }
+    })
+
+    revalidateMemberTransferViews()
+
+    return { message: 'Member transfer release request sent to the current delegate.' }
+  } catch (error) {
+    return renderError(error)
+  }
+}
+
+export const reviewIncomingMemberTransferRequestAction = async (
+  prevState: any,
+  formData: FormData
+): Promise<{ message: string }> => {
+  const user = await getAuthUser()
+
+  try {
+    const requestId = getRequiredFormValue(formData, 'requestId')
+    const status = getRequiredFormValue(formData, 'status')
+    const rejectionReason = String(formData.get('rejectionReason') ?? '').trim()
+
+    if (
+      !isMemberTransferRequestStatus(status) ||
+      !['receiving_delegate_approved', 'receiving_delegate_rejected'].includes(status)
+    ) {
+      throw new Error('Select a valid transfer decision.')
+    }
+
+    if (status === 'receiving_delegate_rejected' && !rejectionReason) {
+      throw new Error('Give the reason to reject the release.')
+    }
+
+    const request = await db.memberTransferRequest.findUnique({
+      where: {
+        id: requestId
+      }
+    })
+
+    if (!request) {
+      throw new Error('Member transfer request not found.')
+    }
+
+    if (request.initiatingClerkId !== user.id) {
+      throw new Error('Only the current delegate can release this member.')
+    }
+
+    if (request.status !== 'receiving_delegate_pending') {
+      throw new Error('This transfer request has already been reviewed by the current delegate.')
+    }
+
+    await db.memberTransferRequest.update({
+      data: {
+        receivingReviewedAt: new Date(),
+        receivingReviewedBy: user.id,
+        rejectionReason: status === 'receiving_delegate_rejected' ? rejectionReason : null,
+        status
+      },
+      where: {
+        id: request.id
+      }
+    })
+
+    revalidateMemberTransferViews()
+
+    return {
+      message:
+        status === 'receiving_delegate_approved'
+          ? 'Member release approved and sent to SAGI admin.'
+          : 'Member transfer release rejected.'
+    }
+  } catch (error) {
+    return renderError(error)
+  }
+}
+
+export const cancelMemberTransferRequestAction = async (prevState: { requestId: string }) => {
+  const user = await getAuthUser()
+  const { requestId } = prevState
+
+  try {
+    const request = await db.memberTransferRequest.findUnique({
+      where: {
+        id: requestId
+      }
+    })
+
+    if (!request) {
+      throw new Error('Member transfer request not found.')
+    }
+
+    if (request.receivingClerkId !== user.id) {
+      throw new Error('Only the receiving delegate who requested this transfer can cancel it.')
+    }
+
+    if (request.status === 'cancelled') {
+      throw new Error('This member transfer request has already been cancelled.')
+    }
+
+    if (!canCancelMemberTransferRequestStatus(request.status)) {
+      throw new Error('This member transfer request can no longer be cancelled because SAGI admin has approved it.')
+    }
+
+    await db.memberTransferRequest.update({
+      data: {
+        rejectionReason: 'Receiving delegate cancelled this transfer request.',
+        status: 'cancelled'
+      },
+      where: {
+        id: request.id
+      }
+    })
+
+    revalidateMemberTransferViews()
+
+    return { message: 'Member transfer request cancelled.' }
+  } catch (error) {
+    return renderError(error)
+  }
+}
+
+export const reviewAdminMemberTransferRequestAction = async (
+  prevState: any,
+  formData: FormData
+): Promise<{ message: string }> => {
+  const user = await assertAdminUser()
+
+  try {
+    const requestId = getRequiredFormValue(formData, 'requestId')
+    const status = getRequiredFormValue(formData, 'status')
+    const rejectionReason = String(formData.get('rejectionReason') ?? '').trim()
+
+    if (!isMemberTransferRequestStatus(status) || !['admin_approved', 'admin_rejected'].includes(status)) {
+      throw new Error('Select a valid admin transfer decision.')
+    }
+
+    const request = await db.memberTransferRequest.findUnique({
+      include: {
+        member: true
+      },
+      where: {
+        id: requestId
+      }
+    })
+
+    if (!request) {
+      throw new Error('Member transfer request not found.')
+    }
+
+    if (request.status !== 'receiving_delegate_approved') {
+      throw new Error('This transfer is not ready for admin review.')
+    }
+
+    if (status === 'admin_rejected') {
+      await db.memberTransferRequest.update({
+        data: {
+          adminReviewedAt: new Date(),
+          adminReviewedBy: user.id,
+          rejectionReason: rejectionReason || 'SAGI admin rejected this transfer request.',
+          status
+        },
+        where: {
+          id: request.id
+        }
+      })
+
+      revalidateMemberTransferViews()
+
+      return { message: 'Member transfer rejected by admin.' }
+    }
+
+    const receivingAssociation = await db.profile.findFirst({
+      select: {
+        associationCode: true,
+        associationName: true,
+        clerkId: true
+      },
+      where: {
+        associationCode: request.receivingAssociationCode,
+        clerkId: request.receivingClerkId
+      }
+    })
+
+    if (!receivingAssociation) {
+      throw new Error('Receiving delegate association profile is no longer available.')
+    }
+
+    if (
+      request.member.clerkId !== request.initiatingClerkId ||
+      request.member.associationCode !== request.initiatingAssociationCode
+    ) {
+      throw new Error('This member no longer belongs to the current delegate association.')
+    }
+
+    const nextMemberMatriculationNumber = getTransferredMemberMatriculationNumber({
+      initiatingAssociationCode: request.initiatingAssociationCode,
+      memberMatriculationNumber: request.member.memberMatriculationNumber,
+      receivingAssociationCode: receivingAssociation.associationCode
+    })
+
+    await db.$transaction([
+      db.member.update({
+        data: {
+          associationCode: receivingAssociation.associationCode,
+          associationName: receivingAssociation.associationName,
+          clerkId: receivingAssociation.clerkId,
+          memberMatriculationNumber: nextMemberMatriculationNumber
+        },
+        where: {
+          id: request.memberId
+        }
+      }),
+      db.associationContributionCredit.updateMany({
+        data: {
+          associationCode: receivingAssociation.associationCode,
+          memberMatriculationNumber: nextMemberMatriculationNumber
+        },
+        where: {
+          memberMatriculationNumber: request.member.memberMatriculationNumber
+        }
+      }),
+      db.memberTransferRequest.update({
+        data: {
+          adminReviewedAt: new Date(),
+          adminReviewedBy: user.id,
+          memberMatriculationNumber: nextMemberMatriculationNumber,
+          rejectionReason: null,
+          status
+        },
+        where: {
+          id: request.id
+        }
+      })
+    ])
+
+    revalidatePaymentViews()
+    revalidateMemberTransferViews()
+
+    return { message: 'Member transfer approved and completed.' }
+  } catch (error) {
+    return renderError(error)
+  }
+}
+
 export const createRemovedMemberAction = async (provState: any, formData: FormData): Promise<{ message: string }> => {
   const user = await getAuthUser()
 
@@ -1603,8 +2498,6 @@ export const createRemovedMemberActionAdmin = async (
     const memberId = formData.get('id') as string
     const rawData = Object.fromEntries(formData)
     const validatedFields = validateWithZodSchema(RemovedMemberSchema, rawData)
-
-    await assertMemberCanBeWithdrawn(memberId)
 
     const member = await db.member.findUnique({
       where: {
@@ -1797,6 +2690,7 @@ export const createDeceasedMemberAction = async (provState: any, formData: FormD
       db.deceasedMember.create({
         data: {
           ...validatedFields,
+          associationCode: member.associationCode,
           registrationDate: formatRegistrationDate(member.createdAt),
           clerkId: user.id
         }
@@ -1859,6 +2753,7 @@ export const createDeceasedMemberActionAdmin = async (
       db.deceasedMember.create({
         data: {
           ...validatedFields,
+          associationCode: member.associationCode,
           registrationDate: formatRegistrationDate(member.createdAt),
           clerkId: user.id
         }
@@ -1890,6 +2785,202 @@ export const fetchDeceasedMembersActionAdmin = async () => {
   })
 
   return deceasedMember
+}
+
+export const fetchDeathDocumentationCasesAction = async () => {
+  const user = await getAuthUser()
+  const isAdminUser = user.id === process.env.ADMIN_USER_ID
+
+  const deceasedMembers = await db.deceasedMember.findMany({
+    include: {
+      documents: {
+        orderBy: { updatedAt: 'desc' },
+        select: {
+          associationCode: true,
+          clerkId: true,
+          createdAt: true,
+          deceasedMemberId: true,
+          documentType: true,
+          fileName: true,
+          fileSize: true,
+          id: true,
+          mimeType: true,
+          rejectionReason: true,
+          status: true,
+          updatedAt: true
+        }
+      }
+    },
+    orderBy: { createdAt: 'desc' },
+    where: isAdminUser
+      ? {}
+      : {
+          clerkId: user.id
+        }
+  })
+
+  return { deceasedMembers, isAdminUser }
+}
+
+export const uploadDeceasedMemberDocumentAction = async (
+  provState: any,
+  formData: FormData
+): Promise<{ message: string }> => {
+  const user = await getAuthUser()
+
+  try {
+    const deceasedMemberId = getRequiredFormValue(formData, 'deceasedMemberId')
+    const documentType = getRequiredFormValue(formData, 'documentType')
+    const file = formData.get('documentFile')
+
+    if (!isDeceasedMemberDocumentType(documentType)) {
+      throw new Error('Select a valid document type.')
+    }
+
+    if (!(file instanceof File) || file.size <= 0) {
+      throw new Error(`Please choose a file for ${deceasedMemberDocumentLabels[documentType]}.`)
+    }
+
+    if (file.size > maxDocumentationFileSize) {
+      throw new Error('The file is too large. Please upload a file that is 20 MB or smaller.')
+    }
+
+    if (!isAllowedDeceasedMemberDocumentFile(file)) {
+      throw new Error('Please upload a PDF, JPG, PNG, WEBP, HEIC, or HEIF file.')
+    }
+
+    const deceasedMember = await db.deceasedMember.findUnique({
+      select: {
+        associationCode: true,
+        clerkId: true,
+        id: true
+      },
+      where: {
+        id: deceasedMemberId
+      }
+    })
+
+    if (!deceasedMember) {
+      throw new Error('Death announcement not found.')
+    }
+
+    const isAdminUser = user.id === process.env.ADMIN_USER_ID
+
+    if (!isAdminUser && deceasedMember.clerkId !== user.id) {
+      throw new Error('You can only upload documents for death announcements from your own account.')
+    }
+
+    const safeFileName = getSafeDocumentFileName(file, documentType)
+    const fileData = Buffer.from(await file.arrayBuffer())
+
+    await db.deceasedMemberDocument.upsert({
+      create: {
+        associationCode: deceasedMember.associationCode,
+        clerkId: deceasedMember.clerkId,
+        deceasedMemberId,
+        documentType,
+        fileData,
+        fileName: safeFileName,
+        fileSize: file.size,
+        mimeType: file.type || 'application/octet-stream'
+      },
+      update: {
+        associationCode: deceasedMember.associationCode,
+        clerkId: deceasedMember.clerkId,
+        fileData,
+        fileName: safeFileName,
+        fileSize: file.size,
+        mimeType: file.type || 'application/octet-stream',
+        rejectionReason: null,
+        status: 'submitted'
+      },
+      where: {
+        deceasedMemberId_documentType: {
+          deceasedMemberId,
+          documentType
+        }
+      }
+    })
+
+    revalidateDeathDocumentationViews()
+
+    return { message: `${deceasedMemberDocumentLabels[documentType]} uploaded successfully` }
+  } catch (error) {
+    return renderError(error)
+  }
+}
+
+export const deleteDeceasedMemberDocumentAction = async (prevState: { documentId: string }) => {
+  const user = await getAuthUser()
+  const { documentId } = prevState
+
+  try {
+    const document = await db.deceasedMemberDocument.findUnique({
+      select: {
+        clerkId: true,
+        id: true
+      },
+      where: {
+        id: documentId
+      }
+    })
+
+    if (!document) {
+      throw new Error('Document not found.')
+    }
+
+    const isAdminUser = user.id === process.env.ADMIN_USER_ID
+
+    if (!isAdminUser && document.clerkId !== user.id) {
+      throw new Error('You can only remove documents from your own account.')
+    }
+
+    await db.deceasedMemberDocument.delete({
+      where: {
+        id: document.id
+      }
+    })
+
+    revalidateDeathDocumentationViews()
+
+    return { message: 'Document removed successfully' }
+  } catch (error) {
+    return renderError(error)
+  }
+}
+
+export const reviewDeceasedMemberDocumentAction = async (
+  provState: any,
+  formData: FormData
+): Promise<{ message: string }> => {
+  await assertAdminUser()
+
+  try {
+    const documentId = getRequiredFormValue(formData, 'documentId')
+    const status = getRequiredFormValue(formData, 'status')
+    const rejectionReason = String(formData.get('rejectionReason') ?? '').trim()
+
+    if (!isDeceasedMemberDocumentStatus(status)) {
+      throw new Error('Select a valid document review status.')
+    }
+
+    await db.deceasedMemberDocument.update({
+      data: {
+        rejectionReason:
+          status === 'rejected' ? rejectionReason || 'Please upload a clearer or corrected document.' : null,
+        status
+      },
+      where: {
+        id: documentId
+      }
+    })
+
+    revalidateDeathDocumentationViews()
+
+    return { message: `Document marked ${status}` }
+  } catch (error) {
+    return renderError(error)
+  }
 }
 
 export const deleteRemovedMemberAction = async (prevState: { removedMemberId: string }) => {

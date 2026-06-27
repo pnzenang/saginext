@@ -40,6 +40,8 @@ export type MemberType = {
   dateOfBirth: string
   countryOfResidence: string
   memberMatriculationNumber: string
+  delegateRecommendation?: string
+  memberStatus?: string
   nameOfBeneficiary?: string
   associationName: string
   associationCode: string
@@ -86,6 +88,7 @@ export type DeceasedMemberType = {
   memberMatriculationNumber: string
   nameOfBeneficiary?: string
   associationName: string
+  associationCode?: string | null
   dateOfDeath: string
   placeOfDeath: string
   createdAt: Date
@@ -97,4 +100,89 @@ export enum contributionStatus {
   denied = 'Contribution_Denied',
   underway = 'Contribution_Underway',
   completed = 'Contribution_Completed'
+}
+
+export const deceasedMemberDocumentTypes = [
+  'death_certificate',
+  'deceased_id_card',
+  'deceased_picture',
+  'funeral_program'
+] as const
+
+export type DeceasedMemberDocumentType = (typeof deceasedMemberDocumentTypes)[number]
+
+export const deceasedMemberDocumentLabels: Record<DeceasedMemberDocumentType, string> = {
+  death_certificate: 'Death certificate',
+  deceased_id_card: 'Deceased ID card',
+  deceased_picture: 'Deceased picture',
+  funeral_program: 'Funeral program'
+}
+
+export const deceasedMemberDocumentStatuses = ['submitted', 'approved', 'rejected'] as const
+
+export type DeceasedMemberDocumentStatus = (typeof deceasedMemberDocumentStatuses)[number]
+
+export const deceasedMemberDocumentStatusLabels: Record<DeceasedMemberDocumentStatus, string> = {
+  approved: 'Approved',
+  rejected: 'Rejected',
+  submitted: 'Submitted'
+}
+
+export type DeceasedMemberDocument = {
+  id: string
+  deceasedMemberId: string
+  clerkId: string
+  associationCode?: string | null
+  documentType: string
+  fileName: string
+  mimeType: string
+  fileSize: number
+  status: string
+  rejectionReason?: string | null
+  createdAt: Date
+  updatedAt: Date
+}
+
+export type DeceasedMemberWithDocuments = DeceasedMemberType & {
+  documents: DeceasedMemberDocument[]
+}
+
+export const nameChangeRequestReasons = ['typo_or_error', 'legal_document'] as const
+
+export type NameChangeRequestReason = (typeof nameChangeRequestReasons)[number]
+
+export const nameChangeRequestReasonLabels: Record<NameChangeRequestReason, string> = {
+  legal_document: 'Legal document',
+  typo_or_error: 'Typo or correction'
+}
+
+export const nameChangeRequestStatuses = ['submitted', 'documentation_requested', 'approved', 'rejected'] as const
+
+export type NameChangeRequestStatus = (typeof nameChangeRequestStatuses)[number]
+
+export const nameChangeRequestStatusLabels: Record<NameChangeRequestStatus, string> = {
+  approved: 'Approved',
+  documentation_requested: 'Documentation requested',
+  rejected: 'Rejected',
+  submitted: 'Submitted'
+}
+
+export const memberTransferRequestStatuses = [
+  'receiving_delegate_pending',
+  'receiving_delegate_approved',
+  'receiving_delegate_rejected',
+  'admin_approved',
+  'admin_rejected',
+  'cancelled'
+] as const
+
+export type MemberTransferRequestStatus = (typeof memberTransferRequestStatuses)[number]
+
+export const memberTransferRequestStatusLabels: Record<MemberTransferRequestStatus, string> = {
+  admin_approved: 'Admin approved',
+  admin_rejected: 'Admin rejected',
+  cancelled: 'Cancelled',
+  receiving_delegate_approved: 'Delegate release approved',
+  receiving_delegate_pending: 'Delegate release pending',
+  receiving_delegate_rejected: 'Delegate release rejected'
 }

@@ -1,4 +1,3 @@
-import { BsSignStopFill } from 'react-icons/bs'
 import { TiWarning } from 'react-icons/ti'
 
 import { SubmitButton } from '@/components/forms/Buttons'
@@ -6,7 +5,7 @@ import FormContainer from '@/components/forms/FormContainer'
 import FormInput from '@/components/forms/FormInput'
 import FormSelect from '@/components/forms/FormSelect'
 import { createRemovedMemberActionAdmin, fetchSingleMemberDetailsAdmin } from '@/utils/actions'
-import { memberStatus, reasonForLeaving } from '@/utils/types'
+import { reasonForLeaving } from '@/utils/types'
 
 const RemoveMember = async ({ params }: { params: { id: string } }) => {
   const { id } = await params
@@ -21,12 +20,8 @@ const RemoveMember = async ({ params }: { params: { id: string } }) => {
     memberMatriculationNumber,
     associationCode,
     associationName,
-    createdAt,
-    memberStatus: currentMemberStatus
+    createdAt
   } = member
-
-  const currentDay = new Date().getDate()
-  const isWithdrawalBlocked = currentMemberStatus === memberStatus.Vested && currentDay >= 6 && currentDay <= 24
 
   return (
     <section className='mt-16 flex flex-col'>
@@ -92,19 +87,8 @@ const RemoveMember = async ({ params }: { params: { id: string } }) => {
                 defaultValue={reasonForLeaving.NoReason}
               />
 
-              {!isWithdrawalBlocked && (
-                <SubmitButton text='Withdraw member' className='mt-4 w-full bg-red-800 hover:bg-red-900' />
-              )}
+              <SubmitButton text='Withdraw member' className='mt-4 w-full bg-red-800 hover:bg-red-900' />
             </div>
-            {isWithdrawalBlocked && (
-              <div className='mt-10 flex flex-col items-center justify-center gap-1 sm:flex-row'>
-                <BsSignStopFill className='size-8 items-center text-red-500' />{' '}
-                <h1 className='text-center text-sm font-semibold text-red-500 sm:text-lg'>
-                  SAGI prevents withdrawal of vested members between the 6th and the 24th of each month. Resume
-                  withdrawal on or after the 25th, and before the 6th.
-                </h1>
-              </div>
-            )}
           </div>
         </FormContainer>
       </div>

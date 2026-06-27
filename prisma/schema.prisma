@@ -46,6 +46,8 @@ model Member {
   associationCode           String
   createdAt                 DateTime @default(now())
   updatedAt                 DateTime @updatedAt
+  nameChangeRequests        NameChangeRequest[]
+  memberTransferRequests    MemberTransferRequest[]
 
   @@unique([firstName, lastAndMiddleNames, dateOfBirth, delegateRecommendation])
 }
@@ -72,7 +74,7 @@ model RemovedMember {
 }
 
 model DeceasedMember {
-  id                        String   @id @default(uuid())
+  id                        String                   @id @default(uuid())
   clerkId                   String
   firstName                 String
   lastAndMiddleNames        String
@@ -81,11 +83,95 @@ model DeceasedMember {
   registrationDate          String
   nameOfBeneficiary         String
   associationName           String
+  associationCode           String?
   dateOfDeath               String
   placeOfDeath              String
   contributionStatus        String
   createdAt                 DateTime @default(now())
   updatedAt                 DateTime @updatedAt
+  documents                 DeceasedMemberDocument[]
+}
+
+model DeceasedMemberDocument {
+  id               String         @id @default(uuid())
+  deceasedMemberId String
+  clerkId          String
+  associationCode  String?
+  documentType     String
+  fileName         String
+  mimeType         String
+  fileSize         Int
+  fileData         Bytes
+  status           String         @default("submitted")
+  rejectionReason  String?
+  deceasedMember   DeceasedMember @relation(fields: [deceasedMemberId], references: [id], onDelete: Cascade)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@unique([deceasedMemberId, documentType])
+  @@index([deceasedMemberId])
+  @@index([associationCode])
+  @@index([clerkId])
+  @@index([status])
+}
+
+model NameChangeRequest {
+  id                          String   @id @default(uuid())
+  memberId                    String
+  clerkId                     String
+  associationCode             String
+  currentFirstName            String
+  currentLastAndMiddleNames   String
+  requestedFirstName          String
+  requestedLastAndMiddleNames String
+  reason                      String
+  documentRequired            Boolean  @default(false)
+  fileName                    String?
+  mimeType                    String?
+  fileSize                    Int?
+  fileData                    Bytes?
+  status                      String   @default("submitted")
+  rejectionReason             String?
+  reviewedBy                  String?
+  reviewedAt                  DateTime?
+  member                      Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+
+  @@index([memberId])
+  @@index([clerkId])
+  @@index([associationCode])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model MemberTransferRequest {
+  id                        String   @id @default(uuid())
+  memberId                  String
+  initiatingClerkId         String
+  initiatingAssociationCode String
+  receivingClerkId          String
+  receivingAssociationCode  String
+  currentFirstName          String
+  currentLastAndMiddleNames String
+  memberMatriculationNumber String
+  status                    String   @default("receiving_delegate_pending")
+  rejectionReason           String?
+  receivingReviewedBy       String?
+  receivingReviewedAt       DateTime?
+  adminReviewedBy           String?
+  adminReviewedAt           DateTime?
+  member                    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  @@index([memberId])
+  @@index([initiatingClerkId])
+  @@index([receivingClerkId])
+  @@index([initiatingAssociationCode])
+  @@index([receivingAssociationCode])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model AssociationContributionPayment {

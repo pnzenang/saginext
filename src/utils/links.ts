@@ -16,7 +16,8 @@ import {
   List,
   Megaphone,
   Table,
-  Pencil
+  FileCheck,
+  ArrowLeftRight
 } from 'lucide-react'
 
 import type { MenuItem } from './types'
@@ -102,9 +103,14 @@ export const pagesItems: MenuItem[] = [
     href: '/death-documentations'
   },
   {
-    icon: Pencil,
+    icon: FileCheck,
     label: 'Name Change & Documentations',
     href: '/name-modification'
+  },
+  {
+    icon: ArrowLeftRight,
+    label: 'Member Transfer',
+    href: '/member-transfer'
   },
   {
     icon: SquareUser,
@@ -115,6 +121,16 @@ export const pagesItems: MenuItem[] = [
     icon: UserCog,
     label: 'Admin All Members',
     href: '/admin-all-members'
+  },
+  {
+    icon: FileCheck,
+    label: 'Admin Name Changes',
+    href: '/admin-name-changes'
+  },
+  {
+    icon: ArrowLeftRight,
+    label: 'Admin Member Transfers',
+    href: '/admin-member-transfers'
   },
   {
     icon: UserCog,

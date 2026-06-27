@@ -80,7 +80,7 @@ const DeathAnnouncement = async ({ params }: { params: { id: string } }) => {
                 defaultValue={nameOfBeneficiary}
               />
 
-              <FormInput type='text' name='associationCode' label='sponsor code' defaultValue={associationCode} />
+              <FormInput type='text' name='associationCode' label='association code' defaultValue={associationCode} />
               <FormInput type='text' name='placeOfDeath' label='loved one place of death' />
 
               <MaskDateInput type='text' name='dateOfDeath' label='loved one date of death' placeholder='MM/DD/YYYY' />
