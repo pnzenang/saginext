@@ -105,12 +105,12 @@ export enum contributionStatus {
   completed = 'Contribution_Completed'
 }
 
-export const deceasedMemberBaseDocumentTypes = [
+export const deceasedMemberUnitedStatesDocumentTypes = [
   'death_certificate',
   'deceased_id_card',
   'deceased_picture',
-  'funeral_program',
-  'funeral_home_invoice'
+  'funeral_home_invoice',
+  'funeral_program'
 ] as const
 
 export const deceasedMemberInternationalDocumentTypes = [
@@ -118,12 +118,22 @@ export const deceasedMemberInternationalDocumentTypes = [
   'social_security_death_report',
   'green_card_or_us_passport',
   'passport_visa_page',
-  'trip_tickets'
+  'trip_tickets',
+  'funeral_program',
+  'deceased_picture'
 ] as const
 
 export const deceasedMemberDocumentTypes = [
-  ...deceasedMemberBaseDocumentTypes,
-  ...deceasedMemberInternationalDocumentTypes
+  'death_certificate',
+  'deceased_id_card',
+  'deceased_picture',
+  'funeral_home_invoice',
+  'funeral_program',
+  'ministry_certified_death_certificate',
+  'social_security_death_report',
+  'green_card_or_us_passport',
+  'passport_visa_page',
+  'trip_tickets'
 ] as const
 
 export type DeceasedMemberDocumentType = (typeof deceasedMemberDocumentTypes)[number]
@@ -131,7 +141,7 @@ export type DeceasedMemberDocumentType = (typeof deceasedMemberDocumentTypes)[nu
 export const deceasedMemberDocumentLabels: Record<DeceasedMemberDocumentType, string> = {
   death_certificate: 'Death certificate',
   deceased_id_card: 'Deceased ID card',
-  deceased_picture: 'Deceased picture',
+  deceased_picture: 'Deceased picture(s)',
   funeral_home_invoice: 'Funeral Home invoice',
   funeral_program: 'Funeral program',
   green_card_or_us_passport: 'Copy of the deceased green card or US passport',

@@ -16,10 +16,10 @@ import {
   uploadDeceasedMemberDocumentAction
 } from '@/utils/actions'
 import {
-  deceasedMemberBaseDocumentTypes,
   deceasedMemberDocumentLabels,
   deceasedMemberDocumentStatusLabels,
   deceasedMemberInternationalDocumentTypes,
+  deceasedMemberUnitedStatesDocumentTypes,
   type DeceasedMemberDocumentStatus,
   type DeceasedMemberDocumentType
 } from '@/utils/types'
@@ -73,14 +73,13 @@ const isUnitedStatesCountry = (country?: string | null) => {
 }
 
 const getRequiredDocumentTypes = (deceasedMember: DeathDocumentationCase): DeceasedMemberDocumentType[] => {
-  const requiredDocumentTypes: DeceasedMemberDocumentType[] = [...deceasedMemberBaseDocumentTypes]
   const countryOfDeath = deceasedMember.placeOfDeathCountry?.trim()
 
   if (countryOfDeath && !isUnitedStatesCountry(countryOfDeath)) {
-    requiredDocumentTypes.push(...deceasedMemberInternationalDocumentTypes)
+    return [...deceasedMemberInternationalDocumentTypes]
   }
 
-  return requiredDocumentTypes
+  return [...deceasedMemberUnitedStatesDocumentTypes]
 }
 
 const getUploadedDocumentCount = (deceasedMember: DeathDocumentationCase) =>
@@ -279,7 +278,12 @@ const DeathDocumentationDetailsForm = ({ deceasedMember }: { deceasedMember: Dea
 
       {requiresInternationalDocuments ? (
         <p className='rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200'>
-          Country of death is outside the United States, so the additional international documents below are required.
+          Country of death is outside the United States, so the international document list below is required.
+        </p>
+      ) : null}
+      {countryOfDeath && !requiresInternationalDocuments ? (
+        <p className='rounded-md border border-green-200 bg-green-50 px-3 py-2 text-xs font-semibold text-green-800 dark:border-green-900 dark:bg-green-950/40 dark:text-green-200'>
+          Country of death is the United States, so the USA document list below is required.
         </p>
       ) : null}
       {!countryOfDeath ? (
@@ -300,10 +304,8 @@ const DeceasedMemberDocumentationCard = ({
 }) => {
   const uploadedCount = getUploadedDocumentCount(deceasedMember)
   const requiredDocumentTypes = getRequiredDocumentTypes(deceasedMember)
-
-  const requiresInternationalDocuments = requiredDocumentTypes.some(documentType =>
-    deceasedMemberInternationalDocumentTypes.includes(documentType as (typeof deceasedMemberInternationalDocumentTypes)[number])
-  )
+  const countryOfDeath = deceasedMember.placeOfDeathCountry?.trim()
+  const requiresInternationalDocuments = Boolean(countryOfDeath && !isUnitedStatesCountry(countryOfDeath))
 
   const documentsByType = new Map(
     deceasedMember.documents.map(uploadedDocument => [uploadedDocument.documentType, uploadedDocument])
@@ -336,13 +338,19 @@ const DeceasedMemberDocumentationCard = ({
 
           <div className='grid gap-3'>
             <div>
-              <h3 className='text-sm font-extrabold'>Mandatory documents</h3>
+              <h3 className='text-sm font-extrabold'>
+                {requiresInternationalDocuments
+                  ? 'Required documents for death outside the United States'
+                  : 'Required documents for death in the United States'}
+              </h3>
               <p className='text-muted-foreground mt-1 text-xs'>
-                These documents are required for every deceased member.
+                {requiresInternationalDocuments
+                  ? 'These documents are required when the death occurred in a country other than the USA.'
+                  : 'These documents are required when the death occurred in the United States.'}
               </p>
             </div>
             <div className='grid w-full min-w-0 gap-4 lg:grid-cols-2 2xl:grid-cols-4'>
-              {deceasedMemberBaseDocumentTypes.map(documentType => (
+              {requiredDocumentTypes.map(documentType => (
                 <DocumentationSlot
                   key={documentType}
                   deceasedMember={deceasedMember}
@@ -353,28 +361,6 @@ const DeceasedMemberDocumentationCard = ({
               ))}
             </div>
           </div>
-
-          {requiresInternationalDocuments ? (
-            <div className='grid gap-3'>
-              <div>
-                <h3 className='text-sm font-extrabold'>Required documents for death outside the United States</h3>
-                <p className='text-muted-foreground mt-1 text-xs'>
-                  These documents are required because the country of death is not the United States.
-                </p>
-              </div>
-              <div className='grid w-full min-w-0 gap-4 lg:grid-cols-2 2xl:grid-cols-4'>
-                {deceasedMemberInternationalDocumentTypes.map(documentType => (
-                  <DocumentationSlot
-                    key={documentType}
-                    deceasedMember={deceasedMember}
-                    documentType={documentType}
-                    isAdminUser={isAdminUser}
-                    uploadedDocument={documentsByType.get(documentType)}
-                  />
-                ))}
-              </div>
-            </div>
-          ) : null}
         </div>
       </CardContent>
     </Card>
