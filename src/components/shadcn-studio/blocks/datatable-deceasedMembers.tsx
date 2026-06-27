@@ -18,14 +18,9 @@ import {
   CheckCircle2,
   CircleDollarSign,
   ClipboardList,
-  Cross,
-  Ellipsis,
-  Eye,
   FileSpreadsheetIcon,
   FileTextIcon,
-  Pencil,
   SearchIcon,
-  Trash2,
   UploadIcon,
   Users,
   XIcon
@@ -44,10 +39,6 @@ import {
   useReactTable
 } from '@tanstack/react-table'
 
-import Link from 'next/link'
-
-import { id } from 'zod/v4/locales'
-
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -55,7 +46,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger
@@ -74,12 +64,12 @@ import { cn } from '@/lib/utils'
 import { getTableCellLabel } from '@/utils/table'
 import { getSelectFilterValues } from '@/utils/table-filter-values'
 
-import { contributionStatus, type DeceasedMemberType } from '@/utils/types'
-import { deleteDeceasedMemberAction } from '@/utils/actions'
-import FormContainer from '@/components/forms/FormContainer'
 import PaginationControls from '@/components/global/PaginationControls'
+import RestoreDeceasedMemberButton from '@/components/global/RestoreDeceasedMemberButton'
+import { contributionStatus, type DeceasedMemberType } from '@/utils/types'
 
 declare module '@tanstack/react-table' {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface ColumnMeta<TData extends RowData, TValue> {
     filterVariant?: 'text' | 'range' | 'select'
   }
@@ -98,6 +88,7 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
     ),
     size: 100
   },
+
   // {
   //   header: 'Middle Name',
   //   accessorKey: 'middleName',
@@ -225,18 +216,13 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
       filterVariant: 'select'
     },
     size: 100
+  },
+  {
+    header: 'Actions',
+    accessorKey: 'id',
+    cell: ({ row: { original } }) => <RowActions deceasedMember={original} />,
+    size: 20
   }
-  // {
-  //   header: 'Actions',
-  //   accessorKey: 'id',
-  //   cell: ({ row: { original } }) => {
-  //     // Destructuring 'id' directly from the row data
-  //     const { id } = original
-
-  //     return <RowActions deceasedMemberId={id} />
-  //   },
-  //   size: 20
-  // }
 ]
 
 const numberFormatter = new Intl.NumberFormat('en-US')
@@ -731,44 +717,6 @@ function Filter({ column }: { column: Column<any, unknown> }) {
   )
 }
 
-function RowActions({ deceasedMemberId }: { deceasedMemberId: string }) {
-  const deleteDeceasedMember = deleteDeceasedMemberAction.bind(null, { deceasedMemberId })
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <div className='flex'>
-          <Button size='icon' variant='ghost' className='rounded-full p-2' aria-label='Edit item'>
-            <Ellipsis className='size-6' aria-hidden='true' />
-          </Button>
-        </div>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align='start' className='rounded border border-purple-500'>
-        <DropdownMenuGroup>
-          <DropdownMenuItem>
-            <Link href={`/deceased-members/${deceasedMemberId}/edit`}>
-              <span className='flex justify-center gap-3 pl-4 text-blue-500'>
-                <Pencil className='text-blue-500' />
-                Edit Case Status
-              </span>
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <FormContainer action={deleteDeceasedMember}>
-              <Button
-                size='default'
-                variant='ghost'
-                className='text-destructive flex justify-center gap-3 rounded-full hover:bg-transparent'
-
-                // aria-label='Edit '
-              >
-                <Trash2 className='text-destructive size-4' aria-hidden='true' />
-                <p className='hover:text-red-400'>remove deceased member</p>
-              </Button>
-            </FormContainer>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
+function RowActions({ deceasedMember }: { deceasedMember: DeceasedMemberType }) {
+  return <RestoreDeceasedMemberButton deceasedMember={deceasedMember} />
 }

@@ -2766,8 +2766,13 @@ export const createDeceasedMemberAction = async (provState: any, formData: FormD
         data: {
           ...validatedFields,
           associationCode: member.associationCode,
-          registrationDate: formatRegistrationDate(member.createdAt),
-          clerkId: user.id
+          clerkId: member.clerkId,
+          dateOfBirth: member.dateOfBirth,
+          delegateRecommendation: member.delegateRecommendation,
+          memberStatus: member.memberStatus,
+          originalMemberCreatedAt: member.createdAt,
+          originalMemberId: member.id,
+          registrationDate: formatRegistrationDate(member.createdAt)
         }
       }),
       db.member.delete({
@@ -2804,7 +2809,7 @@ export const createDeceasedMemberActionAdmin = async (
   provState: any,
   formData: FormData
 ): Promise<{ message: string }> => {
-  const user = await assertAdminUser()
+  await assertAdminUser()
 
   try {
     const memberId = formData.get('id') as string
@@ -2830,8 +2835,13 @@ export const createDeceasedMemberActionAdmin = async (
         data: {
           ...validatedFields,
           associationCode: member.associationCode,
-          registrationDate: formatRegistrationDate(member.createdAt),
-          clerkId: user.id
+          clerkId: member.clerkId,
+          dateOfBirth: member.dateOfBirth,
+          delegateRecommendation: member.delegateRecommendation,
+          memberStatus: member.memberStatus,
+          originalMemberCreatedAt: member.createdAt,
+          originalMemberId: member.id,
+          registrationDate: formatRegistrationDate(member.createdAt)
         }
       }),
       db.member.delete({
@@ -2862,6 +2872,152 @@ export const fetchDeceasedMembersActionAdmin = async () => {
   })
 
   return deceasedMember
+}
+
+export const restoreDeceasedMemberAction = async (prevState: { deceasedMemberId: string }) => {
+  const user = await getAuthUser()
+  const { deceasedMemberId } = prevState
+
+  try {
+    const deceasedMember = await db.deceasedMember.findUnique({
+      where: {
+        id: deceasedMemberId
+      }
+    })
+
+    if (!deceasedMember) {
+      throw new Error('Deceased member not found')
+    }
+
+    if (!deceasedMember.associationCode) {
+      throw new Error('This deceased member record is missing the association code needed for restoration')
+    }
+
+    const associationCode = normalizeAssociationCode(deceasedMember.associationCode)
+    const isAdminUser = user.id === process.env.ADMIN_USER_ID
+
+    const delegateProfile = await db.profile.findUnique({
+      select: {
+        clerkId: true
+      },
+      where: {
+        associationCode
+      }
+    })
+
+    if (!isAdminUser) {
+      const currentAssociationCode = normalizeAssociationCode(await getCurrentAssociationCode(user.id))
+
+      if (currentAssociationCode !== associationCode && deceasedMember.clerkId !== user.id) {
+        throw new Error('You can only restore death announcements from your own association')
+      }
+    }
+
+    if (!isWithinMemberRemovalRestoreWindow(deceasedMember.createdAt)) {
+      throw new Error('This death announcement can no longer be restored because the 48-hour reversal window has expired')
+    }
+
+    if (
+      !deceasedMember.dateOfBirth ||
+      !deceasedMember.delegateRecommendation ||
+      !deceasedMember.memberStatus ||
+      !deceasedMember.nameOfBeneficiary
+    ) {
+      throw new Error('This deceased member record is missing the original details needed for restoration')
+    }
+
+    const dateOfBirth = deceasedMember.dateOfBirth
+    const delegateRecommendation = deceasedMember.delegateRecommendation
+    const restoredMemberStatus = deceasedMember.memberStatus
+    const nameOfBeneficiary = deceasedMember.nameOfBeneficiary
+
+    await db.$transaction(async tx => {
+      await tx.member.create({
+        data: {
+          ...(deceasedMember.originalMemberId ? { id: deceasedMember.originalMemberId } : {}),
+          associationCode,
+          associationName: deceasedMember.associationName,
+          clerkId: delegateProfile?.clerkId ?? deceasedMember.clerkId,
+          countryOfResidence: deceasedMember.countryOfResidence,
+          dateOfBirth,
+          delegateRecommendation,
+          firstName: deceasedMember.firstName,
+          lastAndMiddleNames: deceasedMember.lastAndMiddleNames,
+          memberMatriculationNumber: deceasedMember.memberMatriculationNumber,
+          memberStatus: restoredMemberStatus,
+          nameOfBeneficiary,
+          ...(deceasedMember.originalMemberCreatedAt ? { createdAt: deceasedMember.originalMemberCreatedAt } : {})
+        }
+      })
+
+      await tx.deceasedMember.delete({
+        where: {
+          id: deceasedMember.id
+        }
+      })
+
+      if (restoredMemberStatus === memberStatus.Vested) {
+        await tx.associationContributionCredit.upsert({
+          create: {
+            amountCredited: contributionCreditPerVestedMember,
+            associationCode,
+            memberMatriculationNumber: deceasedMember.memberMatriculationNumber
+          },
+          update: {
+            amountCredited: contributionCreditPerVestedMember,
+            associationCode
+          },
+          where: {
+            memberMatriculationNumber: deceasedMember.memberMatriculationNumber
+          }
+        })
+      }
+
+      const contributionUsage = await tx.associationContributionUsage.findUnique({
+        where: {
+          associationCode
+        }
+      })
+
+      if (!contributionUsage) {
+        return
+      }
+
+      if (decimalToNumber(contributionUsage.amountUsed) <= contributionCreditPerVestedMember) {
+        await tx.associationContributionUsage.delete({
+          where: {
+            associationCode
+          }
+        })
+
+        return
+      }
+
+      await tx.associationContributionUsage.update({
+        data: {
+          amountUsed: {
+            decrement: contributionCreditPerVestedMember
+          }
+        },
+        where: {
+          associationCode
+        }
+      })
+    })
+
+    revalidateDeathDocumentationViews()
+    revalidatePaymentViews()
+    revalidatePath('/all-members')
+    revalidatePath('/admin-all-members')
+
+    return { message: 'Member restored from death announcement successfully' }
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      return { message: 'This member already exists in All Members and cannot be restored again' }
+    }
+
+    return renderError(error)
+  }
 }
 
 export const fetchDeathDocumentationCasesAction = async () => {

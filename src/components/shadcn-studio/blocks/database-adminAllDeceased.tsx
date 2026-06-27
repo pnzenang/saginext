@@ -18,9 +18,7 @@ import {
   CheckCircle2,
   CircleDollarSign,
   ClipboardList,
-  Cross,
   Ellipsis,
-  Eye,
   FileSpreadsheetIcon,
   FileTextIcon,
   Pencil,
@@ -45,8 +43,6 @@ import {
 } from '@tanstack/react-table'
 
 import Link from 'next/link'
-
-import { id } from 'zod/v4/locales'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -78,8 +74,10 @@ import { contributionStatus, type DeceasedMemberType } from '@/utils/types'
 import { deleteDeceasedMemberAction } from '@/utils/actions'
 import FormContainer from '@/components/forms/FormContainer'
 import PaginationControls from '@/components/global/PaginationControls'
+import RestoreDeceasedMemberButton from '@/components/global/RestoreDeceasedMemberButton'
 
 declare module '@tanstack/react-table' {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface ColumnMeta<TData extends RowData, TValue> {
     filterVariant?: 'text' | 'range' | 'select'
   }
@@ -98,6 +96,7 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
     ),
     size: 100
   },
+
   // {
   //   header: 'Middle Name',
   //   accessorKey: 'middleName',
@@ -229,12 +228,7 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
   {
     header: 'Actions',
     accessorKey: 'id',
-    cell: ({ row: { original } }) => {
-      // Destructuring 'id' directly from the row data
-      const { id } = original
-
-      return <RowActions deceasedMemberId={id} />
-    },
+    cell: ({ row: { original } }) => <RowActions deceasedMember={original} />,
     size: 20
   }
 ]
@@ -731,7 +725,8 @@ function Filter({ column }: { column: Column<any, unknown> }) {
   )
 }
 
-function RowActions({ deceasedMemberId }: { deceasedMemberId: string }) {
+function RowActions({ deceasedMember }: { deceasedMember: DeceasedMemberType }) {
+  const deceasedMemberId = deceasedMember.id
   const deleteDeceasedMember = deleteDeceasedMemberAction.bind(null, { deceasedMemberId })
 
   return (
@@ -745,6 +740,9 @@ function RowActions({ deceasedMemberId }: { deceasedMemberId: string }) {
       </DropdownMenuTrigger>
       <DropdownMenuContent align='start' className='rounded border border-purple-500'>
         <DropdownMenuGroup>
+          <DropdownMenuItem>
+            <RestoreDeceasedMemberButton deceasedMember={deceasedMember} />
+          </DropdownMenuItem>
           <DropdownMenuItem>
             <Link href={`/admin-all-deceased/${deceasedMemberId}/edit`}>
               <span className='flex justify-center gap-3 pl-4 text-blue-500'>

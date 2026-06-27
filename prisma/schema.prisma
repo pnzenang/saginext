@@ -75,15 +75,20 @@ model RemovedMember {
 
 model DeceasedMember {
   id                        String                   @id @default(uuid())
+  originalMemberId          String?
   clerkId                   String
   firstName                 String
   lastAndMiddleNames        String
+  dateOfBirth               String?
   countryOfResidence        String   @map("countryOfBirth")
   memberMatriculationNumber String
   registrationDate          String
   nameOfBeneficiary         String
   associationName           String
   associationCode           String?
+  delegateRecommendation    String?
+  memberStatus              String?
+  originalMemberCreatedAt   DateTime?
   familyContactName         String?
   familyContactPhoneNumber  String?
   dateOfDeath               String
