@@ -80,13 +80,13 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
     header: 'Last And Middle Names',
     accessorKey: 'lastAndMiddleNames',
     cell: ({ row }) => (
-      <div className='flex items-center gap-2'>
+      <div className='flex min-w-0 items-center gap-2'>
         <div className='flex flex-col'>
-          <span className='font-medium'>{row.getValue('lastAndMiddleNames')}</span>
+          <span className='truncate font-medium'>{row.getValue('lastAndMiddleNames')}</span>
         </div>
       </div>
     ),
-    size: 100
+    size: 92
   },
 
   // {
@@ -105,50 +105,50 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
     header: 'First Name',
     accessorKey: 'firstName',
     cell: ({ row }) => (
-      <div className='flex items-center gap-2'>
+      <div className='flex min-w-0 items-center gap-2'>
         <div className='flex flex-col'>
-          <span className='font-medium'>{row.getValue('firstName')}</span>
+          <span className='truncate font-medium'>{row.getValue('firstName')}</span>
         </div>
       </div>
     ),
-    size: 100
+    size: 72
   },
 
   {
     header: 'Matriculation',
     accessorKey: 'memberMatriculationNumber',
     cell: ({ row }) => (
-      <div className='flex items-center gap-2'>
+      <div className='flex min-w-0 items-center gap-2'>
         <div className='flex flex-col'>
-          <span className='font-medium'>{row.getValue('memberMatriculationNumber')}</span>
+          <span className='truncate font-medium'>{row.getValue('memberMatriculationNumber')}</span>
         </div>
       </div>
     ),
-    size: 150
+    size: 94
   },
   {
     header: `Group's Name`,
     accessorKey: 'associationName',
     cell: ({ row }) => (
-      <div className='flex items-center gap-2'>
+      <div className='flex min-w-0 items-center gap-2'>
         <div className='flex flex-col'>
-          <span className='font-medium text-wrap'>{row.getValue('associationName')}</span>
+          <span className='line-clamp-2 font-medium break-words'>{row.getValue('associationName')}</span>
         </div>
       </div>
     ),
-    size: 100
+    size: 96
   },
   {
     header: 'Place of Death(State)',
     accessorKey: 'placeOfDeath',
     cell: ({ row }) => (
-      <div className='flex items-center gap-2'>
+      <div className='flex min-w-0 items-center gap-2'>
         <div className='flex flex-col'>
-          <span className='font-medium'>{row.getValue('placeOfDeath')}</span>
+          <span className='line-clamp-2 font-medium break-words'>{row.getValue('placeOfDeath')}</span>
         </div>
       </div>
     ),
-    size: 100
+    size: 88
   },
 
   {
@@ -162,7 +162,7 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
 
       return <div>{formattedRegistrationDate}</div>
     },
-    size: 100
+    size: 82
   },
   {
     accessorKey: 'dateOfDeath', // The key in your data object
@@ -175,7 +175,7 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
 
       return <div>{formattedDateOfDeath}</div>
     },
-    size: 100
+    size: 82
   },
   {
     accessorKey: 'createdAt', // The key in your data object
@@ -187,7 +187,7 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
 
       return <div>{formattedAnnouncementDate}</div>
     },
-    size: 100
+    size: 82
   },
   {
     header: 'contribution status',
@@ -207,7 +207,7 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
       }[contributionStatus]
 
       return (
-        <Badge className={cn('rounded-sm border-none capitalize focus-visible:outline-none', styles)}>
+        <Badge className={cn('max-w-full rounded-sm border-none text-xs capitalize focus-visible:outline-none', styles)}>
           {row.getValue('contributionStatus')}
         </Badge>
       )
@@ -215,13 +215,13 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
     meta: {
       filterVariant: 'select'
     },
-    size: 100
+    size: 92
   },
   {
     header: 'Actions',
     accessorKey: 'id',
     cell: ({ row: { original } }) => <RowActions deceasedMember={original} />,
-    size: 20
+    size: 58
   }
 ]
 
@@ -543,7 +543,7 @@ const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
             </DropdownMenu>
           </div>
         </div>
-        <Table mobileCards>
+        <Table mobileCards className='table-fixed sm:min-w-0'>
           <TableHeader>
             {table.getHeaderGroups().map(headerGroup => (
               <TableRow key={headerGroup.id} className='h-14 border-t bg-purple-500 hover:bg-purple-400'>
@@ -552,13 +552,13 @@ const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
                     <TableHead
                       key={header.id}
                       style={{ width: `${header.getSize()}px` }}
-                      className='font-extrabold text-white first:pl-4 last:px-4'
+                      className='px-1.5 text-xs leading-tight font-extrabold whitespace-normal text-white first:pl-3 last:px-3'
                     >
                       {header.isPlaceholder ? null : header.column.getCanSort() ? (
                         <div
                           className={cn(
                             header.column.getCanSort() &&
-                              'inline-flex h-full cursor-pointer items-center gap-1.5 select-none'
+                              'inline-flex h-full cursor-pointer items-center gap-1 select-none'
                           )}
                           onClick={header.column.getToggleSortingHandler()}
                           onKeyDown={e => {
@@ -601,7 +601,7 @@ const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
                       <TableCell
                         key={cell.id}
                         data-label={cellLabel}
-                        className='h-14 first:w-12.5 first:pl-4 last:w-29 last:px-4'
+                        className='h-14 px-1.5 whitespace-normal first:pl-3 last:px-3'
                       >
                         <span className='sr-only'>{cellLabel}: </span>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
