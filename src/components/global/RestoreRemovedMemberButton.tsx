@@ -53,9 +53,7 @@ const RestoreRemovedMemberButton = ({ removedMember }: { removedMember: RemovedM
 
   const tooltipClass = canRestore
     ? 'border border-emerald-200 bg-emerald-50 text-emerald-800 shadow-sm [&>svg]:bg-emerald-50 [&>svg]:fill-emerald-50'
-    : isExpired
-      ? 'border border-red-200 bg-red-50 text-red-700 shadow-sm [&>svg]:bg-red-50 [&>svg]:fill-red-50'
-      : undefined
+    : undefined
 
   useEffect(() => {
     if (!isOpen) return
@@ -86,6 +84,8 @@ const RestoreRemovedMemberButton = ({ removedMember }: { removedMember: RemovedM
 
     if (open) setNow(Date.now())
   }
+
+  if (isExpired) return null
 
   return (
     <TooltipProvider delayDuration={150}>
@@ -119,7 +119,6 @@ const RestoreRemovedMemberButton = ({ removedMember }: { removedMember: RemovedM
               <p className='font-semibold'>Time remaining: {formatTimeRemaining(timeRemaining)}</p>
             </>
           )}
-          {isExpired && <p className='font-semibold'>{memberName} cannot be restored after 48 hours have elapsed.</p>}
           {!hasDetails && (
             <p className='font-semibold'>
               {memberName} cannot be restored because the original restoration details are missing.
