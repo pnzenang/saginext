@@ -84,8 +84,11 @@ model DeceasedMember {
   nameOfBeneficiary         String
   associationName           String
   associationCode           String?
+  familyContactName         String?
+  familyContactPhoneNumber  String?
   dateOfDeath               String
   placeOfDeath              String
+  placeOfDeathCountry       String?
   contributionStatus        String
   createdAt                 DateTime @default(now())
   updatedAt                 DateTime @updatedAt

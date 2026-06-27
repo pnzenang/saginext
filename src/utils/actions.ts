@@ -2826,6 +2826,69 @@ export const fetchDeathDocumentationCasesAction = async () => {
   return { deceasedMembers, isAdminUser }
 }
 
+export const updateDeathDocumentationDetailsAction = async (
+  provState: any,
+  formData: FormData
+): Promise<{ message: string }> => {
+  const user = await getAuthUser()
+
+  try {
+    const deceasedMemberId = getRequiredFormValue(formData, 'deceasedMemberId')
+    const familyContactName = getRequiredFormValue(formData, 'familyContactName').toUpperCase()
+    const familyContactPhoneNumber = getRequiredFormValue(formData, 'familyContactPhoneNumber')
+    const placeOfDeathCountry = getRequiredFormValue(formData, 'placeOfDeathCountry').toUpperCase()
+
+    if (familyContactName.length < 2) {
+      throw new Error('Family contact name should be at least 2 characters.')
+    }
+
+    if (familyContactPhoneNumber.length < 7) {
+      throw new Error('Family contact phone number should be at least 7 characters.')
+    }
+
+    if (placeOfDeathCountry.length < 2) {
+      throw new Error('Country of death should be at least 2 characters.')
+    }
+
+    const deceasedMember = await db.deceasedMember.findUnique({
+      select: {
+        clerkId: true,
+        id: true
+      },
+      where: {
+        id: deceasedMemberId
+      }
+    })
+
+    if (!deceasedMember) {
+      throw new Error('Death announcement not found.')
+    }
+
+    const isAdminUser = user.id === process.env.ADMIN_USER_ID
+
+    if (!isAdminUser && deceasedMember.clerkId !== user.id) {
+      throw new Error('You can only update documentation details for death announcements from your own account.')
+    }
+
+    await db.deceasedMember.update({
+      data: {
+        familyContactName,
+        familyContactPhoneNumber,
+        placeOfDeathCountry
+      },
+      where: {
+        id: deceasedMember.id
+      }
+    })
+
+    revalidateDeathDocumentationViews()
+
+    return { message: 'Death documentation details saved successfully' }
+  } catch (error) {
+    return renderError(error)
+  }
+}
+
 export const uploadDeceasedMemberDocumentAction = async (
   provState: any,
   formData: FormData

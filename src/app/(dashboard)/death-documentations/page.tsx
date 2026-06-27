@@ -12,12 +12,14 @@ import {
   deleteDeceasedMemberDocumentAction,
   fetchDeathDocumentationCasesAction,
   reviewDeceasedMemberDocumentAction,
+  updateDeathDocumentationDetailsAction,
   uploadDeceasedMemberDocumentAction
 } from '@/utils/actions'
 import {
+  deceasedMemberBaseDocumentTypes,
   deceasedMemberDocumentLabels,
   deceasedMemberDocumentStatusLabels,
-  deceasedMemberDocumentTypes,
+  deceasedMemberInternationalDocumentTypes,
   type DeceasedMemberDocumentStatus,
   type DeceasedMemberDocumentType
 } from '@/utils/types'
@@ -62,10 +64,36 @@ const getDocumentStatusClassName = (status: string) => {
   return 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300'
 }
 
+const unitedStatesCountryValues = new Set(['UNITED STATES', 'UNITED STATES OF AMERICA', 'USA', 'US', 'U.S.', 'U.S.A.'])
+
+const isUnitedStatesCountry = (country?: string | null) => {
+  const normalizedCountry = country?.trim().toUpperCase()
+
+  return normalizedCountry ? unitedStatesCountryValues.has(normalizedCountry) : false
+}
+
+const getRequiredDocumentTypes = (deceasedMember: DeathDocumentationCase): DeceasedMemberDocumentType[] => {
+  const requiredDocumentTypes: DeceasedMemberDocumentType[] = [...deceasedMemberBaseDocumentTypes]
+  const countryOfDeath = deceasedMember.placeOfDeathCountry?.trim()
+
+  if (countryOfDeath && !isUnitedStatesCountry(countryOfDeath)) {
+    requiredDocumentTypes.push(...deceasedMemberInternationalDocumentTypes)
+  }
+
+  return requiredDocumentTypes
+}
+
 const getUploadedDocumentCount = (deceasedMember: DeathDocumentationCase) =>
-  deceasedMemberDocumentTypes.filter(documentType =>
+  getRequiredDocumentTypes(deceasedMember).filter(documentType =>
     deceasedMember.documents.some(uploadedDocument => uploadedDocument.documentType === documentType)
   ).length
+
+const hasDocumentationDetails = (deceasedMember: DeathDocumentationCase) =>
+  Boolean(
+    deceasedMember.familyContactName?.trim() &&
+      deceasedMember.familyContactPhoneNumber?.trim() &&
+      deceasedMember.placeOfDeathCountry?.trim()
+  )
 
 const ReviewDocumentControls = ({ uploadedDocument }: { uploadedDocument: DeathDocumentationDocument }) => (
   <div className='mt-3 grid gap-2 rounded-md border bg-white/60 p-2 dark:bg-black/10'>
@@ -192,6 +220,77 @@ const DocumentationSlot = ({
   )
 }
 
+const DeathDocumentationDetailsForm = ({ deceasedMember }: { deceasedMember: DeathDocumentationCase }) => {
+  const detailsComplete = hasDocumentationDetails(deceasedMember)
+  const countryOfDeath = deceasedMember.placeOfDeathCountry?.trim()
+  const requiresInternationalDocuments = Boolean(countryOfDeath && !isUnitedStatesCountry(countryOfDeath))
+
+  return (
+    <div className='grid gap-3 rounded-md border bg-muted/20 p-4'>
+      <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+        <div>
+          <h3 className='text-sm font-extrabold'>Family contact and country of death</h3>
+          <p className='text-muted-foreground mt-1 text-xs'>
+            Save these details before final review so the required document list is complete.
+          </p>
+        </div>
+        <Badge variant={detailsComplete ? 'default' : 'secondary'} className='w-fit'>
+          {detailsComplete ? 'Details saved' : 'Details required'}
+        </Badge>
+      </div>
+
+      <FormContainer action={updateDeathDocumentationDetailsAction} className='grid gap-3' refreshOnMessage>
+        <input type='hidden' name='deceasedMemberId' value={deceasedMember.id} />
+        <div className='grid gap-3 md:grid-cols-3'>
+          <div className='grid gap-1.5'>
+            <Label htmlFor={`${deceasedMember.id}-familyContactName`}>Family contact</Label>
+            <Input
+              id={`${deceasedMember.id}-familyContactName`}
+              name='familyContactName'
+              defaultValue={deceasedMember.familyContactName ?? ''}
+              placeholder='Full name'
+              required
+            />
+          </div>
+          <div className='grid gap-1.5'>
+            <Label htmlFor={`${deceasedMember.id}-familyContactPhoneNumber`}>Family contact phone number</Label>
+            <Input
+              id={`${deceasedMember.id}-familyContactPhoneNumber`}
+              name='familyContactPhoneNumber'
+              type='tel'
+              defaultValue={deceasedMember.familyContactPhoneNumber ?? ''}
+              placeholder='Phone number'
+              required
+            />
+          </div>
+          <div className='grid gap-1.5'>
+            <Label htmlFor={`${deceasedMember.id}-placeOfDeathCountry`}>Country of death</Label>
+            <Input
+              id={`${deceasedMember.id}-placeOfDeathCountry`}
+              name='placeOfDeathCountry'
+              defaultValue={deceasedMember.placeOfDeathCountry ?? ''}
+              placeholder='United States'
+              required
+            />
+          </div>
+        </div>
+        <SubmitButton text='Save documentation details' className='h-9 w-full text-sm normal-case sm:w-fit' />
+      </FormContainer>
+
+      {requiresInternationalDocuments ? (
+        <p className='rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200'>
+          Country of death is outside the United States, so the additional international documents below are required.
+        </p>
+      ) : null}
+      {!countryOfDeath ? (
+        <p className='rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-800 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-200'>
+          Enter the country of death to determine whether international documents are required.
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
 const DeceasedMemberDocumentationCard = ({
   deceasedMember,
   isAdminUser
@@ -200,6 +299,11 @@ const DeceasedMemberDocumentationCard = ({
   isAdminUser: boolean
 }) => {
   const uploadedCount = getUploadedDocumentCount(deceasedMember)
+  const requiredDocumentTypes = getRequiredDocumentTypes(deceasedMember)
+
+  const requiresInternationalDocuments = requiredDocumentTypes.some(documentType =>
+    deceasedMemberInternationalDocumentTypes.includes(documentType as (typeof deceasedMemberInternationalDocumentTypes)[number])
+  )
 
   const documentsByType = new Map(
     deceasedMember.documents.map(uploadedDocument => [uploadedDocument.documentType, uploadedDocument])
@@ -221,22 +325,56 @@ const DeceasedMemberDocumentationCard = ({
               <span>Place of death: {deceasedMember.placeOfDeath}</span>
             </div>
           </div>
-          <Badge variant={uploadedCount === deceasedMemberDocumentTypes.length ? 'default' : 'secondary'} className='shrink-0'>
-            {uploadedCount} / {deceasedMemberDocumentTypes.length} uploaded
+          <Badge variant={uploadedCount === requiredDocumentTypes.length ? 'default' : 'secondary'} className='shrink-0'>
+            {uploadedCount} / {requiredDocumentTypes.length} uploaded
           </Badge>
         </div>
       </CardHeader>
       <CardContent className='px-4 py-4 sm:px-6'>
-        <div className='grid w-full min-w-0 gap-4 lg:grid-cols-2 2xl:grid-cols-4'>
-          {deceasedMemberDocumentTypes.map(documentType => (
-            <DocumentationSlot
-              key={documentType}
-              deceasedMember={deceasedMember}
-              documentType={documentType}
-              isAdminUser={isAdminUser}
-              uploadedDocument={documentsByType.get(documentType)}
-            />
-          ))}
+        <div className='grid gap-5'>
+          <DeathDocumentationDetailsForm deceasedMember={deceasedMember} />
+
+          <div className='grid gap-3'>
+            <div>
+              <h3 className='text-sm font-extrabold'>Mandatory documents</h3>
+              <p className='text-muted-foreground mt-1 text-xs'>
+                These documents are required for every deceased member.
+              </p>
+            </div>
+            <div className='grid w-full min-w-0 gap-4 lg:grid-cols-2 2xl:grid-cols-4'>
+              {deceasedMemberBaseDocumentTypes.map(documentType => (
+                <DocumentationSlot
+                  key={documentType}
+                  deceasedMember={deceasedMember}
+                  documentType={documentType}
+                  isAdminUser={isAdminUser}
+                  uploadedDocument={documentsByType.get(documentType)}
+                />
+              ))}
+            </div>
+          </div>
+
+          {requiresInternationalDocuments ? (
+            <div className='grid gap-3'>
+              <div>
+                <h3 className='text-sm font-extrabold'>Required documents for death outside the United States</h3>
+                <p className='text-muted-foreground mt-1 text-xs'>
+                  These documents are required because the country of death is not the United States.
+                </p>
+              </div>
+              <div className='grid w-full min-w-0 gap-4 lg:grid-cols-2 2xl:grid-cols-4'>
+                {deceasedMemberInternationalDocumentTypes.map(documentType => (
+                  <DocumentationSlot
+                    key={documentType}
+                    deceasedMember={deceasedMember}
+                    documentType={documentType}
+                    isAdminUser={isAdminUser}
+                    uploadedDocument={documentsByType.get(documentType)}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null}
         </div>
       </CardContent>
     </Card>
@@ -245,8 +383,16 @@ const DeceasedMemberDocumentationCard = ({
 
 const DeathDocumentationsPage = async () => {
   const { deceasedMembers, isAdminUser } = await fetchDeathDocumentationCasesAction()
-  const totalRequiredDocuments = deceasedMembers.length * deceasedMemberDocumentTypes.length
-  const uploadedDocuments = deceasedMembers.reduce((total, deceasedMember) => total + getUploadedDocumentCount(deceasedMember), 0)
+
+  const totalRequiredDocuments = deceasedMembers.reduce(
+    (total, deceasedMember) => total + getRequiredDocumentTypes(deceasedMember).length,
+    0
+  )
+
+  const uploadedDocuments = deceasedMembers.reduce(
+    (total, deceasedMember) => total + getUploadedDocumentCount(deceasedMember),
+    0
+  )
 
   return (
     <section className='grid w-full max-w-full min-w-0 gap-5 overflow-hidden px-0 py-4 sm:px-6 sm:py-8 lg:px-8'>

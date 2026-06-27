@@ -89,8 +89,11 @@ export type DeceasedMemberType = {
   nameOfBeneficiary?: string
   associationName: string
   associationCode?: string | null
+  familyContactName?: string | null
+  familyContactPhoneNumber?: string | null
   dateOfDeath: string
   placeOfDeath: string
+  placeOfDeathCountry?: string | null
   createdAt: Date
   updatedAt: Date
 }
@@ -102,11 +105,25 @@ export enum contributionStatus {
   completed = 'Contribution_Completed'
 }
 
-export const deceasedMemberDocumentTypes = [
+export const deceasedMemberBaseDocumentTypes = [
   'death_certificate',
   'deceased_id_card',
   'deceased_picture',
-  'funeral_program'
+  'funeral_program',
+  'funeral_home_invoice'
+] as const
+
+export const deceasedMemberInternationalDocumentTypes = [
+  'ministry_certified_death_certificate',
+  'social_security_death_report',
+  'green_card_or_us_passport',
+  'passport_visa_page',
+  'trip_tickets'
+] as const
+
+export const deceasedMemberDocumentTypes = [
+  ...deceasedMemberBaseDocumentTypes,
+  ...deceasedMemberInternationalDocumentTypes
 ] as const
 
 export type DeceasedMemberDocumentType = (typeof deceasedMemberDocumentTypes)[number]
@@ -115,7 +132,14 @@ export const deceasedMemberDocumentLabels: Record<DeceasedMemberDocumentType, st
   death_certificate: 'Death certificate',
   deceased_id_card: 'Deceased ID card',
   deceased_picture: 'Deceased picture',
-  funeral_program: 'Funeral program'
+  funeral_home_invoice: 'Funeral Home invoice',
+  funeral_program: 'Funeral program',
+  green_card_or_us_passport: 'Copy of the deceased green card or US passport',
+  ministry_certified_death_certificate:
+    'Copy of death certificate certified by the Ministry of External Relations of the country of death',
+  passport_visa_page: 'Visa page of the passport',
+  social_security_death_report: 'Proof that the death has been reported to the Social Security Administration',
+  trip_tickets: 'Copy of the deceased trip ticket(s)'
 }
 
 export const deceasedMemberDocumentStatuses = ['submitted', 'approved', 'rejected'] as const
