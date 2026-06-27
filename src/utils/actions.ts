@@ -610,8 +610,7 @@ export const createMemberAction = async (provState: any, formData: FormData): Pr
 
     const delegateProfile = await db.profile.findUnique({
       select: {
-        firstDelegateEmail: true,
-        firstDelegateFullName: true
+        firstDelegateEmail: true
       },
       where: {
         clerkId: user.id
@@ -641,9 +640,9 @@ export const createMemberAction = async (provState: any, formData: FormData): Pr
 
     try {
       await sendMemberAdditionAcknowledgmentEmail({
+        associationCode: validatedFields.associationCode,
         associationName: validatedFields.associationName,
         delegateEmail: delegateProfile.firstDelegateEmail,
-        delegateName: delegateProfile.firstDelegateFullName,
         memberAddedAt: member.createdAt,
         memberMatriculationNumber: member.memberMatriculationNumber,
         memberName: `${member.firstName} ${member.lastAndMiddleNames}`.trim(),

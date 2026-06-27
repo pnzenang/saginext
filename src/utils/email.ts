@@ -14,9 +14,9 @@ type SendEmailOptions = {
 }
 
 type SendMemberAdditionAcknowledgmentEmailOptions = {
+  associationCode: string
   associationName: string
   delegateEmail: string
-  delegateName: string
   memberAddedAt: Date
   memberMatriculationNumber: string
   memberName: string
@@ -59,12 +59,13 @@ const sendEmail = async ({ html, subject, text, to }: SendEmailOptions) => {
   const from = getEmailSender()
 
   if (!apiKey || !from) {
-    const missingVariables = [
-      !apiKey ? 'RESEND_API_KEY' : null,
-      !from ? 'SAGI_EMAIL_FROM or EMAIL_FROM' : null
-    ].filter(Boolean)
+    const missingVariables = [!apiKey ? 'RESEND_API_KEY' : null, !from ? 'SAGI_EMAIL_FROM or EMAIL_FROM' : null].filter(
+      Boolean
+    )
 
-    throw new Error(`Email is not configured for ${process.env.VERCEL_ENV ?? 'local'}: missing ${missingVariables.join(', ')}.`)
+    throw new Error(
+      `Email is not configured for ${process.env.VERCEL_ENV ?? 'local'}: missing ${missingVariables.join(', ')}.`
+    )
   }
 
   const response = await fetch(resendApiUrl, {
@@ -103,9 +104,9 @@ const sendEmail = async ({ html, subject, text, to }: SendEmailOptions) => {
 }
 
 export const sendMemberAdditionAcknowledgmentEmail = async ({
+  associationCode,
   associationName,
   delegateEmail,
-  delegateName,
   memberAddedAt,
   memberMatriculationNumber,
   memberName,
@@ -117,8 +118,9 @@ export const sendMemberAdditionAcknowledgmentEmail = async ({
 
   const feeAmount = formatCurrency(registrationFeeAmount)
   const formattedDeadline = emailDateFormatter.format(registrationDeadline)
+  const delegateLabel = `${associationCode} Delegate`
   const safeAssociationName = escapeHtml(associationName)
-  const safeDelegateName = escapeHtml(delegateName)
+  const safeDelegateLabel = escapeHtml(delegateLabel)
   const safeFeeAmount = escapeHtml(feeAmount)
   const safeMemberMatriculationNumber = escapeHtml(memberMatriculationNumber)
   const safeMemberName = escapeHtml(memberName)
@@ -127,7 +129,7 @@ export const sendMemberAdditionAcknowledgmentEmail = async ({
   await sendEmail({
     html: `
       <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827;">
-        <p>Hello ${safeDelegateName},</p>
+        <p>Hello ${safeDelegateLabel},</p>
         <p>
           Thank you for adding <strong>${safeMemberName}</strong> to ${safeAssociationName}.
           This addition helps grow the SAGI family.
@@ -145,7 +147,7 @@ export const sendMemberAdditionAcknowledgmentEmail = async ({
     `,
     subject: `SAGI member addition received: ${memberName}`,
     text: [
-      `Hello ${delegateName},`,
+      `Hello ${delegateLabel},`,
       '',
       `Thank you for adding ${memberName} to ${associationName}. This addition helps grow the SAGI family.`,
       '',
