@@ -32,6 +32,7 @@ import {
 } from './sagi-contribution-summary'
 import { registrationBalanceAdjustmentType, registrationFeePerEligibleMember } from './sagi-registration-summary'
 import { contributionPaymentAlertType, registrationPaymentAlertType } from './payment-constants'
+import { sendMemberAdditionAcknowledgmentEmail } from './email'
 import {
   createProfileAction as createProfileActionBase,
   fetchProfile as fetchProfileBase,
@@ -607,7 +608,21 @@ export const createMemberAction = async (provState: any, formData: FormData): Pr
     const validatedFields = validateWithZodSchema(memberSchema, rawData)
     const memberMatriculationNumber = `AS${validatedFields.associationCode}${randomMatriculation()}`
 
-    await db.member.create({
+    const delegateProfile = await db.profile.findUnique({
+      select: {
+        firstDelegateEmail: true,
+        firstDelegateFullName: true
+      },
+      where: {
+        clerkId: user.id
+      }
+    })
+
+    if (!delegateProfile) {
+      throw new Error('Delegate profile was not found.')
+    }
+
+    const member = await db.member.create({
       data: {
         ...validatedFields,
         clerkId: user.id,
@@ -623,6 +638,20 @@ export const createMemberAction = async (provState: any, formData: FormData): Pr
     }
 
     revalidatePaymentViews()
+
+    try {
+      await sendMemberAdditionAcknowledgmentEmail({
+        associationName: validatedFields.associationName,
+        delegateEmail: delegateProfile.firstDelegateEmail,
+        delegateName: delegateProfile.firstDelegateFullName,
+        memberAddedAt: member.createdAt,
+        memberMatriculationNumber: member.memberMatriculationNumber,
+        memberName: `${member.firstName} ${member.lastAndMiddleNames}`.trim(),
+        registrationFeeAmount: registrationFeePerEligibleMember
+      })
+    } catch (emailError) {
+      console.error('Unable to send member addition acknowledgment email', emailError)
+    }
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2002') {
