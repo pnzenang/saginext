@@ -18,9 +18,13 @@ type SendMemberAdditionAcknowledgmentEmailOptions = {
   associationName: string
   delegateEmail: string
   memberAddedAt: Date
-  memberMatriculationNumber: string
   memberName: string
   registrationFeeAmount: number
+}
+
+type SendDeathAnnouncementAcknowledgmentEmailOptions = {
+  associationCode: string
+  delegateEmail: string
 }
 
 const escapeHtml = (value: string) =>
@@ -108,7 +112,6 @@ export const sendMemberAdditionAcknowledgmentEmail = async ({
   associationName,
   delegateEmail,
   memberAddedAt,
-  memberMatriculationNumber,
   memberName,
   registrationFeeAmount
 }: SendMemberAdditionAcknowledgmentEmailOptions) => {
@@ -122,7 +125,6 @@ export const sendMemberAdditionAcknowledgmentEmail = async ({
   const safeAssociationName = escapeHtml(associationName)
   const safeDelegateLabel = escapeHtml(delegateLabel)
   const safeFeeAmount = escapeHtml(feeAmount)
-  const safeMemberMatriculationNumber = escapeHtml(memberMatriculationNumber)
   const safeMemberName = escapeHtml(memberName)
   const safeRegistrationDeadline = escapeHtml(formattedDeadline)
 
@@ -139,8 +141,7 @@ export const sendMemberAdditionAcknowledgmentEmail = async ({
           registration fee within 60 days.
         </p>
         <p>
-          <strong>Registration payment deadline:</strong> ${safeRegistrationDeadline}<br />
-          <strong>Member matriculation number:</strong> ${safeMemberMatriculationNumber}
+          <strong>Registration payment deadline:</strong> ${safeRegistrationDeadline}
         </p>
         <p>Thank you,<br />SAGI</p>
       </div>
@@ -154,7 +155,48 @@ export const sendMemberAdditionAcknowledgmentEmail = async ({
       `The next step in the registration is to send the ${feeAmount} registration fee within 60 days.`,
       '',
       `Registration payment deadline: ${formattedDeadline}`,
-      `Member matriculation number: ${memberMatriculationNumber}`,
+      '',
+      'Thank you,',
+      'SAGI'
+    ].join('\n'),
+    to: delegateEmail
+  })
+}
+
+export const sendDeathAnnouncementAcknowledgmentEmail = async ({
+  associationCode,
+  delegateEmail
+}: SendDeathAnnouncementAcknowledgmentEmailOptions) => {
+  const delegateLabel = `${associationCode} Delegates`
+  const safeDelegateLabel = escapeHtml(delegateLabel)
+
+  await sendEmail({
+    html: `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827;">
+        <p>Hello ${safeDelegateLabel},</p>
+        <p>
+          We are deeply saddened by the news of the passing of one of your members.
+          Our thoughts and prayers are with your group and the bereaved family.
+        </p>
+        <p>
+          On behalf of the entire SAGI family, please accept our sincere condolences.
+        </p>
+        <p>
+          Please log back in to your dashboard and click on the Death Documentations link
+          to upload the necessary documents when they are ready.
+        </p>
+        <p>Thank you,<br />SAGI</p>
+      </div>
+    `,
+    subject: 'SAGI death announcement received',
+    text: [
+      `Hello ${delegateLabel},`,
+      '',
+      'We are deeply saddened by the news of the passing of one of your members. Our thoughts and prayers are with your group and the bereaved family.',
+      '',
+      'On behalf of the entire SAGI family, please accept our sincere condolences.',
+      '',
+      'Please log back in to your dashboard and click on the Death Documentations link to upload the necessary documents when they are ready.',
       '',
       'Thank you,',
       'SAGI'

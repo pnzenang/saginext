@@ -32,7 +32,7 @@ import {
 } from './sagi-contribution-summary'
 import { registrationBalanceAdjustmentType, registrationFeePerEligibleMember } from './sagi-registration-summary'
 import { contributionPaymentAlertType, registrationPaymentAlertType } from './payment-constants'
-import { sendMemberAdditionAcknowledgmentEmail } from './email'
+import { sendDeathAnnouncementAcknowledgmentEmail, sendMemberAdditionAcknowledgmentEmail } from './email'
 import {
   createProfileAction as createProfileActionBase,
   fetchProfile as fetchProfileBase,
@@ -553,6 +553,37 @@ const revalidateDeathDocumentationViews = () => {
   revalidatePath('/deceased-members')
 }
 
+const sendDeathAnnouncementAcknowledgmentToDelegate = async (associationCode: string) => {
+  const normalizedAssociationCode = associationCode.trim().toUpperCase()
+
+  try {
+    const delegateProfile = await db.profile.findUnique({
+      select: {
+        associationCode: true,
+        firstDelegateEmail: true
+      },
+      where: {
+        associationCode: normalizedAssociationCode
+      }
+    })
+
+    if (!delegateProfile) {
+      console.error('Unable to send death announcement acknowledgment email: delegate profile not found', {
+        associationCode: normalizedAssociationCode
+      })
+
+      return
+    }
+
+    await sendDeathAnnouncementAcknowledgmentEmail({
+      associationCode: delegateProfile.associationCode,
+      delegateEmail: delegateProfile.firstDelegateEmail
+    })
+  } catch (emailError) {
+    console.error('Unable to send death announcement acknowledgment email', emailError)
+  }
+}
+
 const revalidateNameChangeDocumentationViews = () => {
   revalidatePath('/admin-all-members')
   revalidatePath('/admin-name-changes')
@@ -644,7 +675,6 @@ export const createMemberAction = async (provState: any, formData: FormData): Pr
         associationName: validatedFields.associationName,
         delegateEmail: delegateProfile.firstDelegateEmail,
         memberAddedAt: member.createdAt,
-        memberMatriculationNumber: member.memberMatriculationNumber,
         memberName: `${member.firstName} ${member.lastAndMiddleNames}`.trim(),
         registrationFeeAmount: registrationFeePerEligibleMember
       })
@@ -2749,6 +2779,7 @@ export const createDeceasedMemberAction = async (provState: any, formData: FormD
 
     await addDeceasedMemberContributionUsage(member.associationCode)
     revalidatePaymentViews()
+    await sendDeathAnnouncementAcknowledgmentToDelegate(member.associationCode)
   } catch (error) {
     return renderError(error)
   }
@@ -2812,6 +2843,7 @@ export const createDeceasedMemberActionAdmin = async (
 
     await addDeceasedMemberContributionUsage(member.associationCode)
     revalidatePaymentViews()
+    await sendDeathAnnouncementAcknowledgmentToDelegate(member.associationCode)
   } catch (error) {
     return renderError(error)
   }
