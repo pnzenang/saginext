@@ -37,16 +37,34 @@ const formatCurrency = (amount: number) =>
     style: 'currency'
   }).format(amount)
 
-const getEmailSender = () => process.env.SAGI_EMAIL_FROM ?? process.env.EMAIL_FROM
+const normalizeEnvValue = (value?: string) => {
+  const trimmedValue = value?.trim()
+
+  if (!trimmedValue) return undefined
+
+  const isWrappedInDoubleQuotes = trimmedValue.startsWith('"') && trimmedValue.endsWith('"')
+  const isWrappedInSingleQuotes = trimmedValue.startsWith("'") && trimmedValue.endsWith("'")
+
+  if (isWrappedInDoubleQuotes || isWrappedInSingleQuotes) {
+    return trimmedValue.slice(1, -1).trim()
+  }
+
+  return trimmedValue
+}
+
+const getEmailSender = () => normalizeEnvValue(process.env.SAGI_EMAIL_FROM) ?? normalizeEnvValue(process.env.EMAIL_FROM)
 
 const sendEmail = async ({ html, subject, text, to }: SendEmailOptions) => {
-  const apiKey = process.env.RESEND_API_KEY
+  const apiKey = normalizeEnvValue(process.env.RESEND_API_KEY)
   const from = getEmailSender()
 
   if (!apiKey || !from) {
-    console.warn('Skipping email send: RESEND_API_KEY and SAGI_EMAIL_FROM or EMAIL_FROM are required.')
+    const missingVariables = [
+      !apiKey ? 'RESEND_API_KEY' : null,
+      !from ? 'SAGI_EMAIL_FROM or EMAIL_FROM' : null
+    ].filter(Boolean)
 
-    return
+    throw new Error(`Email is not configured for ${process.env.VERCEL_ENV ?? 'local'}: missing ${missingVariables.join(', ')}.`)
   }
 
   const response = await fetch(resendApiUrl, {
@@ -64,10 +82,23 @@ const sendEmail = async ({ html, subject, text, to }: SendEmailOptions) => {
     method: 'POST'
   })
 
-  if (!response.ok) {
-    const responseText = await response.text()
+  const responseText = await response.text()
 
+  if (!response.ok) {
     throw new Error(`Email provider rejected the message: ${response.status} ${responseText}`)
+  }
+
+  try {
+    const responseJson = JSON.parse(responseText) as { id?: string }
+
+    console.info('Email sent successfully', {
+      environment: process.env.VERCEL_ENV ?? 'local',
+      providerMessageId: responseJson.id
+    })
+  } catch {
+    console.info('Email sent successfully', {
+      environment: process.env.VERCEL_ENV ?? 'local'
+    })
   }
 }
 
