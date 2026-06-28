@@ -20,6 +20,7 @@ import * as XLSX from 'xlsx'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem } from '@/components/ui/pagination'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { usePagination } from '@/hooks/use-pagination'
 import { cn } from '@/lib/utils'
@@ -107,7 +108,8 @@ const getExportColumns = (kind: PaymentKind) => {
 
 const actionColumnWidthRem = 14
 const sentAdjustmentColumnWidthRem = 9
-const paymentRowsPerPage = 10
+const defaultPaymentRowsPerPage = 10
+const paymentRowsPerPageOptions = [10, 25, 50, 100]
 
 const columnWidthRemByKey: Record<SortKey, number> = {
   amountExpected: 9,
@@ -367,7 +369,9 @@ const AdminPaymentsTable = ({
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const [rowsPerPage, setRowsPerPage] = useState(defaultPaymentRowsPerPage)
   const searchInputId = useId()
+  const rowsPerPageSelectId = useId()
 
   const filteredRows = useMemo(() => filterPaymentRows(rows, searchQuery), [rows, searchQuery])
 
@@ -384,14 +388,14 @@ const AdminPaymentsTable = ({
     [searchQuery, sortedRows, totals]
   )
 
-  const totalPages = Math.max(1, Math.ceil(sortedRows.length / paymentRowsPerPage))
+  const totalPages = Math.max(1, Math.ceil(sortedRows.length / rowsPerPage))
   const activePage = Math.min(currentPage, totalPages)
 
   const paginatedRows = useMemo(() => {
-    const startIndex = (activePage - 1) * paymentRowsPerPage
+    const startIndex = (activePage - 1) * rowsPerPage
 
-    return sortedRows.slice(startIndex, startIndex + paymentRowsPerPage)
-  }, [activePage, sortedRows])
+    return sortedRows.slice(startIndex, startIndex + rowsPerPage)
+  }, [activePage, rowsPerPage, sortedRows])
 
   const currentPageTotals = useMemo(() => getPaymentTotals(paginatedRows), [paginatedRows])
 
@@ -448,6 +452,11 @@ const AdminPaymentsTable = ({
     setSortDirection('asc')
   }
 
+  const handleRowsPerPageChange = (value: string) => {
+    setRowsPerPage(Number(value))
+    setCurrentPage(1)
+  }
+
   return (
     <div className='border-border w-full max-w-full min-w-0 overflow-hidden rounded-lg border'>
       <div className='flex flex-col gap-3 border-b p-3 sm:flex-row sm:items-center sm:justify-between print:hidden'>
@@ -493,16 +502,35 @@ const AdminPaymentsTable = ({
             ) : null}
           </div>
         </form>
-        <Button
-          type='button'
-          size='sm'
-          onClick={exportPageToExcel}
-          disabled={paginatedRows.length === 0}
-          className='w-full sm:w-auto'
-        >
-          <FileSpreadsheetIcon />
-          Export Page
-        </Button>
+        <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center'>
+          <div className='flex items-center justify-between gap-2 sm:justify-start'>
+            <label htmlFor={rowsPerPageSelectId} className='text-muted-foreground text-sm font-medium whitespace-nowrap'>
+              Rows
+            </label>
+            <Select value={String(rowsPerPage)} onValueChange={handleRowsPerPageChange}>
+              <SelectTrigger id={rowsPerPageSelectId} size='sm' className='w-24'>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent align='end'>
+                {paymentRowsPerPageOptions.map(option => (
+                  <SelectItem key={option} value={String(option)}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button
+            type='button'
+            size='sm'
+            onClick={exportPageToExcel}
+            disabled={paginatedRows.length === 0}
+            className='w-full sm:w-auto'
+          >
+            <FileSpreadsheetIcon />
+            Export Page
+          </Button>
+        </div>
       </div>
       <div className='hidden w-full min-w-0 overflow-x-auto lg:block'>
         <Table
@@ -738,76 +766,78 @@ const AdminPaymentsTable = ({
           ))
         )}
       </div>
-      {sortedRows.length > paymentRowsPerPage ? (
+      {sortedRows.length > 0 ? (
         <div className='flex flex-col items-center justify-between gap-3 border-t p-3 sm:flex-row print:hidden'>
           <p className='text-muted-foreground text-sm' aria-live='polite'>
-            Showing {(activePage - 1) * paymentRowsPerPage + 1}-
-            {Math.min(activePage * paymentRowsPerPage, sortedRows.length)} of {sortedRows.length}
+            Showing {(activePage - 1) * rowsPerPage + 1}-{Math.min(activePage * rowsPerPage, sortedRows.length)} of{' '}
+            {sortedRows.length}
           </p>
-          <Pagination className='w-auto justify-end'>
-            <PaginationContent>
-              <PaginationItem>
-                <Button
-                  type='button'
-                  variant='ghost'
-                  onClick={() => setCurrentPage(Math.max(1, activePage - 1))}
-                  disabled={activePage === 1}
-                  className='disabled:pointer-events-none disabled:opacity-50'
-                  aria-label='Go to previous page'
-                >
-                  <ChevronLeftIcon aria-hidden='true' className='text-primary' />
-                  <span className='text-primary max-sm:hidden'>Previous</span>
-                </Button>
-              </PaginationItem>
-
-              {showLeftEllipsis ? (
+          {totalPages > 1 ? (
+            <Pagination className='w-auto justify-end'>
+              <PaginationContent>
                 <PaginationItem>
-                  <PaginationEllipsis />
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    onClick={() => setCurrentPage(Math.max(1, activePage - 1))}
+                    disabled={activePage === 1}
+                    className='disabled:pointer-events-none disabled:opacity-50'
+                    aria-label='Go to previous page'
+                  >
+                    <ChevronLeftIcon aria-hidden='true' className='text-primary' />
+                    <span className='text-primary max-sm:hidden'>Previous</span>
+                  </Button>
                 </PaginationItem>
-              ) : null}
 
-              {pages.map(page => {
-                const isActive = page === activePage
-
-                return (
-                  <PaginationItem key={page}>
-                    <Button
-                      type='button'
-                      size='icon'
-                      className={cn(
-                        !isActive &&
-                          'bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40'
-                      )}
-                      onClick={() => setCurrentPage(page)}
-                      aria-current={isActive ? 'page' : undefined}
-                    >
-                      {page}
-                    </Button>
+                {showLeftEllipsis ? (
+                  <PaginationItem>
+                    <PaginationEllipsis />
                   </PaginationItem>
-                )
-              })}
+                ) : null}
 
-              {showRightEllipsis ? (
+                {pages.map(page => {
+                  const isActive = page === activePage
+
+                  return (
+                    <PaginationItem key={page}>
+                      <Button
+                        type='button'
+                        size='icon'
+                        className={cn(
+                          !isActive &&
+                            'bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40'
+                        )}
+                        onClick={() => setCurrentPage(page)}
+                        aria-current={isActive ? 'page' : undefined}
+                      >
+                        {page}
+                      </Button>
+                    </PaginationItem>
+                  )
+                })}
+
+                {showRightEllipsis ? (
+                  <PaginationItem>
+                    <PaginationEllipsis />
+                  </PaginationItem>
+                ) : null}
+
                 <PaginationItem>
-                  <PaginationEllipsis />
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    onClick={() => setCurrentPage(Math.min(totalPages, activePage + 1))}
+                    disabled={activePage === totalPages}
+                    className='disabled:pointer-events-none disabled:opacity-50'
+                    aria-label='Go to next page'
+                  >
+                    <span className='text-primary max-sm:hidden'>Next</span>
+                    <ChevronRightIcon aria-hidden='true' className='text-primary' />
+                  </Button>
                 </PaginationItem>
-              ) : null}
-
-              <PaginationItem>
-                <Button
-                  type='button'
-                  variant='ghost'
-                  onClick={() => setCurrentPage(Math.min(totalPages, activePage + 1))}
-                  disabled={activePage === totalPages}
-                  className='disabled:pointer-events-none disabled:opacity-50'
-                  aria-label='Go to next page'
-                >
-                  <span className='text-primary max-sm:hidden'>Next</span>
-                  <ChevronRightIcon aria-hidden='true' className='text-primary' />
-                </Button>
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
+              </PaginationContent>
+            </Pagination>
+          ) : null}
         </div>
       ) : null}
     </div>
