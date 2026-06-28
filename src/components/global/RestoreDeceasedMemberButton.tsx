@@ -109,7 +109,7 @@ const RestoreDeceasedMemberButton = ({ deceasedMember }: { deceasedMember: Decea
         >
           {canRestore && (
             <>
-              <p>{memberName} can be restored within 48 hours of the death announcement.</p>
+              <p>If you made a mistake, {memberName} can be restored within 48 hours of the death announcement.</p>
               <p className='font-semibold'>Time remaining: {formatTimeRemaining(timeRemaining)}</p>
             </>
           )}
