@@ -21,7 +21,8 @@ const hasCurrentPrismaDelegates = (client?: PrismaClient) =>
       'memberTransferRequest' in (client as unknown as Record<string, unknown>) &&
       'nameChangeRequest' in (client as unknown as Record<string, unknown>) &&
       hasCachedModelField(client, 'DeceasedMember', 'associationCode') &&
-      hasCachedModelField(client, 'NameChangeRequest', 'fileData') &&
+      hasCachedModelField(client, 'DeceasedMemberDocument', 'cloudinaryPublicId') &&
+      hasCachedModelField(client, 'NameChangeRequest', 'cloudinaryPublicId') &&
       hasCachedModelField(client, 'MemberTransferRequest', 'receivingAssociationCode')
   )
 

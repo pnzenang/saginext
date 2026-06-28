@@ -31,21 +31,21 @@ model Profile {
 }
 
 model Member {
-  id                        String   @id @default(uuid())
+  id                        String                  @id @default(uuid())
   clerkId                   String
   firstName                 String
   lastAndMiddleNames        String
   // middleName String
   dateOfBirth               String
-  countryOfResidence        String   @map("countryOfBirth")
+  countryOfResidence        String                  @map("countryOfBirth")
   memberMatriculationNumber String
   delegateRecommendation    String
   memberStatus              String
   nameOfBeneficiary         String
   associationName           String
   associationCode           String
-  createdAt                 DateTime @default(now())
-  updatedAt                 DateTime @updatedAt
+  createdAt                 DateTime                @default(now())
+  updatedAt                 DateTime                @updatedAt
   nameChangeRequests        NameChangeRequest[]
   memberTransferRequests    MemberTransferRequest[]
 
@@ -80,7 +80,7 @@ model DeceasedMember {
   firstName                 String
   lastAndMiddleNames        String
   dateOfBirth               String?
-  countryOfResidence        String   @map("countryOfBirth")
+  countryOfResidence        String                   @map("countryOfBirth")
   memberMatriculationNumber String
   registrationDate          String
   nameOfBeneficiary         String
@@ -95,36 +95,42 @@ model DeceasedMember {
   placeOfDeath              String
   placeOfDeathCountry       String?
   contributionStatus        String
-  createdAt                 DateTime @default(now())
-  updatedAt                 DateTime @updatedAt
+  createdAt                 DateTime                 @default(now())
+  updatedAt                 DateTime                 @updatedAt
   documents                 DeceasedMemberDocument[]
 }
 
 model DeceasedMemberDocument {
-  id               String         @id @default(uuid())
-  deceasedMemberId String
-  clerkId          String
-  associationCode  String?
-  documentType     String
-  fileName         String
-  mimeType         String
-  fileSize         Int
-  fileData         Bytes
-  status           String         @default("submitted")
-  rejectionReason  String?
-  deceasedMember   DeceasedMember @relation(fields: [deceasedMemberId], references: [id], onDelete: Cascade)
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
+  id                     String         @id @default(uuid())
+  deceasedMemberId       String
+  clerkId                String
+  associationCode        String?
+  documentType           String
+  fileName               String
+  mimeType               String
+  fileSize               Int
+  fileData               Bytes?
+  cloudinaryPublicId     String?
+  cloudinarySecureUrl    String?
+  cloudinaryResourceType String?
+  cloudinaryDeliveryType String?
+  cloudinaryFormat       String?
+  status                 String         @default("submitted")
+  rejectionReason        String?
+  deceasedMember         DeceasedMember @relation(fields: [deceasedMemberId], references: [id], onDelete: Cascade)
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
 
   @@unique([deceasedMemberId, documentType])
   @@index([deceasedMemberId])
   @@index([associationCode])
   @@index([clerkId])
+  @@index([cloudinaryPublicId])
   @@index([status])
 }
 
 model NameChangeRequest {
-  id                          String   @id @default(uuid())
+  id                          String    @id @default(uuid())
   memberId                    String
   clerkId                     String
   associationCode             String
@@ -133,28 +139,34 @@ model NameChangeRequest {
   requestedFirstName          String
   requestedLastAndMiddleNames String
   reason                      String
-  documentRequired            Boolean  @default(false)
+  documentRequired            Boolean   @default(false)
   fileName                    String?
   mimeType                    String?
   fileSize                    Int?
   fileData                    Bytes?
-  status                      String   @default("submitted")
+  cloudinaryPublicId          String?
+  cloudinarySecureUrl         String?
+  cloudinaryResourceType      String?
+  cloudinaryDeliveryType      String?
+  cloudinaryFormat            String?
+  status                      String    @default("submitted")
   rejectionReason             String?
   reviewedBy                  String?
   reviewedAt                  DateTime?
-  member                      Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  createdAt                   DateTime @default(now())
-  updatedAt                   DateTime @updatedAt
+  member                      Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  createdAt                   DateTime  @default(now())
+  updatedAt                   DateTime  @updatedAt
 
   @@index([memberId])
   @@index([clerkId])
   @@index([associationCode])
+  @@index([cloudinaryPublicId])
   @@index([status])
   @@index([createdAt])
 }
 
 model MemberTransferRequest {
-  id                        String   @id @default(uuid())
+  id                        String    @id @default(uuid())
   memberId                  String
   initiatingClerkId         String
   initiatingAssociationCode String
@@ -163,15 +175,15 @@ model MemberTransferRequest {
   currentFirstName          String
   currentLastAndMiddleNames String
   memberMatriculationNumber String
-  status                    String   @default("receiving_delegate_pending")
+  status                    String    @default("receiving_delegate_pending")
   rejectionReason           String?
   receivingReviewedBy       String?
   receivingReviewedAt       DateTime?
   adminReviewedBy           String?
   adminReviewedAt           DateTime?
-  member                    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  createdAt                 DateTime @default(now())
-  updatedAt                 DateTime @updatedAt
+  member                    Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
 
   @@index([memberId])
   @@index([initiatingClerkId])

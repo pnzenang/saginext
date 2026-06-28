@@ -1,18 +1,10 @@
-import { Suspense } from 'react'
-
 import { Card } from '@/components/ui/card'
-import {
-  fetchDeceasedMembersAction,
-  fetchDeceasedMembersActionAdmin,
-  fetchProfile,
-  fetchRemovedMembersAction
-} from '@/utils/actions'
+import { fetchDeceasedMembersAction } from '@/utils/actions'
 
 import DeceasedMembersDataTable from '@/components/shadcn-studio/blocks/datatable-deceasedMembers'
 
 const DataTablePreview = async () => {
   const deceasedMembers = await fetchDeceasedMembersAction()
-  const users = await fetchProfile()
 
   return (
     <div className='py-8 sm:py-10'>

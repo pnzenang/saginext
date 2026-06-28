@@ -32,6 +32,12 @@ import {
 } from './sagi-contribution-summary'
 import { registrationBalanceAdjustmentType, registrationFeePerEligibleMember } from './sagi-registration-summary'
 import { contributionPaymentAlertType, registrationPaymentAlertType } from './payment-constants'
+import {
+  deleteCloudinaryDocument,
+  getSafeCloudinaryPathSegment,
+  uploadDocumentToCloudinary,
+  type StoredCloudinaryDocument
+} from './cloudinary-documents'
 import { sendDeathAnnouncementAcknowledgmentEmail, sendMemberAdditionAcknowledgmentEmail } from './email'
 import {
   createProfileAction as createProfileActionBase,
@@ -293,6 +299,43 @@ const getSafeUploadedFileName = (file: File, fallbackFileName: string) => {
 
   return fileName.slice(0, 180)
 }
+
+const getDeathDocumentCloudinaryFolder = (deceasedMemberId: string, documentType: string) =>
+  `mysagi/death-documentations/${getSafeCloudinaryPathSegment(deceasedMemberId)}/${getSafeCloudinaryPathSegment(documentType)}`
+
+const getNameChangeDocumentCloudinaryFolder = (requestId: string) =>
+  `mysagi/name-change-documentations/${getSafeCloudinaryPathSegment(requestId)}`
+
+const getCloudinaryDocumentData = (document: StoredCloudinaryDocument) => ({
+  cloudinaryDeliveryType: document.deliveryType,
+  cloudinaryFormat: document.format,
+  cloudinaryPublicId: document.publicId,
+  cloudinaryResourceType: document.resourceType,
+  cloudinarySecureUrl: document.secureUrl,
+  fileData: null,
+  fileSize: document.bytes
+})
+
+const deleteCloudinaryDocumentWithoutBlocking = async (document: {
+  cloudinaryDeliveryType?: string | null
+  cloudinaryPublicId?: string | null
+  cloudinaryResourceType?: string | null
+}) => {
+  if (!document.cloudinaryPublicId) return
+
+  try {
+    await deleteCloudinaryDocument({
+      deliveryType: document.cloudinaryDeliveryType,
+      publicId: document.cloudinaryPublicId,
+      resourceType: document.cloudinaryResourceType
+    })
+  } catch (error) {
+    console.error('Unable to delete replaced Cloudinary document', error)
+  }
+}
+
+const hasUploadedDocument = (document: { cloudinaryPublicId?: string | null; fileData?: unknown }) =>
+  Boolean(document.cloudinaryPublicId || document.fileData)
 
 const getUppercaseFormName = (formData: FormData, fieldName: string) => {
   const value = getRequiredFormValue(formData, fieldName).toUpperCase()
@@ -1857,6 +1900,9 @@ export const uploadNameChangeDocumentationAction = async (
 
     const request = await db.nameChangeRequest.findUnique({
       select: {
+        cloudinaryDeliveryType: true,
+        cloudinaryPublicId: true,
+        cloudinaryResourceType: true,
         clerkId: true,
         id: true,
         status: true
@@ -1880,22 +1926,44 @@ export const uploadNameChangeDocumentationAction = async (
       throw new Error('Documentation has not been requested for this name change.')
     }
 
-    await db.nameChangeRequest.update({
-      data: {
-        documentRequired: true,
-        fileData: Buffer.from(await file.arrayBuffer()),
-        fileName: getSafeUploadedFileName(file, 'Official name change document'),
-        fileSize: file.size,
-        mimeType: file.type || 'application/octet-stream',
-        rejectionReason: null,
-        reviewedAt: null,
-        reviewedBy: null,
-        status: 'submitted'
-      },
-      where: {
-        id: request.id
-      }
+    const safeFileName = getSafeUploadedFileName(file, 'Official name change document')
+    const mimeType = file.type || 'application/octet-stream'
+    const fileBuffer = Buffer.from(await file.arrayBuffer())
+
+    const cloudinaryDocument = await uploadDocumentToCloudinary({
+      fileBuffer,
+      fileName: safeFileName,
+      folder: getNameChangeDocumentCloudinaryFolder(request.id),
+      mimeType
     })
+
+    try {
+      await db.nameChangeRequest.update({
+        data: {
+          documentRequired: true,
+          fileName: safeFileName,
+          mimeType,
+          rejectionReason: null,
+          reviewedAt: null,
+          reviewedBy: null,
+          status: 'submitted',
+          ...getCloudinaryDocumentData(cloudinaryDocument)
+        },
+        where: {
+          id: request.id
+        }
+      })
+    } catch (error) {
+      await deleteCloudinaryDocumentWithoutBlocking({
+        cloudinaryDeliveryType: cloudinaryDocument.deliveryType,
+        cloudinaryPublicId: cloudinaryDocument.publicId,
+        cloudinaryResourceType: cloudinaryDocument.resourceType
+      })
+
+      throw error
+    }
+
+    await deleteCloudinaryDocumentWithoutBlocking(request)
 
     revalidateNameChangeDocumentationViews()
 
@@ -1927,6 +1995,16 @@ export const reviewNameChangeRequestAction = async (
     const request = await db.nameChangeRequest.findUnique({
       where: {
         id: requestId
+      },
+      select: {
+        cloudinaryPublicId: true,
+        documentRequired: true,
+        fileData: true,
+        id: true,
+        memberId: true,
+        requestedFirstName: true,
+        requestedLastAndMiddleNames: true,
+        status: true
       }
     })
 
@@ -1938,7 +2016,7 @@ export const reviewNameChangeRequestAction = async (
       throw new Error('This name change request has already been reviewed.')
     }
 
-    if (status === 'approved' && request.documentRequired && !request.fileData) {
+    if (status === 'approved' && request.documentRequired && !hasUploadedDocument(request)) {
       throw new Error('Documentation is required before approving this name change.')
     }
 
@@ -2017,6 +2095,13 @@ export const deleteNameChangeRequestAction = async (prevState: { requestId: stri
 
   try {
     const request = await db.nameChangeRequest.findUnique({
+      select: {
+        cloudinaryDeliveryType: true,
+        cloudinaryPublicId: true,
+        cloudinaryResourceType: true,
+        clerkId: true,
+        id: true
+      },
       where: {
         id: requestId
       }
@@ -2031,6 +2116,12 @@ export const deleteNameChangeRequestAction = async (prevState: { requestId: stri
     if (!isAdminUser && request.clerkId !== user.id) {
       throw new Error('You can only remove name change requests from your own account.')
     }
+
+    await deleteCloudinaryDocument({
+      deliveryType: request.cloudinaryDeliveryType,
+      publicId: request.cloudinaryPublicId,
+      resourceType: request.cloudinaryResourceType
+    })
 
     await db.nameChangeRequest.delete({
       where: {
@@ -2807,11 +2898,11 @@ export const createDeceasedMemberAction = async (provState: any, formData: FormD
 }
 
 export const fetchDeceasedMembersAction = async () => {
-  await getAuthUser()
+  const user = await getAuthUser()
 
   const deceasedMember = await db.deceasedMember.findMany({
     where: {
-      // clerkId: user.id
+      clerkId: user.id
     },
     orderBy: { createdAt: 'desc' }
   })
@@ -2911,6 +3002,10 @@ export const restoreDeceasedMemberAction = async (prevState: { deceasedMemberId:
     const associationCode = normalizeAssociationCode(deceasedMember.associationCode)
     const isAdminUser = user.id === process.env.ADMIN_USER_ID
 
+    if (!isAdminUser && deceasedMember.clerkId !== user.id) {
+      throw new Error('You can only restore death announcements you submitted.')
+    }
+
     const delegateProfile = await db.profile.findUnique({
       select: {
         clerkId: true
@@ -2919,14 +3014,6 @@ export const restoreDeceasedMemberAction = async (prevState: { deceasedMemberId:
         associationCode
       }
     })
-
-    if (!isAdminUser) {
-      const currentAssociationCode = normalizeAssociationCode(await getCurrentAssociationCode(user.id))
-
-      if (currentAssociationCode !== associationCode && deceasedMember.clerkId !== user.id) {
-        throw new Error('You can only restore death announcements from your own association')
-      }
-    }
 
     if (!isWithinMemberRemovalRestoreWindow(deceasedMember.createdAt)) {
       throw new Error('This death announcement can no longer be restored because the 48-hour reversal window has expired')
@@ -3181,29 +3268,11 @@ export const uploadDeceasedMemberDocumentAction = async (
       throw new Error('You can only upload documents for death announcements from your own account.')
     }
 
-    const safeFileName = getSafeDocumentFileName(file, documentType)
-    const fileData = Buffer.from(await file.arrayBuffer())
-
-    await db.deceasedMemberDocument.upsert({
-      create: {
-        associationCode: deceasedMember.associationCode,
-        clerkId: deceasedMember.clerkId,
-        deceasedMemberId,
-        documentType,
-        fileData,
-        fileName: safeFileName,
-        fileSize: file.size,
-        mimeType: file.type || 'application/octet-stream'
-      },
-      update: {
-        associationCode: deceasedMember.associationCode,
-        clerkId: deceasedMember.clerkId,
-        fileData,
-        fileName: safeFileName,
-        fileSize: file.size,
-        mimeType: file.type || 'application/octet-stream',
-        rejectionReason: null,
-        status: 'submitted'
+    const existingDocument = await db.deceasedMemberDocument.findUnique({
+      select: {
+        cloudinaryDeliveryType: true,
+        cloudinaryPublicId: true,
+        cloudinaryResourceType: true
       },
       where: {
         deceasedMemberId_documentType: {
@@ -3212,6 +3281,58 @@ export const uploadDeceasedMemberDocumentAction = async (
         }
       }
     })
+
+    const safeFileName = getSafeDocumentFileName(file, documentType)
+    const mimeType = file.type || 'application/octet-stream'
+    const fileBuffer = Buffer.from(await file.arrayBuffer())
+
+    const cloudinaryDocument = await uploadDocumentToCloudinary({
+      fileBuffer,
+      fileName: safeFileName,
+      folder: getDeathDocumentCloudinaryFolder(deceasedMemberId, documentType),
+      mimeType
+    })
+
+    try {
+      await db.deceasedMemberDocument.upsert({
+        create: {
+          associationCode: deceasedMember.associationCode,
+          clerkId: deceasedMember.clerkId,
+          deceasedMemberId,
+          documentType,
+          fileName: safeFileName,
+          mimeType,
+          ...getCloudinaryDocumentData(cloudinaryDocument)
+        },
+        update: {
+          associationCode: deceasedMember.associationCode,
+          clerkId: deceasedMember.clerkId,
+          fileName: safeFileName,
+          mimeType,
+          rejectionReason: null,
+          status: 'submitted',
+          ...getCloudinaryDocumentData(cloudinaryDocument)
+        },
+        where: {
+          deceasedMemberId_documentType: {
+            deceasedMemberId,
+            documentType
+          }
+        }
+      })
+    } catch (error) {
+      await deleteCloudinaryDocumentWithoutBlocking({
+        cloudinaryDeliveryType: cloudinaryDocument.deliveryType,
+        cloudinaryPublicId: cloudinaryDocument.publicId,
+        cloudinaryResourceType: cloudinaryDocument.resourceType
+      })
+
+      throw error
+    }
+
+    if (existingDocument) {
+      await deleteCloudinaryDocumentWithoutBlocking(existingDocument)
+    }
 
     revalidateDeathDocumentationViews()
 
@@ -3228,6 +3349,9 @@ export const deleteDeceasedMemberDocumentAction = async (prevState: { documentId
   try {
     const document = await db.deceasedMemberDocument.findUnique({
       select: {
+        cloudinaryDeliveryType: true,
+        cloudinaryPublicId: true,
+        cloudinaryResourceType: true,
         clerkId: true,
         id: true
       },
@@ -3245,6 +3369,12 @@ export const deleteDeceasedMemberDocumentAction = async (prevState: { documentId
     if (!isAdminUser && document.clerkId !== user.id) {
       throw new Error('You can only remove documents from your own account.')
     }
+
+    await deleteCloudinaryDocument({
+      deliveryType: document.cloudinaryDeliveryType,
+      publicId: document.cloudinaryPublicId,
+      resourceType: document.cloudinaryResourceType
+    })
 
     await db.deceasedMemberDocument.delete({
       where: {
@@ -3314,9 +3444,9 @@ export const deleteRemovedMemberAction = async (prevState: { removedMemberId: st
 }
 
 export const deleteDeceasedMemberAction = async (prevState: { deceasedMemberId: string }) => {
-  const { deceasedMemberId } = prevState
+  await assertAdminUser()
 
-  // await getAuthUser()
+  const { deceasedMemberId } = prevState
 
   try {
     await db.deceasedMember.delete({
@@ -3362,6 +3492,8 @@ export const fetchSingleDeceasedMemberDetailsAdmin = async (deceasedMemberId: st
 }
 
 export const updateDeceasedMemberDetailsAction = async (prevState: any, formData: FormData) => {
+  const user = await getAuthUser()
+
   try {
     const deceasedMemberId = formData.get('id') as string
     const rawData = Object.fromEntries(formData)
@@ -3369,20 +3501,21 @@ export const updateDeceasedMemberDetailsAction = async (prevState: any, formData
 
     await db.deceasedMember.update({
       where: {
-        id: deceasedMemberId
+        id: deceasedMemberId,
+        clerkId: user.id
       },
       data: {
         ...validatedFields
       }
     })
-    revalidatePath(`admin-all-deceased/${deceasedMemberId}/edit`)
+    revalidatePath(`/deceased-members/${deceasedMemberId}/edit`)
 
     // return { message: `case status Updated Successfully` }
   } catch (error) {
     return renderError(error)
   }
 
-  redirect('/admin-all-deceased')
+  redirect('/deceased-members')
 }
 
 export const updateDeceasedMemberDetailsActionAdmin = async (prevState: any, formData: FormData) => {
