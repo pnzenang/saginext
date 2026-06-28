@@ -7,6 +7,7 @@ import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 
 import { revalidatePath, unstable_noStore as noStore } from 'next/cache'
+import { after } from 'next/server'
 import { customAlphabet } from 'nanoid'
 
 import db from './db'
@@ -725,18 +726,20 @@ export const createMemberAction = async (provState: any, formData: FormData): Pr
 
     revalidatePaymentViews()
 
-    try {
-      await sendMemberAdditionAcknowledgmentEmail({
-        associationCode: validatedFields.associationCode,
-        associationName: validatedFields.associationName,
-        delegateEmail: delegateProfile.firstDelegateEmail,
-        memberAddedAt: member.createdAt,
-        memberName: `${member.firstName} ${member.lastAndMiddleNames}`.trim(),
-        registrationFeeAmount: registrationFeePerEligibleMember
-      })
-    } catch (emailError) {
-      console.error('Unable to send member addition acknowledgment email', emailError)
-    }
+    after(async () => {
+      try {
+        await sendMemberAdditionAcknowledgmentEmail({
+          associationCode: validatedFields.associationCode,
+          associationName: validatedFields.associationName,
+          delegateEmail: delegateProfile.firstDelegateEmail,
+          memberAddedAt: member.createdAt,
+          memberName: `${member.firstName} ${member.lastAndMiddleNames}`.trim(),
+          registrationFeeAmount: registrationFeePerEligibleMember
+        })
+      } catch (emailError) {
+        console.error('Unable to send member addition acknowledgment email', emailError)
+      }
+    })
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2002') {
@@ -2889,7 +2892,7 @@ export const createDeceasedMemberAction = async (provState: any, formData: FormD
     await addDeceasedMemberContributionUsage(member.associationCode)
     revalidatePaymentViews()
     revalidateDeathDocumentationViews()
-    await sendDeathAnnouncementAcknowledgmentToDelegate(member.associationCode)
+    after(() => sendDeathAnnouncementAcknowledgmentToDelegate(member.associationCode))
   } catch (error) {
     return renderError(error)
   }
@@ -2959,7 +2962,7 @@ export const createDeceasedMemberActionAdmin = async (
     await addDeceasedMemberContributionUsage(member.associationCode)
     revalidatePaymentViews()
     revalidateDeathDocumentationViews()
-    await sendDeathAnnouncementAcknowledgmentToDelegate(member.associationCode)
+    after(() => sendDeathAnnouncementAcknowledgmentToDelegate(member.associationCode))
   } catch (error) {
     return renderError(error)
   }

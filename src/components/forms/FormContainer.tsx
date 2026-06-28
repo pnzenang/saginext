@@ -1,8 +1,6 @@
 'use client'
 
-import { useActionState, useEffect, type FormHTMLAttributes, type ReactNode } from 'react'
-
-import { useRouter } from 'next/navigation'
+import { useActionState, useEffect, useRef, type FormHTMLAttributes, type ReactNode } from 'react'
 
 import { toast } from 'sonner'
 
@@ -17,27 +15,28 @@ const FormContainer = ({
   action,
   children,
   className,
-  encType,
-  refreshOnMessage = false
+  encType
 }: {
   action: actionFunction
   children: ReactNode
   className?: string
   encType?: FormHTMLAttributes<HTMLFormElement>['encType']
-  refreshOnMessage?: boolean
 }) => {
-  const router = useRouter()
-  const [state, formAction] = useActionState(action, initialState)
+  const wasPendingRef = useRef(false)
+  const [state, formAction, isPending] = useActionState(action, initialState)
 
   useEffect(() => {
-    if (state.message) {
-      toast(state.message)
+    if (isPending) {
+      wasPendingRef.current = true
 
-      if (refreshOnMessage) {
-        router.refresh()
-      }
+      return
     }
-  }, [refreshOnMessage, router, state])
+
+    if (!wasPendingRef.current || !state.message) return
+
+    wasPendingRef.current = false
+    toast(state.message)
+  }, [isPending, state.message])
 
   return (
     <form action={formAction} className={cn('w-full max-w-full min-w-0', className)} encType={encType}>

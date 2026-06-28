@@ -79,7 +79,7 @@ const AdminReviewControls = ({ request }: { request: NameChangeRequestCardData }
         Admin review
       </div>
       <div className='grid gap-2 lg:grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)]'>
-        <FormContainer action={reviewNameChangeRequestAction} refreshOnMessage>
+        <FormContainer action={reviewNameChangeRequestAction}>
           <input type='hidden' name='requestId' value={request.id} />
           <input type='hidden' name='status' value='approved' />
           <SubmitButton
@@ -87,7 +87,7 @@ const AdminReviewControls = ({ request }: { request: NameChangeRequestCardData }
             className='h-8 w-full bg-green-700 px-3 text-xs normal-case hover:bg-green-800 sm:w-auto'
           />
         </FormContainer>
-        <FormContainer action={reviewNameChangeRequestAction} className='grid gap-2' refreshOnMessage>
+        <FormContainer action={reviewNameChangeRequestAction} className='grid gap-2'>
           <input type='hidden' name='requestId' value={request.id} />
           <input type='hidden' name='status' value='documentation_requested' />
           <SubmitButton
@@ -102,7 +102,7 @@ const AdminReviewControls = ({ request }: { request: NameChangeRequestCardData }
             className='min-h-20 w-full text-xs'
           />
         </FormContainer>
-        <FormContainer action={reviewNameChangeRequestAction} className='grid gap-2' refreshOnMessage>
+        <FormContainer action={reviewNameChangeRequestAction} className='grid gap-2'>
           <input type='hidden' name='requestId' value={request.id} />
           <input type='hidden' name='status' value='rejected' />
           <SubmitButton text='Reject' className='h-8 w-full bg-red-700 px-3 text-xs normal-case hover:bg-red-800' />
@@ -190,7 +190,7 @@ const NameChangeRequestCard = ({
           </Badge>
         )}
         {request.status !== 'approved' ? (
-          <FormContainer action={deleteRequest} refreshOnMessage>
+          <FormContainer action={deleteRequest}>
             <SubmitButton text='Remove' className='h-8 bg-red-700 px-3 text-xs normal-case hover:bg-red-800' />
           </FormContainer>
         ) : null}
@@ -201,7 +201,6 @@ const NameChangeRequestCard = ({
           action={uploadNameChangeDocumentationAction}
           className='grid gap-2 rounded-md border bg-background/70 p-3'
           encType='multipart/form-data'
-          refreshOnMessage
         >
           <input type='hidden' name='requestId' value={request.id} />
           <div className='grid gap-1.5'>

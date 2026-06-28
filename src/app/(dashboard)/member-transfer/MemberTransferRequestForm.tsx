@@ -77,7 +77,7 @@ const MemberTransferRequestForm = ({
         </div>
       </CardHeader>
       <CardContent className='px-4 py-4'>
-        <FormContainer action={submitMemberTransferRequestAction} className='grid gap-3' refreshOnMessage>
+        <FormContainer action={submitMemberTransferRequestAction} className='grid gap-3'>
           <input type='hidden' name='memberId' value={selectedMemberId} />
           <div className='grid gap-1.5'>
             <Label htmlFor='member-transfer-search'>Search members by name</Label>

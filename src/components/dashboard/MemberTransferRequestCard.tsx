@@ -93,7 +93,7 @@ const ReleasingDelegateControls = ({
         Current delegate release review
       </div>
       <div className={cn('grid gap-2', compact ? '' : 'sm:grid-cols-2')}>
-        <FormContainer action={reviewIncomingMemberTransferRequestAction} refreshOnMessage>
+        <FormContainer action={reviewIncomingMemberTransferRequestAction}>
           <input type='hidden' name='requestId' value={request.id} />
           <input type='hidden' name='status' value='receiving_delegate_approved' />
           <SubmitButton
@@ -101,7 +101,7 @@ const ReleasingDelegateControls = ({
             className='h-8 w-full bg-green-700 px-3 text-xs normal-case hover:bg-green-800'
           />
         </FormContainer>
-        <FormContainer action={reviewIncomingMemberTransferRequestAction} className='grid gap-2' refreshOnMessage>
+        <FormContainer action={reviewIncomingMemberTransferRequestAction} className='grid gap-2'>
           <input type='hidden' name='requestId' value={request.id} />
           <input type='hidden' name='status' value='receiving_delegate_rejected' />
           <SubmitButton
@@ -139,7 +139,7 @@ const AdminTransferControls = ({
         Admin review
       </div>
       <div className={cn('grid gap-2', compact ? '' : 'sm:grid-cols-2')}>
-        <FormContainer action={reviewAdminMemberTransferRequestAction} refreshOnMessage>
+        <FormContainer action={reviewAdminMemberTransferRequestAction}>
           <input type='hidden' name='requestId' value={request.id} />
           <input type='hidden' name='status' value='admin_approved' />
           <SubmitButton
@@ -147,7 +147,7 @@ const AdminTransferControls = ({
             className='h-8 w-full bg-green-700 px-3 text-xs normal-case hover:bg-green-800'
           />
         </FormContainer>
-        <FormContainer action={reviewAdminMemberTransferRequestAction} className='grid gap-2' refreshOnMessage>
+        <FormContainer action={reviewAdminMemberTransferRequestAction} className='grid gap-2'>
           <input type='hidden' name='requestId' value={request.id} />
           <input type='hidden' name='status' value='admin_rejected' />
           <SubmitButton
@@ -177,7 +177,7 @@ const DelegateCancelTransferControl = ({
 
   return (
     <div className='grid gap-1.5'>
-      <FormContainer action={cancelRequest} refreshOnMessage>
+      <FormContainer action={cancelRequest}>
         <SubmitButton
           text='Cancel request'
           className={cn('h-8 w-full bg-red-700 px-3 text-xs normal-case hover:bg-red-800', compact ? '' : 'sm:w-fit')}

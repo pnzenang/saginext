@@ -102,7 +102,7 @@ const ReviewDocumentControls = ({ uploadedDocument }: { uploadedDocument: DeathD
       Admin review
     </div>
     <div className='grid gap-2 sm:grid-cols-[auto_minmax(0,1fr)]'>
-      <FormContainer action={reviewDeceasedMemberDocumentAction} refreshOnMessage>
+      <FormContainer action={reviewDeceasedMemberDocumentAction}>
         <input type='hidden' name='documentId' value={uploadedDocument.id} />
         <input type='hidden' name='status' value='approved' />
         <SubmitButton
@@ -113,7 +113,6 @@ const ReviewDocumentControls = ({ uploadedDocument }: { uploadedDocument: DeathD
       <FormContainer
         action={reviewDeceasedMemberDocumentAction}
         className='grid gap-2 sm:grid-cols-[1fr_auto]'
-        refreshOnMessage
       >
         <input type='hidden' name='documentId' value={uploadedDocument.id} />
         <input type='hidden' name='status' value='rejected' />
@@ -190,7 +189,7 @@ const DocumentationSlot = ({
               </a>
             </Button>
             {deleteDocument ? (
-              <FormContainer action={deleteDocument} refreshOnMessage>
+              <FormContainer action={deleteDocument}>
                 <SubmitButton text='Remove' className='h-8 bg-red-700 px-3 text-xs normal-case hover:bg-red-800' />
               </FormContainer>
             ) : null}
@@ -202,7 +201,6 @@ const DocumentationSlot = ({
         action={uploadDeceasedMemberDocumentAction}
         encType='multipart/form-data'
         className='grid gap-2'
-        refreshOnMessage
       >
         <input type='hidden' name='deceasedMemberId' value={deceasedMember.id} />
         <input type='hidden' name='documentType' value={documentType} />
@@ -239,7 +237,7 @@ const DeathDocumentationDetailsForm = ({ deceasedMember }: { deceasedMember: Dea
         </Badge>
       </div>
 
-      <FormContainer action={updateDeathDocumentationDetailsAction} className='grid gap-3' refreshOnMessage>
+      <FormContainer action={updateDeathDocumentationDetailsAction} className='grid gap-3'>
         <input type='hidden' name='deceasedMemberId' value={deceasedMember.id} />
         <div className='grid gap-3 md:grid-cols-3'>
           <div className='grid gap-1.5'>
