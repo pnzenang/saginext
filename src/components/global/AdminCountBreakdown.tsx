@@ -5,10 +5,13 @@ import { useId, useMemo, useState } from 'react'
 import { ArrowUpDown, ChevronDown, ChevronUp, SearchIcon, XIcon } from 'lucide-react'
 
 import AdminCountExcelButton from '@/components/global/AdminCountExcelButton'
+import PaginationControls from '@/components/global/PaginationControls'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { usePagination } from '@/hooks/use-pagination'
 import { cn } from '@/lib/utils'
 
 export type AdminCountRow = {
@@ -42,6 +45,8 @@ type SortState = {
   direction: SortDirection
 }
 
+const defaultCountRowsPerPage = 10
+const countRowsPerPageOptions = [10, 25, 50, 100]
 const numberFormatter = new Intl.NumberFormat('en-US')
 const formatNumber = (value: number) => numberFormatter.format(value)
 
@@ -124,7 +129,10 @@ const SortIcon = ({ active, direction }: { active: boolean; direction: SortDirec
 const AdminCountBreakdown = ({ counts, totals }: AdminCountBreakdownProps) => {
   const [sort, setSort] = useState<SortState>({ key: 'associationCode', direction: 'asc' })
   const [searchQuery, setSearchQuery] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [rowsPerPage, setRowsPerPage] = useState(defaultCountRowsPerPage)
   const searchInputId = useId()
+  const rowsPerPageSelectId = useId()
 
   const filteredCounts = useMemo(() => filterCountRows(counts, searchQuery), [counts, searchQuery])
 
@@ -149,11 +157,33 @@ const AdminCountBreakdown = ({ counts, totals }: AdminCountBreakdownProps) => {
     [searchQuery, sortedCounts, totals]
   )
 
+  const totalPages = Math.max(1, Math.ceil(sortedCounts.length / rowsPerPage))
+  const activePage = Math.min(currentPage, totalPages)
+
+  const paginatedCounts = useMemo(() => {
+    const startIndex = (activePage - 1) * rowsPerPage
+
+    return sortedCounts.slice(startIndex, startIndex + rowsPerPage)
+  }, [activePage, rowsPerPage, sortedCounts])
+
+  const currentPageTotals = useMemo(() => getCountTotals(paginatedCounts), [paginatedCounts])
+
+  const { pages, showLeftEllipsis, showRightEllipsis } = usePagination({
+    currentPage: activePage,
+    paginationItemsToDisplay: 3,
+    totalPages
+  })
+
   const handleSort = (key: SortKey) => {
     setSort(currentSort => ({
       key,
       direction: getNextDirection(currentSort, key)
     }))
+  }
+
+  const handleRowsPerPageChange = (value: string) => {
+    setRowsPerPage(Number(value))
+    setCurrentPage(1)
   }
 
   return (
@@ -174,7 +204,10 @@ const AdminCountBreakdown = ({ counts, totals }: AdminCountBreakdownProps) => {
               id={searchInputId}
               type='search'
               value={searchQuery}
-              onChange={event => setSearchQuery(event.target.value)}
+              onChange={event => {
+                setSearchQuery(event.target.value)
+                setCurrentPage(1)
+              }}
               placeholder='Search association or code'
               className='pr-9 pl-9'
             />
@@ -187,7 +220,10 @@ const AdminCountBreakdown = ({ counts, totals }: AdminCountBreakdownProps) => {
                 variant='ghost'
                 size='icon-xs'
                 className='text-muted-foreground hover:text-foreground absolute top-1/2 right-1.5 -translate-y-1/2 rounded-full'
-                onClick={() => setSearchQuery('')}
+                onClick={() => {
+                  setSearchQuery('')
+                  setCurrentPage(1)
+                }}
                 aria-label='Clear member counts search'
               >
                 <XIcon className='size-3.5' />
@@ -195,7 +231,26 @@ const AdminCountBreakdown = ({ counts, totals }: AdminCountBreakdownProps) => {
             ) : null}
           </div>
         </form>
-        <AdminCountExcelButton counts={sortedCounts} totals={displayedTotals} />
+        <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center'>
+          <div className='flex items-center justify-between gap-2 sm:justify-start'>
+            <label htmlFor={rowsPerPageSelectId} className='text-muted-foreground text-sm font-medium whitespace-nowrap'>
+              Rows
+            </label>
+            <Select value={String(rowsPerPage)} onValueChange={handleRowsPerPageChange}>
+              <SelectTrigger id={rowsPerPageSelectId} size='sm' className='w-24'>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent align='end'>
+                {countRowsPerPageOptions.map(option => (
+                  <SelectItem key={option} value={String(option)}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <AdminCountExcelButton counts={paginatedCounts} totals={currentPageTotals} />
+        </div>
       </div>
 
       <Card className='print:border-0 print:shadow-none'>
@@ -206,7 +261,7 @@ const AdminCountBreakdown = ({ counts, totals }: AdminCountBreakdownProps) => {
           <div className='lg:hidden print:hidden'>
             {sortedCounts.length > 0 ? (
               <div className='divide-border overflow-hidden rounded-md border'>
-                {sortedCounts.map(item => (
+                {paginatedCounts.map(item => (
                   <div key={item.associationCode} className='odd:bg-muted/35 even:bg-background space-y-4 p-5'>
                     <div className='min-w-0'>
                       <p className='line-clamp-2 text-sm font-semibold' title={item.associationName}>
@@ -314,7 +369,7 @@ const AdminCountBreakdown = ({ counts, totals }: AdminCountBreakdownProps) => {
               </TableHeader>
               <TableBody>
                 {sortedCounts.length > 0 ? (
-                  sortedCounts.map(item => (
+                  paginatedCounts.map(item => (
                     <TableRow key={item.associationCode} className='odd:bg-muted/35 even:bg-background h-16'>
                       <TableCell className='truncate px-1 py-4 font-medium lg:px-2' title={item.associationName}>
                         {item.associationName}
@@ -371,6 +426,34 @@ const AdminCountBreakdown = ({ counts, totals }: AdminCountBreakdownProps) => {
               )}
             </Table>
           </div>
+          {sortedCounts.length > 0 ? (
+            <div className='mt-4 flex flex-col items-center justify-between gap-3 print:hidden sm:flex-row'>
+              <p className='text-muted-foreground text-sm' aria-live='polite'>
+                Showing {(activePage - 1) * rowsPerPage + 1}-{Math.min(activePage * rowsPerPage, sortedCounts.length)}{' '}
+                of {sortedCounts.length}
+              </p>
+              {totalPages > 1 ? (
+                <PaginationControls
+                  activePage={activePage}
+                  canNext={activePage < totalPages}
+                  canPrevious={activePage > 1}
+                  getPageButtonClassName={isActive =>
+                    isActive
+                      ? undefined
+                      : 'bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40'
+                  }
+                  iconClassName='text-primary'
+                  labelClassName='text-primary max-sm:hidden'
+                  onNext={() => setCurrentPage(Math.min(totalPages, activePage + 1))}
+                  onPageChange={setCurrentPage}
+                  onPrevious={() => setCurrentPage(Math.max(1, activePage - 1))}
+                  pages={pages}
+                  showLeftEllipsis={showLeftEllipsis}
+                  showRightEllipsis={showRightEllipsis}
+                />
+              ) : null}
+            </div>
+          ) : null}
         </CardContent>
       </Card>
     </>
