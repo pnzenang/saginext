@@ -31,6 +31,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 
 const heroStats = [
+  { value: '$20', label: 'Registration fee' },
   { value: '$20', label: 'maximum monthly member contribution' },
   { value: '$20,000', label: 'family support after vesting' },
   { value: '30 days', label: 'target payout after documents' }
@@ -170,7 +171,7 @@ const dashboardActions = [
 
 const trustStats = [
   { icon: CircleDollarSignIcon, value: '$15M+', label: 'distributed to families' },
-  { icon: UsersRoundIcon, value: '800K+', label: 'families reached' },
+  { icon: UsersRoundIcon, value: '800+', label: 'families reached' },
   { icon: ClipboardCheckIcon, value: '17+', label: 'years of experience' },
   { icon: BellRingIcon, value: '24/7', label: 'online member access' }
 ]
@@ -281,9 +282,7 @@ function HeroSection() {
           {heroStats.map((stat, index) => (
             <div
               key={stat.label}
-              className={`space-y-1 ${
-                index === 1 ? 'sm:text-center' : index === 2 ? 'sm:text-right' : ''
-              }`}
+              className={`space-y-1 ${index === 1 ? 'sm:text-center' : index === 2 ? 'sm:text-right' : ''}`}
             >
               <p className='text-3xl font-semibold sm:text-4xl'>{stat.value}</p>
               <p className='text-sm leading-6 text-white/72 sm:max-w-48'>{stat.label}</p>
