@@ -1,9 +1,10 @@
 import { unstable_noStore as noStore } from 'next/cache'
 
-import AdminTransactionHistoryTable, {
-  type AdminTransactionHistoryRow,
-  type AdminTransactionHistoryTotals
+import type {
+  AdminTransactionHistoryRow,
+  AdminTransactionHistoryTotals
 } from '@/components/global/AdminTransactionHistoryTable'
+import AdminTransactionHistoryTable from '@/components/global/AdminTransactionHistoryTableClient'
 import db from '@/utils/db'
 import { associationPaymentLedgerEventTypes, associationPaymentTypes } from '@/utils/sagi-payment-ledger'
 

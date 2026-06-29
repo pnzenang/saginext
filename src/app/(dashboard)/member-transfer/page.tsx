@@ -60,7 +60,7 @@ const MemberTransferPage = async () => {
             <ArrowLeftRight className='text-muted-foreground mx-auto mb-3 size-8' />
             <p className='font-semibold'>No outside members available to request.</p>
             <p className='text-muted-foreground mt-1 text-sm'>
-              Vested members under other association codes will appear here.
+              Members under other association codes will appear here.
             </p>
           </CardContent>
         </Card>

@@ -23,7 +23,7 @@ type FAQComponentProps = {
 
 const FAQ = ({ faqItems }: FAQComponentProps) => {
   return (
-    <section className='py-8 sm:py-16 lg:py-24'>
+    <section id='faq' className='py-8 sm:py-16 lg:py-24'>
       <div className='mx-auto max-w-7xl px-4 sm:px-6 lg:px-8'>
         <div className='grid grid-cols-1 gap-8 md:gap-16 lg:grid-cols-2 lg:gap-24'>
           {/* Left Section - Support Card */}
@@ -46,8 +46,8 @@ const FAQ = ({ faqItems }: FAQComponentProps) => {
               </MotionPreset>
               <MotionPreset fade slide={{ direction: 'down', offset: 50 }} delay={0.4} transition={{ duration: 0.7 }}>
                 <p className='text-muted-foreground text-base leading-relaxed'>
-                  Our app is designed to make managing your finances easy and stress-free. With intuitive features, you
-                  can track your spending and savings effortlessly.
+                  SAGI combines mutual aid, clear member rules, and a self-service dashboard so delegates and families
+                  know what to expect before support is needed.
                 </p>
               </MotionPreset>
             </div>
@@ -57,13 +57,12 @@ const FAQ = ({ faqItems }: FAQComponentProps) => {
                   <div className='space-y-2.5'>
                     <h3 className='text-xl font-medium md:text-2xl'>Can&apos;t find answers?</h3>
                     <p className='text-muted-foreground leading-relaxed'>
-                      We&apos;re here to help you out whenever you need! Get in touch with our dedicated support team
-                      for personalized assistance anytime.
+                      We&apos;re here to help with registration, member status, documents, and funeral support questions.
                     </p>
                   </div>
 
                   <PrimarySwipeButton size='lg' asChild className='group has-[>svg]:px-6'>
-                    <Link href='#'>
+                    <Link href='/#contact'>
                       Contact us
                       <ArrowRightIcon className='size-5 rotate-310 transition-transform duration-200' />
                     </Link>

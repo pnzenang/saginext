@@ -197,11 +197,7 @@ const DocumentationSlot = ({
         </div>
       ) : null}
 
-      <FormContainer
-        action={uploadDeceasedMemberDocumentAction}
-        encType='multipart/form-data'
-        className='grid gap-2'
-      >
+      <FormContainer action={uploadDeceasedMemberDocumentAction} className='grid gap-2'>
         <input type='hidden' name='deceasedMemberId' value={deceasedMember.id} />
         <input type='hidden' name='documentType' value={documentType} />
         <Label htmlFor={inputId}>{uploadedDocument ? 'Replace file' : 'Choose file'}</Label>

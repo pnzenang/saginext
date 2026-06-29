@@ -1,5 +1,6 @@
 import {
   BookCheck,
+  Building2,
   Cross,
   Navigation,
   SquareUser,
@@ -116,6 +117,11 @@ export const pagesItems: MenuItem[] = [
     icon: SquareUser,
     label: 'Profile',
     href: '/profile'
+  },
+  {
+    icon: Building2,
+    label: 'Admin Profiles',
+    href: '/admin-profiles'
   },
   {
     icon: UserCog,

@@ -1,6 +1,6 @@
 import { Card } from '@/components/ui/card'
 
-import MembersDataTable from '@/components/shadcn-studio/blocks/datatable-members'
+import MembersDataTable from '@/components/shadcn-studio/blocks/datatable-members-client'
 import { fetchMembers, fetchProfile } from '@/utils/actions'
 import { fetchAssociationContributionSummary } from '@/utils/sagi-contribution-summary'
 import { fetchAssociationRegistrationSummary } from '@/utils/sagi-registration-summary'
@@ -9,9 +9,10 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 const DataTablePreview = async () => {
-  const [members, profile] = await Promise.all([fetchMembers(), fetchProfile()])
+  const profile = await fetchProfile()
 
-  const [currentContribution, currentRegistrationPayment] = await Promise.all([
+  const [members, currentContribution, currentRegistrationPayment] = await Promise.all([
+    fetchMembers(profile.clerkId),
     fetchAssociationContributionSummary(profile.associationCode, { noStore: true }),
     fetchAssociationRegistrationSummary(profile.associationCode, { noStore: true })
   ])

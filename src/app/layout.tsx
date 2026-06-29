@@ -29,15 +29,20 @@ const robotoMono = Roboto_Mono({
 
 export const metadata: Metadata = {
   title: {
-    template: 'Demo: %s - Swipe | Shadcn Studio',
-    default: 'Demo: Swipe - Mobile App Landing page | Shadcn Studio'
+    template: '%s - SAGI',
+    default: 'SAGI: Active Solidarity Ltd.'
   },
   description:
-    'Track expenses, manage budgets, and achieve your financial goals with Swipe - the app that puts you in control of your money.',
+    'SAGI is a mutual aid community helping members and families prepare for funeral expenses through shared contributions and organized support.',
   robots: 'index,follow',
-  keywords: ['expense tracking', 'budget management', 'financial goals', 'money management'],
+  keywords: ['SAGI', 'mutual aid', 'funeral support', 'member contributions', 'family support'],
   icons: {
     icon: [
+      {
+        url: '/favicon/sagi-logo.svg',
+        sizes: 'any',
+        type: 'image/svg+xml'
+      },
       {
         url: '/favicon/favicon-16x16.png',
         sizes: '16x16',
@@ -79,13 +84,13 @@ export const metadata: Metadata = {
   metadataBase: new URL(`${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}`),
   openGraph: {
     title: {
-      template: 'Demo: %s - Swipe | Shadcn Studio',
-      default: 'Demo: Swipe - Mobile App Landing page | Shadcn Studio'
+      template: '%s - SAGI',
+      default: 'SAGI: Active Solidarity Ltd.'
     },
     description:
-      'Track expenses, manage budgets, and achieve your financial goals with Swipe - the app that puts you in control of your money.',
+      'A mutual aid community where low monthly contributions create real funeral support for families when it matters most.',
     type: 'website',
-    siteName: 'Swipe',
+    siteName: 'SAGI',
     url: `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}`,
     images: [
       {
@@ -93,18 +98,18 @@ export const metadata: Metadata = {
         type: 'image/png',
         width: 1200,
         height: 630,
-        alt: 'Swipe - Mobile App Landing page'
+        alt: 'SAGI: Active Solidarity Ltd.'
       }
     ]
   },
   twitter: {
     card: 'summary_large_image',
     title: {
-      template: 'Demo: %s - Swipe | Shadcn Studio',
-      default: 'Demo: Swipe - Mobile App Landing page | Shadcn Studio'
+      template: '%s - SAGI',
+      default: 'SAGI: Active Solidarity Ltd.'
     },
     description:
-      'Track expenses, manage budgets, and achieve your financial goals with Swipe - the app that puts you in control of your money.'
+      'SAGI helps members and families prepare for funeral expenses through shared contributions and organized support.'
   }
 }
 

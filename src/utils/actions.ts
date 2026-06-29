@@ -756,12 +756,12 @@ export const createMemberAction = async (provState: any, formData: FormData): Pr
   redirect('/all-members')
 }
 
-export const fetchMembers = async () => {
-  const user = await getAuthUser()
+export const fetchMembers = async (clerkId?: string) => {
+  const userId = clerkId ?? (await getAuthUser()).id
 
   const members = await db.member.findMany({
     where: {
-      clerkId: user.id
+      clerkId: userId
 
       // memberStatus: 'vested'
     },
@@ -2218,8 +2218,7 @@ export const fetchMemberTransferPageAction = async () => {
         },
         clerkId: {
           not: profile.clerkId
-        },
-        memberStatus: memberStatus.Vested
+        }
       }
     }),
     db.memberTransferRequest.findMany({
@@ -2308,10 +2307,6 @@ export const submitMemberTransferRequestAction = async (
 
     if (memberAssociationCode === receivingAssociationCode) {
       throw new Error('This member is already in your delegate association.')
-    }
-
-    if (member.memberStatus !== memberStatus.Vested) {
-      throw new Error('Transfer is not allowed on non-vested members. Only vested members can be transferred.')
     }
 
     const releasingAssociation = await db.profile.findUnique({
@@ -2576,6 +2571,15 @@ export const reviewAdminMemberTransferRequestAction = async (
         }
       }),
       db.associationContributionCredit.updateMany({
+        data: {
+          associationCode: receivingAssociation.associationCode,
+          memberMatriculationNumber: nextMemberMatriculationNumber
+        },
+        where: {
+          memberMatriculationNumber: request.member.memberMatriculationNumber
+        }
+      }),
+      db.associationRegistrationUsage.updateMany({
         data: {
           associationCode: receivingAssociation.associationCode,
           memberMatriculationNumber: nextMemberMatriculationNumber

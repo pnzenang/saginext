@@ -1,7 +1,7 @@
 import { Card } from '@/components/ui/card'
 import { fetchDeceasedMembersActionAdmin } from '@/utils/actions'
 
-import DeceasedMembersDataTable from '@/components/shadcn-studio/blocks/database-adminAllDeceased'
+import DeceasedMembersDataTable from '@/components/shadcn-studio/blocks/database-adminAllDeceased-client'
 
 const DataTablePreview = async () => {
   const deceasedMembers = await fetchDeceasedMembersActionAdmin()

@@ -254,9 +254,9 @@ const PaymentAlertSkeleton = () => (
       </div>
       <Skeleton className='h-9 w-full rounded-md sm:w-20' />
     </div>
-    <p className='mt-4 rounded-md border border-dashed px-3 py-4'>
+    <div className='mt-4 rounded-md border border-dashed px-3 py-4'>
       <Skeleton className='mx-auto h-4 w-full max-w-64' />
-    </p>
+    </div>
   </div>
 )
 
@@ -654,6 +654,7 @@ const DashboardOverviewSkeleton = () => (
 
 export {
   AdminCountPageSkeleton,
+  AdminPaymentsTableSkeleton,
   AdminPaymentPageSkeleton,
   DashboardOverviewSkeleton,
   MemberFormPageSkeleton,

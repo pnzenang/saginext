@@ -1,5 +1,3 @@
-import { CircleDollarSignIcon, ReceiptTextIcon, SendIcon } from 'lucide-react'
-
 import type { Navigation } from '@/components/blocks/header-navigation'
 
 export const navigationData: Navigation[] = [
@@ -8,16 +6,16 @@ export const navigationData: Navigation[] = [
     href: '/#home'
   },
   {
-    title: 'About',
-    href: '/#about'
+    title: 'How It Works',
+    href: '/#how-it-works'
   },
   {
-    title: 'Benefits',
-    href: '/#benefits'
+    title: 'Status',
+    href: '/#member-status'
   },
   {
-    title: 'Funeral Homes',
-    href: '/#funeral-homes'
+    title: 'Dashboard',
+    href: '/#delegate-dashboard'
   },
   {
     title: 'Contact',

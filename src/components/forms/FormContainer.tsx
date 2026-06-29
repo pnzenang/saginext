@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useEffect, useRef, type FormHTMLAttributes, type ReactNode } from 'react'
+import { useActionState, useEffect, useRef, type ReactNode } from 'react'
 
 import { toast } from 'sonner'
 
@@ -14,13 +14,11 @@ const initialState = {
 const FormContainer = ({
   action,
   children,
-  className,
-  encType
+  className
 }: {
   action: actionFunction
   children: ReactNode
   className?: string
-  encType?: FormHTMLAttributes<HTMLFormElement>['encType']
 }) => {
   const wasPendingRef = useRef(false)
   const [state, formAction, isPending] = useActionState(action, initialState)
@@ -39,7 +37,7 @@ const FormContainer = ({
   }, [isPending, state.message])
 
   return (
-    <form action={formAction} className={cn('w-full max-w-full min-w-0', className)} encType={encType}>
+    <form action={formAction} className={cn('w-full max-w-full min-w-0', className)}>
       {children}
     </form>
   )

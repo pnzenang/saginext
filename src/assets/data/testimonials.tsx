@@ -2,84 +2,66 @@ import type { TestimonialItem } from '@/components/blocks/testimonials-section/t
 
 export const testimonialsData: TestimonialItem[] = [
   {
-    name: 'Eleanor Pena',
-    handle: 'AKUM',
-    
+    name: 'Association Delegate',
+    handle: 'Member group',
     rating: 5,
     content:
-      'swipe has made my development process so much easier! The components are intuitive and blend perfectly with Tailwind CSS. Highly recommend it!',
-   
+      'The dashboard gives our group one place to review member status, contributions, and documents without losing track of requests.'
   },
   {
-    name: 'Darlene Robertson',
-    handle: 'ACAA',
-   
+    name: 'Family Coordinator',
+    handle: 'SAGI member',
     rating: 5,
     content:
-      'The support team behind swipe is fantastic! They helped me with integration issues quickly and efficiently. Always responsive and helpful!',
-    
+      'SAGI makes the rules visible before there is an emergency. That clarity matters when families are already under pressure.'
   },
   {
-    name: 'Esther Howard',
-    handle: '@oxtuggs',
-    
+    name: 'Group Administrator',
+    handle: 'Delegate portal',
     rating: 4.5,
     content:
-      'swipe is a fantastic tool for any developer using Shadcn UI. The components are not only beautiful but also functional and easy to customize!',
-    
+      'Adding members and submitting documents online has reduced the back-and-forth that used to slow everything down.'
   },
   {
-    name: 'Floyd Miles',
-    handle: '@Athar',
-   
+    name: 'Community Treasurer',
+    handle: 'Contribution tracking',
     rating: 4.5,
     content:
-      'Using swipe has transformed the way I build applications. The ease of use and flexibility is unmatched for modern development!',
-    
+      'The member status labels help us explain who is pending, who needs attention, and who is vested.'
   },
   {
-    name: 'Brad Hanna',
-    handle: '@Marko',
-    
+    name: 'Association President',
+    handle: 'Member support',
     rating: 4.5,
     content:
-      'swipe has significantly sped up my development process. The pre-built components are perfect for rapid prototyping and production builds!',
-    
+      'The process feels organized: register, contribute, stay current, and know what documentation is needed when support is requested.'
   },
   {
-    name: 'Cody Fisher',
-    handle: '@BerryB777',
-    
+    name: 'SAGI Delegate',
+    handle: 'Online records',
     rating: 5,
     content:
-      'swipe has made designing my web applications effortless. The components are easy to customize and integrate seamlessly into any project!',
-    
+      'Having member records and death documentation in the same system gives our group much better confidence.'
   },
   {
-    name: 'Theresa Webb',
-    handle: '@inverse_hq',
-   
+    name: 'Member Family',
+    handle: 'Funeral support',
     rating: 4.5,
     content:
-      "The attention to detail in swipe's components is impressive. It saves me so much time and effort in my projects every single day!",
-    
+      'Knowing there is a support path in place brings peace of mind long before a difficult moment arrives.'
   },
   {
-    name: 'Natalie Green',
-    handle: '@FinanceFocused',
-    
+    name: 'Group Secretary',
+    handle: 'Self-service tools',
     rating: 4.5,
     content:
-      "I've been using this app for a month now, and I couldn't be happier. I can track my spending, set up budgets, and complete transactions all in one place.",
-    
+      'Our delegate team can manage common changes directly instead of waiting for every update to happen manually.'
   },
   {
-    name: 'Liam Scott',
-    handle: '@ThriftyInvestor',
-    
+    name: 'Community Member',
+    handle: 'Mutual aid',
     rating: 4.5,
     content:
-      "User-friendly and efficient! It's tracking my daily spending or making transfers, the app covers all the bases. This is what I need to get my finances check.",
-    
+      'The monthly contribution is predictable, and the purpose is easy to explain: we help each other when families need it most.'
   }
 ]

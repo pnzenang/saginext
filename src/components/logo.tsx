@@ -3,11 +3,13 @@ import Image from 'next/image'
 // Util Imports
 import { cn } from '@/lib/utils'
 
+const sagiLogoSrc = '/images/sagi-logo.svg'
+
 const Logo = ({ className }: { className?: string }) => {
   return (
     <div className={cn('relative', className)}>
       <Image
-        src='https://res.cloudinary.com/dp8tkb7hq/image/upload/v1777010615/mySagi_kjlgfp.svg'
+        src={sagiLogoSrc}
         alt='logo'
         loading='eager'
         width={160}

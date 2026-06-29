@@ -309,7 +309,7 @@ const PaymentRouteCard = ({
       <CircleDollarSign className='size-5 shrink-0' aria-hidden='true' />
       {title}: {formatCurrency(amount)}
     </p>
-    <p className='text-primary/80 mt-1 text-sm font-semibold break-words'>{description}</p>
+    <div className='text-primary/80 mt-1 text-sm font-semibold break-words'>{description}</div>
     <div className='text-primary/80 mt-3 grid gap-1.5 text-xs font-semibold'>{details}</div>
     <Button asChild className='mt-4 w-fit'>
       <Link href={href}>

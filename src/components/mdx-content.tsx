@@ -1,8 +1,47 @@
-import type { JSX } from 'react'
+import { Children, isValidElement, type JSX, type ReactNode } from 'react'
 
 import Link from 'next/link'
 
 import { MDXRemote, type MDXRemoteProps } from 'next-mdx-remote-client/rsc'
+
+const blockElementNames = new Set([
+  'address',
+  'article',
+  'aside',
+  'blockquote',
+  'div',
+  'dl',
+  'fieldset',
+  'figcaption',
+  'figure',
+  'footer',
+  'form',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  'header',
+  'hr',
+  'main',
+  'nav',
+  'ol',
+  'p',
+  'pre',
+  'section',
+  'table',
+  'ul'
+])
+
+const hasBlockChild = (children: ReactNode) =>
+  Children.toArray(children).some(child => isValidElement(child) && typeof child.type === 'string' && blockElementNames.has(child.type))
+
+const Paragraph = ({ children }: { children?: ReactNode }) => {
+  const Component = hasBlockChild(children) ? 'div' : 'p'
+
+  return <Component className='text-muted-foreground flex flex-wrap gap-6 leading-relaxed'>{children}</Component>
+}
 
 const components: MDXRemoteProps['components'] = {
   h1: ({ children }) => <h1 className='text-3xl font-bold'>{children}</h1>,
@@ -10,7 +49,7 @@ const components: MDXRemoteProps['components'] = {
   h3: ({ children }) => <h3 className='mt-6 text-2xl font-semibold md:mt-10 lg:mt-16'>{children}</h3>,
   h4: ({ children }) => <h4 className='text-xl font-semibold'>{children}</h4>,
   h5: ({ children }) => <h5 className='text-xl font-medium'>{children}</h5>,
-  p: ({ children }) => <p className='text-muted-foreground flex flex-wrap gap-6 leading-relaxed'>{children}</p>,
+  p: Paragraph,
   ul: ({ children }) => <ul className='-mt-3 ml-6 list-disc space-y-1'>{children}</ul>,
   ol: ({ children }) => <ol className='ml-6 list-decimal space-y-2'>{children}</ol>,
   li: ({ children }) => <li className='text-muted-foreground leading-relaxed'>{children}</li>,

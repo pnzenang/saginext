@@ -200,7 +200,6 @@ const NameChangeRequestCard = ({
         <FormContainer
           action={uploadNameChangeDocumentationAction}
           className='grid gap-2 rounded-md border bg-background/70 p-3'
-          encType='multipart/form-data'
         >
           <input type='hidden' name='requestId' value={request.id} />
           <div className='grid gap-1.5'>

@@ -1,7 +1,5 @@
-import AdminPaymentsTable, {
-  type AdminPaymentRow,
-  type AdminPaymentTotals
-} from '@/components/global/AdminPaymentsTable'
+import type { AdminPaymentRow, AdminPaymentTotals } from '@/components/global/AdminPaymentsTable'
+import AdminPaymentsTable from '@/components/global/AdminPaymentsTableClient'
 import PaymentSubmissionAlertCard, { type PaymentSubmissionAlert } from '@/components/global/PaymentSubmissionAlertCard'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import db from '@/utils/db'

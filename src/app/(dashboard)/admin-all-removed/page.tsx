@@ -1,6 +1,6 @@
 import { Card } from '@/components/ui/card'
 
-import MembersDataTable from '@/components/shadcn-studio/blocks/database-adminAllRemoved'
+import MembersDataTable from '@/components/shadcn-studio/blocks/database-adminAllRemoved-client'
 import { fetchRemovedMembersActionAdmin } from '@/utils/actions'
 
 const DataTablePreview = async () => {

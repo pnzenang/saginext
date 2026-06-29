@@ -1,27 +1,27 @@
 export const faqData = [
   {
-    question: 'What is this app, and how can it help me?',
+    question: 'What is SAGI?',
     answer:
-      'This app helps you track your daily expenses, set budgets, and manage your finances more effectively. It provides you with the tools you need to understand your spending patterns.'
+      'SAGI is a mutual aid community that helps members and families prepare for funeral expenses through shared contributions and organized support.'
   },
   {
-    question: 'Is there a free trial available?',
+    question: 'Who can join SAGI?',
     answer:
-      'Yes, we offer a 14-day free trial that gives you full access to all premium features. No credit card required to start your trial, and you can cancel anytime during the trial period.'
+      'Individuals, families, groups, and associations can participate as long as they meet the registration requirements and agree to SAGI participation rules.'
   },
   {
-    question: 'Which payment methods do you accept?',
+    question: 'When is a member eligible for support?',
     answer:
-      'We accept all major credit cards (Visa, MasterCard, American Express), PayPal, and bank transfers. All payments are processed securely through our encrypted payment gateway.'
+      'A member is eligible when they are vested, have completed the waiting period, have finished registration, and are current on required contributions.'
   },
   {
-    question: 'How does the app keep my financial data secure?',
+    question: 'What can a delegate do from the dashboard?',
     answer:
-      'We use bank-level 256-bit SSL encryption to protect your data. Your financial information is stored on secure servers and we never share your personal data with third parties without your explicit consent.'
+      'Delegates can register members, review member status, manage removals, submit death documentation, and follow contribution or payment records.'
   },
   {
-    question: 'I need help with the app. How can I contact support?',
+    question: 'How can I contact SAGI for help?',
     answer:
-      'You can reach our support team 24/7 through live chat, email at support@example.com, or by submitting a ticket through the app. We typically respond within 2-4 hours during business days.'
+      'You can call SAGI at (804) 214-6390, email info@mySagi.org, or send a message through the contact form on this page.'
   }
 ]

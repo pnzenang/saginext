@@ -2,7 +2,7 @@ import React from 'react'
 
 import { AlertTriangle, Clock, Hourglass, ShieldCheck, Users } from 'lucide-react'
 
-import AdminCountBreakdown from '@/components/global/AdminCountBreakdown'
+import AdminCountBreakdown from '@/components/global/AdminCountBreakdownClient'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { fetchMemberStatusCountsByAssociationCode } from '@/utils/actions'
 

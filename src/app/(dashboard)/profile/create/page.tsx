@@ -1,4 +1,4 @@
-import { currentUser } from '@clerk/nextjs/server'
+import { auth } from '@clerk/nextjs/server'
 
 import { redirect } from 'next/navigation'
 
@@ -6,12 +6,24 @@ import { SubmitButton } from '@/components/forms/Buttons'
 import FormContainer from '@/components/forms/FormContainer'
 import FormInput from '@/components/forms/FormInput'
 import MaskPhoneInput from '@/components/forms/MaskPhoneInput'
+import db from '@/utils/db'
 import { createProfileAction } from '@/utils/profile-actions'
 
 const CreateProfilePage = async () => {
-  const user = await currentUser()
+  const { userId } = await auth()
 
-  if (user?.privateMetadata?.hasProfile) redirect('/all-members')
+  if (!userId) redirect('/sign-in')
+
+  const profile = await db.profile.findUnique({
+    where: {
+      clerkId: userId
+    },
+    select: {
+      id: true
+    }
+  })
+
+  if (profile) redirect('/all-members')
 
   return (
     <section className='flex w-full min-w-0 flex-col overflow-hidden py-8 sm:py-10'>

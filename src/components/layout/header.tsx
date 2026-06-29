@@ -52,7 +52,7 @@ const Header = ({ navigationData, className }: HeaderProps) => {
       >
         {/* Logo */}
         <div>
-          <Link href='/#home '>
+          <Link href='/#home'>
             <Logo className='hidden pt-2 sm:block' />
             <LogoSmall className='block pt-1 sm:hidden' />
           </Link>
@@ -67,13 +67,15 @@ const Header = ({ navigationData, className }: HeaderProps) => {
 
           {/* Get started Button */}
           <PrimarySwipeButton className='rounded-full max-lg:hidden' asChild>
-            <Link href='/sign-in'>Login</Link>
+            <Link href='/sign-in' prefetch={false}>
+              Login
+            </Link>
           </PrimarySwipeButton>
 
           {/* Navigation for small screens */}
           <div className='flex gap-3 lg:hidden'>
             <PrimarySwipeButton className=':hidden flex items-center rounded-full' asChild size='icon'>
-              <Link href='/sign-in'>
+              <Link href='/sign-in' prefetch={false}>
                 <LogIn />
               </Link>
             </PrimarySwipeButton>
