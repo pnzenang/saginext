@@ -55,7 +55,8 @@ const steps = [
   {
     icon: HeartHandshakeIcon,
     title: 'Receive support',
-    description: 'When documentation is complete, SAGI coordinates funeral assistance and payout processing.'
+    description:
+      'If affected, When documentation is complete, SAGI coordinates funeral assistance and payout processing.'
   }
 ]
 
@@ -75,7 +76,7 @@ const memberStatuses = [
     icon: Clock3Icon,
     description: 'The member has started registration but is not eligible for benefits yet.',
     points: ['Waiting period is active', 'Registration fee not received', 'Benefits are not available yet'],
-    className: 'border-amber-500/40 bg-amber-500/10'
+    className: 'border-amber-500/40 bg-amber-100 dark:bg-amber-500/20'
   },
   {
     name: 'Awaiting Publication',
@@ -83,7 +84,7 @@ const memberStatuses = [
     icon: FileTextIcon,
     description: 'The member registration was paid, and the member is waiting to finish the waiting period.',
     points: ['Registration fee received.', 'Awaiting publication ', 'Benefits are not available yet.'],
-    className: 'border-sky-500/40 bg-sky-500/10'
+    className: 'border-sky-500/40 bg-sky-100 dark:bg-sky-500/20'
   },
   {
     name: 'Vested',
@@ -100,7 +101,47 @@ const memberStatuses = [
     icon: LockKeyholeIcon,
     description: 'The member has missed one or more contributions.',
     points: ['Missed contribution ', 'Eligibility is paused', 'Delegate can review next steps'],
-    className: 'border-rose-500/40 bg-rose-500/10'
+    className: 'border-rose-500/40 bg-rose-100 dark:bg-rose-500/20'
+  }
+]
+
+const benefitSchedule = [
+  {
+    status: 'Pending',
+    benefit: '$0',
+    timing: 'Registration started',
+    description: 'Benefits are not available while registration, payment, and waiting-period steps are still open.',
+    icon: Clock3Icon,
+    rowClassName: 'bg-amber-100 dark:bg-amber-500/20',
+    iconClassName: 'border-amber-500/40 bg-amber-500/20 text-amber-700 dark:text-amber-200'
+  },
+  {
+    status: 'Awaiting Publication',
+    benefit: '$0',
+    timing: 'Paid and waiting',
+    description: 'Benefits begin only after the waiting period is complete and the member is published as eligible.',
+    icon: FileTextIcon,
+    rowClassName: 'bg-sky-100 dark:bg-sky-500/20',
+    iconClassName: 'border-sky-500/40 bg-sky-500/20 text-sky-700 dark:text-sky-200'
+  },
+  {
+    status: 'Vested',
+    benefit: 'Up to $20,000',
+    timing: 'Eligible after approval',
+    description: 'Family support is available when the member is vested, current, and required documents are approved.',
+    icon: ShieldCheckIcon,
+    rowClassName: 'bg-emerald-500/10',
+    iconClassName: 'border-emerald-600 bg-emerald-600 text-white',
+    featured: true
+  },
+  {
+    status: 'Not in Good Standing',
+    benefit: 'Canceled or paused',
+    timing: 'Action needed',
+    description: 'Benefits are canceled or paused while contribution or standing issues are unresolved.',
+    icon: LockKeyholeIcon,
+    rowClassName: 'bg-rose-100 dark:bg-rose-500/20',
+    iconClassName: 'border-rose-500/40 bg-rose-500/20 text-rose-700 dark:text-rose-200'
   }
 ]
 
@@ -148,6 +189,7 @@ const Home = () => {
       <HowItWorksSection />
       <WhoCanJoinSection />
       <MemberStatusSection />
+      <BenefitScheduleSection />
       <DelegateDashboardSection />
       <FuneralHomesPage />
       <TrustSection />
@@ -235,11 +277,16 @@ function HeroSection() {
           </div>
         </div>
 
-        <div className='grid gap-3 border-t border-white/18 pt-6 text-white sm:grid-cols-3'>
-          {heroStats.map(stat => (
-            <div key={stat.label} className='space-y-1'>
+        <div className='flex flex-col gap-6 border-t border-white/18 pt-6 text-white sm:flex-row sm:items-start sm:justify-between'>
+          {heroStats.map((stat, index) => (
+            <div
+              key={stat.label}
+              className={`space-y-1 ${
+                index === 1 ? 'sm:text-center' : index === 2 ? 'sm:text-right' : ''
+              }`}
+            >
               <p className='text-3xl font-semibold sm:text-4xl'>{stat.value}</p>
-              <p className='max-w-xs text-sm leading-6 text-white/72'>{stat.label}</p>
+              <p className='text-sm leading-6 text-white/72 sm:max-w-48'>{stat.label}</p>
             </div>
           ))}
         </div>
@@ -372,6 +419,74 @@ function MemberStatusSection() {
               </CardContent>
             </Card>
           ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function BenefitScheduleSection() {
+  return (
+    <section id='benefit-schedule' className='bg-muted py-16 sm:py-20 lg:py-24'>
+      <div className='mx-auto max-w-7xl space-y-10 px-4 sm:px-6 lg:px-8'>
+        <div className='grid gap-6 lg:grid-cols-[1fr_26rem] lg:items-end'>
+          <SectionIntro
+            eyebrow='Benefit schedule'
+            title='What support is available by member status.'
+            description='A simple schedule helps families and delegates understand when support is available, paused, or still waiting on registration steps.'
+            align='left'
+          />
+
+          <div className='bg-background overflow-hidden rounded-lg border p-2 shadow-sm lg:justify-self-end'>
+            <Image
+              src='/images/benefit-support-planning.jpg'
+              alt='Family reviewing benefit support paperwork with an advisor'
+              width={520}
+              height={260}
+              sizes='(min-width: 1024px) 416px, 100vw'
+              className='h-44 w-full rounded-md object-cover object-center sm:h-52 lg:w-[26rem]'
+            />
+          </div>
+        </div>
+
+        <div className='bg-background overflow-hidden rounded-lg border'>
+          <div className='bg-muted/60 text-muted-foreground hidden grid-cols-[1fr_0.8fr_1fr_1.35fr] gap-4 border-b px-5 py-3 text-sm font-medium md:grid'>
+            <span>Status</span>
+            <span>Benefit</span>
+            <span>Timing</span>
+            <span>What it means</span>
+          </div>
+
+          <div className='divide-y'>
+            {benefitSchedule.map(item => (
+              <div
+                key={item.status}
+                className={`grid gap-4 px-5 py-5 md:grid-cols-[1fr_0.8fr_1fr_1.35fr] md:items-center ${item.rowClassName}`}
+              >
+                <div className='flex items-center gap-3'>
+                  <div className={`flex size-10 items-center justify-center rounded-lg border ${item.iconClassName}`}>
+                    <item.icon className='size-5' aria-hidden='true' />
+                  </div>
+                  <div>
+                    <p className='font-semibold'>{item.status}</p>
+                    {item.featured && <p className='text-xs font-medium text-emerald-700'>Eligible status</p>}
+                  </div>
+                </div>
+
+                <div>
+                  <p className='text-muted-foreground text-xs font-medium md:hidden'>Benefit</p>
+                  <p className='text-lg font-semibold'>{item.benefit}</p>
+                </div>
+
+                <div>
+                  <p className='text-muted-foreground text-xs font-medium md:hidden'>Timing</p>
+                  <p className='font-medium'>{item.timing}</p>
+                </div>
+
+                <p className='text-muted-foreground leading-7'>{item.description}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>
