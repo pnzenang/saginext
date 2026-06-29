@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { UserButton } from '@clerk/nextjs'
 
 import Link from 'next/link'
+import { cookies } from 'next/headers'
 
 import SidebarGroupedMenuItems from '@/components/dashboard/SidebarGroupedMenuItems'
 import { ModeToggle } from '@/components/layout/mode-toggle/mode-toggle'
@@ -18,12 +19,20 @@ import {
   SidebarTrigger,
   Sidebar
 } from '@/components/ui/sidebar'
+import { dashboardText, languageCookieName, normalizeLanguage, translateDashboardMenuItems } from '@/lib/i18n'
 import { pagesItems } from '@/utils/links'
 
-const PagesLayout = ({ children }: Readonly<{ children: ReactNode }>) => {
+export const dynamic = 'force-dynamic'
+
+const PagesLayout = async ({ children }: Readonly<{ children: ReactNode }>) => {
+  const cookieStore = await cookies()
+  const language = normalizeLanguage(cookieStore.get(languageCookieName)?.value)
+  const translatedPagesItems = translateDashboardMenuItems(pagesItems, language)
+  const copy = dashboardText[language]
+
   return (
     <>
-      <div className='bg-muted flex min-h-dvh w-full overflow-x-hidden'>
+      <div className='bg-muted flex min-h-dvh w-full overflow-x-hidden' lang={language}>
         <SidebarProvider>
           <Sidebar collapsible='icon' className='**:data-[slot=sidebar-inner]:bg-muted border-r-0!'>
             <SidebarHeader>
@@ -38,7 +47,7 @@ const PagesLayout = ({ children }: Readonly<{ children: ReactNode }>) => {
               </SidebarMenu>
             </SidebarHeader>
             <SidebarContent>
-              <SidebarGroupedMenuItems data={pagesItems} />
+              <SidebarGroupedMenuItems data={translatedPagesItems} adminLabel={copy.sidebar.admin} />
             </SidebarContent>
           </Sidebar>
           <div className='flex min-w-0 flex-1 flex-col'>
@@ -48,7 +57,7 @@ const PagesLayout = ({ children }: Readonly<{ children: ReactNode }>) => {
                 <LogoSmall className='size-9 shrink-0 sm:hidden' />
               </div>
               <div className='text-primary hidden min-w-0 truncate font-bold min-[360px]:block sm:text-2xl'>
-                SAGI-USA
+                {copy.brand}
               </div>
               <div className='flex shrink-0 items-center justify-center gap-x-2 sm:gap-x-3'>
                 <ModeToggle />

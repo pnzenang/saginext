@@ -19,9 +19,27 @@ type FAQItem = {
 
 type FAQComponentProps = {
   faqItems: FAQItem[]
+  copy?: {
+    badge: string
+    title: string
+    description: string
+    cardTitle: string
+    cardDescription: string
+    contactCta: string
+  }
 }
 
-const FAQ = ({ faqItems }: FAQComponentProps) => {
+const defaultCopy = {
+  badge: 'FAQ',
+  title: 'Have more questions?',
+  description:
+    'SAGI combines mutual aid, clear member rules, and a self-service dashboard so delegates and families know what to expect before support is needed.',
+  cardTitle: "Can't find answers?",
+  cardDescription: "We're here to help with registration, member status, documents, and funeral support questions.",
+  contactCta: 'Contact us'
+}
+
+const FAQ = ({ faqItems, copy = defaultCopy }: FAQComponentProps) => {
   return (
     <section id='faq' className='py-8 sm:py-16 lg:py-24'>
       <div className='mx-auto max-w-7xl px-4 sm:px-6 lg:px-8'>
@@ -31,7 +49,7 @@ const FAQ = ({ faqItems }: FAQComponentProps) => {
             <div className='mb-12 space-y-4 sm:mb-16 lg:mb-24'>
               <MotionPreset fade slide={{ direction: 'down', offset: 50 }} transition={{ duration: 0.7 }}>
                 <Badge className='border-primary text-primary px-3 py-1 text-sm [&>svg]:size-6' variant='outline'>
-                  <LogoVector className='animation-duration-[2s] size-6 animate-spin' /> FAQ
+                  <LogoVector className='animation-duration-[2s] size-6 animate-spin' /> {copy.badge}
                 </Badge>
               </MotionPreset>
               <MotionPreset
@@ -42,12 +60,11 @@ const FAQ = ({ faqItems }: FAQComponentProps) => {
                 delay={0.2}
                 transition={{ duration: 0.7 }}
               >
-                Have more questions?
+                {copy.title}
               </MotionPreset>
               <MotionPreset fade slide={{ direction: 'down', offset: 50 }} delay={0.4} transition={{ duration: 0.7 }}>
                 <p className='text-muted-foreground text-base leading-relaxed'>
-                  SAGI combines mutual aid, clear member rules, and a self-service dashboard so delegates and families
-                  know what to expect before support is needed.
+                  {copy.description}
                 </p>
               </MotionPreset>
             </div>
@@ -55,15 +72,15 @@ const FAQ = ({ faqItems }: FAQComponentProps) => {
               <Card>
                 <CardContent className='space-y-6'>
                   <div className='space-y-2.5'>
-                    <h3 className='text-xl font-medium md:text-2xl'>Can&apos;t find answers?</h3>
+                    <h3 className='text-xl font-medium md:text-2xl'>{copy.cardTitle}</h3>
                     <p className='text-muted-foreground leading-relaxed'>
-                      We&apos;re here to help with registration, member status, documents, and funeral support questions.
+                      {copy.cardDescription}
                     </p>
                   </div>
 
                   <PrimarySwipeButton size='lg' asChild className='group has-[>svg]:px-6'>
                     <Link href='/#contact'>
-                      Contact us
+                      {copy.contactCta}
                       <ArrowRightIcon className='size-5 rotate-310 transition-transform duration-200' />
                     </Link>
                   </PrimarySwipeButton>

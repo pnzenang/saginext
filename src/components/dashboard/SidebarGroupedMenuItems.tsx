@@ -91,7 +91,15 @@ const SidebarDropdownMenu = ({
   </Collapsible>
 )
 
-const SidebarGroupedMenuItems = async ({ data, groupLabel }: { data: MenuItem[]; groupLabel?: string }) => {
+const SidebarGroupedMenuItems = async ({
+  data,
+  adminLabel = 'Admin',
+  groupLabel
+}: {
+  data: MenuItem[]
+  adminLabel?: string
+  groupLabel?: string
+}) => {
   const { userId } = await auth()
   const isAdminUser = userId === process.env.ADMIN_USER_ID
   const adminItems = isAdminUser ? data.filter(isAdminItem) : []
@@ -108,12 +116,12 @@ const SidebarGroupedMenuItems = async ({ data, groupLabel }: { data: MenuItem[];
 
               return (
                 <SidebarDropdownMenu
-	                  key='admin-menu'
-	                  icon={UserCog}
-	                  title='Admin'
-	                  items={adminItems}
-	                  formatLabel={getAdminLabel}
-	                />
+                  key='admin-menu'
+                  icon={UserCog}
+                  title={adminLabel}
+                  items={adminItems}
+                  formatLabel={getAdminLabel}
+                />
               )
             }
 

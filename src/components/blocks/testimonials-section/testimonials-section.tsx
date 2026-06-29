@@ -11,16 +11,25 @@ export type TestimonialItem = {
 
 type TestimonialsComponentProps = {
   testimonials: TestimonialItem[]
+  copy?: {
+    title: string
+    description: string
+  }
 }
 
-const TestimonialsComponent = ({ testimonials }: TestimonialsComponentProps) => {
+const defaultCopy = {
+  title: 'Trusted by families and delegates',
+  description: 'A practical support system built around clear rules, organized records, and community care.'
+}
+
+const TestimonialsComponent = ({ testimonials, copy = defaultCopy }: TestimonialsComponentProps) => {
   return (
     <section id='testimonials' className='bg-muted space-y-12 py-8 sm:space-y-16 sm:py-16 lg:space-y-24 lg:py-24'>
       <div className='mb-12 space-y-4 text-center sm:mb-16 lg:mb-24'>
-        <h2 className='text-2xl font-semibold md:text-4xl lg:text-6xl'>Trusted by families and delegates</h2>
+        <h2 className='text-2xl font-semibold md:text-4xl lg:text-6xl'>{copy.title}</h2>
 
         <p className='text-muted-foreground text-lg md:text-xl'>
-          A practical support system built around clear rules, organized records, and community care.
+          {copy.description}
         </p>
       </div>
 

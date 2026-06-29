@@ -8,9 +8,11 @@ import { LogIn } from 'lucide-react'
 
 import type { Navigation } from '@/components/blocks/header-navigation'
 import { HeaderNavigation, HeaderNavigationSmallScreen } from '@/components/blocks/header-navigation'
+import { LanguageToggle } from '@/components/global/LanguageToggle'
 import { ModeToggle } from '@/components/layout/mode-toggle'
 import { PrimarySwipeButton } from '@/components/ui/swipe-button'
 
+import type { AppLanguage } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 
 import Logo from '@/components/logo'
@@ -18,10 +20,11 @@ import LogoSmall from '../logoSmall'
 
 type HeaderProps = {
   navigationData: Navigation[]
+  language?: AppLanguage
   className?: string
 }
 
-const Header = ({ navigationData, className }: HeaderProps) => {
+const Header = ({ navigationData, language = 'en', className }: HeaderProps) => {
   const [isScrolled, setIsScrolled] = useState(false)
 
   useEffect(() => {
@@ -63,6 +66,8 @@ const Header = ({ navigationData, className }: HeaderProps) => {
 
         {/* Actions */}
         <div className='flex items-center gap-3'>
+          <LanguageToggle homeOnly initialLanguage={language} />
+
           <ModeToggle />
 
           {/* Get started Button */}
