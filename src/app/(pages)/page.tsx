@@ -40,7 +40,6 @@ type HeroStat = {
 }
 
 const heroStats: HeroStat[] = [
-  { value: '$20', label: 'Registration fee' },
   { value: '$20', label: 'maximum monthly member contribution' },
   { value: '$20,000', label: 'family support after vesting' },
   { value: '30 days', label: 'target payout after documents' }
@@ -209,7 +208,6 @@ const totalRegisteredLabels: Record<HomeLanguage, string> = {
 }
 
 const frenchHeroStats: HeroStat[] = [
-  { value: '$20', label: "frais d'inscription" },
   { value: '$20', label: 'cotisation mensuelle maximale par membre' },
   { value: '$20,000', label: 'soutien familial après acquisition des droits' },
   { value: '30 jours', label: 'objectif de paiement après réception des documents' }
@@ -808,7 +806,7 @@ function HeroSection({
           </div>
         </div>
 
-        <div className='grid gap-6 border-t border-white/18 pt-6 text-white sm:grid-cols-2 lg:grid-cols-5'>
+        <div className='grid gap-6 border-t border-white/18 pt-6 text-white sm:grid-cols-2 lg:grid-cols-4'>
           {heroStatsWithTotalRegistered.map(stat => (
             <div key={stat.label} className='space-y-1'>
               <p className='text-3xl font-semibold sm:text-4xl'>{stat.value}</p>
