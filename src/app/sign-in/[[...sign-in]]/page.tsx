@@ -33,6 +33,7 @@ const AuthLoadingCard = () => {
           <div className='space-y-2'>
             <div className='bg-muted mx-auto h-7 w-36 animate-pulse rounded-md' />
             <div className='bg-muted mx-auto h-4 w-64 max-w-full animate-pulse rounded-md' />
+            <p>rgeggrgerge</p>
           </div>
         </div>
         <div className='space-y-3'>
