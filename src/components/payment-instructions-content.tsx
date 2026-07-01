@@ -70,7 +70,7 @@ const PaymentInstructionsContent = () => {
               </Link>
             </Button>
             <Button asChild variant='outline'>
-              <Link href='/registrations'>Registration Payments</Link>
+              <Link href='/registrationsPayments'>Registration Payments</Link>
             </Button>
           </div>
         </div>
