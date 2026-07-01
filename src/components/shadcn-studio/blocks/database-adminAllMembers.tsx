@@ -78,7 +78,10 @@ import { getSelectFilterValues } from '@/utils/table-filter-values'
 import { formatLongevity } from '@/utils/formatLongevity'
 import {
   awaitingPublicationVestingLongevityDays,
-  getAwaitingPublicationVestingCutoff
+  getAwaitingPublicationVestingCutoff,
+  getPendingRegistrationDaysRemaining,
+  isPendingRegistrationExpired,
+  pendingRegistrationDeadlineDays
 } from '@/utils/sagi-member-longevity'
 import { vestEligibleAwaitingPublicationMembersAction } from '@/utils/actions'
 import { memberStatus, type MemberType } from '@/utils/types'
@@ -97,6 +100,16 @@ const getVisibleMatriculationNumber = (status: unknown, matriculationNumber: unk
   if (status === memberStatus.Pending || status === memberStatus.Awaiting) return 'Pending'
 
   return String(matriculationNumber ?? '')
+}
+
+const formatPendingRegistrationCountdown = (createdAt: Date | string) => {
+  const daysRemaining = getPendingRegistrationDaysRemaining(createdAt)
+
+  if (daysRemaining <= 0) {
+    return 'Deadline reached'
+  }
+
+  return `${daysRemaining} day${daysRemaining === 1 ? '' : 's'} left`
 }
 
 const nameFilterIds = new Set(['firstName', 'lastAndMiddleNames'])
@@ -221,6 +234,34 @@ const columns: ColumnDef<MemberType>[] = [
     size: 160
   },
   {
+    id: 'registrationDeadline',
+    accessorFn: row => row.createdAt,
+    header: `Registration Deadline (${pendingRegistrationDeadlineDays} Days)`,
+    cell: ({ row }) => {
+      const { createdAt, memberStatus: status } = row.original
+
+      if (status !== memberStatus.Pending) {
+        return <span className='text-muted-foreground text-sm'>Status changed</span>
+      }
+
+      const daysRemaining = getPendingRegistrationDaysRemaining(createdAt)
+
+      return (
+        <Badge
+          className={cn(
+            'rounded-sm border-none capitalize focus-visible:outline-none',
+            daysRemaining <= 7
+              ? 'bg-red-600/10 text-red-600 focus-visible:ring-red-600/20 dark:bg-red-400/10 dark:text-red-400'
+              : 'bg-amber-600/10 text-amber-600 focus-visible:ring-amber-600/20 dark:bg-amber-400/10 dark:text-amber-400'
+          )}
+        >
+          {formatPendingRegistrationCountdown(createdAt)}
+        </Badge>
+      )
+    },
+    size: 170
+  },
+  {
     header: 'Recommendation',
     accessorKey: 'delegateRecommendation',
     cell: ({ row }) => {
@@ -302,6 +343,7 @@ const columns: ColumnDef<MemberType>[] = [
 
 const MembersDataTable = ({ data }: { data: MemberType[] }) => {
   const [columnFilters, setColumnFilters] = usePersistentColumnFilters('sagi:admin-all-members:columnFilters')
+  const visibleData = useMemo(() => data.filter(member => !isPendingRegistrationExpired(member)), [data])
 
   const [autoVestState, autoVestFormAction] = useActionState(vestEligibleAwaitingPublicationMembersAction, {
     message: ''
@@ -323,7 +365,7 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
   }, [autoVestState.message])
 
   const table = useReactTable({
-    data,
+    data: visibleData,
     columns,
     initialState: {
       columnVisibility: {
@@ -357,12 +399,12 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
   const eligibleAutoVestCount = useMemo(() => {
     const cutoffTime = getAwaitingPublicationVestingCutoff().getTime()
 
-    return data.filter(member => {
+    return visibleData.filter(member => {
       const createdAt = new Date(member.createdAt).getTime()
 
       return member.memberStatus === memberStatus.Awaiting && Number.isFinite(createdAt) && createdAt <= cutoffTime
     }).length
-  }, [data])
+  }, [visibleData])
 
   const summaryTotals = table.getCoreRowModel().rows.reduce(
     (acc, row) => {
@@ -481,6 +523,10 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
         'Last And Middle Names': row.getValue('lastAndMiddleNames'),
         'First Name': row.getValue('firstName'),
         Longevity: formatLongevity(createdAt),
+        'Registration Deadline':
+          row.getValue('memberStatus') === memberStatus.Pending
+            ? formatPendingRegistrationCountdown(createdAt)
+            : 'Status changed',
         Recommendation: row.getValue('delegateRecommendation'),
         Status: row.getValue('memberStatus')
       }
@@ -491,7 +537,16 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
 
     XLSX.utils.book_append_sheet(workbook, worksheet, 'All Members')
 
-    const cols = [{ wch: 12 }, { wch: 18 }, { wch: 28 }, { wch: 18 }, { wch: 32 }, { wch: 28 }, { wch: 22 }]
+    const cols = [
+      { wch: 12 },
+      { wch: 18 },
+      { wch: 28 },
+      { wch: 18 },
+      { wch: 32 },
+      { wch: 26 },
+      { wch: 28 },
+      { wch: 22 }
+    ]
 
     worksheet['!cols'] = cols
 
