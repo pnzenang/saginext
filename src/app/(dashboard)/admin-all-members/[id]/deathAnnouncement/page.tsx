@@ -7,7 +7,7 @@ import FormInput from '@/components/forms/FormInput'
 import FormSelect from '@/components/forms/FormSelect'
 import MaskDateInput from '@/components/forms/MaskDateInput'
 import { createDeceasedMemberActionAdmin, fetchSingleMemberDetailsAdmin } from '@/utils/actions'
-import { contributionStatus, memberStatus } from '@/utils/types'
+import { contributionStatus, countryOfResidenceOptions, memberStatus } from '@/utils/types'
 
 const DeathAnnouncement = async ({ params }: { params: { id: string } }) => {
   const { id } = await params
@@ -17,7 +17,6 @@ const DeathAnnouncement = async ({ params }: { params: { id: string } }) => {
   const {
     firstName,
     lastAndMiddleNames,
-    countryOfResidence,
     nameOfBeneficiary,
     memberMatriculationNumber,
     createdAt,
@@ -66,11 +65,11 @@ const DeathAnnouncement = async ({ params }: { params: { id: string } }) => {
                 // placeholder='MM/DD/YYYY'
               />
 
-              <FormInput
-                type='text'
+              <FormSelect
                 name='countryOfResidence'
                 label='Country Of Residence'
-                defaultValue={countryOfResidence}
+                items={countryOfResidenceOptions}
+                defaultValue={countryOfResidenceOptions[0]}
               />
 
               <FormInput

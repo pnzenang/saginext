@@ -1,21 +1,16 @@
+import Link from 'next/link'
+
+import { BsSignStopFill } from 'react-icons/bs'
 import { IoIosWarning } from 'react-icons/io'
+import { RiArrowGoBackLine } from 'react-icons/ri'
 
 import { SubmitButton } from '@/components/forms/Buttons'
 import FormContainer from '@/components/forms/FormContainer'
 import FormInput from '@/components/forms/FormInput'
-import FormInputS from '@/components/forms/FormInputS'
 import FormSelect from '@/components/forms/FormSelect'
 import MaskDateInput from '@/components/forms/MaskDateInput'
-import { RiArrowGoBackLine } from 'react-icons/ri'
-import {
-  createDeceasedMemberAction,
-  fetchProfile,
-  fetchSingleMemberDetails,
-  updateMemberDetailsAction
-} from '@/utils/actions'
-import { contributionStatus, delegateRecommendation, memberStatus } from '@/utils/types'
-import Link from 'next/link'
-import { BsSignStopFill } from 'react-icons/bs'
+import { createDeceasedMemberAction, fetchSingleMemberDetails } from '@/utils/actions'
+import { contributionStatus, countryOfResidenceOptions, memberStatus } from '@/utils/types'
 
 const DeathAnnouncement = async ({ params }: { params: { id: string } }) => {
   const { id } = await params
@@ -25,14 +20,11 @@ const DeathAnnouncement = async ({ params }: { params: { id: string } }) => {
   const {
     firstName,
     lastAndMiddleNames,
-    countryOfResidence,
     nameOfBeneficiary,
     memberMatriculationNumber,
     createdAt,
     associationName
   } = member
-
-  const profile = await fetchProfile()
 
   return (
     <section className='mt-16 flex flex-col'>
@@ -78,12 +70,11 @@ const DeathAnnouncement = async ({ params }: { params: { id: string } }) => {
                 value={createdAt.toLocaleDateString()}
                 readOnly
               />
-              <FormInput
-                type='text'
+              <FormSelect
                 name='countryOfResidence'
                 label='Country Of Residence'
-                value={countryOfResidence}
-                readOnly
+                items={countryOfResidenceOptions}
+                defaultValue={countryOfResidenceOptions[0]}
               />
               {/* </div>
             <div className='mt-4 grid gap-4 md:grid-cols-3'> */}
@@ -132,7 +123,7 @@ const DeathAnnouncement = async ({ params }: { params: { id: string } }) => {
                   not vested.
                 </h1>
                 <Link href='/all-members' className='text-red-900/60 hover:underline'>
-                  Back to the members' List
+                  Back to the members&apos; List
                   <RiArrowGoBackLine className='px- inline' />
                 </Link>
               </div>

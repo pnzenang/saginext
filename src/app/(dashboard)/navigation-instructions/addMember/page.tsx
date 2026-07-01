@@ -19,7 +19,7 @@ const memberFields = [
   'Last and middle names: write the last name first and avoid abbreviations.',
   'First names: enter the member first name or names exactly as they should appear.',
   'Date of birth: use the MM / DD / YYYY format.',
-  'Country of residence: enter the country where the member currently resides.',
+  'Country of residence: choose UNITED STATES from the dropdown.',
   'Name of beneficiary: enter the person who should be listed as beneficiary.',
   'Association name and association code: these are filled automatically from your profile.',
   'Delegate recommendation: leave it as Confirm when you are recommending the member.',
@@ -29,7 +29,7 @@ const memberFields = [
 const preparationItems = [
   'Confirm that the person is ready to join your association or family group.',
   'Collect the correct full legal name before opening the form.',
-  'Have the date of birth, country of residence, and beneficiary name ready.',
+  'Have the date of birth and beneficiary name ready.',
   'Make sure your profile has the correct association name and association code because the form uses those automatically.'
 ]
 
@@ -43,7 +43,7 @@ const processSteps = [
     icon: ClipboardList,
     title: 'Complete the form',
     description:
-      'Enter the member names, date of birth, country of residence, and beneficiary name. Review spelling carefully before submitting.'
+      'Enter the member names, date of birth, and beneficiary name, then confirm the country of residence. Review spelling carefully before submitting.'
   },
   {
     icon: UsersRound,
@@ -67,7 +67,7 @@ const afterSubmissionItems = [
 ]
 
 const commonMistakes = [
-  'Do not abbreviate the last name, middle name, first name, country, or beneficiary name.',
+  'Do not abbreviate the last name, middle name, first name, or beneficiary name.',
   'Do not enter the first name in the last name field.',
   'Do not change the association name or code if those fields are already filled from your profile.',
   'Do not forget to record the registration payment after sending it.'

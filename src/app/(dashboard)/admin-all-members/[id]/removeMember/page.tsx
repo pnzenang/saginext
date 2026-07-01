@@ -5,7 +5,7 @@ import FormContainer from '@/components/forms/FormContainer'
 import FormInput from '@/components/forms/FormInput'
 import FormSelect from '@/components/forms/FormSelect'
 import { createRemovedMemberActionAdmin, fetchSingleMemberDetailsAdmin } from '@/utils/actions'
-import { reasonForLeaving } from '@/utils/types'
+import { countryOfResidenceOptions, reasonForLeaving } from '@/utils/types'
 
 const RemoveMember = async ({ params }: { params: { id: string } }) => {
   const { id } = await params
@@ -16,7 +16,6 @@ const RemoveMember = async ({ params }: { params: { id: string } }) => {
     firstName,
     lastAndMiddleNames,
     dateOfBirth,
-    countryOfResidence,
     memberMatriculationNumber,
     associationCode,
     associationName,
@@ -49,11 +48,11 @@ const RemoveMember = async ({ params }: { params: { id: string } }) => {
               {/* <FormInputS type='text' name='middleName' label='member middle name' defaultValue={middleName} /> */}
               <FormInput type='text' name='firstName' label='member first names' value={firstName} readOnly />
               <FormInput type='text' name='dateOfBirth' label='member date of birth' defaultValue={dateOfBirth} />
-              <FormInput
-                type='text'
+              <FormSelect
                 name='countryOfResidence'
                 label='Country Of Residence'
-                defaultValue={countryOfResidence}
+                items={countryOfResidenceOptions}
+                defaultValue={countryOfResidenceOptions[0]}
               />
               <FormInput
                 type='text'

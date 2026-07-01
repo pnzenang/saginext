@@ -1,12 +1,10 @@
 import { SubmitButton } from '@/components/forms/Buttons'
 import FormContainer from '@/components/forms/FormContainer'
 import FormInput from '@/components/forms/FormInput'
-import FormInputS from '@/components/forms/FormInputS'
-
 import FormSelect from '@/components/forms/FormSelect'
 import MaskDateInput from '@/components/forms/MaskDateInput'
 import { createMemberAction, fetchProfile } from '@/utils/actions'
-import { delegateRecommendation, memberStatus } from '@/utils/types'
+import { countryOfResidenceOptions, delegateRecommendation, memberStatus } from '@/utils/types'
 
 const AddMember = async () => {
   const user = await fetchProfile()
@@ -43,7 +41,12 @@ const AddMember = async () => {
             {/* </div>
           <div className='mt-4 grid gap-4 md:grid-cols-3'> */}
             <MaskDateInput type='text' name='dateOfBirth' label='member date of birth' placeholder='MM / DD / YYYY' />
-            <FormInput type='text' name='countryOfResidence' label='Country Of Residence' />
+            <FormSelect
+              name='countryOfResidence'
+              label='Country Of Residence'
+              items={countryOfResidenceOptions}
+              defaultValue={countryOfResidenceOptions[0]}
+            />
             <FormInput type='text' name='nameOfBeneficiary' label='Name of the Beneficiary' />
             {/* </div>
           <div className='mt-4 grid gap-4 md:grid-cols-3'> */}

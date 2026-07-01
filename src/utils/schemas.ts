@@ -1,7 +1,15 @@
 import * as z from 'zod'
 import type { ZodSchema } from 'zod'
 
-import { contributionStatus, delegateRecommendation, memberStatus, reasonForLeaving } from './types'
+import {
+  contributionStatus,
+  countryOfResidenceOptions,
+  delegateRecommendation,
+  memberStatus,
+  reasonForLeaving
+} from './types'
+
+const countryOfResidenceSchema = z.enum(countryOfResidenceOptions)
 
 export const profileSchema = z.object({
   associationName: z.string().toUpperCase().min(4, { message: 'Association name must be at least 4 characters' }),
@@ -28,6 +36,7 @@ export const profileSchema = z.object({
 
 export const memberSchema = z.object({
   firstName: z.string().toUpperCase(),
+
   // middleName: z.string().toUpperCase(),
   associationName: z.string().toUpperCase(),
   associationCode: z.string().toUpperCase(),
@@ -36,10 +45,7 @@ export const memberSchema = z.object({
     .toUpperCase()
     .min(2, { message: 'the member last name should be at least 2 characters' }),
   dateOfBirth: z.string().length(10, { message: 'Date of birth should be 10 characters' }),
-  countryOfResidence: z
-    .string()
-    .toUpperCase()
-    .min(2, { message: 'the country of residence should be at least 2 characters' }),
+  countryOfResidence: countryOfResidenceSchema,
   nameOfBeneficiary: z
     .string()
     .toUpperCase()
@@ -47,9 +53,12 @@ export const memberSchema = z.object({
   delegateRecommendation: z.enum(delegateRecommendation),
   memberStatus: z.enum(memberStatus)
 })
+
 export const RemovedMemberSchema = z.object({
   firstName: z.string().toUpperCase(),
+
   // middleName: z.string().toUpperCase(),
+
   // associationName: z.string().toUpperCase(),
   associationCode: z.string().toUpperCase(),
   lastAndMiddleNames: z
@@ -58,18 +67,17 @@ export const RemovedMemberSchema = z.object({
     .min(2, { message: 'the member last name should be at least 2 characters' }),
   dateOfBirth: z.string().length(10, { message: 'Date of birth should be 10 characters' }),
   registrationDate: z.string(),
-  countryOfResidence: z
-    .string()
-    .toUpperCase()
-    .min(2, { message: 'the country of residence should be at least 2 characters' }),
+  countryOfResidence: countryOfResidenceSchema,
   memberMatriculationNumber: z.string(),
   reasonForLeaving: z.enum(reasonForLeaving)
 })
 
 export const DeceasedMemberSchema = z.object({
   firstName: z.string().toUpperCase(),
+
   // middleName: z.string().toUpperCase(),
   associationName: z.string().toUpperCase(),
+
   // associationCode: z.string().toUpperCase(),
   lastAndMiddleNames: z
     .string()
@@ -79,10 +87,7 @@ export const DeceasedMemberSchema = z.object({
   // dateOfBirth: z.string().length(10, { message: 'Date of birth should be 10 characters' }),
   registrationDate: z.string(),
   dateOfDeath: z.string().length(10, { message: 'Date of death should be 10 characters' }),
-  countryOfResidence: z
-    .string()
-    .toUpperCase()
-    .min(2, { message: 'the country of residence should be at least 2 characters' }),
+  countryOfResidence: countryOfResidenceSchema,
   memberMatriculationNumber: z.string(),
   placeOfDeath: z
     .string()

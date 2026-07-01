@@ -1,14 +1,9 @@
-import { date } from 'zod'
-
 import { SubmitButton } from '@/components/forms/Buttons'
 import FormContainer from '@/components/forms/FormContainer'
 import FormInput from '@/components/forms/FormInput'
 import FormSelect from '@/components/forms/FormSelect'
-import MaskDateInput from '@/components/forms/MaskDateInput'
-import { fetchProfile, fetchSingleMemberDetails, updateMemberDetailsAction } from '@/utils/actions'
-import { delegateRecommendation, memberStatus } from '@/utils/types'
-import FormInputS from '@/components/forms/FormInputS'
-import { BsSignStopFill } from 'react-icons/bs'
+import { fetchSingleMemberDetails, updateMemberDetailsAction } from '@/utils/actions'
+import { countryOfResidenceOptions, delegateRecommendation } from '@/utils/types'
 
 const EditMemberDetailPage = async ({ params }: { params: { id: string } }) => {
   const { id } = await params
@@ -19,15 +14,11 @@ const EditMemberDetailPage = async ({ params }: { params: { id: string } }) => {
     firstName,
     lastAndMiddleNames,
     dateOfBirth,
-    countryOfResidence,
-    clerkId,
     nameOfBeneficiary,
     associationName,
     associationCode,
-    memberStatus
+    memberStatus: currentMemberStatus
   } = member
-
-  const profile = await fetchProfile()
 
   return (
     <section className='mt-16 flex flex-col'>
@@ -56,11 +47,11 @@ const EditMemberDetailPage = async ({ params }: { params: { id: string } }) => {
               <FormInput type='text' name='firstName' label='member first names' value={firstName} readOnly />
               <input type='hidden' name='id' value={id} />
               <FormInput type='text' name='dateOfBirth' label='member date of birth' defaultValue={dateOfBirth} />
-              <FormInput
-                type='text'
+              <FormSelect
                 name='countryOfResidence'
                 label='Country Of Residence'
-                defaultValue={countryOfResidence}
+                items={countryOfResidenceOptions}
+                defaultValue={countryOfResidenceOptions[0]}
               />
               <FormInput
                 type='text'
@@ -94,8 +85,8 @@ const EditMemberDetailPage = async ({ params }: { params: { id: string } }) => {
               <FormSelect
                 label='member status at registration'
                 name='memberStatus'
-                items={[memberStatus]}
-                defaultValue={memberStatus}
+                items={[currentMemberStatus]}
+                defaultValue={currentMemberStatus}
               />
 
               <SubmitButton text='Update member Information' className='mt-4 w-full' />

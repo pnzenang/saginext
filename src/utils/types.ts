@@ -32,6 +32,8 @@ export enum memberStatus {
   Delinquent = 'not_in_good_standing'
 }
 
+export const countryOfResidenceOptions = ['UNITED STATES'] as const
+
 export type MemberType = {
   id: string
   clerkId: string

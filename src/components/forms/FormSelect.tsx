@@ -3,7 +3,7 @@ import { Label } from '../ui/label'
 
 type FormSelectProps = {
   name: string
-  items: string[]
+  items: readonly string[]
   label?: string
   defaultValue?: string
 }
