@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
+import { unstable_noStore as noStore } from 'next/cache'
 import { cookies } from 'next/headers'
 import {
   ArrowRightIcon,
@@ -31,8 +32,14 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { languageCookieName, normalizeLanguage } from '@/lib/i18n'
+import db from '@/utils/db'
 
-const heroStats = [
+type HeroStat = {
+  value: string
+  label: string
+}
+
+const heroStats: HeroStat[] = [
   { value: '$20', label: 'Registration fee' },
   { value: '$20', label: 'maximum monthly member contribution' },
   { value: '$20,000', label: 'family support after vesting' },
@@ -191,7 +198,17 @@ type HomeSearchParams = {
   lang?: string | string[]
 }
 
-const frenchHeroStats = [
+const registeredMemberNumberFormatters: Record<HomeLanguage, Intl.NumberFormat> = {
+  en: new Intl.NumberFormat('en-US'),
+  fr: new Intl.NumberFormat('fr-FR')
+}
+
+const totalRegisteredLabels: Record<HomeLanguage, string> = {
+  en: 'total registered to date',
+  fr: 'total des inscrits à ce jour'
+}
+
+const frenchHeroStats: HeroStat[] = [
   { value: '$20', label: "frais d'inscription" },
   { value: '$20', label: 'cotisation mensuelle maximale par membre' },
   { value: '$20,000', label: 'soutien familial après acquisition des droits' },
@@ -666,15 +683,28 @@ const getLanguage = (params?: HomeSearchParams, cookieLanguage?: string): HomeLa
   return normalizeLanguage(rawLang ?? cookieLanguage)
 }
 
+const fetchTotalRegisteredMembers = async () => {
+  noStore()
+
+  const [activeMembers, removedMembers, deceasedMembers] = await Promise.all([
+    db.member.count(),
+    db.removedMember.count(),
+    db.deceasedMember.count()
+  ])
+
+  return activeMembers + removedMembers + deceasedMembers
+}
+
 const Home = async ({ searchParams }: { searchParams?: Promise<HomeSearchParams> }) => {
   const cookieStore = await cookies()
   const params = searchParams ? await searchParams : undefined
   const language = getLanguage(params, cookieStore.get(languageCookieName)?.value)
   const copy = homeContent[language]
+  const totalRegisteredMembers = await fetchTotalRegisteredMembers()
 
   return (
     <div lang={language}>
-      <HeroSection copy={copy} language={language} />
+      <HeroSection copy={copy} language={language} totalRegisteredMembers={totalRegisteredMembers} />
       <HowItWorksSection copy={copy} />
       <WhoCanJoinSection copy={copy} />
       <MemberStatusSection copy={copy} />
@@ -690,6 +720,11 @@ const Home = async ({ searchParams }: { searchParams?: Promise<HomeSearchParams>
 }
 
 export default Home
+
+const getTotalRegisteredStat = (totalRegisteredMembers: number, language: HomeLanguage): HeroStat => ({
+  value: registeredMemberNumberFormatters[language].format(totalRegisteredMembers),
+  label: totalRegisteredLabels[language]
+})
 
 function SectionIntro({
   eyebrow,
@@ -713,7 +748,17 @@ function SectionIntro({
   )
 }
 
-function HeroSection({ copy, language }: { copy: HomeContent; language: HomeLanguage }) {
+function HeroSection({
+  copy,
+  language,
+  totalRegisteredMembers
+}: {
+  copy: HomeContent
+  language: HomeLanguage
+  totalRegisteredMembers: number
+}) {
+  const heroStatsWithTotalRegistered = [getTotalRegisteredStat(totalRegisteredMembers, language), ...copy.heroStats]
+
   return (
     <section
       id='home'
@@ -763,12 +808,9 @@ function HeroSection({ copy, language }: { copy: HomeContent; language: HomeLang
           </div>
         </div>
 
-        <div className='-mr-4 flex flex-col gap-6 border-t border-white/18 pt-6 text-white sm:-mr-6 sm:flex-row sm:items-start sm:justify-between lg:-mr-8'>
-          {copy.heroStats.map((stat, index) => (
-            <div
-              key={stat.label}
-              className={`space-y-1 ${index === 1 ? 'sm:text-center' : index === 2 ? 'sm:w-48 sm:text-right' : ''}`}
-            >
+        <div className='grid gap-6 border-t border-white/18 pt-6 text-white sm:grid-cols-2 lg:grid-cols-5'>
+          {heroStatsWithTotalRegistered.map(stat => (
+            <div key={stat.label} className='space-y-1'>
               <p className='text-3xl font-semibold sm:text-4xl'>{stat.value}</p>
               <p className='text-sm leading-6 text-white/72 sm:max-w-48'>{stat.label}</p>
             </div>
