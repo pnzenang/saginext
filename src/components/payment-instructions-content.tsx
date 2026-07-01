@@ -24,8 +24,7 @@ const paymentSteps = [
   {
     icon: FileText,
     title: 'Write a clear payment note',
-    description:
-      'Always include your group 4-letter code, group name, delegate name, payment month, and whether the payment is for registration or contribution.'
+    description: 'Always include at least your group 4-letter code in the zelle memo.'
   },
   {
     icon: Upload,
@@ -38,7 +37,7 @@ const paymentSteps = [
 const reminders = [
   'Confirm the amount before sending payment.',
   'Always include your group 4-letter code when making a payment.',
-  'Use the same group name that appears in your SAGI dashboard.',
+  'Use the same group 4-letter code that appears in your SAGI dashboard.',
   'Keep your Zelle confirmation until the payment is reflected in SAGI.',
   'Do not combine registration and contribution payments without writing a clear note.'
 ]
@@ -81,7 +80,11 @@ const PaymentInstructionsContent = () => {
               <CreditCard className='text-primary size-5' />
               Zelle Payment
             </CardTitle>
-            <CardDescription>Scan or click the QR code to open the payment information.</CardDescription>
+            <CardDescription>
+              Send zelle payment using:
+              <br /> SAGI name: Active Solidarity Ltd and email: info@sagiusa.org <br />
+              or click the QR code to open the payment information.
+            </CardDescription>
           </CardHeader>
           <CardContent className='flex flex-col items-center gap-4'>
             <Link
@@ -99,7 +102,8 @@ const PaymentInstructionsContent = () => {
               />
             </Link>
             <p className='text-muted-foreground text-center text-sm'>
-              After sending, come back to SAGI and submit the payment record.
+              After sending, come back to SAGI and submit the payment record in Registration Payments or Contributions
+              Payments.
             </p>
           </CardContent>
         </Card>

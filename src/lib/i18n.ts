@@ -88,7 +88,7 @@ const dashboardMenuLabelTranslations: Record<string, string> = {
   'Removed Members': 'Membres retirés',
   'Death Announcement': 'Annonce de décès',
   'All Deceased Members': 'Tous les membres décédés',
-  'Payment instruction': 'Instruction de paiement',
+  'Payment Instructions': 'Instructions de paiement',
   'Monthly Additions': 'Ajouts mensuels',
   'Contribution Table': 'Tableau des cotisations',
   'Death Documentations': 'Documents de décès',

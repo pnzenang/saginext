@@ -78,7 +78,7 @@ export const pagesItems: MenuItem[] = [
   },
   {
     icon: CreditCard,
-    label: 'Payment instruction',
+    label: 'Payment Instructions',
     href: '/payment-instructions'
   },
   {
