@@ -21,7 +21,21 @@ const AdminProfilesPage = async () => {
   noStore()
 
   const profiles = await db.profile.findMany({
-    orderBy: [{ associationName: 'asc' }, { createdAt: 'desc' }]
+    orderBy: [{ associationName: 'asc' }, { createdAt: 'desc' }],
+    select: {
+      associationCode: true,
+      associationName: true,
+      createdAt: true,
+      firstDelegateEmail: true,
+      firstDelegateFullName: true,
+      firstDelegatePhoneNumber: true,
+      secondDelegateEmail: true,
+      secondDelegateFullName: true,
+      secondDelegatePhoneNumber: true,
+      thirdDelegateEmail: true,
+      thirdDelegateFullName: true,
+      thirdDelegatePhoneNumber: true
+    }
   })
 
   const totalProfiles = profiles.length
@@ -103,11 +117,10 @@ const AdminProfilesPage = async () => {
                     </TableHeader>
                     <TableBody>
                       {profiles.map(profile => (
-                        <TableRow key={profile.id}>
+                        <TableRow key={profile.associationCode}>
                           <TableCell className='min-w-64'>
                             <div className='space-y-1'>
                               <p className='font-medium whitespace-normal'>{profile.associationName}</p>
-                              <p className='text-muted-foreground font-mono text-xs'>{profile.id}</p>
                             </div>
                           </TableCell>
                           <TableCell>
@@ -145,7 +158,7 @@ const AdminProfilesPage = async () => {
 
                 <div className='grid gap-3 p-3 md:hidden'>
                   {profiles.map(profile => (
-                    <Card key={profile.id} className='rounded-lg shadow-none'>
+                    <Card key={profile.associationCode} className='rounded-lg shadow-none'>
                       <CardContent className='space-y-4'>
                         <div className='space-y-2'>
                           <div className='flex flex-wrap items-start justify-between gap-2'>
