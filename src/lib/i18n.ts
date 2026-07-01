@@ -53,6 +53,15 @@ export const getLanguageSetHref = (language: AppLanguage, next: string) => {
   return `/api/language?${params.toString()}`
 }
 
+export const siteHeaderText = {
+  en: {
+    login: 'Login'
+  },
+  fr: {
+    login: 'Connexion'
+  }
+} as const
+
 export const dashboardText = {
   en: {
     brand: 'SAGI-USA',

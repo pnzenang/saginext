@@ -1,8 +1,8 @@
 'use client'
 
-import { Suspense, useMemo } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState, useTransition } from 'react'
 
-import { usePathname, useSearchParams } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 
 import {
   languageCookieName,
@@ -14,7 +14,8 @@ import { cn } from '@/lib/utils'
 
 type LanguageToggleContentProps = {
   currentLanguage?: AppLanguage
-  nextPath?: string
+  isPending?: boolean
+  onSelectLanguage?: (language: AppLanguage) => void
 }
 
 const setLanguageCookie = (language: AppLanguage) => {
@@ -37,7 +38,7 @@ const getLanguageRedirectPath = (language: AppLanguage) => {
   return `${url.pathname}${url.search}${url.hash}`
 }
 
-const LanguageToggleContent = ({ currentLanguage, nextPath }: LanguageToggleContentProps) => (
+const LanguageToggleContent = ({ currentLanguage, isPending, onSelectLanguage }: LanguageToggleContentProps) => (
   <div
     className='ring-primary/60 bg-primary/10 text-primary flex h-9 items-center gap-1 rounded-full p-1 text-xs font-semibold shadow-[inset_0_-3px_6px_0px_rgba(255,255,255,100)] ring-2 backdrop-blur duration-500'
     aria-label='Choose site language'
@@ -51,7 +52,7 @@ const LanguageToggleContent = ({ currentLanguage, nextPath }: LanguageToggleCont
         isActive ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-accent hover:text-foreground'
       )
 
-      if (!nextPath) {
+      if (!onSelectLanguage) {
         return (
           <span key={language} className={className}>
             {option.shortLabel}
@@ -65,21 +66,9 @@ const LanguageToggleContent = ({ currentLanguage, nextPath }: LanguageToggleCont
           type='button'
           aria-label={option.ariaLabel}
           aria-current={isActive ? 'page' : undefined}
+          disabled={isActive || isPending}
           className={className}
-          onClick={() => {
-            setLanguageCookie(typedLanguage)
-
-            const redirectPath = getLanguageRedirectPath(typedLanguage)
-            const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`
-
-            if (redirectPath === currentPath) {
-              window.location.reload()
-
-              return
-            }
-
-            window.location.assign(redirectPath)
-          }}
+          onClick={() => onSelectLanguage(typedLanguage)}
         >
           {option.shortLabel}
         </button>
@@ -96,15 +85,69 @@ const LanguageToggleInner = ({
   initialLanguage: AppLanguage
 }) => {
   const pathname = usePathname()
+  const router = useRouter()
   const searchParams = useSearchParams()
+  const [isPending, startTransition] = useTransition()
+  const [selectedLanguage, setSelectedLanguage] = useState(initialLanguage)
+  const scrollPositionRef = useRef<number | null>(null)
   const queryLanguage = searchParams.get('lang')
-  const currentLanguage = normalizeLanguage(queryLanguage ?? initialLanguage)
+  const currentLanguage = normalizeLanguage(queryLanguage ?? selectedLanguage)
   const search = searchParams.toString()
-  const nextPath = useMemo(() => `${pathname}${search ? `?${search}` : ''}`, [pathname, search])
+  const currentPath = useMemo(() => `${pathname}${search ? `?${search}` : ''}`, [pathname, search])
+
+  useEffect(() => {
+    setSelectedLanguage(initialLanguage)
+  }, [initialLanguage])
+
+  useEffect(() => {
+    if (scrollPositionRef.current === null) return
+
+    const scrollPosition = scrollPositionRef.current
+    let frame = 0
+    let animationFrame = 0
+
+    scrollPositionRef.current = null
+
+    const restoreScrollPosition = () => {
+      window.scrollTo({ top: scrollPosition, behavior: 'instant' })
+
+      frame += 1
+
+      if (frame < 3) {
+        animationFrame = requestAnimationFrame(restoreScrollPosition)
+      }
+    }
+
+    animationFrame = requestAnimationFrame(restoreScrollPosition)
+
+    return () => {
+      cancelAnimationFrame(animationFrame)
+    }
+  }, [currentPath])
 
   if (homeOnly && pathname !== '/') return null
 
-  return <LanguageToggleContent currentLanguage={currentLanguage} nextPath={nextPath} />
+  const handleSelectLanguage = (language: AppLanguage) => {
+    if (language === currentLanguage) return
+
+    setSelectedLanguage(language)
+    setLanguageCookie(language)
+    scrollPositionRef.current = window.scrollY
+
+    const redirectPath = getLanguageRedirectPath(language)
+
+    startTransition(() => {
+      router.replace(redirectPath, { scroll: false })
+    })
+  }
+
+  return (
+    <LanguageToggleContent
+      currentLanguage={currentLanguage}
+      isPending={isPending}
+      onSelectLanguage={handleSelectLanguage}
+    />
+  )
 }
 
 const LanguageToggle = ({

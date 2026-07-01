@@ -26,7 +26,6 @@ import { PrimarySwipeButton } from '@/components/ui/swipe-button'
 
 import { cn } from '@/lib/utils'
 
-import Logo from '@/components/logo'
 import LogoSmall from '../logoSmall'
 
 type NavigationItem = {
@@ -185,9 +184,9 @@ const HeaderNavigation = ({ navigationData, className }: { navigationData: Navig
   const activeSection = useActiveSection(sectionIds)
 
   return (
-    <div className={cn('flex items-center', className)}>
+    <div className={cn('flex min-w-0 flex-1 items-center justify-center', className)}>
       <NavigationMenu viewport={false}>
-        <NavigationMenuList className='flex-wrap gap-0'>
+        <NavigationMenuList className='flex-nowrap gap-0'>
           {navigationData.map(navItem => {
             // Simple link (no dropdown)
             if (navItem.href) {
@@ -207,7 +206,7 @@ const HeaderNavigation = ({ navigationData, className }: { navigationData: Navig
                     data-active={isActive}
                     className={cn(
                       navigationMenuTriggerStyle(),
-                      'text-muted-foreground data-[active=true]:text-primary bg-transparent px-3! py-1.5! text-base! font-medium! shadow-none hover:bg-transparent focus:bg-transparent focus-visible:bg-transparent data-[active=true]:bg-transparent hover:data-[active=true]:bg-transparent focus:data-[active=true]:bg-transparent active:data-[active=true]:bg-transparent'
+                      'text-muted-foreground data-[active=true]:text-primary bg-transparent px-3! py-1.5! text-base! font-medium! whitespace-nowrap shadow-none hover:bg-transparent focus:bg-transparent focus-visible:bg-transparent data-[active=true]:bg-transparent hover:data-[active=true]:bg-transparent focus:data-[active=true]:bg-transparent active:data-[active=true]:bg-transparent'
                     )}
                     asChild
                   >

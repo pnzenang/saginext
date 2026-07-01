@@ -31,6 +31,7 @@ import {
   fetchAssociationContributionSummary,
   fetchLatestAssociationContributionAssessment
 } from './sagi-contribution-summary'
+import { awaitingPublicationVestingLongevityDays, getAwaitingPublicationVestingCutoff } from './sagi-member-longevity'
 import { registrationBalanceAdjustmentType, registrationFeePerEligibleMember } from './sagi-registration-summary'
 import { contributionPaymentAlertType, registrationPaymentAlertType } from './payment-constants'
 import {
@@ -1734,6 +1735,40 @@ export const updateMemberDetailsActionAdmin = async (prevState: any, formData: F
   }
 
   redirect('/admin-all-members')
+}
+
+export const vestEligibleAwaitingPublicationMembersAction = async (): Promise<{ message: string }> => {
+  await assertAdminUser()
+
+  try {
+    const cutoffAt = getAwaitingPublicationVestingCutoff()
+
+    const updatedMembers = await db.member.updateMany({
+      data: {
+        memberStatus: memberStatus.Vested
+      },
+      where: {
+        createdAt: {
+          lte: cutoffAt
+        },
+        memberStatus: memberStatus.Awaiting
+      }
+    })
+
+    revalidatePaymentViews()
+
+    if (updatedMembers.count === 0) {
+      return {
+        message: `No awaiting publication members with at least ${awaitingPublicationVestingLongevityDays} days of longevity were found.`
+      }
+    }
+
+    return {
+      message: `${updatedMembers.count} member${updatedMembers.count === 1 ? '' : 's'} moved to Vested. No contribution credit was applied.`
+    }
+  } catch (error) {
+    return renderError(error)
+  }
 }
 
 export const fetchNameChangeDocumentationPageAction = async () => {

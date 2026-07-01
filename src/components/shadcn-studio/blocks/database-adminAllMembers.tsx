@@ -1,6 +1,8 @@
 'use client'
 
-import { useEffect, useId, useMemo, useState } from 'react'
+import { useActionState, useEffect, useId, useMemo, useState } from 'react'
+
+import { useFormStatus } from 'react-dom'
 
 import type { Column, ColumnDef, ColumnFiltersState, PaginationState, RowData, Row } from '@tanstack/react-table'
 import {
@@ -27,6 +29,7 @@ import {
   FileSpreadsheetIcon,
   FileTextIcon,
   Hourglass,
+  Loader,
   Pencil,
   SearchIcon,
   ShieldCheck,
@@ -37,9 +40,20 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import Papa from 'papaparse'
+import { toast } from 'sonner'
 import * as XLSX from 'xlsx'
 
 import PaginationControls from '@/components/global/PaginationControls'
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger
+} from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -62,6 +76,11 @@ import { cn } from '@/lib/utils'
 import { getTableCellLabel } from '@/utils/table'
 import { getSelectFilterValues } from '@/utils/table-filter-values'
 import { formatLongevity } from '@/utils/formatLongevity'
+import {
+  awaitingPublicationVestingLongevityDays,
+  getAwaitingPublicationVestingCutoff
+} from '@/utils/sagi-member-longevity'
+import { vestEligibleAwaitingPublicationMembersAction } from '@/utils/actions'
 import { memberStatus, type MemberType } from '@/utils/types'
 
 declare module '@tanstack/react-table' {
@@ -284,6 +303,10 @@ const columns: ColumnDef<MemberType>[] = [
 const MembersDataTable = ({ data }: { data: MemberType[] }) => {
   const [columnFilters, setColumnFilters] = usePersistentColumnFilters('sagi:admin-all-members:columnFilters')
 
+  const [autoVestState, autoVestFormAction] = useActionState(vestEligibleAwaitingPublicationMembersAction, {
+    message: ''
+  })
+
   const pageSize = 200
 
   const [pagination, setPagination] = useState<PaginationState>({
@@ -294,6 +317,10 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
   useEffect(() => {
     setColumnFilters(currentFilters => mergeNameColumnFilters(currentFilters))
   }, [columnFilters, setColumnFilters])
+
+  useEffect(() => {
+    if (autoVestState.message) toast(autoVestState.message)
+  }, [autoVestState.message])
 
   const table = useReactTable({
     data,
@@ -326,6 +353,16 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
       hasMatriculationColumn && columnId === 'associationCode' && 'md:hidden lg:table-cell',
       hasMatriculationColumn && columnId === 'memberMatriculationNumber' && 'md:pl-4 lg:pl-2'
     )
+
+  const eligibleAutoVestCount = useMemo(() => {
+    const cutoffTime = getAwaitingPublicationVestingCutoff().getTime()
+
+    return data.filter(member => {
+      const createdAt = new Date(member.createdAt).getTime()
+
+      return member.memberStatus === memberStatus.Awaiting && Number.isFinite(createdAt) && createdAt <= cutoffTime
+    }).length
+  }, [data])
 
   const summaryTotals = table.getCoreRowModel().rows.reduce(
     (acc, row) => {
@@ -583,6 +620,33 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
                 </PaginationContent>
               </Pagination>
               <div className='grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:items-center'>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      className='w-full bg-emerald-700 text-white hover:bg-emerald-800 focus-visible:ring-emerald-700/30 sm:w-auto'
+                      disabled={eligibleAutoVestCount === 0}
+                    >
+                      <ShieldCheck />
+                      Vest {awaitingPublicationVestingLongevityDays}+ Days ({eligibleAutoVestCount})
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Move eligible members to Vested?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will move {eligibleAutoVestCount} member
+                        {eligibleAutoVestCount === 1 ? '' : 's'} from Awaiting Publication to Vested. No contribution
+                        credit will be created.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <form action={autoVestFormAction}>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel type='button'>Cancel</AlertDialogCancel>
+                        <AutoVestSubmitButton disabled={eligibleAutoVestCount === 0} />
+                      </AlertDialogFooter>
+                    </form>
+                  </AlertDialogContent>
+                </AlertDialog>
                 <Button
                   type='button'
                   onClick={exportVisibleColumnsToExcel}
@@ -618,6 +682,11 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
               </div>
             </div>
           </div>
+          {autoVestState.message ? (
+            <p className='text-primary text-sm font-semibold' aria-live='polite'>
+              {autoVestState.message}
+            </p>
+          ) : null}
           <div className='grid grid-cols-1 gap-6 max-md:*:last:col-span-full sm:grid-cols-2 md:grid-cols-3'>
             {/* <Filter column={table.getColumn('dateOfBirth')!} /> */}
           </div>
@@ -760,6 +829,27 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
 }
 
 export default MembersDataTable
+
+function AutoVestSubmitButton({ disabled }: { disabled: boolean }) {
+  const { pending } = useFormStatus()
+
+  return (
+    <Button
+      type='submit'
+      disabled={disabled || pending}
+      className='bg-emerald-700 text-white hover:bg-emerald-800 focus-visible:ring-emerald-700/30'
+    >
+      {pending ? (
+        <>
+          <Loader className='animate-spin' />
+          Please wait...
+        </>
+      ) : (
+        'Move to Vested'
+      )}
+    </Button>
+  )
+}
 
 function Filter({ column }: { column: Column<any, unknown> }) {
   const id = useId()

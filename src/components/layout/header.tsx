@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 
 import { LogIn } from 'lucide-react'
 
@@ -12,7 +13,7 @@ import { LanguageToggle } from '@/components/global/LanguageToggle'
 import { ModeToggle } from '@/components/layout/mode-toggle'
 import { PrimarySwipeButton } from '@/components/ui/swipe-button'
 
-import type { AppLanguage } from '@/lib/i18n'
+import { normalizeLanguage, siteHeaderText, type AppLanguage } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 
 import Logo from '@/components/logo'
@@ -26,6 +27,9 @@ type HeaderProps = {
 
 const Header = ({ navigationData, language = 'en', className }: HeaderProps) => {
   const [isScrolled, setIsScrolled] = useState(false)
+  const searchParams = useSearchParams()
+  const currentLanguage = normalizeLanguage(searchParams.get('lang') ?? language)
+  const copy = siteHeaderText[currentLanguage]
 
   useEffect(() => {
     const handleScroll = () => {
@@ -50,11 +54,11 @@ const Header = ({ navigationData, language = 'en', className }: HeaderProps) => 
       <div
         className={cn(
           'border-background relative flex h-14 w-full max-w-7xl items-center justify-between gap-4 rounded-full border pr-4 transition-all duration-700 before:absolute before:inset-0 before:-z-1 before:rounded-full before:bg-linear-to-b before:from-white/50 before:to-white before:backdrop-blur-[6px] sm:h-20 dark:before:from-black/50 dark:before:to-black',
-          { 'max-w-4xl': isScrolled, 'sm:pl-2 lg:pl-1': !isScrolled }
+          { 'xl:max-w-6xl': isScrolled, 'sm:pl-2 lg:pl-1': !isScrolled }
         )}
       >
         {/* Logo */}
-        <div>
+        <div className='shrink-0'>
           <Link href='/#home'>
             <Logo className='hidden pt-2 sm:block' />
             <LogoSmall className='block pt-1 sm:hidden' />
@@ -65,7 +69,7 @@ const Header = ({ navigationData, language = 'en', className }: HeaderProps) => 
         <HeaderNavigation navigationData={navigationData} className='max-lg:hidden' />
 
         {/* Actions */}
-        <div className='flex items-center gap-3'>
+        <div className='flex shrink-0 items-center gap-3'>
           <LanguageToggle homeOnly initialLanguage={language} />
 
           <ModeToggle />
@@ -73,14 +77,14 @@ const Header = ({ navigationData, language = 'en', className }: HeaderProps) => 
           {/* Get started Button */}
           <PrimarySwipeButton className='rounded-full max-lg:hidden' asChild>
             <Link href='/sign-in' prefetch={false}>
-              Login
+              {copy.login}
             </Link>
           </PrimarySwipeButton>
 
           {/* Navigation for small screens */}
           <div className='flex gap-3 lg:hidden'>
             <PrimarySwipeButton className=':hidden flex items-center rounded-full' asChild size='icon'>
-              <Link href='/sign-in' prefetch={false}>
+              <Link href='/sign-in' aria-label={copy.login} prefetch={false}>
                 <LogIn />
               </Link>
             </PrimarySwipeButton>
