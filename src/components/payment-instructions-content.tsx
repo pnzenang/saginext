@@ -82,8 +82,9 @@ const PaymentInstructionsContent = () => {
             </CardTitle>
             <CardDescription>
               Send zelle payment using:
-              <br /> SAGI name: Active Solidarity Ltd and email: info@sagiusa.org <br />
-              or click the QR code to open the payment information.
+              <br /> SAGI name:<span> Active Solidarity Ltd</span> and email: <span>info@sagiusa.org </span>
+              <br />
+              or click the QR code to search your bank and connect the zelle payment.
             </CardDescription>
           </CardHeader>
           <CardContent className='flex flex-col items-center gap-4'>
