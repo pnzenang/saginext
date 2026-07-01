@@ -806,11 +806,20 @@ function HeroSection({
           </div>
         </div>
 
-        <div className='grid gap-6 border-t border-white/18 pt-6 text-white sm:grid-cols-2 lg:grid-cols-4'>
-          {heroStatsWithTotalRegistered.map(stat => (
-            <div key={stat.label} className='space-y-1'>
+        <div className='grid gap-6 border-t border-white/18 pt-6 text-white sm:grid-cols-2 lg:flex lg:items-start lg:justify-between'>
+          {heroStatsWithTotalRegistered.map((stat, index) => (
+            <div
+              key={stat.label}
+              className={`space-y-1 lg:max-w-48 ${
+                index === 0
+                  ? 'lg:text-left'
+                  : index === heroStatsWithTotalRegistered.length - 1
+                    ? 'lg:text-right'
+                    : 'lg:text-center'
+              }`}
+            >
               <p className='text-3xl font-semibold sm:text-4xl'>{stat.value}</p>
-              <p className='text-sm leading-6 text-white/72 sm:max-w-48'>{stat.label}</p>
+              <p className='text-sm leading-6 text-white/72'>{stat.label}</p>
             </div>
           ))}
         </div>
