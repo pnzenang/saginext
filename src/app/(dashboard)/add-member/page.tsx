@@ -4,7 +4,7 @@ import FormInput from '@/components/forms/FormInput'
 import FormSelect from '@/components/forms/FormSelect'
 import MaskDateInput from '@/components/forms/MaskDateInput'
 import { createMemberAction, fetchProfile } from '@/utils/actions'
-import { countryOfResidenceOptions, delegateRecommendation, memberStatus } from '@/utils/types'
+import { countryOfResidenceOptions, defaultCountryOfResidence, delegateRecommendation, memberStatus } from '@/utils/types'
 
 const AddMember = async () => {
   const user = await fetchProfile()
@@ -45,7 +45,7 @@ const AddMember = async () => {
               name='countryOfResidence'
               label='Country Of Residence'
               items={countryOfResidenceOptions}
-              defaultValue={countryOfResidenceOptions[0]}
+              defaultValue={defaultCountryOfResidence}
             />
             <FormInput type='text' name='nameOfBeneficiary' label='Name of the Beneficiary' />
             {/* </div>

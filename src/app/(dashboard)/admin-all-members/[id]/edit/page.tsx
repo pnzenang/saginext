@@ -7,7 +7,12 @@ import {
   fetchSingleMemberDetailsAdmin,
   updateMemberDetailsActionAdmin
 } from '@/utils/actions'
-import { countryOfResidenceOptions, delegateRecommendation, memberStatus } from '@/utils/types'
+import {
+  countryOfResidenceOptions,
+  delegateRecommendation,
+  getCountryOfResidenceDefault,
+  memberStatus
+} from '@/utils/types'
 
 const EditMemberDetailPage = async ({ params }: { params: { id: string } }) => {
   const { id } = await params
@@ -18,6 +23,7 @@ const EditMemberDetailPage = async ({ params }: { params: { id: string } }) => {
     firstName,
     lastAndMiddleNames,
     dateOfBirth,
+    countryOfResidence,
     nameOfBeneficiary,
     associationCode,
     associationName
@@ -52,7 +58,7 @@ const EditMemberDetailPage = async ({ params }: { params: { id: string } }) => {
                 name='countryOfResidence'
                 label='Country Of Residence'
                 items={countryOfResidenceOptions}
-                defaultValue={countryOfResidenceOptions[0]}
+                defaultValue={getCountryOfResidenceDefault(countryOfResidence)}
               />
               <FormInput
                 type='text'

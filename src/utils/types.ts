@@ -32,7 +32,17 @@ export enum memberStatus {
   Delinquent = 'not_in_good_standing'
 }
 
-export const countryOfResidenceOptions = ['UNITED STATES'] as const
+export const countryOfResidenceOptions = ['UNITED STATES', 'CANADA', 'MEXICO'] as const
+export type CountryOfResidenceOption = (typeof countryOfResidenceOptions)[number]
+export const defaultCountryOfResidence = countryOfResidenceOptions[0]
+
+export const getCountryOfResidenceDefault = (country?: string | null): CountryOfResidenceOption => {
+  const normalizedCountry = country?.trim().toUpperCase()
+
+  return countryOfResidenceOptions.includes(normalizedCountry as CountryOfResidenceOption)
+    ? (normalizedCountry as CountryOfResidenceOption)
+    : defaultCountryOfResidence
+}
 
 export type MemberType = {
   id: string

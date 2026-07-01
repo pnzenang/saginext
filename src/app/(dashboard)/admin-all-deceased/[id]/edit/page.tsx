@@ -6,7 +6,7 @@ import {
   fetchSingleDeceasedMemberDetailsAdmin,
   updateDeceasedMemberDetailsActionAdmin
 } from '@/utils/actions'
-import { contributionStatus, countryOfResidenceOptions } from '@/utils/types'
+import { contributionStatus, countryOfResidenceOptions, getCountryOfResidenceDefault } from '@/utils/types'
 
 const EditCaseStatus = async ({ params }: { params: { id: string } }) => {
   const { id } = await params
@@ -16,6 +16,7 @@ const EditCaseStatus = async ({ params }: { params: { id: string } }) => {
   const {
     firstName,
     lastAndMiddleNames,
+    countryOfResidence,
     nameOfBeneficiary,
     memberMatriculationNumber,
 
@@ -65,7 +66,7 @@ const EditCaseStatus = async ({ params }: { params: { id: string } }) => {
                 name='countryOfResidence'
                 label='Country Of Residence'
                 items={countryOfResidenceOptions}
-                defaultValue={countryOfResidenceOptions[0]}
+                defaultValue={getCountryOfResidenceDefault(countryOfResidence)}
               />
 
               <FormInput

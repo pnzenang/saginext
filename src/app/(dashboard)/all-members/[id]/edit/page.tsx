@@ -3,7 +3,7 @@ import FormContainer from '@/components/forms/FormContainer'
 import FormInput from '@/components/forms/FormInput'
 import FormSelect from '@/components/forms/FormSelect'
 import { fetchSingleMemberDetails, updateMemberDetailsAction } from '@/utils/actions'
-import { countryOfResidenceOptions, delegateRecommendation } from '@/utils/types'
+import { countryOfResidenceOptions, delegateRecommendation, getCountryOfResidenceDefault } from '@/utils/types'
 
 const EditMemberDetailPage = async ({ params }: { params: { id: string } }) => {
   const { id } = await params
@@ -14,6 +14,7 @@ const EditMemberDetailPage = async ({ params }: { params: { id: string } }) => {
     firstName,
     lastAndMiddleNames,
     dateOfBirth,
+    countryOfResidence,
     nameOfBeneficiary,
     associationName,
     associationCode,
@@ -51,7 +52,7 @@ const EditMemberDetailPage = async ({ params }: { params: { id: string } }) => {
                 name='countryOfResidence'
                 label='Country Of Residence'
                 items={countryOfResidenceOptions}
-                defaultValue={countryOfResidenceOptions[0]}
+                defaultValue={getCountryOfResidenceDefault(countryOfResidence)}
               />
               <FormInput
                 type='text'
