@@ -14,7 +14,6 @@ import {
   fetchAssociationRegistrationSummary,
   registrationBalanceAdjustmentType
 } from '@/utils/sagi-registration-summary'
-import { getPendingRegistrationCutoff } from '@/utils/sagi-member-longevity'
 import { registrationPaymentAlertType } from '@/utils/payment-constants'
 import { memberStatus } from '@/utils/types'
 
@@ -63,27 +62,9 @@ const AdminRegistrationPayments = async () => {
         associationCode: 'asc'
       },
       where: {
-        AND: [
-          {
-            memberStatus: {
-              in: [memberStatus.Vested, memberStatus.Awaiting, memberStatus.Pending]
-            }
-          },
-          {
-            OR: [
-              {
-                memberStatus: {
-                  not: memberStatus.Pending
-                }
-              },
-              {
-                createdAt: {
-                  gt: getPendingRegistrationCutoff()
-                }
-              }
-            ]
-          }
-        ]
+        memberStatus: {
+          in: [memberStatus.Vested, memberStatus.Awaiting, memberStatus.Pending]
+        }
       }
     }),
     db.member.findMany({

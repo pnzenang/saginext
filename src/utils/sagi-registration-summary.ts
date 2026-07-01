@@ -3,8 +3,6 @@ import { unstable_noStore as noStore } from 'next/cache'
 import db from './db'
 import { registrationFeePerEligibleMember } from './payment-constants'
 import { associationPaymentTypes, fetchAssociationPaymentLedgerTotals } from './sagi-payment-ledger'
-import { getPendingRegistrationCutoff } from './sagi-member-longevity'
-import { memberStatus } from './types'
 
 export const registrationBalanceAdjustmentType = 'registration'
 export { registrationFeePerEligibleMember } from './payment-constants'
@@ -34,21 +32,6 @@ export type AssociationRegistrationSummary = {
 
 const decimalToNumber = (value: unknown) => Number(value ?? 0)
 
-const getVisibleRegistrationMemberFilter = () => ({
-  OR: [
-    {
-      memberStatus: {
-        not: memberStatus.Pending
-      }
-    },
-    {
-      createdAt: {
-        gt: getPendingRegistrationCutoff()
-      }
-    }
-  ]
-})
-
 export const fetchRegistrationUsedMemberCount = async (associationCode: string) => {
   const registrationUsages = await db.associationRegistrationUsage.findMany({
     select: {
@@ -68,7 +51,6 @@ export const fetchRegistrationUsedMemberCount = async (associationCode: string) 
   return db.member.count({
     where: {
       associationCode,
-      ...getVisibleRegistrationMemberFilter(),
       memberMatriculationNumber: {
         in: memberMatriculationNumbers
       }
@@ -132,7 +114,6 @@ export const fetchAssociationRegistrationSummary = async (
           },
           where: {
             associationCode,
-            ...getVisibleRegistrationMemberFilter(),
             memberMatriculationNumber: {
               in: memberMatriculationNumbers
             }

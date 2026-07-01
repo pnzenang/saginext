@@ -65,11 +65,6 @@ import { cn } from '@/lib/utils'
 import { registrationFeePerEligibleMember } from '@/utils/payment-constants'
 import type { AssociationContributionSummary } from '@/utils/sagi-contribution-summary'
 import type { AssociationRegistrationSummary } from '@/utils/sagi-registration-summary'
-import {
-  getPendingRegistrationDaysRemaining,
-  isPendingRegistrationExpired,
-  pendingRegistrationDeadlineDays
-} from '@/utils/sagi-member-longevity'
 import { getTableCellLabel } from '@/utils/table'
 import { getSelectFilterValues } from '@/utils/table-filter-values'
 import { formatLongevity } from '@/utils/formatLongevity'
@@ -100,16 +95,6 @@ const getVisibleMatriculationNumber = (status: unknown, matriculationNumber: unk
   if (status === memberStatus.Pending || status === memberStatus.Awaiting) return 'Pending'
 
   return String(matriculationNumber ?? '')
-}
-
-const formatPendingRegistrationCountdown = (createdAt: Date | string) => {
-  const daysRemaining = getPendingRegistrationDaysRemaining(createdAt)
-
-  if (daysRemaining <= 0) {
-    return 'Deadline reached'
-  }
-
-  return `${daysRemaining} day${daysRemaining === 1 ? '' : 's'} left`
 }
 
 const nameFilterIds = new Set(['firstName', 'lastAndMiddleNames'])
@@ -216,34 +201,6 @@ const columns: ColumnDef<MemberType>[] = [
       return <div>{formatLongevity(field)}</div>
     },
     size: 160
-  },
-  {
-    id: 'registrationDeadline',
-    accessorFn: row => row.createdAt,
-    header: `Registration Deadline (${pendingRegistrationDeadlineDays} Days)`,
-    cell: ({ row }) => {
-      const { createdAt, memberStatus: status } = row.original
-
-      if (status !== memberStatus.Pending) {
-        return <span className='text-muted-foreground text-sm'>Status changed</span>
-      }
-
-      const daysRemaining = getPendingRegistrationDaysRemaining(createdAt)
-
-      return (
-        <Badge
-          className={cn(
-            'rounded-sm border-none capitalize focus-visible:outline-none',
-            daysRemaining <= 7
-              ? 'bg-red-600/10 text-red-600 focus-visible:ring-red-600/20 dark:bg-red-400/10 dark:text-red-400'
-              : 'bg-amber-600/10 text-amber-600 focus-visible:ring-amber-600/20 dark:bg-amber-400/10 dark:text-amber-400'
-          )}
-        >
-          {formatPendingRegistrationCountdown(createdAt)}
-        </Badge>
-      )
-    },
-    size: 170
   },
   {
     header: 'Recommendation',
@@ -422,7 +379,6 @@ type MembersDataTableProps = {
 
 const MembersDataTable = ({ currentContribution, currentRegistrationPayment, data }: MembersDataTableProps) => {
   const [columnFilters, setColumnFilters] = usePersistentColumnFilters('sagi:all-members:columnFilters')
-  const visibleData = useMemo(() => data.filter(member => !isPendingRegistrationExpired(member)), [data])
 
   const pageSize = 200
 
@@ -436,7 +392,7 @@ const MembersDataTable = ({ currentContribution, currentRegistrationPayment, dat
   }, [columnFilters, setColumnFilters])
 
   const table = useReactTable({
-    data: visibleData,
+    data,
     columns,
     initialState: {
       columnVisibility: {
@@ -584,10 +540,6 @@ const MembersDataTable = ({ currentContribution, currentRegistrationPayment, dat
         'Last and Middle Names': row.getValue('lastAndMiddleNames'),
         'First Name': row.getValue('firstName'),
         Longevity: formatLongevity(createdAt),
-        'Registration Deadline':
-          row.getValue('memberStatus') === memberStatus.Pending
-            ? formatPendingRegistrationCountdown(createdAt)
-            : 'Status changed',
         Recommendation: row.getValue('delegateRecommendation'),
         Status: row.getValue('memberStatus')
       }
@@ -598,16 +550,7 @@ const MembersDataTable = ({ currentContribution, currentRegistrationPayment, dat
 
     XLSX.utils.book_append_sheet(workbook, worksheet, 'All Members')
 
-    const cols = [
-      { wch: 12 },
-      { wch: 18 },
-      { wch: 28 },
-      { wch: 18 },
-      { wch: 32 },
-      { wch: 26 },
-      { wch: 28 },
-      { wch: 22 }
-    ]
+    const cols = [{ wch: 12 }, { wch: 18 }, { wch: 28 }, { wch: 18 }, { wch: 32 }, { wch: 28 }, { wch: 22 }]
 
     worksheet['!cols'] = cols
 

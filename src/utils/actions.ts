@@ -31,11 +31,7 @@ import {
   fetchAssociationContributionSummary,
   fetchLatestAssociationContributionAssessment
 } from './sagi-contribution-summary'
-import {
-  awaitingPublicationVestingLongevityDays,
-  getAwaitingPublicationVestingCutoff,
-  getPendingRegistrationCutoff
-} from './sagi-member-longevity'
+import { awaitingPublicationVestingLongevityDays, getAwaitingPublicationVestingCutoff } from './sagi-member-longevity'
 import { registrationBalanceAdjustmentType, registrationFeePerEligibleMember } from './sagi-registration-summary'
 import { contributionPaymentAlertType, registrationPaymentAlertType } from './payment-constants'
 import {
@@ -107,21 +103,6 @@ const renderError = (error: unknown): { message: string } => {
 
 const decimalToNumber = (value: unknown) => Number(value ?? 0)
 const roundCurrencyAmount = (amount: number) => Number(amount.toFixed(2))
-
-const getVisibleActiveMemberFilter = () => ({
-  OR: [
-    {
-      memberStatus: {
-        not: memberStatus.Pending
-      }
-    },
-    {
-      createdAt: {
-        gt: getPendingRegistrationCutoff()
-      }
-    }
-  ]
-})
 
 const createMissingVerifiedLedgerEntry = async ({
   amountVerified,
@@ -781,8 +762,7 @@ export const fetchMembers = async (clerkId?: string) => {
 
   const members = await db.member.findMany({
     where: {
-      clerkId: userId,
-      ...getVisibleActiveMemberFilter()
+      clerkId: userId
 
       // memberStatus: 'vested'
     },
@@ -796,7 +776,7 @@ export const fetchMembersForAdmin = async () => {
   await assertAdminUser()
 
   const members = await db.member.findMany({
-    where: getVisibleActiveMemberFilter(),
+    // where: {},
     orderBy: { createdAt: 'desc' }
   })
 
@@ -809,14 +789,9 @@ export const fetchMemberStatusCountsByAssociationCode = async () => {
   const counts = await db.member.groupBy({
     by: ['associationCode', 'memberStatus'],
     where: {
-      AND: [
-        getVisibleActiveMemberFilter(),
-        {
-          memberStatus: {
-            in: Object.values(memberStatus)
-          }
-        }
-      ]
+      memberStatus: {
+        in: Object.values(memberStatus)
+      }
     },
     _count: {
       _all: true
