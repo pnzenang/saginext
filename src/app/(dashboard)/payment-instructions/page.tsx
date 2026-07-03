@@ -1,7 +1,13 @@
-import PaymentInstructionsContent from '@/components/payment-instructions-content'
+import { cookies } from 'next/headers'
 
-const PaymentInstructions = () => {
-  return <PaymentInstructionsContent />
+import PaymentInstructionsContent from '@/components/payment-instructions-content'
+import { languageCookieName, normalizeLanguage } from '@/lib/i18n'
+
+const PaymentInstructions = async () => {
+  const cookieStore = await cookies()
+  const language = normalizeLanguage(cookieStore.get(languageCookieName)?.value)
+
+  return <PaymentInstructionsContent language={language} />
 }
 
 export default PaymentInstructions
