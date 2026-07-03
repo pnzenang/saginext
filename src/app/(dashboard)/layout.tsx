@@ -9,6 +9,7 @@ import SidebarGroupedMenuItems from '@/components/dashboard/SidebarGroupedMenuIt
 import { ModeToggle } from '@/components/layout/mode-toggle/mode-toggle'
 import LogoSmall from '@/components/logoSmall'
 import { Card, CardContent } from '@/components/ui/card'
+import { LanguageToggle } from '@/components/global/LanguageToggle'
 import {
   SidebarProvider,
   SidebarHeader,
@@ -60,6 +61,7 @@ const PagesLayout = async ({ children }: Readonly<{ children: ReactNode }>) => {
                 {copy.brand}
               </div>
               <div className='flex shrink-0 items-center justify-center gap-x-2 sm:gap-x-3'>
+                <LanguageToggle initialLanguage={language} />
                 <ModeToggle />
 
                 <UserButton />
