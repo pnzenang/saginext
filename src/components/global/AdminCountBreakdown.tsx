@@ -202,7 +202,7 @@ const AdminCountBreakdown = ({ counts, totals }: AdminCountBreakdownProps) => {
           <div className='relative'>
             <Input
               id={searchInputId}
-              type='search'
+              type='text'
               value={searchQuery}
               onChange={event => {
                 setSearchQuery(event.target.value)
