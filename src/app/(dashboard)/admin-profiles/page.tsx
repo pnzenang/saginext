@@ -41,12 +41,9 @@ const AdminProfilesPage = async () => {
   const totalProfiles = profiles.length
   const uniqueCodes = new Set(profiles.map(profile => profile.associationCode.trim().toUpperCase()).filter(Boolean))
 
-  const delegateAndBoardMemberEmails = new Set(
-    profiles
-      .flatMap(profile => [profile.firstDelegateEmail, profile.secondDelegateEmail, profile.thirdDelegateEmail])
-      .map(email => email.trim().toLowerCase())
-      .filter(Boolean)
-  )
+  const delegateAndBoardMemberEmailCount = profiles
+    .flatMap(profile => [profile.firstDelegateEmail, profile.secondDelegateEmail, profile.thirdDelegateEmail])
+    .filter(email => email.trim()).length
 
   const summaryCards = [
     {
@@ -62,7 +59,7 @@ const AdminProfilesPage = async () => {
     {
       icon: Mail,
       label: 'Delegate + Board Emails',
-      value: delegateAndBoardMemberEmails.size
+      value: delegateAndBoardMemberEmailCount
     }
   ]
 
