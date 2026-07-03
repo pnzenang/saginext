@@ -41,7 +41,7 @@ const AdminProfilesPage = async () => {
   const totalProfiles = profiles.length
   const uniqueCodes = new Set(profiles.map(profile => profile.associationCode.trim().toUpperCase()).filter(Boolean))
 
-  const delegateEmails = new Set(
+  const delegateAndBoardMemberEmails = new Set(
     profiles
       .flatMap(profile => [profile.firstDelegateEmail, profile.secondDelegateEmail, profile.thirdDelegateEmail])
       .map(email => email.trim().toLowerCase())
@@ -61,8 +61,8 @@ const AdminProfilesPage = async () => {
     },
     {
       icon: Mail,
-      label: 'Delegate Emails',
-      value: delegateEmails.size
+      label: 'Delegate + Board Emails',
+      value: delegateAndBoardMemberEmails.size
     }
   ]
 
