@@ -240,6 +240,20 @@ export const fetchAssociationPaymentLedgerTotals = async (
     noStore()
   }
 
+  const latestReset = await db.associationPaymentLedgerEntry.findFirst({
+    orderBy: {
+      createdAt: 'desc'
+    },
+    select: {
+      createdAt: true
+    },
+    where: {
+      associationCode,
+      eventType: associationPaymentLedgerEventTypes.reset,
+      paymentType
+    }
+  })
+
   const [ledgerTotals, aggregatePayments] = await Promise.all([
     db.associationPaymentLedgerEntry.groupBy({
       _sum: {
@@ -251,7 +265,8 @@ export const fetchAssociationPaymentLedgerTotals = async (
         eventType: {
           in: paymentHistoryEventTypes
         },
-        paymentType
+        paymentType,
+        ...(latestReset ? { createdAt: { gt: latestReset.createdAt } } : {})
       }
     }),
     fetchPaymentAggregates(associationCode, paymentType)

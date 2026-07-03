@@ -1043,6 +1043,128 @@ export const resetAssociationContributionCalculationAction = async (): Promise<{
   }
 }
 
+export const zeroAllAssociationContributionBalancesAction = async (): Promise<{ message: string }> => {
+  const user = await assertAdminUser()
+
+  try {
+    const [profiles, associationContributionPayments, contributionAssessmentGroups, balanceAdjustments, members] =
+      await Promise.all([
+        db.profile.findMany({
+          select: {
+            associationCode: true
+          }
+        }),
+        db.associationContributionPayment.findMany(),
+        db.associationContributionAssessmentGroup.findMany({
+          select: {
+            associationCode: true
+          }
+        }),
+        db.associationBalanceAdjustment.findMany({
+          select: {
+            associationCode: true
+          },
+          where: {
+            balanceType: contributionBalanceAdjustmentType
+          }
+        }),
+        db.member.findMany({
+          distinct: ['associationCode'],
+          select: {
+            associationCode: true
+          }
+        })
+      ])
+
+    const affectedAssociationCodes = Array.from(
+      new Set([
+        ...profiles.map(profile => profile.associationCode),
+        ...associationContributionPayments.map(payment => payment.associationCode),
+        ...contributionAssessmentGroups.map(group => group.associationCode),
+        ...balanceAdjustments.map(adjustment => adjustment.associationCode),
+        ...members.map(member => member.associationCode)
+      ])
+    ).filter(Boolean)
+
+    if (affectedAssociationCodes.length === 0) {
+      return { message: 'No contribution balances found to reset.' }
+    }
+
+    const contributionSummaries = await Promise.all(
+      affectedAssociationCodes.map(associationCode => fetchAssociationContributionSummary(associationCode))
+    )
+
+    const resetEntries = contributionSummaries.filter(
+      summary =>
+        summary.amountOwed !== 0 ||
+        summary.amountReceived !== 0 ||
+        summary.amountVerified !== 0 ||
+        summary.balance !== 0 ||
+        summary.manualBalanceAdjustment !== 0
+    )
+
+    await db.$transaction(async tx => {
+      await Promise.all(
+        associationContributionPayments.map(payment =>
+          createMissingPaymentHistoryLedgerEntries({
+            createdBy: user.id,
+            payment,
+            paymentType: associationPaymentTypes.contribution,
+            tx
+          })
+        )
+      )
+
+      if (associationContributionPayments.length > 0) {
+        await tx.associationContributionPayment.updateMany({
+          data: {
+            amountSent: 0,
+            amountVerified: 0,
+            lastSubmittedAt: null,
+            verifiedAt: null
+          },
+          where: {
+            associationCode: {
+              in: associationContributionPayments.map(payment => payment.associationCode)
+            }
+          }
+        })
+      }
+
+      await tx.associationContributionAssessment.deleteMany()
+
+      await tx.associationBalanceAdjustment.deleteMany({
+        where: {
+          balanceType: contributionBalanceAdjustmentType
+        }
+      })
+
+      if (resetEntries.length > 0) {
+        await tx.associationPaymentLedgerEntry.createMany({
+          data: resetEntries.map(summary => ({
+            amount: summary.balance,
+            associationCode: summary.associationCode,
+            createdBy: user.id,
+            eventType: associationPaymentLedgerEventTypes.reset,
+            note: 'Contribution balance reset to zero by SAGI fresh start.',
+            paymentType: associationPaymentTypes.contribution
+          }))
+        })
+      }
+    })
+
+    revalidatePaymentViews()
+
+    return {
+      message: `Contribution balances reset to $0.00 for ${affectedAssociationCodes.length} association${
+        affectedAssociationCodes.length === 1 ? '' : 's'
+      }. Payment history was kept.`
+    }
+  } catch (error) {
+    return renderError(error)
+  }
+}
+
 export const saveAssociationContributionPaymentAction = async (
   prevState: any,
   formData: FormData

@@ -10,7 +10,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
   createAssociationContributionAssessmentAction,
-  resetAssociationContributionCalculationAction
+  resetAssociationContributionCalculationAction,
+  zeroAllAssociationContributionBalancesAction
 } from '@/utils/actions'
 
 type ContributionAssessmentFormProps = {
@@ -24,6 +25,7 @@ const initialState = {
 const ContributionAssessmentForm = ({ vestedMembersCount }: ContributionAssessmentFormProps) => {
   const [state, formAction] = useActionState(createAssociationContributionAssessmentAction, initialState)
   const [resetState, resetFormAction] = useActionState(resetAssociationContributionCalculationAction, initialState)
+  const [zeroState, zeroFormAction] = useActionState(zeroAllAssociationContributionBalancesAction, initialState)
 
   return (
     <Card className='border-primary/30 bg-primary/10 w-full max-w-full min-w-0 overflow-hidden py-0'>
@@ -36,7 +38,7 @@ const ContributionAssessmentForm = ({ vestedMembersCount }: ContributionAssessme
       </CardHeader>
       <CardContent className='min-w-0 py-5'>
         <div className='grid w-full min-w-0 gap-4'>
-          <div className='grid w-full min-w-0 grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-4 md:items-end'>
+          <div className='grid w-full min-w-0 grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-5 md:items-end'>
             <form action={formAction} className='contents'>
               <div className='grid min-w-0 gap-2'>
                 <Label htmlFor='totalAmount'>Monthly contribution total</Label>
@@ -82,12 +84,32 @@ const ContributionAssessmentForm = ({ vestedMembersCount }: ContributionAssessme
                 className='h-auto min-h-10 w-full min-w-0 bg-red-600 px-3 py-2 whitespace-normal text-white hover:bg-red-700'
               />
             </form>
+
+            <form
+              action={zeroFormAction}
+              className='min-w-0'
+              onSubmit={event => {
+                const shouldReset = window.confirm(
+                  'Reset every association contribution balance to $0.00 and clear the current contribution cycle? Payment history will be kept.'
+                )
+
+                if (!shouldReset) {
+                  event.preventDefault()
+                }
+              }}
+            >
+              <SubmitButton
+                text='Zero all balances'
+                className='h-auto min-h-10 w-full min-w-0 bg-orange-600 px-3 py-2 whitespace-normal text-white hover:bg-orange-700'
+              />
+            </form>
           </div>
 
           <div className='grid min-w-0 gap-2'>
             <p className='text-muted-foreground text-sm'>Vested members currently counted: {vestedMembersCount}</p>
             {state.message ? <p className='text-primary text-sm font-medium'>{state.message}</p> : null}
             {resetState.message ? <p className='text-primary text-sm font-medium'>{resetState.message}</p> : null}
+            {zeroState.message ? <p className='text-primary text-sm font-medium'>{zeroState.message}</p> : null}
           </div>
         </div>
       </CardContent>
