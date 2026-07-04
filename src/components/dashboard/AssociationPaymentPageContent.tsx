@@ -503,8 +503,8 @@ const AssociationPaymentPageContent = (props: AssociationPaymentPageContentProps
         <h1 className='text-xl font-semibold tracking-normal md:text-4xl'>{title}</h1>
         <p className='text-muted-foreground mt-2 max-w-4xl text-sm leading-6 sm:text-base'>
           Scan or click the QR code to send payment by Zelle. Add{' '}
-          <strong className='font-extrabold'>Sagicam-{props.associationCode}</strong> in the memo so the payment can be
-          matched to your association, then record the amount sent.
+          <strong className='font-extrabold'>SAGI-USA-{props.associationCode}</strong> in the memo so the payment can
+          be matched to your association, then record the amount sent.
         </p>
       </div>
 

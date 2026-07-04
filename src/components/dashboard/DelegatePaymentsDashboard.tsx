@@ -187,7 +187,7 @@ const DelegatePaymentsDashboard = ({
             <p className='text-lg font-extrabold break-words sm:text-xl'>Payment instructions</p>
             <p className='text-primary/80 mt-1 text-sm font-semibold break-words'>
               Scan or click the QR code to send payment by Zelle. Add{' '}
-              <strong className='font-extrabold'>Sagicam-{associationCode}</strong> in the memo so the payment can be
+              <strong className='font-extrabold'>SAGI-USA-{associationCode}</strong> in the memo so the payment can be
               matched to your association, then record the contribution or registration amount sent.
             </p>
           </div>
