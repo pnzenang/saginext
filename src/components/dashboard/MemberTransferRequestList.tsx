@@ -8,28 +8,28 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { usePersistentState } from '@/hooks/use-persistent-state'
-import { memberTransferRequestStatusLabels, type MemberTransferRequestStatus } from '@/utils/types'
+import { formatMemberTransferRequestStatus, type AppLanguage } from '@/lib/i18n'
 
 import MemberTransferRequestCard, { type MemberTransferRequestCardData } from './MemberTransferRequestCard'
 
 type EmptyIcon = 'inbox' | 'transfer'
 
-const getStatusLabel = (status: string) =>
-  memberTransferRequestStatusLabels[status as MemberTransferRequestStatus] ?? status
-
-const getRequestSearchValue = (request: MemberTransferRequestCardData) =>
+const getRequestSearchValue = (request: MemberTransferRequestCardData, language: AppLanguage) =>
   [
     request.currentFirstName,
     request.currentLastAndMiddleNames,
     request.initiatingAssociationCode,
+    request.initiatingAssociationName,
     request.member?.associationCode,
+    request.member?.associationName,
     request.member?.firstName,
     request.member?.lastAndMiddleNames,
     request.member?.memberMatriculationNumber,
     request.memberMatriculationNumber,
     request.receivingAssociationCode,
+    request.receivingAssociationName,
     request.rejectionReason,
-    getStatusLabel(request.status),
+    formatMemberTransferRequestStatus(request.status, language),
     request.status
   ]
     .filter(Boolean)
@@ -42,12 +42,32 @@ const EmptyStateIcon = ({ icon }: { icon: EmptyIcon }) => {
   return <Icon className='text-muted-foreground mx-auto mb-3 size-8' />
 }
 
+const memberTransferRequestListCopy = {
+  en: {
+    clear: 'Clear',
+    noMatchesDescription: 'Try another name, matriculation number, association code, association name, or status.',
+    noMatchesTitle: 'No transfer requests match your search.',
+    searchLabel: 'Search transfer requests',
+    showing: (filteredCount: number, totalCount: number) =>
+      `Showing ${filteredCount} of ${totalCount} request${totalCount === 1 ? '' : 's'}.`
+  },
+  fr: {
+    clear: 'Effacer',
+    noMatchesDescription: "Essayez un autre nom, matricule, code d'association, nom d'association ou statut.",
+    noMatchesTitle: 'Aucune demande de transfert ne correspond à votre recherche.',
+    searchLabel: 'Rechercher des demandes de transfert',
+    showing: (filteredCount: number, totalCount: number) =>
+      `Affichage de ${filteredCount} sur ${totalCount} demande${totalCount === 1 ? '' : 's'}.`
+  }
+} as const
+
 const MemberTransferRequestList = ({
   currentUserClerkId,
   emptyDescription,
   emptyIcon,
   emptyTitle,
   isAdminUser,
+  language,
   requests,
   searchPlaceholder,
   storageKey
@@ -57,18 +77,20 @@ const MemberTransferRequestList = ({
   emptyIcon: EmptyIcon
   emptyTitle: string
   isAdminUser: boolean
+  language: AppLanguage
   requests: MemberTransferRequestCardData[]
   searchPlaceholder: string
   storageKey: string
 }) => {
+  const copy = memberTransferRequestListCopy[language]
   const [search, setSearch] = usePersistentState(storageKey, '')
   const normalizedSearch = search.trim().toLowerCase()
 
   const filteredRequests = useMemo(() => {
     if (!normalizedSearch) return requests
 
-    return requests.filter(request => getRequestSearchValue(request).includes(normalizedSearch))
-  }, [normalizedSearch, requests])
+    return requests.filter(request => getRequestSearchValue(request, language).includes(normalizedSearch))
+  }, [language, normalizedSearch, requests])
 
   const searchInputId = `${storageKey.replace(/[^a-z0-9-]/gi, '-')}-search`
 
@@ -78,7 +100,7 @@ const MemberTransferRequestList = ({
         <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
           <form role='search' onSubmit={event => event.preventDefault()} className='min-w-0 flex-1'>
             <label htmlFor={searchInputId} className='sr-only'>
-              Search transfer requests
+              {copy.searchLabel}
             </label>
             <div className='relative'>
               <Search className='text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2' />
@@ -101,16 +123,14 @@ const MemberTransferRequestList = ({
               onClick={() => setSearch('')}
             >
               <X />
-              Clear
+              {copy.clear}
             </Button>
           ) : null}
         </div>
       ) : null}
 
       {normalizedSearch ? (
-        <p className='text-muted-foreground text-xs'>
-          Showing {filteredRequests.length} of {requests.length} request{requests.length === 1 ? '' : 's'}.
-        </p>
+        <p className='text-muted-foreground text-xs'>{copy.showing(filteredRequests.length, requests.length)}</p>
       ) : null}
 
       {requests.length === 0 ? (
@@ -125,10 +145,8 @@ const MemberTransferRequestList = ({
         <Card className='rounded-lg'>
           <CardContent className='py-8 text-center'>
             <Search className='text-muted-foreground mx-auto mb-3 size-8' />
-            <p className='font-semibold'>No transfer requests match your search.</p>
-            <p className='text-muted-foreground mt-1 text-sm'>
-              Try another name, matriculation number, association code, or status.
-            </p>
+            <p className='font-semibold'>{copy.noMatchesTitle}</p>
+            <p className='text-muted-foreground mt-1 text-sm'>{copy.noMatchesDescription}</p>
           </CardContent>
         </Card>
       ) : (
@@ -138,6 +156,7 @@ const MemberTransferRequestList = ({
               key={request.id}
               currentUserClerkId={currentUserClerkId}
               isAdminUser={isAdminUser}
+              language={language}
               request={request}
             />
           ))}

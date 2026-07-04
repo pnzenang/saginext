@@ -4,13 +4,56 @@ import AutoRefreshAt from '@/components/dashboard/AutoRefreshAt'
 import MemberTransferRequestList from '@/components/dashboard/MemberTransferRequestList'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
+import { getDashboardLanguage } from '@/lib/get-dashboard-language'
 import { fetchMemberTransferPageAction } from '@/utils/actions'
 
 import MemberTransferRequestForm from './MemberTransferRequestForm'
 
+const memberTransferPageCopy = {
+  en: {
+    alertBadge: (count: number) => `${count} required`,
+    alertDescription: (count: number) => `${count} release request${count === 1 ? '' : 's'} need your approval.`,
+    alertTitle: 'Transfer approval required',
+    description:
+      'Request a member into your delegate association, start a transfer out from your current association, and review transfer requests.',
+    emptyDescription: 'Submitted and incoming requests will appear here.',
+    emptyTitle: 'No member transfer requests found.',
+    noCurrentDescription: 'Members under your association code will appear here.',
+    noCurrentTitle: 'No current members available to transfer out.',
+    noOutsideDescription: 'Members under other association codes will appear here.',
+    noOutsideTitle: 'No outside members available to request.',
+    requestsBadge: (count: number) => `${count} request${count === 1 ? '' : 's'}`,
+    requestsTitle: 'Transfer requests',
+    searchPlaceholder: 'Search name, matriculation, association code, association name, or status',
+    title: 'Member Transfer'
+  },
+  fr: {
+    alertBadge: (count: number) => `${count} requise${count === 1 ? '' : 's'}`,
+    alertDescription: (count: number) =>
+      `${count} demande${count === 1 ? '' : 's'} de libération nécessite${count === 1 ? '' : 'nt'} votre approbation.`,
+    alertTitle: 'Approbation de transfert requise',
+    description:
+      "Demandez l'entrée d'un membre dans votre association déléguée, démarrez un transfert sortant depuis votre association actuelle et révisez les demandes de transfert.",
+    emptyDescription: 'Les demandes soumises et entrantes apparaîtront ici.',
+    emptyTitle: 'Aucune demande de transfert trouvée.',
+    noCurrentDescription: "Les membres sous votre code d'association apparaîtront ici.",
+    noCurrentTitle: 'Aucun membre actuel disponible pour un transfert sortant.',
+    noOutsideDescription: "Les membres sous d'autres codes d'association apparaîtront ici.",
+    noOutsideTitle: 'Aucun membre externe disponible à demander.',
+    requestsBadge: (count: number) => `${count} demande${count === 1 ? '' : 's'}`,
+    requestsTitle: 'Demandes de transfert',
+    searchPlaceholder: "Rechercher par nom, matricule, code d'association, nom d'association ou statut",
+    title: 'Transfert de membre'
+  }
+} as const
+
 const MemberTransferPage = async () => {
-  const { currentMembers, members, nextCancelledTransferRefreshAt, profile, requests } =
-    await fetchMemberTransferPageAction()
+  const [language, transferPageData] = await Promise.all([getDashboardLanguage(), fetchMemberTransferPageAction()])
+
+  const { currentMembers, members, nextCancelledTransferRefreshAt, profile, receivingAssociations, requests } =
+    transferPageData
+
+  const copy = memberTransferPageCopy[language]
 
   const incomingActionCount = requests.filter(
     request => request.initiatingClerkId === profile.clerkId && request.status === 'receiving_delegate_pending'
@@ -22,14 +65,11 @@ const MemberTransferPage = async () => {
 
       <div className='flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between'>
         <div>
-          <h1 className='text-2xl font-extrabold tracking-normal sm:text-3xl'>Member Transfer</h1>
-          <p className='text-muted-foreground mt-1 text-sm'>
-            Request a member into your delegate association, start a transfer out from your current association, and
-            review transfer requests.
-          </p>
+          <h1 className='text-2xl font-extrabold tracking-normal sm:text-3xl'>{copy.title}</h1>
+          <p className='text-muted-foreground mt-1 text-sm'>{copy.description}</p>
         </div>
         <Badge variant='outline' className='w-fit text-sm'>
-          {requests.length} request{requests.length === 1 ? '' : 's'}
+          {copy.requestsBadge(requests.length)}
         </Badge>
       </div>
 
@@ -39,17 +79,15 @@ const MemberTransferPage = async () => {
             <div className='flex min-w-0 items-start gap-3'>
               <Inbox className='mt-0.5 size-5 shrink-0 text-blue-700 dark:text-blue-300' />
               <div className='min-w-0'>
-                <p className='font-extrabold text-blue-800 dark:text-blue-200'>Transfer approval required</p>
-                <p className='text-sm text-blue-700 dark:text-blue-300'>
-                  {incomingActionCount} release request{incomingActionCount === 1 ? '' : 's'} need your approval.
-                </p>
+                <p className='font-extrabold text-blue-800 dark:text-blue-200'>{copy.alertTitle}</p>
+                <p className='text-sm text-blue-700 dark:text-blue-300'>{copy.alertDescription(incomingActionCount)}</p>
               </div>
             </div>
             <Badge
               variant='outline'
               className='w-fit border-blue-300 bg-white text-blue-800 dark:bg-black/20 dark:text-blue-200'
             >
-              {incomingActionCount} required
+              {copy.alertBadge(incomingActionCount)}
             </Badge>
           </CardContent>
         </Card>
@@ -60,15 +98,15 @@ const MemberTransferPage = async () => {
           <Card className='rounded-lg'>
             <CardContent className='py-8 text-center'>
               <ArrowLeftRight className='text-muted-foreground mx-auto mb-3 size-8' />
-              <p className='font-semibold'>No outside members available to request.</p>
-              <p className='text-muted-foreground mt-1 text-sm'>
-                Members under other association codes will appear here.
-              </p>
+              <p className='font-semibold'>{copy.noOutsideTitle}</p>
+              <p className='text-muted-foreground mt-1 text-sm'>{copy.noOutsideDescription}</p>
             </CardContent>
           </Card>
         ) : (
           <MemberTransferRequestForm
             currentAssociationCode={profile.associationCode}
+            currentAssociationName={profile.associationName}
+            language={language}
             members={members}
             mode='incoming'
             receivingAssociationCode={profile.associationCode}
@@ -79,17 +117,18 @@ const MemberTransferPage = async () => {
           <Card className='rounded-lg'>
             <CardContent className='py-8 text-center'>
               <ArrowLeftRight className='text-muted-foreground mx-auto mb-3 size-8' />
-              <p className='font-semibold'>No current members available to transfer out.</p>
-              <p className='text-muted-foreground mt-1 text-sm'>
-                Members under your association code will appear here.
-              </p>
+              <p className='font-semibold'>{copy.noCurrentTitle}</p>
+              <p className='text-muted-foreground mt-1 text-sm'>{copy.noCurrentDescription}</p>
             </CardContent>
           </Card>
         ) : (
           <MemberTransferRequestForm
             currentAssociationCode={profile.associationCode}
+            currentAssociationName={profile.associationName}
+            language={language}
             members={currentMembers}
             mode='outgoing'
+            receivingAssociationOptions={receivingAssociations}
           />
         )}
       </div>
@@ -97,16 +136,17 @@ const MemberTransferPage = async () => {
       <div className='grid gap-3'>
         <div className='flex items-center gap-2'>
           <ArrowLeftRight className='text-primary size-5' />
-          <h2 className='text-lg font-extrabold'>Transfer requests</h2>
+          <h2 className='text-lg font-extrabold'>{copy.requestsTitle}</h2>
         </div>
         <MemberTransferRequestList
           currentUserClerkId={profile.clerkId}
-          emptyDescription='Submitted and incoming requests will appear here.'
+          emptyDescription={copy.emptyDescription}
           emptyIcon='inbox'
-          emptyTitle='No member transfer requests found.'
+          emptyTitle={copy.emptyTitle}
           isAdminUser={false}
+          language={language}
           requests={requests}
-          searchPlaceholder='Search name, matriculation, association code, or status'
+          searchPlaceholder={copy.searchPlaceholder}
           storageKey='sagi:member-transfer:request-search'
         />
       </div>

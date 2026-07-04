@@ -9,11 +9,14 @@ import { SubmitButton } from '@/components/forms/Buttons'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { formatMemberStatus, type AppLanguage } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { submitMemberTransferRequestAction, submitOutgoingMemberTransferRequestAction } from '@/utils/actions'
 
 type MemberTransferMemberOption = {
   associationCode: string
+  associationName: string
   firstName: string
   id: string
   lastAndMiddleNames: string
@@ -21,59 +24,124 @@ type MemberTransferMemberOption = {
   memberStatus: string
 }
 
+type MemberTransferAssociationOption = {
+  associationCode: string
+  associationName: string
+}
+
 const maxVisibleMembers = 10
 
 const getMemberNameSearchValue = (member: MemberTransferMemberOption) =>
-  `${member.firstName} ${member.lastAndMiddleNames} ${member.memberMatriculationNumber} ${member.associationCode} ${member.memberStatus}`.toLowerCase()
+  `${member.firstName} ${member.lastAndMiddleNames} ${member.memberMatriculationNumber} ${member.associationCode} ${member.associationName} ${member.memberStatus}`.toLowerCase()
 
-const formatMemberStatus = (status: string) =>
-  status
-    .split('_')
-    .filter(Boolean)
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ')
+const formatAssociationLabel = (associationCode: string, associationName?: string | null) =>
+  associationName ? `${associationCode} - ${associationName}` : associationCode
 
 type TransferMode = 'incoming' | 'outgoing'
 
 const transferFormCopy = {
-  incoming: {
-    action: submitMemberTransferRequestAction,
-    associationHelp: 'Search for the member you want to bring into your delegate association.',
-    memberAssociationLabel: 'Current association code',
-    noMatches: 'No members match your search.',
-    receivingAssociationLabel: 'Receiving association code',
-    searchLabel: 'Search outside members by name',
-    searchPlaceholder: 'Search name, matriculation, association code, or status',
-    selectLabel: 'Select member to transfer in',
-    submitText: 'Send release request',
-    title: 'Request a member transfer in'
+  en: {
+    fields: {
+      currentAssociationInline: 'Current association',
+      memberStatus: 'Member status',
+      matriculation: 'Matriculation',
+      notApplicable: 'N/A',
+      receivingAssociationCode: 'Receiving association code',
+      selectAssociation: 'Select association',
+      selectedMember: 'Selected member'
+    },
+    incoming: {
+      action: submitMemberTransferRequestAction,
+      associationHelp: 'Search for the member you want to bring into your delegate association.',
+      memberAssociationLabel: 'Current association',
+      noMatches: 'No members match your search.',
+      receivingAssociationLabel: 'Receiving association',
+      searchLabel: 'Search outside members by name',
+      searchPlaceholder: 'Search name, matriculation, association code, or status',
+      selectLabel: 'Select member to transfer in',
+      submitText: 'Send release request',
+      title: 'Request a member transfer in'
+    },
+    matches: (count: number) => `${count} match${count === 1 ? '' : 'es'}`,
+    noOtherAssociations: 'No other delegate associations are available.',
+    outgoing: {
+      action: submitOutgoingMemberTransferRequestAction,
+      associationHelp: 'Select one of your current members and choose the association receiving the member.',
+      memberAssociationLabel: 'Current association',
+      noMatches: 'No current members match your search.',
+      receivingAssociationLabel: 'Receiving association',
+      searchLabel: 'Search your members by name',
+      searchPlaceholder: 'Search your members by name, matriculation, or status',
+      selectLabel: 'Select member to transfer out',
+      submitText: 'Start transfer out',
+      title: 'Start a member transfer out'
+    },
+    selectMember: 'Select a member',
+    selectReceivingAssociation: 'Select receiving association',
+    showingFirstMatches: (count: number) => `Showing first ${count} matches. Keep typing to narrow the search.`
   },
-  outgoing: {
-    action: submitOutgoingMemberTransferRequestAction,
-    associationHelp: 'Select one of your current members and enter the association code receiving the member.',
-    memberAssociationLabel: 'Current association code',
-    noMatches: 'No current members match your search.',
-    receivingAssociationLabel: 'Receiving association code',
-    searchLabel: 'Search your members by name',
-    searchPlaceholder: 'Search your members by name, matriculation, or status',
-    selectLabel: 'Select member to transfer out',
-    submitText: 'Start transfer out',
-    title: 'Start a member transfer out'
+  fr: {
+    fields: {
+      currentAssociationInline: 'Association actuelle',
+      memberStatus: 'Statut du membre',
+      matriculation: 'Matricule',
+      notApplicable: 'S/O',
+      receivingAssociationCode: "Code de l'association destinataire",
+      selectAssociation: 'Sélectionner une association',
+      selectedMember: 'Membre sélectionné'
+    },
+    incoming: {
+      action: submitMemberTransferRequestAction,
+      associationHelp: 'Recherchez le membre que vous voulez faire entrer dans votre association déléguée.',
+      memberAssociationLabel: 'Association actuelle',
+      noMatches: 'Aucun membre ne correspond à votre recherche.',
+      receivingAssociationLabel: 'Association destinataire',
+      searchLabel: 'Rechercher des membres externes par nom',
+      searchPlaceholder: 'Rechercher par nom, matricule, code d’association ou statut',
+      selectLabel: 'Sélectionner le membre à transférer vers votre association',
+      submitText: 'Envoyer la demande de libération',
+      title: 'Demander un transfert entrant'
+    },
+    matches: (count: number) => `${count} résultat${count === 1 ? '' : 's'}`,
+    noOtherAssociations: 'Aucune autre association déléguée n’est disponible.',
+    outgoing: {
+      action: submitOutgoingMemberTransferRequestAction,
+      associationHelp: 'Sélectionnez l’un de vos membres actuels et choisissez l’association qui le recevra.',
+      memberAssociationLabel: 'Association actuelle',
+      noMatches: 'Aucun membre actuel ne correspond à votre recherche.',
+      receivingAssociationLabel: 'Association destinataire',
+      searchLabel: 'Rechercher vos membres par nom',
+      searchPlaceholder: 'Rechercher vos membres par nom, matricule ou statut',
+      selectLabel: 'Sélectionner le membre à transférer',
+      submitText: 'Démarrer le transfert sortant',
+      title: 'Démarrer un transfert sortant'
+    },
+    selectMember: 'Sélectionner un membre',
+    selectReceivingAssociation: 'Sélectionner l’association destinataire',
+    showingFirstMatches: (count: number) =>
+      `Affichage des ${count} premiers résultats. Continuez à écrire pour affiner la recherche.`
   }
 } as const
 
 const MemberTransferRequestForm = ({
   currentAssociationCode,
+  currentAssociationName,
+  language,
   mode,
   members,
+  receivingAssociationOptions = [],
   receivingAssociationCode
 }: {
   currentAssociationCode: string
+  currentAssociationName: string
+  language: AppLanguage
   mode: TransferMode
   members: MemberTransferMemberOption[]
+  receivingAssociationOptions?: MemberTransferAssociationOption[]
   receivingAssociationCode?: string
 }) => {
-  const copy = transferFormCopy[mode]
+  const copy = transferFormCopy[language]
+  const modeCopy = copy[mode]
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedMemberId, setSelectedMemberId] = useState('')
   const [targetAssociationCode, setTargetAssociationCode] = useState(receivingAssociationCode ?? '')
@@ -94,8 +162,15 @@ const MemberTransferRequestForm = ({
   const displayedMembers = filteredMembers.slice(0, maxVisibleMembers)
   const hiddenMatchCount = filteredMembers.length - displayedMembers.length
 
+  const selectedReceivingAssociation = receivingAssociationOptions.find(
+    association => association.associationCode === targetAssociationCode
+  )
+
   const displayReceivingAssociationCode =
     mode === 'outgoing' ? targetAssociationCode.trim().toUpperCase() : (receivingAssociationCode ?? currentAssociationCode)
+
+  const displayReceivingAssociationName =
+    mode === 'outgoing' ? selectedReceivingAssociation?.associationName : currentAssociationName
 
   const handleSearchChange = (nextSearchQuery: string) => {
     setSearchQuery(nextSearchQuery)
@@ -114,18 +189,18 @@ const MemberTransferRequestForm = ({
         <div className='flex items-start gap-3'>
           <ArrowLeftRight className='text-primary mt-1 size-5 shrink-0' />
           <div className='min-w-0'>
-            <CardTitle className='text-lg break-words'>{copy.title}</CardTitle>
+            <CardTitle className='text-lg break-words'>{modeCopy.title}</CardTitle>
             <p className='text-muted-foreground mt-1 text-xs'>
-              {copy.associationHelp}
+              {modeCopy.associationHelp}
             </p>
           </div>
         </div>
       </CardHeader>
       <CardContent className='px-4 py-4'>
-        <FormContainer action={copy.action} className='grid gap-3'>
+        <FormContainer action={modeCopy.action} className='grid gap-3'>
           <input type='hidden' name='memberId' value={selectedMemberId} />
           <div className='grid gap-1.5'>
-            <Label htmlFor={`member-transfer-${mode}-search`}>{copy.searchLabel}</Label>
+            <Label htmlFor={`member-transfer-${mode}-search`}>{modeCopy.searchLabel}</Label>
             <div className='relative'>
               <Search className='text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2' />
               <Input
@@ -133,7 +208,7 @@ const MemberTransferRequestForm = ({
                 type='search'
                 value={searchQuery}
                 onChange={event => handleSearchChange(event.target.value)}
-                placeholder={copy.searchPlaceholder}
+                placeholder={modeCopy.searchPlaceholder}
                 className='pl-9'
               />
             </div>
@@ -141,31 +216,44 @@ const MemberTransferRequestForm = ({
 
           {mode === 'outgoing' ? (
             <div className='grid gap-1.5'>
-              <Label htmlFor='member-transfer-receiving-association-code'>Receiving association code</Label>
-              <Input
-                id='member-transfer-receiving-association-code'
+              <Label htmlFor='member-transfer-receiving-association-code'>
+                {copy.fields.receivingAssociationCode}
+              </Label>
+              <Select
+                disabled={receivingAssociationOptions.length === 0}
                 name='receivingAssociationCode'
-                value={targetAssociationCode}
-                onChange={event => setTargetAssociationCode(event.target.value.toUpperCase())}
-                placeholder='ABCD'
-                maxLength={4}
-                autoCapitalize='characters'
-                className='font-extrabold tracking-wide uppercase'
+                onValueChange={setTargetAssociationCode}
                 required
-              />
+                value={targetAssociationCode}
+              >
+                <SelectTrigger
+                  id='member-transfer-receiving-association-code'
+                  className='bg-background w-full font-extrabold uppercase'
+                >
+                  <SelectValue placeholder={copy.selectReceivingAssociation} />
+                </SelectTrigger>
+                <SelectContent>
+                  {receivingAssociationOptions.map(association => (
+                    <SelectItem key={association.associationCode} value={association.associationCode}>
+                      {association.associationCode} - {association.associationName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {receivingAssociationOptions.length === 0 ? (
+                <p className='text-muted-foreground text-xs'>{copy.noOtherAssociations}</p>
+              ) : null}
             </div>
           ) : null}
 
           <div className='grid gap-2'>
             <div className='flex items-center justify-between gap-2'>
-              <p className='text-sm font-semibold'>{copy.selectLabel}</p>
-              <p className='text-muted-foreground text-xs'>
-                {filteredMembers.length} match{filteredMembers.length === 1 ? '' : 'es'}
-              </p>
+              <p className='text-sm font-semibold'>{modeCopy.selectLabel}</p>
+              <p className='text-muted-foreground text-xs'>{copy.matches(filteredMembers.length)}</p>
             </div>
             {filteredMembers.length === 0 ? (
               <p className='text-muted-foreground rounded-md border bg-muted/30 p-3 text-sm'>
-                {copy.noMatches}
+                {modeCopy.noMatches}
               </p>
             ) : (
               <div className='grid max-h-72 gap-2 overflow-y-auto pr-1'>
@@ -187,10 +275,12 @@ const MemberTransferRequestForm = ({
                         {member.firstName} {member.lastAndMiddleNames}
                       </span>
                       <span className='text-muted-foreground text-xs'>
-                        Matriculation: {member.memberMatriculationNumber} · Current association: {member.associationCode}
+                        {copy.fields.matriculation}: {member.memberMatriculationNumber} ·{' '}
+                        {copy.fields.currentAssociationInline}:{' '}
+                        {formatAssociationLabel(member.associationCode, member.associationName)}
                       </span>
                       <span className='text-primary text-xs font-semibold'>
-                        Status: {formatMemberStatus(member.memberStatus)}
+                        {copy.fields.memberStatus}: {formatMemberStatus(member.memberStatus, language)}
                       </span>
                     </button>
                   )
@@ -199,37 +289,43 @@ const MemberTransferRequestForm = ({
             )}
             {hiddenMatchCount > 0 ? (
               <p className='text-muted-foreground text-xs'>
-                Showing first {maxVisibleMembers} matches. Keep typing to narrow the search.
+                {copy.showingFirstMatches(maxVisibleMembers)}
               </p>
             ) : null}
           </div>
 
           <div className='grid gap-2 rounded-md border bg-muted/30 p-3 sm:grid-cols-2'>
             <div className='min-w-0'>
-              <p className='text-muted-foreground text-xs font-semibold'>Selected member</p>
+              <p className='text-muted-foreground text-xs font-semibold'>{copy.fields.selectedMember}</p>
               <p className='mt-1 font-extrabold break-words'>
-                {selectedMember ? `${selectedMember.firstName} ${selectedMember.lastAndMiddleNames}` : 'Select a member'}
+                {selectedMember ? `${selectedMember.firstName} ${selectedMember.lastAndMiddleNames}` : copy.selectMember}
               </p>
             </div>
             <div className='min-w-0'>
-              <p className='text-muted-foreground text-xs font-semibold'>{copy.memberAssociationLabel}</p>
+              <p className='text-muted-foreground text-xs font-semibold'>{modeCopy.memberAssociationLabel}</p>
               <p className='mt-1 font-extrabold break-words'>
-                {selectedMember ? selectedMember.associationCode : 'N/A'}
+                {selectedMember
+                  ? formatAssociationLabel(selectedMember.associationCode, selectedMember.associationName)
+                  : copy.fields.notApplicable}
               </p>
             </div>
             <div className='min-w-0'>
-              <p className='text-muted-foreground text-xs font-semibold'>{copy.receivingAssociationLabel}</p>
-              <p className='mt-1 font-extrabold break-words'>{displayReceivingAssociationCode || 'Enter code'}</p>
+              <p className='text-muted-foreground text-xs font-semibold'>{modeCopy.receivingAssociationLabel}</p>
+              <p className='mt-1 font-extrabold break-words'>
+                {displayReceivingAssociationCode
+                  ? formatAssociationLabel(displayReceivingAssociationCode, displayReceivingAssociationName)
+                  : copy.fields.selectAssociation}
+              </p>
             </div>
             <div className='min-w-0'>
-              <p className='text-muted-foreground text-xs font-semibold'>Member status</p>
+              <p className='text-muted-foreground text-xs font-semibold'>{copy.fields.memberStatus}</p>
               <p className='mt-1 font-extrabold break-words'>
-                {selectedMember ? formatMemberStatus(selectedMember.memberStatus) : 'N/A'}
+                {selectedMember ? formatMemberStatus(selectedMember.memberStatus, language) : copy.fields.notApplicable}
               </p>
             </div>
           </div>
 
-          <SubmitButton text={copy.submitText} className='h-9 w-full text-sm normal-case sm:w-fit' />
+          <SubmitButton text={modeCopy.submitText} className='h-9 w-full text-sm normal-case sm:w-fit' />
         </FormContainer>
       </CardContent>
     </Card>
