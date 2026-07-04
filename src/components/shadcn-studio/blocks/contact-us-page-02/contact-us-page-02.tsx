@@ -41,13 +41,13 @@ const ContactUs = ({ copy = defaultCopy }: { copy?: ContactCopy }) => {
           </p>
         </div>
 
-        <Card className='border shadow-none'>
-          <CardContent className='grid gap-6 md:grid-cols-6'>
-            <Card className='bg-primary py-8 shadow-none md:col-span-3 xl:col-span-2'>
-              <CardContent className='text-primary-foreground space-y-7'>
+        <Card className='border bg-background shadow-none'>
+          <CardContent className='grid gap-6 p-6 md:grid-cols-2'>
+            <Card className='border-primary/20 bg-primary/10 h-full py-8 shadow-none'>
+              <CardContent className='space-y-7'>
                 <div className='space-y-2'>
-                  <h2 className='text-2xl font-semibold'>{copy.infoTitle}</h2>
-                  <p>
+                  <h2 className='text-primary text-2xl font-semibold'>{copy.infoTitle}</h2>
+                  <p className='text-muted-foreground'>
                     {copy.infoDescription}
                   </p>
                 </div>
@@ -55,13 +55,13 @@ const ContactUs = ({ copy = defaultCopy }: { copy?: ContactCopy }) => {
                 <div className='space-y-7'>
                   {/* Phone */}
                   <div className='flex items-start gap-4 text-lg font-semibold'>
-                    <PhoneIcon className='size-7 shrink-0' />
+                    <PhoneIcon className='text-primary size-7 shrink-0' />
                     <a href='tel:+1-804-214-6390'>(804) 214-6390</a>
                   </div>
 
                   {/* Email */}
                   <div className='flex items-start gap-4'>
-                    <MailIcon className='size-7 shrink-0' />
+                    <MailIcon className='text-primary size-7 shrink-0' />
                     <a className='text-lg font-semibold' href='mailto:info@mySagi.org'>
                       info@mySagi.org
                     </a>
@@ -69,7 +69,7 @@ const ContactUs = ({ copy = defaultCopy }: { copy?: ContactCopy }) => {
 
                   {/* Address */}
                   <div className='flex items-start gap-4 text-lg font-semibold'>
-                    <MapPinIcon className='size-7 shrink-0' />
+                    <MapPinIcon className='text-primary size-7 shrink-0' />
                     <address className='not-italic'>9711 Washingtonian Blvd Suite 550, Gaithersburg, MD 20878</address>
                   </div>
                 </div>
@@ -77,7 +77,7 @@ const ContactUs = ({ copy = defaultCopy }: { copy?: ContactCopy }) => {
             </Card>
 
             {/* Form Section */}
-            <div className='md:col-span-3 xl:col-span-4'>
+            <div className='h-full'>
               <ContactForm copy={copy.form} />
             </div>
           </CardContent>

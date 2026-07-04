@@ -74,6 +74,7 @@ const associationPaymentCopy = {
     contributionSubmit: 'Add Contribution Amount Sent',
     contributionTitle: 'Contribution Payment',
     defaultConnector: 'for',
+    deathCount: (count: number) => `Number of deaths: ${count}`,
     due: 'Due',
     dueDate: 'Due date',
     existingBalance: 'Existing Balance',
@@ -121,6 +122,7 @@ const associationPaymentCopy = {
     contributionSubmit: 'Ajouter le montant de cotisation envoyé',
     contributionTitle: 'Paiement des cotisations',
     defaultConnector: 'pour',
+    deathCount: (count: number) => `Nombre de décès : ${count}`,
     due: 'Échéance',
     dueDate: "Date d'échéance",
     existingBalance: 'Solde existant',
@@ -655,6 +657,11 @@ const AssociationPaymentPageContent = (props: AssociationPaymentPageContentProps
           <div className='border-primary/20 bg-primary/10 text-primary flex h-full min-h-32 min-w-0 flex-col rounded-md border px-3 py-3 sm:px-4'>
             <p className='text-lg font-extrabold break-words sm:text-xl'>{amountTitle}</p>
             <p className='text-primary/80 mt-1 text-sm font-semibold break-words'>{amountDetail}</p>
+            {isContributionPayment ? (
+              <p className='text-primary/80 mt-1 text-sm font-semibold break-words'>
+                {copy.deathCount(props.contribution.deathCount)}
+              </p>
+            ) : null}
             <p
               className={cn(
                 'mt-2 text-sm font-extrabold break-words text-teal-600 dark:text-teal-300',
