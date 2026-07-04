@@ -870,16 +870,16 @@ function HeroSection({
           ))}
         </div>
 
-        <div className='grid w-full gap-3 rounded-lg border border-white/45 bg-white/80 p-3 text-slate-950 shadow-xl shadow-slate-950/10 backdrop-blur-md sm:p-4 md:grid-cols-2'>
-          <div className='min-w-0 rounded-md border border-slate-950/10 bg-white/60 px-4 py-3'>
-            <p className='text-sm font-semibold text-slate-600'>
+        <div className='grid w-full gap-3 rounded-lg border border-primary/35 bg-primary/25 p-3 text-white shadow-xl shadow-primary/15 backdrop-blur-md sm:p-4 md:grid-cols-2'>
+          <div className='min-w-0 rounded-md border border-white/20 bg-primary/15 px-4 py-3'>
+            <p className='text-sm font-semibold text-white/76'>
               {copy.monthlyContributionCard.contributionLabel(contributionMonth)}
             </p>
-            <p className='text-2xl font-extrabold tabular-nums text-primary sm:text-3xl'>{contributionAmount}</p>
+            <p className='text-2xl font-extrabold tabular-nums sm:text-3xl'>{contributionAmount}</p>
           </div>
-          <div className='min-w-0 rounded-md border border-slate-950/10 bg-white/60 px-4 py-3 md:text-right'>
-            <p className='text-sm font-semibold text-slate-600'>{copy.monthlyContributionCard.deathCountLabel}</p>
-            <p className='text-2xl font-extrabold tabular-nums text-primary sm:text-3xl'>
+          <div className='min-w-0 rounded-md border border-white/20 bg-primary/15 px-4 py-3 md:text-right'>
+            <p className='text-sm font-semibold text-white/76'>{copy.monthlyContributionCard.deathCountLabel}</p>
+            <p className='text-2xl font-extrabold tabular-nums sm:text-3xl'>
               {heroContributionBanner.deathCount}
             </p>
           </div>
