@@ -34,6 +34,7 @@ export type MemberTransferRequestCardData = {
   receivingAssociationName?: string | null
   receivingClerkId: string
   receivingReviewedAt?: Date | null
+  receivingReviewedBy?: string | null
   rejectionReason?: string | null
   status: string
 }
@@ -256,7 +257,28 @@ const DelegateCancelTransferControl = ({
   )
 }
 
-const canDelegateCancelTransfer = (status: string) => status !== 'admin_approved' && status !== 'cancelled'
+const cancellableTransferStatuses = [
+  'receiving_delegate_pending',
+  'initiating_delegate_approved',
+  'receiving_delegate_approved'
+] as const
+
+const canDelegateCancelTransfer = (status: string) =>
+  cancellableTransferStatuses.includes(status as (typeof cancellableTransferStatuses)[number])
+
+const getRequestInitiatorClerkId = (request: MemberTransferRequestCardData) => {
+  if (request.status === 'receiving_delegate_pending') return request.receivingClerkId
+
+  if (request.status === 'initiating_delegate_approved') return request.initiatingClerkId
+
+  if (request.status === 'receiving_delegate_approved') {
+    return request.receivingReviewedBy === request.receivingClerkId
+      ? request.initiatingClerkId
+      : request.receivingClerkId
+  }
+
+  return null
+}
 
 export const MemberTransferRequestActions = ({
   className,
@@ -277,8 +299,10 @@ export const MemberTransferRequestActions = ({
 }) => {
   const isInitiatingDelegate = currentUserClerkId === request.initiatingClerkId
   const isReceivingDelegate = currentUserClerkId === request.receivingClerkId
+  const requestInitiatorClerkId = getRequestInitiatorClerkId(request)
 
-  const hasCancelAction = (isInitiatingDelegate || isReceivingDelegate) && canDelegateCancelTransfer(request.status)
+  const hasCancelAction =
+    currentUserClerkId === requestInitiatorClerkId && canDelegateCancelTransfer(request.status)
 
   const delegateReviewKind =
     isInitiatingDelegate && request.status === 'receiving_delegate_pending'

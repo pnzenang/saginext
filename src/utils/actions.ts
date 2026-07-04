@@ -2335,7 +2335,26 @@ const openMemberTransferRequestStatuses: MemberTransferRequestStatus[] = [
 ]
 
 const canCancelMemberTransferRequestStatus = (status: string) =>
-  isMemberTransferRequestStatus(status) && status !== 'admin_approved' && status !== 'cancelled'
+  openMemberTransferRequestStatuses.includes(status as MemberTransferRequestStatus)
+
+const getMemberTransferRequestInitiatorClerkId = (request: {
+  initiatingClerkId: string
+  receivingClerkId: string
+  receivingReviewedBy?: string | null
+  status: string
+}) => {
+  if (request.status === 'receiving_delegate_pending') return request.receivingClerkId
+
+  if (request.status === 'initiating_delegate_approved') return request.initiatingClerkId
+
+  if (request.status === 'receiving_delegate_approved') {
+    return request.receivingReviewedBy === request.receivingClerkId
+      ? request.initiatingClerkId
+      : request.receivingClerkId
+  }
+
+  return null
+}
 
 const CANCELLED_MEMBER_TRANSFER_CARD_VISIBILITY_MS = 5 * 60 * 1000
 
@@ -2399,7 +2418,7 @@ const memberTransferActionCopy: Record<
     currentDelegateAssociationProfileNotFound: string
     currentDelegateOnlyInitiate: string
     currentDelegateOnlyRelease: string
-    delegateOnlyCancel: string
+    initiatingDelegateOnlyCancel: string
     delegateReviewAlreadyCompleted: string
     delegateReviewNotAvailable: string
     invalidAdminDecision: string
@@ -2436,7 +2455,7 @@ const memberTransferActionCopy: Record<
     currentDelegateAssociationProfileNotFound: 'Current delegate association profile was not found.',
     currentDelegateOnlyInitiate: 'Only the current delegate association can initiate this member transfer.',
     currentDelegateOnlyRelease: 'Only the current delegate can release this member.',
-    delegateOnlyCancel: 'Only the initiating or receiving delegate can cancel this transfer request.',
+    initiatingDelegateOnlyCancel: 'Only the delegate who initiated this request can cancel it.',
     delegateReviewAlreadyCompleted: 'This transfer request has already been reviewed by the required delegate.',
     delegateReviewNotAvailable: 'This transfer request is not waiting for your delegate approval.',
     invalidAdminDecision: 'Select a valid admin transfer decision.',
@@ -2473,7 +2492,7 @@ const memberTransferActionCopy: Record<
     currentDelegateAssociationProfileNotFound: "Le profil de l'association déléguée actuelle est introuvable.",
     currentDelegateOnlyInitiate: "Seule l'association déléguée actuelle peut initier ce transfert de membre.",
     currentDelegateOnlyRelease: 'Seul le délégué actuel peut libérer ce membre.',
-    delegateOnlyCancel: 'Seul le délégué initiateur ou destinataire peut annuler cette demande de transfert.',
+    initiatingDelegateOnlyCancel: 'Seul le délégué qui a initié cette demande peut l’annuler.',
     delegateReviewAlreadyCompleted: 'Cette demande a déjà été révisée par le délégué requis.',
     delegateReviewNotAvailable: "Cette demande de transfert n'attend pas votre approbation de délégué.",
     invalidAdminDecision: 'Sélectionnez une décision admin valide pour ce transfert.',
@@ -2935,13 +2954,6 @@ export const cancelMemberTransferRequestAction = async (prevState: { requestId: 
       throw new Error(copy.requestNotFound)
     }
 
-    const isInitiatingDelegate = request.initiatingClerkId === user.id
-    const isReceivingDelegate = request.receivingClerkId === user.id
-
-    if (!isInitiatingDelegate && !isReceivingDelegate) {
-      throw new Error(copy.delegateOnlyCancel)
-    }
-
     if (request.status === 'cancelled') {
       throw new Error(copy.alreadyCancelled)
     }
@@ -2950,9 +2962,15 @@ export const cancelMemberTransferRequestAction = async (prevState: { requestId: 
       throw new Error(copy.cannotCancelApproved)
     }
 
+    const requestInitiatorClerkId = getMemberTransferRequestInitiatorClerkId(request)
+
+    if (requestInitiatorClerkId !== user.id) {
+      throw new Error(copy.initiatingDelegateOnlyCancel)
+    }
+
     await db.memberTransferRequest.update({
       data: {
-        rejectionReason: isInitiatingDelegate
+        rejectionReason: requestInitiatorClerkId === request.initiatingClerkId
           ? copy.cancelledByInitiatingDelegateReason
           : copy.cancelledByReceivingDelegateReason,
         status: 'cancelled'
