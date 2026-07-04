@@ -838,18 +838,18 @@ function HeroSection({
           ))}
         </div>
 
-        <div className='max-w-xl rounded-lg border border-white/55 bg-white/92 p-5 text-slate-950 shadow-xl shadow-slate-950/10 backdrop-blur-md'>
+        <div className='max-w-xl rounded-lg border border-white/30 bg-slate-950/42 p-5 text-white shadow-xl shadow-slate-950/20 backdrop-blur-md'>
           <div className='flex items-center gap-3'>
-            <div className='bg-primary/10 text-primary flex size-11 shrink-0 items-center justify-center rounded-lg'>
+            <div className='flex size-11 shrink-0 items-center justify-center rounded-lg bg-white/12 text-white'>
               <CircleDollarSignIcon className='size-5' />
             </div>
             <div>
-              <p className='text-sm font-semibold text-slate-600'>{copy.monthlyContributionCard.label}</p>
+              <p className='text-sm font-semibold text-white/70'>{copy.monthlyContributionCard.label}</p>
               <p className='text-lg font-semibold'>{copy.monthlyContributionCard.title}</p>
             </div>
           </div>
           <p className='mt-4 text-4xl font-semibold tracking-tight'>{copy.monthlyContributionCard.amount}</p>
-          <p className='mt-3 text-sm leading-6 text-slate-700'>{copy.monthlyContributionCard.description}</p>
+          <p className='mt-3 text-sm leading-6 text-white/76'>{copy.monthlyContributionCard.description}</p>
         </div>
       </div>
     </section>
