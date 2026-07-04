@@ -16,6 +16,7 @@ type LanguageToggleContentProps = {
   currentLanguage?: AppLanguage
   isPending?: boolean
   onSelectLanguage?: (language: AppLanguage) => void
+  size?: 'default' | 'xs'
 }
 
 const setLanguageCookie = (language: AppLanguage) => {
@@ -38,9 +39,17 @@ const getLanguageRedirectPath = (language: AppLanguage) => {
   return `${url.pathname}${url.search}${url.hash}`
 }
 
-const LanguageToggleContent = ({ currentLanguage, isPending, onSelectLanguage }: LanguageToggleContentProps) => (
+const LanguageToggleContent = ({
+  currentLanguage,
+  isPending,
+  onSelectLanguage,
+  size = 'default'
+}: LanguageToggleContentProps) => (
   <div
-    className='ring-primary/60 bg-primary/10 text-primary flex h-9 items-center gap-1 rounded-full p-1 text-xs font-semibold shadow-[inset_0_-3px_6px_0px_rgba(255,255,255,100)] ring-2 backdrop-blur duration-500'
+    className={cn(
+      'ring-primary/60 bg-primary/10 text-primary flex items-center rounded-full text-xs font-semibold shadow-[inset_0_-3px_6px_0px_rgba(255,255,255,100)] ring-2 backdrop-blur duration-500',
+      size === 'xs' ? 'h-6 gap-0.5 p-0.5' : 'h-9 gap-1 p-1'
+    )}
     aria-label='Choose site language'
   >
     {Object.entries(languageOptions).map(([language, option]) => {
@@ -48,7 +57,8 @@ const LanguageToggleContent = ({ currentLanguage, isPending, onSelectLanguage }:
       const isActive = typedLanguage === currentLanguage
 
       const className = cn(
-        'flex h-7 items-center rounded-full px-2.5 transition',
+        'flex items-center rounded-full transition',
+        size === 'xs' ? 'h-5 px-1.5' : 'h-7 px-2.5',
         isActive ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-accent hover:text-foreground'
       )
 
@@ -79,10 +89,12 @@ const LanguageToggleContent = ({ currentLanguage, isPending, onSelectLanguage }:
 
 const LanguageToggleInner = ({
   homeOnly,
-  initialLanguage
+  initialLanguage,
+  size = 'default'
 }: {
   homeOnly?: boolean
   initialLanguage: AppLanguage
+  size?: 'default' | 'xs'
 }) => {
   const pathname = usePathname()
   const router = useRouter()
@@ -146,19 +158,22 @@ const LanguageToggleInner = ({
       currentLanguage={currentLanguage}
       isPending={isPending}
       onSelectLanguage={handleSelectLanguage}
+      size={size}
     />
   )
 }
 
 const LanguageToggle = ({
   homeOnly,
-  initialLanguage = 'en'
+  initialLanguage = 'en',
+  size = 'default'
 }: {
   homeOnly?: boolean
   initialLanguage?: AppLanguage
+  size?: 'default' | 'xs'
 }) => (
-  <Suspense fallback={<LanguageToggleContent currentLanguage={initialLanguage} />}>
-    <LanguageToggleInner homeOnly={homeOnly} initialLanguage={initialLanguage} />
+  <Suspense fallback={<LanguageToggleContent currentLanguage={initialLanguage} size={size} />}>
+    <LanguageToggleInner homeOnly={homeOnly} initialLanguage={initialLanguage} size={size} />
   </Suspense>
 )
 

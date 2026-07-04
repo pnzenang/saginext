@@ -16,7 +16,7 @@ const paymentInstructionsCopy = {
     title: 'How to make and record a SAGI payment',
     intro:
       'Send your payment first, then record it in the correct SAGI payment page so the admin team can match the money to your group without delays.',
-    memoReminder: 'Always include SAGI-{4-letter code} in the Zelle memo.',
+    memoReminder: 'Always include SAGI-{association 4-letter code} in the Zelle memo.',
     contributionsCta: 'Contributions Payments',
     registrationsCta: 'Registration Payments',
     zelle: {
@@ -47,7 +47,7 @@ const paymentInstructionsCopy = {
       {
         icon: FileText,
         title: 'Write a clear payment note',
-        description: 'Always include SAGI-{4-letter code} in the Zelle memo.'
+        description: 'Always include SAGI-{association 4-letter code} in the Zelle memo.'
       },
       {
         icon: Upload,
@@ -62,8 +62,8 @@ const paymentInstructionsCopy = {
     },
     reminders: [
       'Confirm the amount before sending payment.',
-      'Always include SAGI-{4-letter code} when making a payment.',
-      'Use the same group 4-letter code that appears in your SAGI dashboard.',
+      'Always include SAGI-{association 4-letter code} when making a payment.',
+      'Use the same association 4-letter code that appears in your SAGI dashboard.',
       'Keep your Zelle confirmation until the payment is reflected in SAGI.',
       'Do not combine registration and contribution payments without writing a clear note.'
     ]
@@ -74,7 +74,7 @@ const paymentInstructionsCopy = {
     intro:
       "Envoyez d'abord votre paiement, puis enregistrez-le sur la bonne page de paiement SAGI afin que l'équipe administrative puisse associer l'argent à votre groupe sans délai.",
     memoReminder:
-      'Incluez toujours SAGI-{code à 4 lettres} dans le mémo Zelle.',
+      "Incluez toujours SAGI-{code d'association à 4 lettres} dans le mémo Zelle.",
     contributionsCta: 'Paiements des cotisations',
     registrationsCta: "Paiements d'inscription",
     zelle: {
@@ -106,7 +106,7 @@ const paymentInstructionsCopy = {
         icon: FileText,
         title: 'Écrire une note de paiement claire',
         description:
-          'Incluez toujours SAGI-{code à 4 lettres} dans le mémo Zelle.'
+          "Incluez toujours SAGI-{code d'association à 4 lettres} dans le mémo Zelle."
       },
       {
         icon: Upload,
@@ -121,8 +121,8 @@ const paymentInstructionsCopy = {
     },
     reminders: [
       "Confirmez le montant avant d'envoyer le paiement.",
-      'Incluez toujours SAGI-{code à 4 lettres} lorsque vous effectuez un paiement.',
-      'Utilisez le même code à 4 lettres que celui qui apparaît dans votre tableau de bord SAGI.',
+      "Incluez toujours SAGI-{code d'association à 4 lettres} lorsque vous effectuez un paiement.",
+      "Utilisez le même code d'association à 4 lettres que celui qui apparaît dans votre tableau de bord SAGI.",
       "Gardez votre confirmation Zelle jusqu'à ce que le paiement apparaisse dans SAGI.",
       "Ne combinez pas les paiements d'inscription et de cotisation sans écrire une note claire."
     ]

@@ -61,7 +61,7 @@ const PagesLayout = async ({ children }: Readonly<{ children: ReactNode }>) => {
                 {copy.brand}
               </div>
               <div className='flex shrink-0 items-center justify-center gap-x-2 sm:gap-x-3'>
-                <LanguageToggle initialLanguage={language} />
+                <LanguageToggle initialLanguage={language} size='xs' />
                 <ModeToggle />
 
                 <UserButton />
