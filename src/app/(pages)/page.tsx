@@ -33,6 +33,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { languageCookieName, normalizeLanguage } from '@/lib/i18n'
 import db from '@/utils/db'
+import { fetchLatestAssociationContributionAssessment } from '@/utils/sagi-contribution-summary'
 
 type HeroStat = {
   value: string
@@ -200,6 +201,20 @@ type HomeSearchParams = {
 const registeredMemberNumberFormatters: Record<HomeLanguage, Intl.NumberFormat> = {
   en: new Intl.NumberFormat('en-US'),
   fr: new Intl.NumberFormat('fr-FR')
+}
+
+const currencyFormatter = new Intl.NumberFormat('en-US', {
+  currency: 'USD',
+  style: 'currency'
+})
+
+const monthFormatters: Record<HomeLanguage, Intl.DateTimeFormat> = {
+  en: new Intl.DateTimeFormat('en-US', {
+    month: 'long'
+  }),
+  fr: new Intl.DateTimeFormat('fr-FR', {
+    month: 'long'
+  })
 }
 
 const totalRegisteredLabels: Record<HomeLanguage, string> = {
@@ -477,7 +492,9 @@ const homeContent = {
     },
     heroStats,
     monthlyContributionCard: {
-      text: 'Number of families supported: 15'
+      deathCountLabel: 'Number of deaths',
+      detail: (amount: string) => `1 vested member x ${amount}`,
+      title: (month: string, amount: string) => `${month}'s Contribution: ${amount}`
     },
     howIntro: {
       eyebrow: 'How SAGI works',
@@ -584,7 +601,9 @@ const homeContent = {
     },
     heroStats: frenchHeroStats,
     monthlyContributionCard: {
-      text: 'Number of families supported: 15'
+      deathCountLabel: 'Nombre de décès',
+      detail: (amount: string) => `1 membre acquis x ${amount}`,
+      title: (month: string, amount: string) => `Cotisation de ${month} : ${amount}`
     },
     howIntro: {
       eyebrow: 'Comment fonctionne SAGI',
@@ -697,18 +716,33 @@ const fetchTotalRegisteredMembers = async () => {
   return activeMembers + removedMembers + deceasedMembers
 }
 
+const fetchHeroContributionBanner = async () => {
+  noStore()
+
+  const latestAssessment = await fetchLatestAssociationContributionAssessment()
+
+  return {
+    amountPerMember: Number(latestAssessment?.amountPerVestedMember ?? 0),
+    deathCount: latestAssessment?.deathCount ?? 0
+  }
+}
+
 const Home = async ({ searchParams }: { searchParams?: Promise<HomeSearchParams> }) => {
   const cookieStore = await cookies()
   const params = searchParams ? await searchParams : undefined
   const language = getLanguage(params, cookieStore.get(languageCookieName)?.value)
   const copy = homeContent[language]
 
-  const totalRegisteredMembers = await fetchTotalRegisteredMembers()
+  const [heroContributionBanner, totalRegisteredMembers] = await Promise.all([
+    fetchHeroContributionBanner(),
+    fetchTotalRegisteredMembers()
+  ])
 
   return (
     <div lang={language}>
       <HeroSection
         copy={copy}
+        heroContributionBanner={heroContributionBanner}
         language={language}
         totalRegisteredMembers={totalRegisteredMembers}
       />
@@ -757,14 +791,18 @@ function SectionIntro({
 
 function HeroSection({
   copy,
+  heroContributionBanner,
   language,
   totalRegisteredMembers
 }: {
   copy: HomeContent
+  heroContributionBanner: Awaited<ReturnType<typeof fetchHeroContributionBanner>>
   language: HomeLanguage
   totalRegisteredMembers: number
 }) {
   const heroStatsWithTotalRegistered = [getTotalRegisteredStat(totalRegisteredMembers, language), ...copy.heroStats]
+  const contributionAmount = currencyFormatter.format(heroContributionBanner.amountPerMember)
+  const contributionMonth = monthFormatters[language].format(new Date())
 
   return (
     <section
@@ -834,8 +872,19 @@ function HeroSection({
           ))}
         </div>
 
-        <div className='w-full rounded-lg border border-white/30 bg-slate-950/42 px-4 py-3 text-white shadow-xl shadow-slate-950/20 backdrop-blur-md sm:px-5'>
-          <p className='text-lg font-semibold tracking-normal sm:text-xl'>{copy.monthlyContributionCard.text}</p>
+        <div className='grid w-full gap-4 rounded-lg border border-white/30 bg-slate-950/42 px-4 py-3 text-white shadow-xl shadow-slate-950/20 backdrop-blur-md sm:px-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center'>
+          <div className='min-w-0'>
+            <p className='text-lg font-extrabold tracking-normal break-words sm:text-xl'>
+              {copy.monthlyContributionCard.title(contributionMonth, contributionAmount)}
+            </p>
+            <p className='mt-1 text-sm font-semibold break-words text-white/76'>
+              {copy.monthlyContributionCard.detail(contributionAmount)}
+            </p>
+          </div>
+          <div className='min-w-0 md:text-right'>
+            <p className='text-sm font-semibold text-white/76'>{copy.monthlyContributionCard.deathCountLabel}</p>
+            <p className='text-2xl font-extrabold tabular-nums sm:text-3xl'>{heroContributionBanner.deathCount}</p>
+          </div>
         </div>
       </div>
     </section>
