@@ -224,7 +224,10 @@ const AdminContributionPayments = async () => {
         action={resetContributionPaymentAlertAction}
       />
 
-      <ContributionAssessmentForm vestedMembersCount={totalVestedMembers} />
+      <ContributionAssessmentForm
+        latestDeathCount={latestContributionAssessment?.deathCount ?? 0}
+        vestedMembersCount={totalVestedMembers}
+      />
 
       <Card className='w-full max-w-full min-w-0 overflow-hidden'>
         <CardHeader className='min-w-0'>

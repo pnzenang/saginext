@@ -1,6 +1,5 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { auth } from '@clerk/nextjs/server'
 import { unstable_noStore as noStore } from 'next/cache'
 import { cookies } from 'next/headers'
 import {
@@ -34,10 +33,6 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { languageCookieName, normalizeLanguage } from '@/lib/i18n'
 import db from '@/utils/db'
-import {
-  fetchAssociationContributionSummary,
-  type AssociationContributionSummary
-} from '@/utils/sagi-contribution-summary'
 
 type HeroStat = {
   value: string
@@ -207,26 +202,10 @@ const registeredMemberNumberFormatters: Record<HomeLanguage, Intl.NumberFormat> 
   fr: new Intl.NumberFormat('fr-FR')
 }
 
-const currencyFormatter = new Intl.NumberFormat('en-US', {
-  currency: 'USD',
-  style: 'currency'
-})
-
 const totalRegisteredLabels: Record<HomeLanguage, string> = {
   en: 'total registered to date',
   fr: 'total des inscrits à ce jour'
 }
-
-const monthFormatters: Record<HomeLanguage, Intl.DateTimeFormat> = {
-  en: new Intl.DateTimeFormat('en-US', {
-    month: 'long'
-  }),
-  fr: new Intl.DateTimeFormat('fr-FR', {
-    month: 'long'
-  })
-}
-
-const formatCurrency = (value: number) => currencyFormatter.format(value)
 
 const frenchHeroStats: HeroStat[] = [
   { value: '$20', label: 'cotisation mensuelle maximale par membre' },
@@ -492,22 +471,13 @@ const homeContent = {
       title: 'SAGI: Active Solidarity Ltd.',
       description:
         'A mutual aid community where low monthly contributions create real funeral support for families when it matters most.',
-      nonprofit: 'SAGI is a 501(c)(3) nonprofit organization.',
       primaryCta: 'Join SAGI',
       secondaryCta: 'See how it works',
       imageAlt: 'Family receiving compassionate guidance with support documents'
     },
     heroStats,
     monthlyContributionCard: {
-      amountDetail: (vestedMembersCount: number, amountPerVestedMember: string) =>
-        `${vestedMembersCount} vested member(s) x ${amountPerVestedMember}`,
-      cta: 'Go to contribution payment',
-      fallbackAmount: '$20 max',
-      fallbackDescription: 'The dashboard shows the current month, amount due, sent total, and verified total.',
-      fallbackTitle: 'Monthly Contribution',
-      sentLabel: 'Sent',
-      title: (month: string) => `${month}'s Contribution`,
-      verifiedLabel: 'Verified'
+      text: 'Number of families supported: 15'
     },
     howIntro: {
       eyebrow: 'How SAGI works',
@@ -608,22 +578,13 @@ const homeContent = {
       title: 'SAGI: Active Solidarity Ltd.',
       description:
         'Une communauté de solidarité où de faibles cotisations mensuelles créent un vrai soutien funéraire pour les familles au moment le plus important.',
-      nonprofit: 'SAGI est une organisation a but non lucratif 501(c)(3).',
       primaryCta: 'Rejoindre SAGI',
       secondaryCta: 'Voir le fonctionnement',
       imageAlt: 'Famille recevant un accompagnement compatissant avec des documents de soutien'
     },
     heroStats: frenchHeroStats,
     monthlyContributionCard: {
-      amountDetail: (vestedMembersCount: number, amountPerVestedMember: string) =>
-        `${vestedMembersCount} membre(s) acquis x ${amountPerVestedMember}`,
-      cta: 'Aller au paiement de cotisation',
-      fallbackAmount: '20 $ max',
-      fallbackDescription: 'Le tableau de bord affiche le mois courant, le montant dû, envoyé et vérifié.',
-      fallbackTitle: 'Cotisation mensuelle',
-      sentLabel: 'Envoyé',
-      title: (month: string) => `Cotisation de ${month}`,
-      verifiedLabel: 'Vérifié'
+      text: 'Number of families supported: 15'
     },
     howIntro: {
       eyebrow: 'Comment fonctionne SAGI',
@@ -736,43 +697,18 @@ const fetchTotalRegisteredMembers = async () => {
   return activeMembers + removedMembers + deceasedMembers
 }
 
-const fetchCurrentUserContributionSummary = async () => {
-  noStore()
-
-  const { userId } = await auth()
-
-  if (!userId) return null
-
-  const profile = await db.profile.findUnique({
-    where: {
-      clerkId: userId
-    },
-    select: {
-      associationCode: true
-    }
-  })
-
-  if (!profile) return null
-
-  return fetchAssociationContributionSummary(profile.associationCode, { noStore: true })
-}
-
 const Home = async ({ searchParams }: { searchParams?: Promise<HomeSearchParams> }) => {
   const cookieStore = await cookies()
   const params = searchParams ? await searchParams : undefined
   const language = getLanguage(params, cookieStore.get(languageCookieName)?.value)
   const copy = homeContent[language]
 
-  const [currentContribution, totalRegisteredMembers] = await Promise.all([
-    fetchCurrentUserContributionSummary(),
-    fetchTotalRegisteredMembers()
-  ])
+  const totalRegisteredMembers = await fetchTotalRegisteredMembers()
 
   return (
     <div lang={language}>
       <HeroSection
         copy={copy}
-        currentContribution={currentContribution}
         language={language}
         totalRegisteredMembers={totalRegisteredMembers}
       />
@@ -821,33 +757,14 @@ function SectionIntro({
 
 function HeroSection({
   copy,
-  currentContribution,
   language,
   totalRegisteredMembers
 }: {
   copy: HomeContent
-  currentContribution: AssociationContributionSummary | null
   language: HomeLanguage
   totalRegisteredMembers: number
 }) {
   const heroStatsWithTotalRegistered = [getTotalRegisteredStat(totalRegisteredMembers, language), ...copy.heroStats]
-
-  const currentMonthName = monthFormatters[language].format(new Date())
-
-  const monthlyContributionTitle = currentContribution
-    ? copy.monthlyContributionCard.title(currentMonthName)
-    : copy.monthlyContributionCard.fallbackTitle
-
-  const monthlyContributionAmount = currentContribution
-    ? formatCurrency(currentContribution.amountOwed)
-    : copy.monthlyContributionCard.fallbackAmount
-
-  const monthlyContributionDescription = currentContribution
-    ? copy.monthlyContributionCard.amountDetail(
-        currentContribution.vestedMembersCount,
-        formatCurrency(currentContribution.amountPerVestedMember)
-      )
-    : copy.monthlyContributionCard.fallbackDescription
 
   return (
     <section
@@ -876,8 +793,9 @@ function HeroSection({
             <h1 className='text-4xl font-semibold tracking-tight text-balance text-white sm:text-5xl lg:text-7xl'>
               {copy.hero.title}
             </h1>
-            <p className='max-w-3xl text-lg leading-8 text-white/84 sm:text-xl'>{copy.hero.description}</p>
-            <p className='max-w-3xl text-lg leading-8 text-white/84 sm:text-xl'>{copy.hero.nonprofit}</p>
+            <p className='max-w-4xl text-xl leading-9 font-medium text-white/88 sm:text-2xl sm:leading-10'>
+              {copy.hero.description}
+            </p>
           </div>
 
           <div className='flex flex-wrap gap-3'>
@@ -916,47 +834,8 @@ function HeroSection({
           ))}
         </div>
 
-        <div className='w-full rounded-lg border border-white/30 bg-slate-950/42 p-4 text-white shadow-xl shadow-slate-950/20 backdrop-blur-md sm:p-5'>
-          <div className='flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between'>
-            <div className='flex min-w-0 items-start gap-3'>
-              <div className='mt-0.5 flex size-11 shrink-0 items-center justify-center rounded-lg bg-white/12 text-white'>
-                <CircleDollarSignIcon className='size-5' />
-              </div>
-              <div className='min-w-0'>
-                <p className='text-lg font-extrabold break-words sm:text-xl'>
-                  {monthlyContributionTitle}: {monthlyContributionAmount}
-                </p>
-                <p className='mt-1 text-sm font-semibold break-words text-white/76'>
-                  {monthlyContributionDescription}
-                </p>
-              </div>
-            </div>
-
-            <div className='flex flex-col gap-3 lg:items-end'>
-              {currentContribution ? (
-                <div className='grid w-full gap-1.5 text-xs font-semibold text-white/76 sm:min-w-60'>
-                  <div className='flex items-start justify-between gap-4'>
-                    <span>{copy.monthlyContributionCard.sentLabel}</span>
-                    <span className='shrink-0 text-right tabular-nums'>
-                      {formatCurrency(currentContribution.amountReceived)}
-                    </span>
-                  </div>
-                  <div className='flex items-start justify-between gap-4'>
-                    <span>{copy.monthlyContributionCard.verifiedLabel}</span>
-                    <span className='shrink-0 text-right tabular-nums'>
-                      {formatCurrency(currentContribution.amountVerified)}
-                    </span>
-                  </div>
-                </div>
-              ) : null}
-              <Button asChild className='w-fit'>
-                <Link href='/contributions'>
-                  {copy.monthlyContributionCard.cta}
-                  <ArrowRightIcon aria-hidden='true' />
-                </Link>
-              </Button>
-            </div>
-          </div>
+        <div className='w-full rounded-lg border border-white/30 bg-slate-950/42 px-4 py-3 text-white shadow-xl shadow-slate-950/20 backdrop-blur-md sm:px-5'>
+          <p className='text-lg font-semibold tracking-normal sm:text-xl'>{copy.monthlyContributionCard.text}</p>
         </div>
       </div>
     </section>
