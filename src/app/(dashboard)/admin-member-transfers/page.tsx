@@ -9,27 +9,27 @@ import { fetchAdminMemberTransferPageAction } from '@/utils/actions'
 
 const adminMemberTransfersPageCopy = {
   en: {
-    description: 'Complete member transfers after the current delegate releases the member.',
-    emptyDescription: 'Released transfers will appear here.',
+    description: 'Complete member transfers after both delegate associations approve the transfer.',
+    emptyDescription: 'Transfers approved by both delegates will appear here.',
     emptyTitle: 'No member transfer requests found.',
     listTitle: 'All member transfer requests',
     pendingBadge: (count: number) => `${count} pending`,
     pendingDescription: (count: number) =>
-      `${count} request${count === 1 ? '' : 's'} waiting for admin approval.`,
-    pendingTitle: 'Admin transfer approval pending',
+      `${count} request${count === 1 ? '' : 's'} approved by both delegates and waiting for admin approval.`,
+    pendingTitle: 'Two-delegate approval complete',
     requestsBadge: (count: number) => `${count} request${count === 1 ? '' : 's'}`,
     searchPlaceholder: 'Search name, matriculation, association code, association name, or status',
     title: 'Admin Member Transfers'
   },
   fr: {
-    description: 'Terminez les transferts de membres après la libération par le délégué actuel.',
-    emptyDescription: 'Les transferts libérés apparaîtront ici.',
+    description: 'Terminez les transferts de membres après approbation des deux associations déléguées.',
+    emptyDescription: 'Les transferts approuvés par les deux délégués apparaîtront ici.',
     emptyTitle: 'Aucune demande de transfert trouvée.',
     listTitle: 'Toutes les demandes de transfert',
     pendingBadge: (count: number) => `${count} en attente`,
     pendingDescription: (count: number) =>
-      `${count} demande${count === 1 ? '' : 's'} en attente de l'approbation admin.`,
-    pendingTitle: 'Approbation admin du transfert en attente',
+      `${count} demande${count === 1 ? '' : 's'} approuvée${count === 1 ? '' : 's'} par les deux délégués en attente de l'approbation admin.`,
+    pendingTitle: 'Approbation des deux délégués terminée',
     requestsBadge: (count: number) => `${count} demande${count === 1 ? '' : 's'}`,
     searchPlaceholder: "Rechercher par nom, matricule, code d'association, nom d'association ou statut",
     title: 'Transferts de membres admin'

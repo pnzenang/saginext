@@ -12,7 +12,7 @@ import MemberTransferRequestForm from './MemberTransferRequestForm'
 const memberTransferPageCopy = {
   en: {
     alertBadge: (count: number) => `${count} required`,
-    alertDescription: (count: number) => `${count} release request${count === 1 ? '' : 's'} need your approval.`,
+    alertDescription: (count: number) => `${count} transfer request${count === 1 ? '' : 's'} need your approval.`,
     alertTitle: 'Transfer approval required',
     description:
       'Request a member into your delegate association, start a transfer out from your current association, and review transfer requests.',
@@ -30,7 +30,7 @@ const memberTransferPageCopy = {
   fr: {
     alertBadge: (count: number) => `${count} requise${count === 1 ? '' : 's'}`,
     alertDescription: (count: number) =>
-      `${count} demande${count === 1 ? '' : 's'} de libération nécessite${count === 1 ? '' : 'nt'} votre approbation.`,
+      `${count} demande${count === 1 ? '' : 's'} de transfert nécessite${count === 1 ? '' : 'nt'} votre approbation.`,
     alertTitle: 'Approbation de transfert requise',
     description:
       "Demandez l'entrée d'un membre dans votre association déléguée, démarrez un transfert sortant depuis votre association actuelle et révisez les demandes de transfert.",
@@ -55,8 +55,10 @@ const MemberTransferPage = async () => {
 
   const copy = memberTransferPageCopy[language]
 
-  const incomingActionCount = requests.filter(
-    request => request.initiatingClerkId === profile.clerkId && request.status === 'receiving_delegate_pending'
+  const delegateActionCount = requests.filter(
+    request =>
+      (request.initiatingClerkId === profile.clerkId && request.status === 'receiving_delegate_pending') ||
+      (request.receivingClerkId === profile.clerkId && request.status === 'initiating_delegate_approved')
   ).length
 
   return (
@@ -73,21 +75,21 @@ const MemberTransferPage = async () => {
         </Badge>
       </div>
 
-      {incomingActionCount > 0 ? (
+      {delegateActionCount > 0 ? (
         <Card className='rounded-lg border-blue-200 bg-blue-50 py-0 dark:border-blue-900 dark:bg-blue-950/40'>
           <CardContent className='flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between'>
             <div className='flex min-w-0 items-start gap-3'>
               <Inbox className='mt-0.5 size-5 shrink-0 text-blue-700 dark:text-blue-300' />
               <div className='min-w-0'>
                 <p className='font-extrabold text-blue-800 dark:text-blue-200'>{copy.alertTitle}</p>
-                <p className='text-sm text-blue-700 dark:text-blue-300'>{copy.alertDescription(incomingActionCount)}</p>
+                <p className='text-sm text-blue-700 dark:text-blue-300'>{copy.alertDescription(delegateActionCount)}</p>
               </div>
             </div>
             <Badge
               variant='outline'
               className='w-fit border-blue-300 bg-white text-blue-800 dark:bg-black/20 dark:text-blue-200'
             >
-              {copy.alertBadge(incomingActionCount)}
+              {copy.alertBadge(delegateActionCount)}
             </Badge>
           </CardContent>
         </Card>

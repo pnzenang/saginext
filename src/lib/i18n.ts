@@ -177,9 +177,10 @@ export const memberTransferRequestStatusLabelsByLanguage: Record<
     admin_approved: 'Approuvé par l’admin',
     admin_rejected: 'Rejeté par l’admin',
     cancelled: 'Annulé',
-    receiving_delegate_approved: 'Libération approuvée par le délégué',
+    initiating_delegate_approved: 'Approbation du délégué destinataire en attente',
+    receiving_delegate_approved: 'Approuvé par les deux délégués',
     receiving_delegate_pending: 'Libération en attente du délégué',
-    receiving_delegate_rejected: 'Libération rejetée par le délégué'
+    receiving_delegate_rejected: 'Rejeté par le délégué'
   }
 }
 

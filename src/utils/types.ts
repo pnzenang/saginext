@@ -220,6 +220,7 @@ export const nameChangeRequestStatusLabels: Record<NameChangeRequestStatus, stri
 
 export const memberTransferRequestStatuses = [
   'receiving_delegate_pending',
+  'initiating_delegate_approved',
   'receiving_delegate_approved',
   'receiving_delegate_rejected',
   'admin_approved',
@@ -233,7 +234,8 @@ export const memberTransferRequestStatusLabels: Record<MemberTransferRequestStat
   admin_approved: 'Admin approved',
   admin_rejected: 'Admin rejected',
   cancelled: 'Cancelled',
-  receiving_delegate_approved: 'Delegate release approved',
+  initiating_delegate_approved: 'Receiving delegate approval pending',
+  receiving_delegate_approved: 'Both delegates approved',
   receiving_delegate_pending: 'Delegate release pending',
-  receiving_delegate_rejected: 'Delegate release rejected'
+  receiving_delegate_rejected: 'Delegate rejected'
 }

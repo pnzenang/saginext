@@ -79,6 +79,7 @@ const memberTransferRequestCardCopy = {
     adminRejectReasonPlaceholder: 'Reason if rejected',
     adminReview: 'Admin review',
     approveRelease: 'Approve release',
+    approveTransfer: 'Approve transfer',
     cancelNote: 'You can cancel this request unless SAGI admin has approved it.',
     cancelRequest: 'Cancel request',
     completeTransfer: 'Complete transfer',
@@ -86,15 +87,18 @@ const memberTransferRequestCardCopy = {
     currentDelegateReleaseReview: 'Current delegate release review',
     matriculation: 'Matriculation',
     receivingDelegateAssociation: 'Receiving delegate association',
+    receivingDelegateReview: 'Receiving delegate review',
     rejectRelease: 'Reject release',
     rejectReleaseReason: 'Give the reason to reject the release',
     rejectTransfer: 'Reject transfer',
+    rejectTransferReason: 'Give the reason to reject the transfer',
     submitted: 'Submitted'
   },
   fr: {
     adminRejectReasonPlaceholder: 'Raison du rejet',
     adminReview: 'Revue admin',
     approveRelease: 'Approuver la libération',
+    approveTransfer: 'Approuver le transfert',
     cancelNote: "Vous pouvez annuler cette demande sauf si l'admin SAGI l'a approuvée.",
     cancelRequest: 'Annuler la demande',
     completeTransfer: 'Terminer le transfert',
@@ -102,9 +106,11 @@ const memberTransferRequestCardCopy = {
     currentDelegateReleaseReview: 'Revue de libération du délégué actuel',
     matriculation: 'Matricule',
     receivingDelegateAssociation: 'Association déléguée destinataire',
+    receivingDelegateReview: 'Revue du délégué destinataire',
     rejectRelease: 'Rejeter la libération',
     rejectReleaseReason: 'Indiquez la raison du rejet de la libération',
     rejectTransfer: 'Rejeter le transfert',
+    rejectTransferReason: 'Indiquez la raison du rejet du transfert',
     submitted: 'Soumis'
   }
 } as const
@@ -115,7 +121,11 @@ export const RequestStatusBadge = ({ language, status }: { language: AppLanguage
     {status === 'admin_rejected' || status === 'cancelled' || status === 'receiving_delegate_rejected' ? (
       <XCircle />
     ) : null}
-    {status === 'receiving_delegate_pending' || status === 'receiving_delegate_approved' ? <Clock3 /> : null}
+    {status === 'receiving_delegate_pending' ||
+    status === 'initiating_delegate_approved' ||
+    status === 'receiving_delegate_approved' ? (
+      <Clock3 />
+    ) : null}
     {formatMemberTransferRequestStatus(status, language)}
   </Badge>
 )
@@ -123,29 +133,32 @@ export const RequestStatusBadge = ({ language, status }: { language: AppLanguage
 const ReleasingDelegateControls = ({
   compact = false,
   language,
+  reviewKind,
   request
 }: {
   compact?: boolean
   language: AppLanguage
+  reviewKind: 'release' | 'receiving'
   request: MemberTransferRequestCardData
 }) => {
-  if (request.status !== 'receiving_delegate_pending') return null
+  if (!['receiving_delegate_pending', 'initiating_delegate_approved'].includes(request.status)) return null
 
   const copy = memberTransferRequestCardCopy[language]
   const rejectionReasonId = `release-rejection-reason-${request.id}`
+  const isReleaseReview = reviewKind === 'release'
 
   return (
     <div className={cn('grid gap-2 rounded-md border bg-white/60 dark:bg-black/10', compact ? 'p-2' : 'p-3')}>
       <div className='flex items-center gap-1.5 text-xs font-semibold'>
         <ArrowLeftRight className='size-3.5' />
-        {copy.currentDelegateReleaseReview}
+        {isReleaseReview ? copy.currentDelegateReleaseReview : copy.receivingDelegateReview}
       </div>
       <div className={cn('grid gap-2', compact ? '' : 'sm:grid-cols-2')}>
         <FormContainer action={reviewIncomingMemberTransferRequestAction}>
           <input type='hidden' name='requestId' value={request.id} />
           <input type='hidden' name='status' value='receiving_delegate_approved' />
           <SubmitButton
-            text={copy.approveRelease}
+            text={isReleaseReview ? copy.approveRelease : copy.approveTransfer}
             className='h-8 w-full bg-green-700 px-3 text-xs normal-case hover:bg-green-800'
           />
         </FormContainer>
@@ -153,14 +166,14 @@ const ReleasingDelegateControls = ({
           <input type='hidden' name='requestId' value={request.id} />
           <input type='hidden' name='status' value='receiving_delegate_rejected' />
           <SubmitButton
-            text={copy.rejectRelease}
+            text={isReleaseReview ? copy.rejectRelease : copy.rejectTransfer}
             className='h-8 w-full bg-red-700 px-3 text-xs normal-case hover:bg-red-800'
           />
           <Textarea
             id={rejectionReasonId}
-            aria-label={copy.rejectReleaseReason}
+            aria-label={isReleaseReview ? copy.rejectReleaseReason : copy.rejectTransferReason}
             name='rejectionReason'
-            placeholder={copy.rejectReleaseReason}
+            placeholder={isReleaseReview ? copy.rejectReleaseReason : copy.rejectTransferReason}
             required
             defaultValue={request.rejectionReason ?? ''}
             className={cn('text-xs', compact ? 'min-h-14' : 'min-h-16')}
@@ -266,10 +279,17 @@ export const MemberTransferRequestActions = ({
   const isReceivingDelegate = currentUserClerkId === request.receivingClerkId
 
   const hasCancelAction = (isInitiatingDelegate || isReceivingDelegate) && canDelegateCancelTransfer(request.status)
-  const hasReleasingDelegateAction = isInitiatingDelegate && request.status === 'receiving_delegate_pending'
+
+  const delegateReviewKind =
+    isInitiatingDelegate && request.status === 'receiving_delegate_pending'
+      ? 'release'
+      : isReceivingDelegate && request.status === 'initiating_delegate_approved'
+        ? 'receiving'
+        : null
+
   const hasAdminAction = isAdminUser && request.status === 'receiving_delegate_approved'
 
-  if (!hasCancelAction && !hasReleasingDelegateAction && !hasAdminAction) {
+  if (!hasCancelAction && !delegateReviewKind && !hasAdminAction) {
     if (!emptyLabel) return null
 
     return <span className={cn('text-muted-foreground text-xs font-semibold', className)}>{emptyLabel}</span>
@@ -280,8 +300,13 @@ export const MemberTransferRequestActions = ({
       {hasCancelAction ? (
         <DelegateCancelTransferControl compact={compact} language={language} request={request} />
       ) : null}
-      {hasReleasingDelegateAction ? (
-        <ReleasingDelegateControls compact={compact} language={language} request={request} />
+      {delegateReviewKind ? (
+        <ReleasingDelegateControls
+          compact={compact}
+          language={language}
+          request={request}
+          reviewKind={delegateReviewKind}
+        />
       ) : null}
       {hasAdminAction ? <AdminTransferControls compact={compact} language={language} request={request} /> : null}
     </div>

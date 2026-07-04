@@ -2330,6 +2330,7 @@ export const deleteNameChangeRequestAction = async (prevState: { requestId: stri
 
 const openMemberTransferRequestStatuses: MemberTransferRequestStatus[] = [
   'receiving_delegate_pending',
+  'initiating_delegate_approved',
   'receiving_delegate_approved'
 ]
 
@@ -2391,7 +2392,6 @@ const memberTransferActionCopy: Record<
     adminRejectedReason: string
     alreadyCancelled: string
     alreadyInYourAssociation: string
-    alreadyReviewedByCurrentDelegate: string
     cancelled: string
     cancelledByInitiatingDelegateReason: string
     cancelledByReceivingDelegateReason: string
@@ -2400,21 +2400,27 @@ const memberTransferActionCopy: Record<
     currentDelegateOnlyInitiate: string
     currentDelegateOnlyRelease: string
     delegateOnlyCancel: string
+    delegateReviewAlreadyCompleted: string
+    delegateReviewNotAvailable: string
     invalidAdminDecision: string
     invalidTransferDecision: string
     memberNoLongerInCurrentAssociation: string
     memberNotFound: string
     openRequest: string
     receivingDelegateAssociationNotFound: string
+    receivingDelegateOnlyApprove: string
     receivingMustDiffer: string
     receivingProfileUnavailable: string
     releaseApproved: string
     releaseRejected: string
+    receivingApprovalApproved: string
+    receivingApprovalRequested: string
+    transferRejected: string
     releaseSubmitted: string
     rejectReleaseReason: string
+    rejectTransferReason: string
     requestNotFound: string
     transferNotReadyForAdmin: string
-    transferSubmittedToAdmin: string
   }
 > = {
   en: {
@@ -2423,7 +2429,6 @@ const memberTransferActionCopy: Record<
     adminRejectedReason: 'SAGI admin rejected this transfer request.',
     alreadyCancelled: 'This member transfer request has already been cancelled.',
     alreadyInYourAssociation: 'This member is already in your delegate association.',
-    alreadyReviewedByCurrentDelegate: 'This transfer request has already been reviewed by the current delegate.',
     cancelled: 'Member transfer request cancelled.',
     cancelledByInitiatingDelegateReason: 'Initiating delegate cancelled this transfer request.',
     cancelledByReceivingDelegateReason: 'Receiving delegate cancelled this transfer request.',
@@ -2432,21 +2437,27 @@ const memberTransferActionCopy: Record<
     currentDelegateOnlyInitiate: 'Only the current delegate association can initiate this member transfer.',
     currentDelegateOnlyRelease: 'Only the current delegate can release this member.',
     delegateOnlyCancel: 'Only the initiating or receiving delegate can cancel this transfer request.',
+    delegateReviewAlreadyCompleted: 'This transfer request has already been reviewed by the required delegate.',
+    delegateReviewNotAvailable: 'This transfer request is not waiting for your delegate approval.',
     invalidAdminDecision: 'Select a valid admin transfer decision.',
     invalidTransferDecision: 'Select a valid transfer decision.',
     memberNoLongerInCurrentAssociation: 'This member no longer belongs to the current delegate association.',
     memberNotFound: 'Member not found.',
     openRequest: 'This member already has a member transfer request in progress.',
     receivingDelegateAssociationNotFound: 'Receiving delegate association profile was not found.',
+    receivingDelegateOnlyApprove: 'Only the receiving delegate can approve this transfer.',
     receivingMustDiffer: 'The receiving association must be different from your current association.',
     receivingProfileUnavailable: 'Receiving delegate association profile is no longer available.',
     releaseApproved: 'Member release approved and sent to SAGI admin.',
     releaseRejected: 'Member transfer release rejected.',
+    receivingApprovalApproved: 'Receiving delegate approved the transfer and sent it to SAGI admin.',
+    receivingApprovalRequested: 'Member transfer request sent to the receiving delegate for approval.',
+    transferRejected: 'Member transfer rejected.',
     releaseSubmitted: 'Member transfer release request sent to the current delegate.',
     rejectReleaseReason: 'Give the reason to reject the release.',
+    rejectTransferReason: 'Give the reason to reject the transfer.',
     requestNotFound: 'Member transfer request not found.',
-    transferNotReadyForAdmin: 'This transfer is not ready for admin review.',
-    transferSubmittedToAdmin: 'Member transfer release sent to SAGI admin for review.'
+    transferNotReadyForAdmin: 'This transfer is not ready for admin review until both delegates approve it.'
   },
   fr: {
     adminApproved: 'Transfert de membre approuvé et terminé.',
@@ -2454,7 +2465,6 @@ const memberTransferActionCopy: Record<
     adminRejectedReason: "L'admin SAGI a rejeté cette demande de transfert.",
     alreadyCancelled: 'Cette demande de transfert de membre a déjà été annulée.',
     alreadyInYourAssociation: 'Ce membre est déjà dans votre association déléguée.',
-    alreadyReviewedByCurrentDelegate: 'Cette demande a déjà été révisée par le délégué actuel.',
     cancelled: 'Demande de transfert de membre annulée.',
     cancelledByInitiatingDelegateReason: 'Le délégué initiateur a annulé cette demande de transfert.',
     cancelledByReceivingDelegateReason: 'Le délégué destinataire a annulé cette demande de transfert.',
@@ -2464,21 +2474,28 @@ const memberTransferActionCopy: Record<
     currentDelegateOnlyInitiate: "Seule l'association déléguée actuelle peut initier ce transfert de membre.",
     currentDelegateOnlyRelease: 'Seul le délégué actuel peut libérer ce membre.',
     delegateOnlyCancel: 'Seul le délégué initiateur ou destinataire peut annuler cette demande de transfert.',
+    delegateReviewAlreadyCompleted: 'Cette demande a déjà été révisée par le délégué requis.',
+    delegateReviewNotAvailable: "Cette demande de transfert n'attend pas votre approbation de délégué.",
     invalidAdminDecision: 'Sélectionnez une décision admin valide pour ce transfert.',
     invalidTransferDecision: 'Sélectionnez une décision de transfert valide.',
     memberNoLongerInCurrentAssociation: "Ce membre n'appartient plus à l'association déléguée actuelle.",
     memberNotFound: 'Membre introuvable.',
     openRequest: 'Ce membre a déjà une demande de transfert en cours.',
     receivingDelegateAssociationNotFound: "Le profil de l'association déléguée destinataire est introuvable.",
+    receivingDelegateOnlyApprove: 'Seul le délégué destinataire peut approuver ce transfert.',
     receivingMustDiffer: "L'association destinataire doit être différente de votre association actuelle.",
     receivingProfileUnavailable: "Le profil de l'association déléguée destinataire n'est plus disponible.",
     releaseApproved: "Libération du membre approuvée et envoyée à l'admin SAGI.",
     releaseRejected: 'Libération du membre rejetée.',
+    receivingApprovalApproved: "Le délégué destinataire a approuvé le transfert et l'a envoyé à l'admin SAGI.",
+    receivingApprovalRequested: 'Demande de transfert envoyée au délégué destinataire pour approbation.',
+    transferRejected: 'Transfert de membre rejeté.',
     releaseSubmitted: 'Demande de libération du membre envoyée au délégué actuel.',
     rejectReleaseReason: 'Indiquez la raison du rejet de la libération.',
+    rejectTransferReason: 'Indiquez la raison du rejet du transfert.',
     requestNotFound: 'Demande de transfert de membre introuvable.',
-    transferNotReadyForAdmin: "Ce transfert n'est pas prêt pour la revue admin.",
-    transferSubmittedToAdmin: "Libération du membre envoyée à l'admin SAGI pour révision."
+    transferNotReadyForAdmin:
+      "Ce transfert n'est pas prêt pour la revue admin tant que les deux délégués ne l'ont pas approuvé."
   }
 }
 
@@ -2806,15 +2823,13 @@ export const submitOutgoingMemberTransferRequestAction = async (
         memberMatriculationNumber: member.memberMatriculationNumber,
         receivingAssociationCode: receivingAssociation.associationCode,
         receivingClerkId: receivingAssociation.clerkId,
-        receivingReviewedAt: new Date(),
-        receivingReviewedBy: initiatingAssociation.clerkId,
-        status: 'receiving_delegate_approved'
+        status: 'initiating_delegate_approved'
       }
     })
 
     revalidateMemberTransferViews()
 
-    return { message: copy.transferSubmittedToAdmin }
+    return { message: copy.receivingApprovalRequested }
   } catch (error) {
     return renderError(error)
   }
@@ -2839,10 +2854,6 @@ export const reviewIncomingMemberTransferRequestAction = async (
       throw new Error(copy.invalidTransferDecision)
     }
 
-    if (status === 'receiving_delegate_rejected' && !rejectionReason) {
-      throw new Error(copy.rejectReleaseReason)
-    }
-
     const request = await db.memberTransferRequest.findUnique({
       where: {
         id: requestId
@@ -2853,41 +2864,55 @@ export const reviewIncomingMemberTransferRequestAction = async (
       throw new Error(copy.requestNotFound)
     }
 
-    if (request.initiatingClerkId !== user.id) {
+    const isCurrentDelegateReleaseReview =
+      request.status === 'receiving_delegate_pending' && request.initiatingClerkId === user.id
+
+    const isReceivingDelegateAcceptanceReview =
+      request.status === 'initiating_delegate_approved' && request.receivingClerkId === user.id
+
+    if (request.status === 'receiving_delegate_pending' && request.initiatingClerkId !== user.id) {
       throw new Error(copy.currentDelegateOnlyRelease)
     }
 
-    if (request.status !== 'receiving_delegate_pending') {
-      throw new Error(copy.alreadyReviewedByCurrentDelegate)
+    if (request.status === 'initiating_delegate_approved' && request.receivingClerkId !== user.id) {
+      throw new Error(copy.receivingDelegateOnlyApprove)
     }
 
-    await db.$transaction([
-      db.member.updateMany({
-        data: {
-          clerkId: request.initiatingClerkId
-        },
-        where: {
-          associationCode: request.initiatingAssociationCode,
-          id: request.memberId
-        }
-      }),
-      db.memberTransferRequest.update({
-        data: {
-          receivingReviewedAt: new Date(),
-          receivingReviewedBy: user.id,
-          rejectionReason: status === 'receiving_delegate_rejected' ? rejectionReason : null,
-          status
-        },
-        where: {
-          id: request.id
-        }
-      })
-    ])
+    if (!['receiving_delegate_pending', 'initiating_delegate_approved'].includes(request.status)) {
+      throw new Error(copy.delegateReviewAlreadyCompleted)
+    }
+
+    if (!isCurrentDelegateReleaseReview && !isReceivingDelegateAcceptanceReview) {
+      throw new Error(copy.delegateReviewNotAvailable)
+    }
+
+    if (status === 'receiving_delegate_rejected' && !rejectionReason) {
+      throw new Error(isCurrentDelegateReleaseReview ? copy.rejectReleaseReason : copy.rejectTransferReason)
+    }
+
+    await db.memberTransferRequest.update({
+      data: {
+        receivingReviewedAt: new Date(),
+        receivingReviewedBy: user.id,
+        rejectionReason: status === 'receiving_delegate_rejected' ? rejectionReason : null,
+        status
+      },
+      where: {
+        id: request.id
+      }
+    })
 
     revalidateMemberTransferViews()
 
     return {
-      message: status === 'receiving_delegate_approved' ? copy.releaseApproved : copy.releaseRejected
+      message:
+        status === 'receiving_delegate_rejected'
+          ? isCurrentDelegateReleaseReview
+            ? copy.releaseRejected
+            : copy.transferRejected
+          : isCurrentDelegateReleaseReview
+            ? copy.releaseApproved
+            : copy.receivingApprovalApproved
     }
   } catch (error) {
     return renderError(error)
