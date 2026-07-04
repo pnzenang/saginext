@@ -243,7 +243,7 @@ const DelegateCancelTransferControl = ({
   )
 }
 
-const canRequestingDelegateCancelTransfer = (status: string) => status !== 'admin_approved' && status !== 'cancelled'
+const canDelegateCancelTransfer = (status: string) => status !== 'admin_approved' && status !== 'cancelled'
 
 export const MemberTransferRequestActions = ({
   className,
@@ -265,11 +265,11 @@ export const MemberTransferRequestActions = ({
   const isInitiatingDelegate = currentUserClerkId === request.initiatingClerkId
   const isReceivingDelegate = currentUserClerkId === request.receivingClerkId
 
-  const hasReceivingDelegateAction = isReceivingDelegate && canRequestingDelegateCancelTransfer(request.status)
+  const hasCancelAction = (isInitiatingDelegate || isReceivingDelegate) && canDelegateCancelTransfer(request.status)
   const hasReleasingDelegateAction = isInitiatingDelegate && request.status === 'receiving_delegate_pending'
   const hasAdminAction = isAdminUser && request.status === 'receiving_delegate_approved'
 
-  if (!hasReceivingDelegateAction && !hasReleasingDelegateAction && !hasAdminAction) {
+  if (!hasCancelAction && !hasReleasingDelegateAction && !hasAdminAction) {
     if (!emptyLabel) return null
 
     return <span className={cn('text-muted-foreground text-xs font-semibold', className)}>{emptyLabel}</span>
@@ -277,7 +277,7 @@ export const MemberTransferRequestActions = ({
 
   return (
     <div className={cn('grid gap-2', className)}>
-      {hasReceivingDelegateAction ? (
+      {hasCancelAction ? (
         <DelegateCancelTransferControl compact={compact} language={language} request={request} />
       ) : null}
       {hasReleasingDelegateAction ? (

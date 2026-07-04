@@ -2393,18 +2393,19 @@ const memberTransferActionCopy: Record<
     alreadyInYourAssociation: string
     alreadyReviewedByCurrentDelegate: string
     cancelled: string
-    cancelledReason: string
+    cancelledByInitiatingDelegateReason: string
+    cancelledByReceivingDelegateReason: string
     cannotCancelApproved: string
     currentDelegateAssociationProfileNotFound: string
     currentDelegateOnlyInitiate: string
     currentDelegateOnlyRelease: string
+    delegateOnlyCancel: string
     invalidAdminDecision: string
     invalidTransferDecision: string
     memberNoLongerInCurrentAssociation: string
     memberNotFound: string
     openRequest: string
     receivingDelegateAssociationNotFound: string
-    receivingDelegateOnlyCancel: string
     receivingMustDiffer: string
     receivingProfileUnavailable: string
     releaseApproved: string
@@ -2424,18 +2425,19 @@ const memberTransferActionCopy: Record<
     alreadyInYourAssociation: 'This member is already in your delegate association.',
     alreadyReviewedByCurrentDelegate: 'This transfer request has already been reviewed by the current delegate.',
     cancelled: 'Member transfer request cancelled.',
-    cancelledReason: 'Receiving delegate cancelled this transfer request.',
+    cancelledByInitiatingDelegateReason: 'Initiating delegate cancelled this transfer request.',
+    cancelledByReceivingDelegateReason: 'Receiving delegate cancelled this transfer request.',
     cannotCancelApproved: 'This member transfer request can no longer be cancelled because SAGI admin has approved it.',
     currentDelegateAssociationProfileNotFound: 'Current delegate association profile was not found.',
     currentDelegateOnlyInitiate: 'Only the current delegate association can initiate this member transfer.',
     currentDelegateOnlyRelease: 'Only the current delegate can release this member.',
+    delegateOnlyCancel: 'Only the initiating or receiving delegate can cancel this transfer request.',
     invalidAdminDecision: 'Select a valid admin transfer decision.',
     invalidTransferDecision: 'Select a valid transfer decision.',
     memberNoLongerInCurrentAssociation: 'This member no longer belongs to the current delegate association.',
     memberNotFound: 'Member not found.',
     openRequest: 'This member already has a member transfer request in progress.',
     receivingDelegateAssociationNotFound: 'Receiving delegate association profile was not found.',
-    receivingDelegateOnlyCancel: 'Only the receiving delegate can cancel this transfer request.',
     receivingMustDiffer: 'The receiving association must be different from your current association.',
     receivingProfileUnavailable: 'Receiving delegate association profile is no longer available.',
     releaseApproved: 'Member release approved and sent to SAGI admin.',
@@ -2454,19 +2456,20 @@ const memberTransferActionCopy: Record<
     alreadyInYourAssociation: 'Ce membre est déjà dans votre association déléguée.',
     alreadyReviewedByCurrentDelegate: 'Cette demande a déjà été révisée par le délégué actuel.',
     cancelled: 'Demande de transfert de membre annulée.',
-    cancelledReason: 'Le délégué destinataire a annulé cette demande de transfert.',
+    cancelledByInitiatingDelegateReason: 'Le délégué initiateur a annulé cette demande de transfert.',
+    cancelledByReceivingDelegateReason: 'Le délégué destinataire a annulé cette demande de transfert.',
     cannotCancelApproved:
       "Cette demande de transfert de membre ne peut plus être annulée, car l'admin SAGI l'a approuvée.",
     currentDelegateAssociationProfileNotFound: "Le profil de l'association déléguée actuelle est introuvable.",
     currentDelegateOnlyInitiate: "Seule l'association déléguée actuelle peut initier ce transfert de membre.",
     currentDelegateOnlyRelease: 'Seul le délégué actuel peut libérer ce membre.',
+    delegateOnlyCancel: 'Seul le délégué initiateur ou destinataire peut annuler cette demande de transfert.',
     invalidAdminDecision: 'Sélectionnez une décision admin valide pour ce transfert.',
     invalidTransferDecision: 'Sélectionnez une décision de transfert valide.',
     memberNoLongerInCurrentAssociation: "Ce membre n'appartient plus à l'association déléguée actuelle.",
     memberNotFound: 'Membre introuvable.',
     openRequest: 'Ce membre a déjà une demande de transfert en cours.',
     receivingDelegateAssociationNotFound: "Le profil de l'association déléguée destinataire est introuvable.",
-    receivingDelegateOnlyCancel: 'Seul le délégué destinataire peut annuler cette demande de transfert.',
     receivingMustDiffer: "L'association destinataire doit être différente de votre association actuelle.",
     receivingProfileUnavailable: "Le profil de l'association déléguée destinataire n'est plus disponible.",
     releaseApproved: "Libération du membre approuvée et envoyée à l'admin SAGI.",
@@ -2907,8 +2910,11 @@ export const cancelMemberTransferRequestAction = async (prevState: { requestId: 
       throw new Error(copy.requestNotFound)
     }
 
-    if (request.receivingClerkId !== user.id) {
-      throw new Error(copy.receivingDelegateOnlyCancel)
+    const isInitiatingDelegate = request.initiatingClerkId === user.id
+    const isReceivingDelegate = request.receivingClerkId === user.id
+
+    if (!isInitiatingDelegate && !isReceivingDelegate) {
+      throw new Error(copy.delegateOnlyCancel)
     }
 
     if (request.status === 'cancelled') {
@@ -2921,7 +2927,9 @@ export const cancelMemberTransferRequestAction = async (prevState: { requestId: 
 
     await db.memberTransferRequest.update({
       data: {
-        rejectionReason: copy.cancelledReason,
+        rejectionReason: isInitiatingDelegate
+          ? copy.cancelledByInitiatingDelegateReason
+          : copy.cancelledByReceivingDelegateReason,
         status: 'cancelled'
       },
       where: {
