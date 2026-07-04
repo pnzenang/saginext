@@ -1,13 +1,11 @@
-import { cookies } from 'next/headers'
-
 import PaymentInstructionsContent from '@/components/payment-instructions-content'
-import { languageCookieName, normalizeLanguage } from '@/lib/i18n'
+import { getDashboardLanguage } from '@/lib/get-dashboard-language'
+import { fetchProfile } from '@/utils/actions'
 
 const PaymentInstructions = async () => {
-  const cookieStore = await cookies()
-  const language = normalizeLanguage(cookieStore.get(languageCookieName)?.value)
+  const [language, profile] = await Promise.all([getDashboardLanguage(), fetchProfile()])
 
-  return <PaymentInstructionsContent language={language} />
+  return <PaymentInstructionsContent associationCode={profile.associationCode} language={language} />
 }
 
 export default PaymentInstructions

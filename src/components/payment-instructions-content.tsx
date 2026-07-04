@@ -16,9 +16,11 @@ const paymentInstructionsCopy = {
     title: 'How to make and record a SAGI payment',
     intro:
       'Send your payment first, then record it in the correct SAGI payment page so the admin team can match the money to your group without delays.',
-    memoReminder: 'Always include SAGI-{association 4-letter code} in the Zelle memo.',
+    memoReminder: (memoCode: string) =>
+      `Add ${memoCode} in the Zelle memo so the payment can be matched to your association.`,
     contributionsCta: 'Contributions Payments',
     registrationsCta: 'Registration Payments',
+    memoCodePlaceholder: 'SAGI-USA-{association 4-letter code}',
     zelle: {
       title: 'Zelle Payment',
       descriptionStart: 'Send Zelle payment using:',
@@ -47,7 +49,8 @@ const paymentInstructionsCopy = {
       {
         icon: FileText,
         title: 'Write a clear payment note',
-        description: 'Always include SAGI-{association 4-letter code} in the Zelle memo.'
+        description: (memoCode: string) =>
+          `Add ${memoCode} in the Zelle memo so the payment can be matched to your association.`
       },
       {
         icon: Upload,
@@ -62,7 +65,7 @@ const paymentInstructionsCopy = {
     },
     reminders: [
       'Confirm the amount before sending payment.',
-      'Always include SAGI-{association 4-letter code} when making a payment.',
+      (memoCode: string) => `Add ${memoCode} in the Zelle memo when making a payment.`,
       'Use the same association 4-letter code that appears in your SAGI dashboard.',
       'Keep your Zelle confirmation until the payment is reflected in SAGI.',
       'Do not combine registration and contribution payments without writing a clear note.'
@@ -73,10 +76,11 @@ const paymentInstructionsCopy = {
     title: 'Comment effectuer et enregistrer un paiement SAGI',
     intro:
       "Envoyez d'abord votre paiement, puis enregistrez-le sur la bonne page de paiement SAGI afin que l'équipe administrative puisse associer l'argent à votre groupe sans délai.",
-    memoReminder:
-      "Incluez toujours SAGI-{code d'association à 4 lettres} dans le mémo Zelle.",
+    memoReminder: (memoCode: string) =>
+      `Ajoutez ${memoCode} dans le mémo Zelle afin que le paiement soit associé à votre association.`,
     contributionsCta: 'Paiements des cotisations',
     registrationsCta: "Paiements d'inscription",
+    memoCodePlaceholder: "SAGI-USA-{code d'association à 4 lettres}",
     zelle: {
       title: 'Paiement Zelle',
       descriptionStart: 'Envoyez le paiement Zelle avec :',
@@ -105,8 +109,8 @@ const paymentInstructionsCopy = {
       {
         icon: FileText,
         title: 'Écrire une note de paiement claire',
-        description:
-          "Incluez toujours SAGI-{code d'association à 4 lettres} dans le mémo Zelle."
+        description: (memoCode: string) =>
+          `Ajoutez ${memoCode} dans le mémo Zelle afin que le paiement soit associé à votre association.`
       },
       {
         icon: Upload,
@@ -121,7 +125,7 @@ const paymentInstructionsCopy = {
     },
     reminders: [
       "Confirmez le montant avant d'envoyer le paiement.",
-      "Incluez toujours SAGI-{code d'association à 4 lettres} lorsque vous effectuez un paiement.",
+      (memoCode: string) => `Ajoutez ${memoCode} dans le mémo Zelle lorsque vous effectuez un paiement.`,
       "Utilisez le même code d'association à 4 lettres que celui qui apparaît dans votre tableau de bord SAGI.",
       "Gardez votre confirmation Zelle jusqu'à ce que le paiement apparaisse dans SAGI.",
       "Ne combinez pas les paiements d'inscription et de cotisation sans écrire une note claire."
@@ -130,11 +134,13 @@ const paymentInstructionsCopy = {
 } as const
 
 type PaymentInstructionsContentProps = {
+  associationCode?: string
   language?: AppLanguage
 }
 
-const PaymentInstructionsContent = ({ language = 'en' }: PaymentInstructionsContentProps) => {
+const PaymentInstructionsContent = ({ associationCode, language = 'en' }: PaymentInstructionsContentProps) => {
   const copy = paymentInstructionsCopy[language]
+  const memoCode = associationCode ? `SAGI-USA-${associationCode}` : copy.memoCodePlaceholder
 
   return (
     <section className='max-w-9xl mx-auto flex w-full flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8'>
@@ -147,7 +153,7 @@ const PaymentInstructionsContent = ({ language = 'en' }: PaymentInstructionsCont
             {copy.title}
           </h1>
           <p className='text-muted-foreground mt-4 max-w-3xl text-base leading-7'>
-            {copy.intro} <span className='text-primary font-bold'>{copy.memoReminder}</span>
+            {copy.intro} <span className='text-primary font-bold'>{copy.memoReminder(memoCode)}</span>
           </p>
           <div className='mt-6 flex flex-col gap-3 sm:flex-row'>
             <Button asChild>
@@ -213,7 +219,9 @@ const PaymentInstructionsContent = ({ language = 'en' }: PaymentInstructionsCont
                 <CardTitle className='text-lg'>{step.title}</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className='text-muted-foreground text-sm leading-6'>{step.description}</p>
+                <p className='text-muted-foreground text-sm leading-6'>
+                  {typeof step.description === 'function' ? step.description(memoCode) : step.description}
+                </p>
               </CardContent>
             </Card>
           )
@@ -231,9 +239,12 @@ const PaymentInstructionsContent = ({ language = 'en' }: PaymentInstructionsCont
         <CardContent>
           <ul className='grid gap-3 sm:grid-cols-2'>
             {copy.reminders.map(reminder => (
-              <li className='text-muted-foreground flex gap-3 text-sm leading-6' key={reminder}>
+              <li
+                className='text-muted-foreground flex gap-3 text-sm leading-6'
+                key={typeof reminder === 'function' ? reminder(memoCode) : reminder}
+              >
                 <CheckCircle2 className='text-primary mt-0.5 size-5 shrink-0' />
-                <span>{reminder}</span>
+                <span>{typeof reminder === 'function' ? reminder(memoCode) : reminder}</span>
               </li>
             ))}
           </ul>
