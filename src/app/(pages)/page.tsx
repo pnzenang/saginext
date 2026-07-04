@@ -493,8 +493,7 @@ const homeContent = {
     heroStats,
     monthlyContributionCard: {
       deathCountLabel: 'Number of deaths',
-      detail: (amount: string) => `1 vested member x ${amount}`,
-      title: (month: string, amount: string) => `${month}'s Contribution: ${amount}`
+      title: (month: string, amount: string) => `${month}'s Contribution per member: ${amount}`
     },
     howIntro: {
       eyebrow: 'How SAGI works',
@@ -602,8 +601,7 @@ const homeContent = {
     heroStats: frenchHeroStats,
     monthlyContributionCard: {
       deathCountLabel: 'Nombre de décès',
-      detail: (amount: string) => `1 membre acquis x ${amount}`,
-      title: (month: string, amount: string) => `Cotisation de ${month} : ${amount}`
+      title: (month: string, amount: string) => `Cotisation par membre de ${month} : ${amount}`
     },
     howIntro: {
       eyebrow: 'Comment fonctionne SAGI',
@@ -872,13 +870,10 @@ function HeroSection({
           ))}
         </div>
 
-        <div className='grid w-full gap-4 rounded-lg border border-white/30 bg-slate-950/42 px-4 py-3 text-white shadow-xl shadow-slate-950/20 backdrop-blur-md sm:px-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center'>
+        <div className='grid w-full gap-4 rounded-lg border border-primary/35 bg-primary/20 px-4 py-3 text-white shadow-xl shadow-primary/15 backdrop-blur-md sm:px-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center'>
           <div className='min-w-0'>
-            <p className='text-lg font-extrabold tracking-normal break-words sm:text-xl'>
+            <p className='text-xl font-extrabold tracking-normal break-words sm:text-2xl'>
               {copy.monthlyContributionCard.title(contributionMonth, contributionAmount)}
-            </p>
-            <p className='mt-1 text-sm font-semibold break-words text-white/76'>
-              {copy.monthlyContributionCard.detail(contributionAmount)}
             </p>
           </div>
           <div className='min-w-0 md:text-right'>
