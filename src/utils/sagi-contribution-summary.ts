@@ -22,7 +22,6 @@ export type AssociationContributionSummary = {
     amount: number
     dueDate: string
   }[]
-  deathCount: number
   dueDate: string | null
   existingBalance: number
   lastSubmittedAt: string | null
@@ -142,7 +141,6 @@ export const fetchAssociationContributionSummary = async (
     associationCode,
     balance: Number((amountVerified + manualBalanceAdjustment - amountOwed).toFixed(2)),
     contributionDueMonths: fallbackContributionDueMonths,
-    deathCount: latestAssessment?.deathCount ?? 0,
     dueDate: latestAssessment?.dueDate?.toISOString() ?? null,
     existingBalance,
     lastSubmittedAt: payment?.lastSubmittedAt?.toISOString() ?? null,

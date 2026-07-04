@@ -65,7 +65,6 @@ const associationPaymentCopy = {
     amountVerifiedConnector: 'Amount Verified',
     balanceAdjustment: 'Balance Adjustment',
     contributionAmountDetail: (count: number, amount: string) => `${count} vested member(s) x ${amount}`,
-    contributionDeathCount: (count: number) => `Number of deaths: ${count}`,
     contributionAmountSent: 'Contribution amount sent',
     contributionAmountTitle: (month: string, amount: string) => `${month}'s Contribution: ${amount}`,
     contributionDue: 'Contribution Due',
@@ -113,7 +112,6 @@ const associationPaymentCopy = {
     amountVerifiedConnector: 'Montant vérifié',
     balanceAdjustment: 'Ajustement du solde',
     contributionAmountDetail: (count: number, amount: string) => `${count} membre(s) acquis x ${amount}`,
-    contributionDeathCount: (count: number) => `Nombre de décès : ${count}`,
     contributionAmountSent: 'Montant de cotisation envoyé',
     contributionAmountTitle: (month: string, amount: string) => `Cotisation de ${month} : ${amount}`,
     contributionDue: 'Cotisation due',
@@ -657,11 +655,6 @@ const AssociationPaymentPageContent = (props: AssociationPaymentPageContentProps
           <div className='border-primary/20 bg-primary/10 text-primary flex h-full min-h-32 min-w-0 flex-col rounded-md border px-3 py-3 sm:px-4'>
             <p className='text-lg font-extrabold break-words sm:text-xl'>{amountTitle}</p>
             <p className='text-primary/80 mt-1 text-sm font-semibold break-words'>{amountDetail}</p>
-            {isContributionPayment && props.contribution.deathCount > 0 ? (
-              <p className='text-primary/80 mt-1 text-sm font-semibold break-words'>
-                {copy.contributionDeathCount(props.contribution.deathCount)}
-              </p>
-            ) : null}
             <p
               className={cn(
                 'mt-2 text-sm font-extrabold break-words text-teal-600 dark:text-teal-300',

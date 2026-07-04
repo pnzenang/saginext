@@ -33,11 +33,7 @@ import {
 } from './sagi-contribution-summary'
 import { awaitingPublicationVestingLongevityDays, getAwaitingPublicationVestingCutoff } from './sagi-member-longevity'
 import { registrationBalanceAdjustmentType, registrationFeePerEligibleMember } from './sagi-registration-summary'
-import {
-  contributionPaymentAlertType,
-  familySupportAmountPerDeath,
-  registrationPaymentAlertType
-} from './payment-constants'
+import { contributionPaymentAlertType, registrationPaymentAlertType } from './payment-constants'
 import {
   deleteCloudinaryDocument,
   getSafeCloudinaryPathSegment,
@@ -361,16 +357,6 @@ const getPositiveDollarAmountFromForm = (formData: FormData, fieldName: string) 
   }
 
   return Number(amount.toFixed(2))
-}
-
-const getPositiveIntegerFromForm = (formData: FormData, fieldName: string, label = fieldName) => {
-  const value = Number(getRequiredFormValue(formData, fieldName))
-
-  if (!Number.isInteger(value) || value <= 0) {
-    throw new Error(`${label} must be a whole number greater than 0.`)
-  }
-
-  return value
 }
 
 const getSignedDollarAmountFromForm = (formData: FormData, fieldName: string) => {
@@ -900,8 +886,7 @@ export const createAssociationContributionAssessmentAction = async (
   const user = await assertAdminUser()
 
   try {
-    const deathCount = getPositiveIntegerFromForm(formData, 'deathCount', 'Number of deaths')
-    const totalAmount = roundCurrencyAmount(deathCount * familySupportAmountPerDeath)
+    const totalAmount = getPositiveDollarAmountFromForm(formData, 'totalAmount')
     const dueDate = getRequiredDateFromForm(formData, 'dueDate')
 
     const vestedMembers = await db.member.findMany({
@@ -935,7 +920,6 @@ export const createAssociationContributionAssessmentAction = async (
       await tx.associationContributionAssessment.create({
         data: {
           amountPerVestedMember,
-          deathCount,
           dueDate,
           totalAmount,
           totalVestedMembers: vestedMembers.length,
@@ -951,7 +935,7 @@ export const createAssociationContributionAssessmentAction = async (
           associationCode: group.associationCode,
           createdBy: user.id,
           eventType: associationPaymentLedgerEventTypes.dueOffset,
-          note: `Contribution due created for ${group.vestedMembersCount} vested member(s) after ${deathCount} death(s).`,
+          note: `Contribution due created for ${group.vestedMembersCount} vested member(s).`,
           paymentType: associationPaymentTypes.contribution
         }))
       })
@@ -960,7 +944,7 @@ export const createAssociationContributionAssessmentAction = async (
     revalidatePaymentViews()
 
     return {
-      message: `Calculated ${deathCount} death(s) at ${currencyFormatter.format(familySupportAmountPerDeath)} each and distributed ${currencyFormatter.format(totalAmount)} across ${vestedMembers.length} vested members. Each vested member is ${currencyFormatter.format(amountPerVestedMember)}.`
+      message: `Distributed ${currencyFormatter.format(totalAmount)} across ${vestedMembers.length} vested members. Each vested member is ${currencyFormatter.format(amountPerVestedMember)}.`
     }
   } catch (error) {
     return renderError(error)

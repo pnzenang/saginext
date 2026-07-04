@@ -210,7 +210,6 @@ model AssociationContributionPayment {
 
 model AssociationContributionAssessment {
   id                    String                                   @id @default(uuid())
-  deathCount            Int                                      @default(0)
   totalAmount           Decimal                                  @db.Decimal(10, 2)
   totalVestedMembers    Int
   amountPerVestedMember Decimal                                  @db.Decimal(10, 2)

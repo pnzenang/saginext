@@ -2,7 +2,7 @@
 
 import { useActionState } from 'react'
 
-import { CalendarDays, HeartHandshake } from 'lucide-react'
+import { CalendarDays, DollarSign } from 'lucide-react'
 
 import { SubmitButton } from '@/components/forms/Buttons'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -13,10 +13,8 @@ import {
   resetAssociationContributionCalculationAction,
   zeroAllAssociationContributionBalancesAction
 } from '@/utils/actions'
-import { familySupportAmountPerDeath } from '@/utils/payment-constants'
 
 type ContributionAssessmentFormProps = {
-  latestDeathCount?: number
   vestedMembersCount: number
 }
 
@@ -24,7 +22,7 @@ const initialState = {
   message: ''
 }
 
-const ContributionAssessmentForm = ({ latestDeathCount = 0, vestedMembersCount }: ContributionAssessmentFormProps) => {
+const ContributionAssessmentForm = ({ vestedMembersCount }: ContributionAssessmentFormProps) => {
   const [state, formAction] = useActionState(createAssociationContributionAssessmentAction, initialState)
   const [resetState, resetFormAction] = useActionState(resetAssociationContributionCalculationAction, initialState)
   const [zeroState, zeroFormAction] = useActionState(zeroAllAssociationContributionBalancesAction, initialState)
@@ -32,10 +30,10 @@ const ContributionAssessmentForm = ({ latestDeathCount = 0, vestedMembersCount }
   return (
     <Card className='border-primary/30 bg-primary/10 w-full max-w-full min-w-0 overflow-hidden py-0'>
       <CardHeader className='border-primary/20 min-w-0 border-b py-5'>
-        <CardTitle className='text-xl leading-tight break-words'>Death cases to support this month</CardTitle>
+        <CardTitle className='text-xl leading-tight break-words'>Amount to be contributed this month</CardTitle>
         <CardDescription className='break-words'>
-          Enter the number of deaths. SAGI multiplies it by ${familySupportAmountPerDeath.toLocaleString('en-US')}, then
-          divides the total by all vested members and applies it to each 4-letter association code.
+          Enter a total dollar amount. SAGI divides it by all vested members, then multiplies that amount by the number
+          of vested members under each 4-letter association code.
         </CardDescription>
       </CardHeader>
       <CardContent className='min-w-0 py-5'>
@@ -43,17 +41,17 @@ const ContributionAssessmentForm = ({ latestDeathCount = 0, vestedMembersCount }
           <div className='grid w-full min-w-0 grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-5 md:items-end'>
             <form action={formAction} className='contents'>
               <div className='grid min-w-0 gap-2'>
-                <Label htmlFor='deathCount'>Number of deaths</Label>
+                <Label htmlFor='totalAmount'>Monthly contribution total</Label>
                 <div className='relative'>
-                  <HeartHandshake className='text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2' />
+                  <DollarSign className='text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2' />
                   <Input
-                    id='deathCount'
-                    name='deathCount'
+                    id='totalAmount'
+                    name='totalAmount'
                     type='number'
-                    inputMode='numeric'
-                    min='1'
-                    step='1'
-                    placeholder='0'
+                    inputMode='decimal'
+                    min='0.01'
+                    step='0.01'
+                    placeholder='0.00'
                     className='border-primary/40 bg-background text-foreground pl-9'
                     required
                   />
@@ -109,12 +107,6 @@ const ContributionAssessmentForm = ({ latestDeathCount = 0, vestedMembersCount }
 
           <div className='grid min-w-0 gap-2'>
             <p className='text-muted-foreground text-sm'>Vested members currently counted: {vestedMembersCount}</p>
-            <p className='text-muted-foreground text-sm'>
-              Support amount per death: ${familySupportAmountPerDeath.toLocaleString('en-US')}
-            </p>
-            {latestDeathCount > 0 ? (
-              <p className='text-muted-foreground text-sm'>Latest death count entered: {latestDeathCount}</p>
-            ) : null}
             {state.message ? <p className='text-primary text-sm font-medium'>{state.message}</p> : null}
             {resetState.message ? <p className='text-primary text-sm font-medium'>{resetState.message}</p> : null}
             {zeroState.message ? <p className='text-primary text-sm font-medium'>{zeroState.message}</p> : null}
