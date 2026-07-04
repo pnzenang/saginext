@@ -1,13 +1,12 @@
 import type { ComponentType } from 'react'
 
+import Link from 'next/link'
+
 import { ArrowRightIcon } from 'lucide-react'
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-
 import { cn } from '@/lib/utils'
-import Link from 'next/link'
 
 type Features = {
   icon: ComponentType
@@ -19,10 +18,10 @@ type Features = {
   href?: string
 }[]
 
-const Features = ({ featuresList }: { featuresList: Features }) => {
+const Features = ({ className, featuresList }: { className?: string; featuresList: Features }) => {
   return (
-    <section className='py-8 sm:py-16 lg:py-24'>
-      <div className='mx-auto max-w-7xl px-4 sm:px-6 lg:px-8'>
+    <section className={cn('w-full min-w-0 py-8 sm:py-16 lg:py-24', className)}>
+      <div className='w-full max-w-full min-w-0 px-4 sm:px-6 lg:px-8'>
         {/* Header */}
         <div className='mb-6 space-y-4 sm:mb-8 lg:mb-10'>
           <h2 className='text-center text-2xl font-semibold md:text-3xl lg:text-4xl'>NAVIGATION INSTRUCTIONS</h2>
@@ -49,7 +48,6 @@ const Features = ({ featuresList }: { featuresList: Features }) => {
                   <Link
                     href={features.href}
                     replace={true}
-                    // target='blank'
                     className='text-primary mt-4 inline-flex w-full items-center justify-end gap-2 text-sm font-medium'
                   >
                     Read More <ArrowRightIcon className='size-4' />

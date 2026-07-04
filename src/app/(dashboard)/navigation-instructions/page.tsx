@@ -1,71 +1,32 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+import {
+  ArrowRightLeft,
+  CreditCard,
+  Cross,
+  FileStack,
+  Pencil,
+  Table,
+  Trash2,
+  UserPlus,
+  Users,
+  Wallet,
+  WalletCards,
+  WalletMinimal
+} from 'lucide-react'
+
+import Features from '@/components/shadcn-studio/blocks/features-section-01/features-section-01'
 import { fetchProfile } from '@/utils/profile-actions'
-import Image from 'next/image'
-import Link from 'next/link'
-import { Card } from '@/components/ui/card'
-import { FaSquareWhatsapp } from 'react-icons/fa6'
 
 const NavigationInstructions = async () => {
-  const user = await fetchProfile()
+  await fetchProfile()
 
   return (
-    <div className='flex flex-col items-center gap-4'>
-      {/* <div className='flex flex-col items-center justify-center gap-8 sm:mt-10 sm:flex-row'>
-        <Card className='flex flex-col items-center gap-5 p-5 sm:flex-row sm:p-20'>
-          <FaSquareWhatsapp className='text-9xl text-green-600' />
-          <div className='w-64 sm:w-96'>
-            <h1 className='sm:text-2xl'>
-              Click on or scan the QR-Code to join the SAGI whatsapp group in order to receive SAGI UPDATES such as
-              contribution charts via Whatsapp.
-            </h1>
-          </div>
-        </Card>
-        <Link href='https://chat.whatsapp.com/BD21tcO2cX91xY3K7C3ssQ'>
-          <Image
-            alt='chef'
-            src='https://res.cloudinary.com/dp8tkb7hq/image/upload/v1778147516/Watsapp_lhkanv.svg'
-            width={300}
-            height={300}
-          />
-        </Link>
-      </div> */}
-      <Features featuresList={featuresList} />
+    <div className='flex w-full min-w-0 flex-col items-stretch gap-4'>
+      <Features className='w-full max-w-full' featuresList={featuresList} />
     </div>
   )
 }
 
 export default NavigationInstructions
-
-import {
-  SwatchBookIcon,
-  SearchIcon,
-  StarIcon,
-  SmartphoneIcon,
-  LockKeyholeIcon,
-  ShieldBanIcon,
-  Pencil
-} from 'lucide-react'
-import {
-  BookCheck,
-  Cross,
-  Navigation,
-  SquareUser,
-  Trash2,
-  UserCog,
-  UserPlus,
-  FileStack,
-  Users,
-  Wallet,
-  FileCheck,
-  WalletCards,
-  WalletMinimal,
-  CreditCard,
-  ArrowRightLeft,
-  List,
-  Table
-} from 'lucide-react'
-import Features from '@/components/shadcn-studio/blocks/features-section-01/features-section-01'
-import { hr } from 'motion/react-client'
 
 const featuresList = [
   {

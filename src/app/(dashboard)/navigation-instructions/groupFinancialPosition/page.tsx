@@ -68,7 +68,7 @@ const avoidConfusionItems = [
 
 const GroupFinancialPositions = () => {
   return (
-    <section className='max-w-9xl mx-auto flex w-full flex-col gap-6 px-3 py-4 sm:px-6 sm:py-6 lg:px-8'>
+    <section className='flex w-full max-w-full min-w-0 flex-col gap-6 px-3 py-4 sm:px-6 sm:py-6 lg:px-8'>
       <div className='bg-card rounded-lg border p-6 shadow-sm sm:p-8'>
         <Badge className='mb-4 w-fit' variant='secondary'>
           Group Financial Position Instructions
