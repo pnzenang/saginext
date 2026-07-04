@@ -359,6 +359,23 @@ const getPositiveDollarAmountFromForm = (formData: FormData, fieldName: string) 
   return Number(amount.toFixed(2))
 }
 
+const getOptionalNonNegativeIntegerFromForm = (formData: FormData, fieldName: string, label = fieldName) => {
+  const rawValue = formData.get(fieldName)
+  const value = typeof rawValue === 'string' ? rawValue.trim() : ''
+
+  if (!value) {
+    return null
+  }
+
+  const numberValue = Number(value)
+
+  if (!Number.isInteger(numberValue) || numberValue < 0) {
+    throw new Error(`${label} must be a whole number of 0 or more.`)
+  }
+
+  return numberValue
+}
+
 const getSignedDollarAmountFromForm = (formData: FormData, fieldName: string) => {
   const amount = Number(getRequiredFormValue(formData, fieldName))
 
@@ -887,6 +904,7 @@ export const createAssociationContributionAssessmentAction = async (
 
   try {
     const totalAmount = getPositiveDollarAmountFromForm(formData, 'totalAmount')
+    const deathCount = getOptionalNonNegativeIntegerFromForm(formData, 'deathCount', 'Number of deaths')
     const dueDate = getRequiredDateFromForm(formData, 'dueDate')
 
     const vestedMembers = await db.member.findMany({
@@ -920,6 +938,7 @@ export const createAssociationContributionAssessmentAction = async (
       await tx.associationContributionAssessment.create({
         data: {
           amountPerVestedMember,
+          deathCount: deathCount ?? 0,
           dueDate,
           totalAmount,
           totalVestedMembers: vestedMembers.length,
@@ -935,7 +954,9 @@ export const createAssociationContributionAssessmentAction = async (
           associationCode: group.associationCode,
           createdBy: user.id,
           eventType: associationPaymentLedgerEventTypes.dueOffset,
-          note: `Contribution due created for ${group.vestedMembersCount} vested member(s).`,
+          note: `Contribution due created for ${group.vestedMembersCount} vested member(s).${
+            deathCount === null ? '' : ` Number of deaths entered: ${deathCount}.`
+          }`,
           paymentType: associationPaymentTypes.contribution
         }))
       })
@@ -944,7 +965,9 @@ export const createAssociationContributionAssessmentAction = async (
     revalidatePaymentViews()
 
     return {
-      message: `Distributed ${currencyFormatter.format(totalAmount)} across ${vestedMembers.length} vested members. Each vested member is ${currencyFormatter.format(amountPerVestedMember)}.`
+      message: `Distributed ${currencyFormatter.format(totalAmount)} across ${vestedMembers.length} vested members. Each vested member is ${currencyFormatter.format(amountPerVestedMember)}.${
+        deathCount === null ? '' : ` Number of deaths entered: ${deathCount}.`
+      }`
     }
   } catch (error) {
     return renderError(error)

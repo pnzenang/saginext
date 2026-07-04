@@ -339,6 +339,8 @@ const AssociationPaymentNavigationCards = ({
           <>
             {currentContribution.vestedMembersCount} vested member(s) x{' '}
             {formatCurrency(currentContribution.amountPerVestedMember)}
+            <br />
+            Number of deaths: {currentContribution.deathCount}
           </>
         }
         details={

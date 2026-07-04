@@ -2,7 +2,7 @@
 
 import { useActionState } from 'react'
 
-import { CalendarDays, DollarSign } from 'lucide-react'
+import { CalendarDays, DollarSign, HeartHandshake } from 'lucide-react'
 
 import { SubmitButton } from '@/components/forms/Buttons'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -38,7 +38,7 @@ const ContributionAssessmentForm = ({ vestedMembersCount }: ContributionAssessme
       </CardHeader>
       <CardContent className='min-w-0 py-5'>
         <div className='grid w-full min-w-0 gap-4'>
-          <div className='grid w-full min-w-0 grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-5 md:items-end'>
+          <div className='grid w-full min-w-0 grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-6 md:items-end'>
             <form action={formAction} className='contents'>
               <div className='grid min-w-0 gap-2'>
                 <Label htmlFor='totalAmount'>Monthly contribution total</Label>
@@ -54,6 +54,23 @@ const ContributionAssessmentForm = ({ vestedMembersCount }: ContributionAssessme
                     placeholder='0.00'
                     className='border-primary/40 bg-background text-foreground pl-9'
                     required
+                  />
+                </div>
+              </div>
+
+              <div className='grid min-w-0 gap-2'>
+                <Label htmlFor='deathCount'>Number of deaths</Label>
+                <div className='relative'>
+                  <HeartHandshake className='text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2' />
+                  <Input
+                    id='deathCount'
+                    name='deathCount'
+                    type='number'
+                    inputMode='numeric'
+                    min='0'
+                    step='1'
+                    placeholder='0'
+                    className='border-primary/40 bg-background text-foreground pl-9'
                   />
                 </div>
               </div>
