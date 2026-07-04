@@ -40,41 +40,41 @@ type HeroStat = {
 }
 
 const heroStats: HeroStat[] = [
-  { value: '$20', label: 'maximum monthly contribution per member' },
-  { value: '$20,000', label: 'support available for approved eligible cases' },
-  { value: '30 days', label: 'target processing window after complete documents' }
+  { value: '$20', label: 'maximum monthly member contribution' },
+  { value: '$20,000', label: 'family support after vesting' },
+  { value: '30 days', label: 'target payout after documents' }
 ]
 
 const steps = [
   {
     icon: UserPlusIcon,
     title: 'Register members',
-    description: 'Create the member record, beneficiary details, and association information in the dashboard.'
+    description: 'Delegates add individual, family, association, or group members to their dashboard.'
   },
   {
     icon: WalletCardsIcon,
-    title: 'Pay required fees',
-    description: 'Record registration fees and monthly contributions so SAGI can match payments to the right group.'
+    title: 'Contribute together',
+    description: 'Members keep participation active through predictable, low-overhead contributions.'
   },
   {
     icon: BadgeCheckIcon,
-    title: 'Track member status',
-    description: 'See when a member is pending, awaiting publication, vested, or not in good standing.'
+    title: 'Stay vested',
+    description: 'The platform makes member status clear before a family ever needs support.'
   },
   {
     icon: HeartHandshakeIcon,
-    title: 'Request support',
+    title: 'Receive support',
     description:
-      'When a vested member passes away, submit the required documents so SAGI can review and coordinate support.'
+      'If affected, When documentation is complete, SAGI coordinates funeral assistance and payout processing.'
   }
 ]
 
 const eligibilityHighlights = [
-  'Individuals, families, associations, and groups welcome',
   'No health checks',
   'No age limitation',
   'No nationality limitation',
-  'No minimum group size',
+  'Any group size',
+  'Individual, Families and associations welcome',
   'Self-service delegate dashboard'
 ]
 
@@ -209,8 +209,8 @@ const totalRegisteredLabels: Record<HomeLanguage, string> = {
 
 const frenchHeroStats: HeroStat[] = [
   { value: '$20', label: 'cotisation mensuelle maximale par membre' },
-  { value: '$20,000', label: 'soutien disponible pour les dossiers admissibles approuvés' },
-  { value: '30 jours', label: 'objectif de traitement après documents complets' }
+  { value: '$20,000', label: 'soutien familial après acquisition des droits' },
+  { value: '30 jours', label: 'objectif de paiement après réception des documents' }
 ]
 
 const frenchSteps = [
@@ -218,34 +218,32 @@ const frenchSteps = [
     icon: UserPlusIcon,
     title: 'Inscrire les membres',
     description:
-      "Créez le dossier du membre, les informations du bénéficiaire et les informations d'association dans le tableau de bord."
+      'Les délégués ajoutent les membres individuels, les familles, les associations ou les groupes dans leur tableau de bord.'
   },
   {
     icon: WalletCardsIcon,
-    title: 'Payer les frais requis',
-    description:
-      'Enregistrez les frais d’inscription et les cotisations mensuelles afin que SAGI associe les paiements au bon groupe.'
+    title: 'Contribuer ensemble',
+    description: 'Les membres gardent leur participation active grâce à des cotisations prévisibles et simples.'
   },
   {
     icon: BadgeCheckIcon,
-    title: 'Suivre le statut',
-    description:
-      'Voyez quand un membre est en attente, en attente de publication, acquis ou pas en règle.'
+    title: 'Rester acquis',
+    description: 'La plateforme rend le statut de chaque membre clair avant qu’une famille ait besoin de soutien.'
   },
   {
     icon: HeartHandshakeIcon,
-    title: 'Demander du soutien',
+    title: 'Recevoir du soutien',
     description:
-      'Lorsqu’un membre acquis décède, soumettez les documents requis afin que SAGI puisse examiner et coordonner le soutien.'
+      'Lorsque les documents sont complets, SAGI coordonne l’aide funéraire et le traitement du paiement.'
   }
 ]
 
 const frenchEligibilityHighlights = [
-  'Individus, familles, associations et groupes bienvenus',
   'Aucun examen médical',
   "Aucune limite d'âge",
   'Aucune limite de nationalité',
-  'Aucune taille minimale de groupe',
+  'Toute taille de groupe',
+  'Individus, familles et associations bienvenus',
   'Tableau de bord autonome pour les délégués'
 ]
 
@@ -469,58 +467,21 @@ const homeContent = {
       french: 'Français'
     },
     hero: {
-      badge: 'SAGI-USA mutual aid',
-      title: 'SAGI-USA funeral support',
+      badge: 'Member-funded funeral support',
+      title: 'SAGI: Active Solidarity Ltd.',
       description:
-        'A member-funded nonprofit community that helps families with funeral support when an eligible member passes away.',
-      nonprofit: '501(c)(3) nonprofit. Not insurance. Built on shared contributions and clear member rules.',
-      primaryCta: 'Create an account',
-      secondaryCta: 'How membership works',
-      imageAlt: 'Family receiving compassionate guidance with support documents',
-      highlights: [
-        'Members contribute up to $20 per month.',
-        'Eligible approved cases may receive support up to $20,000.',
-        'Delegates manage members, payments, and documents online.'
-      ]
+        'A mutual aid community where low monthly contributions create real funeral support for families when it matters most.',
+      nonprofit: 'SAGI is a 501(c)(3) nonprofit organization.',
+      primaryCta: 'Join SAGI',
+      secondaryCta: 'See how it works',
+      imageAlt: 'Family receiving compassionate guidance with support documents'
     },
-    startHereIntro: {
-      eyebrow: 'Start here',
-      title: 'Choose the path that matches what you need today.',
-      description:
-        'SAGI serves members, delegates, and families. These shortcuts point each visitor to the next practical step.'
-    },
-    startHereActions: [
-      {
-        icon: UserPlusIcon,
-        title: 'I want to join',
-        description:
-          'Create an account, complete the association profile, and start registering members.',
-        href: '/sign-up',
-        cta: 'Create account'
-      },
-      {
-        icon: LayoutDashboardIcon,
-        title: 'I manage a group',
-        description:
-          'Log in to add members, record payments, check statuses, and submit documents.',
-        href: '/sign-in',
-        cta: 'Open dashboard'
-      },
-      {
-        icon: HeartHandshakeIcon,
-        title: 'A family needs support',
-        description:
-          'Review statuses, benefit rules, funeral-home guidance, and required documents.',
-        href: '#member-status',
-        cta: 'Review support rules'
-      }
-    ],
     heroStats,
     howIntro: {
       eyebrow: 'How SAGI works',
-      title: 'From registration to support, every step has a purpose.',
+      title: 'A clear path from registration to family support.',
       description:
-        'The process is simple: register the member, keep payments current, watch the status, and submit documents if support is needed.'
+        'From first registration to urgent family support, every step is organized so members and delegates know what comes next.'
     },
     steps,
     whoIntro: {
@@ -611,59 +572,21 @@ const homeContent = {
       french: 'Français'
     },
     hero: {
-      badge: 'Solidarité SAGI-USA',
-      title: 'Soutien funéraire SAGI-USA',
+      badge: 'Soutien funéraire financé par les membres',
+      title: 'SAGI: Active Solidarity Ltd.',
       description:
-        'Une communauté à but non lucratif financée par les membres qui aide les familles avec un soutien funéraire lorsqu’un membre admissible décède.',
-      nonprofit:
-        'Organisation à but non lucratif 501(c)(3). Ce n’est pas une assurance. Le système repose sur les cotisations partagées et des règles claires.',
-      primaryCta: 'Créer un compte',
-      secondaryCta: 'Comment fonctionne l’adhésion',
-      imageAlt: 'Famille recevant un accompagnement compatissant avec des documents de soutien',
-      highlights: [
-        'Les membres cotisent jusqu’à 20 $ par mois.',
-        'Les dossiers admissibles approuvés peuvent recevoir jusqu’à 20 000 $.',
-        'Les délégués gèrent les membres, paiements et documents en ligne.'
-      ]
+        'Une communauté de solidarité où de faibles cotisations mensuelles créent un vrai soutien funéraire pour les familles au moment le plus important.',
+      nonprofit: 'SAGI est une organisation a but non lucratif 501(c)(3).',
+      primaryCta: 'Rejoindre SAGI',
+      secondaryCta: 'Voir le fonctionnement',
+      imageAlt: 'Famille recevant un accompagnement compatissant avec des documents de soutien'
     },
-    startHereIntro: {
-      eyebrow: 'Commencer ici',
-      title: 'Choisissez le chemin qui correspond à votre besoin aujourd’hui.',
-      description:
-        'SAGI sert les membres, les délégués et les familles. Ces raccourcis indiquent la prochaine étape pratique.'
-    },
-    startHereActions: [
-      {
-        icon: UserPlusIcon,
-        title: 'Je veux rejoindre',
-        description:
-          "Créez un compte, complétez le profil d'association et commencez à inscrire les membres.",
-        href: '/sign-up',
-        cta: 'Créer un compte'
-      },
-      {
-        icon: LayoutDashboardIcon,
-        title: 'Je gère un groupe',
-        description:
-          'Connectez-vous pour ajouter des membres, enregistrer les paiements, vérifier les statuts et soumettre les documents.',
-        href: '/sign-in',
-        cta: 'Ouvrir le tableau de bord'
-      },
-      {
-        icon: HeartHandshakeIcon,
-        title: 'Une famille a besoin de soutien',
-        description:
-          'Consultez les statuts, les règles des avantages, les conseils funéraires et les documents requis.',
-        href: '#member-status',
-        cta: 'Voir les règles de soutien'
-      }
-    ],
     heroStats: frenchHeroStats,
     howIntro: {
       eyebrow: 'Comment fonctionne SAGI',
-      title: "De l'inscription au soutien, chaque étape a un but.",
+      title: "Un chemin clair de l'inscription au soutien familial.",
       description:
-        'Le processus est simple: inscrire le membre, garder les paiements à jour, suivre le statut et soumettre les documents si le soutien est nécessaire.'
+        "De la première inscription au soutien familial urgent, chaque étape est organisée afin que les membres et les délégués sachent ce qui vient ensuite."
     },
     steps: frenchSteps,
     whoIntro: {
@@ -780,7 +703,6 @@ const Home = async ({ searchParams }: { searchParams?: Promise<HomeSearchParams>
   return (
     <div lang={language}>
       <HeroSection copy={copy} language={language} totalRegisteredMembers={totalRegisteredMembers} />
-      <StartHereSection copy={copy} />
       <HowItWorksSection copy={copy} />
       <WhoCanJoinSection copy={copy} />
       <MemberStatusSection copy={copy} />
@@ -846,10 +768,10 @@ function HeroSection({
         fill
         priority
         sizes='100vw'
-        className='-z-20 object-cover'
+        className='-z-20 object-cover brightness-110 saturate-105'
       />
-      <div className='absolute inset-0 -z-10 bg-slate-950/45' />
-      <div className='absolute inset-0 -z-10 bg-linear-to-r from-slate-950/75 via-slate-950/45 to-slate-950/10' />
+      <div className='absolute inset-0 -z-10 bg-white/10' />
+      <div className='absolute inset-0 -z-10 bg-linear-to-r from-slate-950/58 via-slate-950/26 to-white/12' />
 
       <div className='mx-auto flex max-w-7xl flex-col gap-12 px-4 sm:px-6 lg:px-8'>
         <div className='max-w-4xl space-y-7'>
@@ -865,15 +787,6 @@ function HeroSection({
             <p className='max-w-3xl text-lg leading-8 text-white/84 sm:text-xl'>{copy.hero.description}</p>
             <p className='max-w-3xl text-lg leading-8 text-white/84 sm:text-xl'>{copy.hero.nonprofit}</p>
           </div>
-
-          <ul className='grid max-w-4xl gap-3 text-sm font-medium text-white/88 sm:grid-cols-3'>
-            {copy.hero.highlights.map(highlight => (
-              <li key={highlight} className='flex items-start gap-2 rounded-md bg-white/10 px-3 py-3 ring-1 ring-white/15'>
-                <CheckCircle2Icon className='mt-0.5 size-4 shrink-0 text-emerald-200' />
-                <span className='leading-6'>{highlight}</span>
-              </li>
-            ))}
-          </ul>
 
           <div className='flex flex-wrap gap-3'>
             <Button asChild size='lg' className='rounded-full'>
@@ -908,43 +821,6 @@ function HeroSection({
               <p className='text-3xl font-semibold sm:text-4xl'>{stat.value}</p>
               <p className='text-sm leading-6 text-white/72'>{stat.label}</p>
             </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
-
-function StartHereSection({ copy }: { copy: HomeContent }) {
-  return (
-    <section id='start-here' className='border-b bg-background py-14 sm:py-16'>
-      <div className='mx-auto max-w-7xl space-y-8 px-4 sm:px-6 lg:px-8'>
-        <SectionIntro
-          eyebrow={copy.startHereIntro.eyebrow}
-          title={copy.startHereIntro.title}
-          description={copy.startHereIntro.description}
-        />
-
-        <div className='grid gap-4 md:grid-cols-3'>
-          {copy.startHereActions.map(action => (
-            <Link
-              key={action.title}
-              href={action.href}
-              prefetch={action.href.startsWith('/sign') ? false : undefined}
-              className='group border-primary/15 hover:border-primary/45 bg-muted/40 hover:bg-background flex h-full flex-col gap-5 rounded-lg border p-5 transition'
-            >
-              <div className='bg-primary/10 text-primary flex size-12 items-center justify-center rounded-lg'>
-                <action.icon className='size-6' />
-              </div>
-              <div className='space-y-2'>
-                <h3 className='text-xl font-semibold'>{action.title}</h3>
-                <p className='text-muted-foreground leading-7'>{action.description}</p>
-              </div>
-              <span className='text-primary mt-auto inline-flex items-center gap-2 font-semibold'>
-                {action.cta}
-                <ArrowRightIcon className='size-4 transition group-hover:translate-x-1' />
-              </span>
-            </Link>
           ))}
         </div>
       </div>
