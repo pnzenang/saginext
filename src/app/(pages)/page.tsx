@@ -838,18 +838,25 @@ function HeroSection({
           ))}
         </div>
 
-        <div className='max-w-xl rounded-lg border border-white/30 bg-slate-950/42 p-5 text-white shadow-xl shadow-slate-950/20 backdrop-blur-md'>
-          <div className='flex items-center gap-3'>
-            <div className='flex size-11 shrink-0 items-center justify-center rounded-lg bg-white/12 text-white'>
-              <CircleDollarSignIcon className='size-5' />
+        <div className='w-full rounded-lg border border-white/30 bg-slate-950/42 p-4 text-white shadow-xl shadow-slate-950/20 backdrop-blur-md sm:p-5'>
+          <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
+            <div className='flex min-w-0 items-center gap-3'>
+              <div className='flex size-11 shrink-0 items-center justify-center rounded-lg bg-white/12 text-white'>
+                <CircleDollarSignIcon className='size-5' />
+              </div>
+              <div className='min-w-0'>
+                <p className='text-sm font-semibold text-white/70'>{copy.monthlyContributionCard.label}</p>
+                <p className='text-lg font-semibold'>{copy.monthlyContributionCard.title}</p>
+              </div>
             </div>
-            <div>
-              <p className='text-sm font-semibold text-white/70'>{copy.monthlyContributionCard.label}</p>
-              <p className='text-lg font-semibold'>{copy.monthlyContributionCard.title}</p>
+
+            <div className='sm:max-w-3xl sm:text-right'>
+              <p className='text-3xl font-semibold tracking-tight sm:text-4xl'>
+                {copy.monthlyContributionCard.amount}
+              </p>
+              <p className='mt-1 text-sm leading-6 text-white/76'>{copy.monthlyContributionCard.description}</p>
             </div>
           </div>
-          <p className='mt-4 text-4xl font-semibold tracking-tight'>{copy.monthlyContributionCard.amount}</p>
-          <p className='mt-3 text-sm leading-6 text-white/76'>{copy.monthlyContributionCard.description}</p>
         </div>
       </div>
     </section>
