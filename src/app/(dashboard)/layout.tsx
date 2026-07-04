@@ -1,15 +1,16 @@
 import type { ReactNode } from 'react'
 
 import { UserButton } from '@clerk/nextjs'
+import { auth } from '@clerk/nextjs/server'
 
-import Link from 'next/link'
 import { cookies } from 'next/headers'
+import Link from 'next/link'
 
+import { LanguageToggle } from '@/components/global/LanguageToggle'
 import SidebarGroupedMenuItems from '@/components/dashboard/SidebarGroupedMenuItems'
 import { ModeToggle } from '@/components/layout/mode-toggle/mode-toggle'
 import LogoSmall from '@/components/logoSmall'
 import { Card, CardContent } from '@/components/ui/card'
-import { LanguageToggle } from '@/components/global/LanguageToggle'
 import {
   SidebarProvider,
   SidebarHeader,
@@ -20,13 +21,30 @@ import {
   SidebarTrigger,
   Sidebar
 } from '@/components/ui/sidebar'
+import db from '@/utils/db'
 import { dashboardText, languageCookieName, normalizeLanguage, translateDashboardMenuItems } from '@/lib/i18n'
 import { pagesItems } from '@/utils/links'
 
 export const dynamic = 'force-dynamic'
 
+const getDashboardAssociationIdentity = async () => {
+  const { userId } = await auth()
+
+  if (!userId) return null
+
+  return db.profile.findUnique({
+    select: {
+      associationCode: true,
+      associationName: true
+    },
+    where: {
+      clerkId: userId
+    }
+  })
+}
+
 const PagesLayout = async ({ children }: Readonly<{ children: ReactNode }>) => {
-  const cookieStore = await cookies()
+  const [cookieStore, associationIdentity] = await Promise.all([cookies(), getDashboardAssociationIdentity()])
   const language = normalizeLanguage(cookieStore.get(languageCookieName)?.value)
   const translatedPagesItems = translateDashboardMenuItems(pagesItems, language)
   const copy = dashboardText[language]
@@ -57,8 +75,13 @@ const PagesLayout = async ({ children }: Readonly<{ children: ReactNode }>) => {
                 <SidebarTrigger className='text-primary size-10 font-extrabold md:size-7 [&_svg]:size-6!' />
                 <LogoSmall className='size-9 shrink-0 sm:hidden' />
               </div>
-              <div className='text-primary hidden min-w-0 truncate font-bold min-[360px]:block sm:text-2xl'>
-                {copy.brand}
+              <div className='hidden min-w-0 flex-1 flex-col items-center text-center min-[360px]:flex'>
+                <div className='text-primary max-w-full truncate font-bold sm:text-2xl'>{copy.brand}</div>
+                {associationIdentity ? (
+                  <div className='text-muted-foreground max-w-full truncate text-[11px] font-semibold sm:text-xs'>
+                    {associationIdentity.associationCode} - {associationIdentity.associationName}
+                  </div>
+                ) : null}
               </div>
               <div className='flex shrink-0 items-center justify-center gap-x-2 sm:gap-x-3'>
                 <LanguageToggle initialLanguage={language} size='xs' />
