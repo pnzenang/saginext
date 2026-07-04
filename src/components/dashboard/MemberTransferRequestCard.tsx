@@ -252,7 +252,7 @@ const MemberTransferRequestCard = ({
             <span>Matriculation: {request.memberMatriculationNumber}</span>
             <span>Submitted: {formatTransferRequestDateTime(request.createdAt)}</span>
             {showRequestingAssociationCode ? (
-              <span>Requested by delegate association code: {request.receivingAssociationCode}</span>
+              <span>Receiving delegate association code: {request.receivingAssociationCode}</span>
             ) : null}
           </div>
         </div>

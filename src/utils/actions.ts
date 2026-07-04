@@ -2381,7 +2381,7 @@ export const fetchMemberTransferPageAction = async () => {
   const profile = await fetchProfile()
   const visibleMemberTransferRequestWhere = getVisibleMemberTransferRequestWhere()
 
-  const [members, requests] = await Promise.all([
+  const [members, currentMembers, requests] = await Promise.all([
     db.member.findMany({
       orderBy: [{ lastAndMiddleNames: 'asc' }, { firstName: 'asc' }],
       select: {
@@ -2399,6 +2399,21 @@ export const fetchMemberTransferPageAction = async () => {
         clerkId: {
           not: profile.clerkId
         }
+      }
+    }),
+    db.member.findMany({
+      orderBy: [{ lastAndMiddleNames: 'asc' }, { firstName: 'asc' }],
+      select: {
+        associationCode: true,
+        firstName: true,
+        id: true,
+        lastAndMiddleNames: true,
+        memberMatriculationNumber: true,
+        memberStatus: true
+      },
+      where: {
+        associationCode: profile.associationCode,
+        clerkId: profile.clerkId
       }
     }),
     db.memberTransferRequest.findMany({
@@ -2425,6 +2440,7 @@ export const fetchMemberTransferPageAction = async () => {
   ])
 
   return {
+    currentMembers,
     members,
     nextCancelledTransferRefreshAt: getNextCancelledMemberTransferRefreshAt(requests),
     profile,
@@ -2541,6 +2557,101 @@ export const submitMemberTransferRequestAction = async (
   }
 }
 
+export const submitOutgoingMemberTransferRequestAction = async (
+  prevState: any,
+  formData: FormData
+): Promise<{ message: string }> => {
+  try {
+    const memberId = getRequiredFormValue(formData, 'memberId')
+    const receivingAssociationCode = normalizeAssociationCode(getRequiredFormValue(formData, 'receivingAssociationCode'))
+    const initiatingAssociation = await fetchProfile()
+    const initiatingAssociationCode = normalizeAssociationCode(initiatingAssociation.associationCode)
+
+    if (receivingAssociationCode === initiatingAssociationCode) {
+      throw new Error('The receiving association must be different from your current association.')
+    }
+
+    const [member, receivingAssociation] = await Promise.all([
+      db.member.findUnique({
+        select: {
+          associationCode: true,
+          clerkId: true,
+          firstName: true,
+          id: true,
+          lastAndMiddleNames: true,
+          memberMatriculationNumber: true,
+          memberStatus: true
+        },
+        where: {
+          id: memberId
+        }
+      }),
+      db.profile.findUnique({
+        select: {
+          associationCode: true,
+          clerkId: true
+        },
+        where: {
+          associationCode: receivingAssociationCode
+        }
+      })
+    ])
+
+    if (!member) {
+      throw new Error('Member not found.')
+    }
+
+    if (
+      normalizeAssociationCode(member.associationCode) !== initiatingAssociationCode ||
+      member.clerkId !== initiatingAssociation.clerkId
+    ) {
+      throw new Error('Only the current delegate association can initiate this member transfer.')
+    }
+
+    if (!receivingAssociation) {
+      throw new Error('Receiving delegate association profile was not found.')
+    }
+
+    const openRequest = await db.memberTransferRequest.findFirst({
+      select: {
+        id: true
+      },
+      where: {
+        memberId: member.id,
+        status: {
+          in: openMemberTransferRequestStatuses
+        }
+      }
+    })
+
+    if (openRequest) {
+      throw new Error('This member already has a member transfer request in progress.')
+    }
+
+    await db.memberTransferRequest.create({
+      data: {
+        currentFirstName: member.firstName,
+        currentLastAndMiddleNames: member.lastAndMiddleNames,
+        initiatingAssociationCode: initiatingAssociation.associationCode,
+        initiatingClerkId: initiatingAssociation.clerkId,
+        memberId: member.id,
+        memberMatriculationNumber: member.memberMatriculationNumber,
+        receivingAssociationCode: receivingAssociation.associationCode,
+        receivingClerkId: receivingAssociation.clerkId,
+        receivingReviewedAt: new Date(),
+        receivingReviewedBy: initiatingAssociation.clerkId,
+        status: 'receiving_delegate_approved'
+      }
+    })
+
+    revalidateMemberTransferViews()
+
+    return { message: 'Member transfer release sent to SAGI admin for review.' }
+  } catch (error) {
+    return renderError(error)
+  }
+}
+
 export const reviewIncomingMemberTransferRequestAction = async (
   prevState: any,
   formData: FormData
@@ -2633,7 +2744,7 @@ export const cancelMemberTransferRequestAction = async (prevState: { requestId: 
     }
 
     if (request.receivingClerkId !== user.id) {
-      throw new Error('Only the receiving delegate who requested this transfer can cancel it.')
+      throw new Error('Only the receiving delegate can cancel this transfer request.')
     }
 
     if (request.status === 'cancelled') {

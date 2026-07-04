@@ -9,7 +9,8 @@ import { fetchMemberTransferPageAction } from '@/utils/actions'
 import MemberTransferRequestForm from './MemberTransferRequestForm'
 
 const MemberTransferPage = async () => {
-  const { members, nextCancelledTransferRefreshAt, profile, requests } = await fetchMemberTransferPageAction()
+  const { currentMembers, members, nextCancelledTransferRefreshAt, profile, requests } =
+    await fetchMemberTransferPageAction()
 
   const incomingActionCount = requests.filter(
     request => request.initiatingClerkId === profile.clerkId && request.status === 'receiving_delegate_pending'
@@ -23,8 +24,8 @@ const MemberTransferPage = async () => {
         <div>
           <h1 className='text-2xl font-extrabold tracking-normal sm:text-3xl'>Member Transfer</h1>
           <p className='text-muted-foreground mt-1 text-sm'>
-            Request a member release into your delegate association and review release requests sent to your association
-            code.
+            Request a member into your delegate association, start a transfer out from your current association, and
+            review transfer requests.
           </p>
         </div>
         <Badge variant='outline' className='w-fit text-sm'>
@@ -54,19 +55,44 @@ const MemberTransferPage = async () => {
         </Card>
       ) : null}
 
-      {members.length === 0 ? (
-        <Card className='rounded-lg'>
-          <CardContent className='py-8 text-center'>
-            <ArrowLeftRight className='text-muted-foreground mx-auto mb-3 size-8' />
-            <p className='font-semibold'>No outside members available to request.</p>
-            <p className='text-muted-foreground mt-1 text-sm'>
-              Members under other association codes will appear here.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <MemberTransferRequestForm members={members} receivingAssociationCode={profile.associationCode} />
-      )}
+      <div className='grid gap-4 xl:grid-cols-2'>
+        {members.length === 0 ? (
+          <Card className='rounded-lg'>
+            <CardContent className='py-8 text-center'>
+              <ArrowLeftRight className='text-muted-foreground mx-auto mb-3 size-8' />
+              <p className='font-semibold'>No outside members available to request.</p>
+              <p className='text-muted-foreground mt-1 text-sm'>
+                Members under other association codes will appear here.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <MemberTransferRequestForm
+            currentAssociationCode={profile.associationCode}
+            members={members}
+            mode='incoming'
+            receivingAssociationCode={profile.associationCode}
+          />
+        )}
+
+        {currentMembers.length === 0 ? (
+          <Card className='rounded-lg'>
+            <CardContent className='py-8 text-center'>
+              <ArrowLeftRight className='text-muted-foreground mx-auto mb-3 size-8' />
+              <p className='font-semibold'>No current members available to transfer out.</p>
+              <p className='text-muted-foreground mt-1 text-sm'>
+                Members under your association code will appear here.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <MemberTransferRequestForm
+            currentAssociationCode={profile.associationCode}
+            members={currentMembers}
+            mode='outgoing'
+          />
+        )}
+      </div>
 
       <div className='grid gap-3'>
         <div className='flex items-center gap-2'>
