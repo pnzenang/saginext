@@ -150,6 +150,7 @@ const LanguageToggleInner = ({
 
     startTransition(() => {
       router.replace(redirectPath, { scroll: false })
+      router.refresh()
     })
   }
 
