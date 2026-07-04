@@ -477,6 +477,13 @@ const homeContent = {
       imageAlt: 'Family receiving compassionate guidance with support documents'
     },
     heroStats,
+    monthlyContributionCard: {
+      label: 'Monthly contribution',
+      amount: '$20 max',
+      title: 'per member, each month',
+      description:
+        'Members contribute up to $20 per month so the community can support eligible families when support is approved.'
+    },
     howIntro: {
       eyebrow: 'How SAGI works',
       title: 'A clear path from registration to family support.',
@@ -582,6 +589,13 @@ const homeContent = {
       imageAlt: 'Famille recevant un accompagnement compatissant avec des documents de soutien'
     },
     heroStats: frenchHeroStats,
+    monthlyContributionCard: {
+      label: 'Cotisation mensuelle',
+      amount: '20 $ max',
+      title: 'par membre, chaque mois',
+      description:
+        'Les membres cotisent jusqu’à 20 $ par mois afin que la communauté puisse soutenir les familles admissibles lorsque le soutien est approuvé.'
+    },
     howIntro: {
       eyebrow: 'Comment fonctionne SAGI',
       title: "Un chemin clair de l'inscription au soutien familial.",
@@ -822,6 +836,20 @@ function HeroSection({
               <p className='text-sm leading-6 text-white/72'>{stat.label}</p>
             </div>
           ))}
+        </div>
+
+        <div className='max-w-xl rounded-lg border border-white/55 bg-white/92 p-5 text-slate-950 shadow-xl shadow-slate-950/10 backdrop-blur-md'>
+          <div className='flex items-center gap-3'>
+            <div className='bg-primary/10 text-primary flex size-11 shrink-0 items-center justify-center rounded-lg'>
+              <CircleDollarSignIcon className='size-5' />
+            </div>
+            <div>
+              <p className='text-sm font-semibold text-slate-600'>{copy.monthlyContributionCard.label}</p>
+              <p className='text-lg font-semibold'>{copy.monthlyContributionCard.title}</p>
+            </div>
+          </div>
+          <p className='mt-4 text-4xl font-semibold tracking-tight'>{copy.monthlyContributionCard.amount}</p>
+          <p className='mt-3 text-sm leading-6 text-slate-700'>{copy.monthlyContributionCard.description}</p>
         </div>
       </div>
     </section>
