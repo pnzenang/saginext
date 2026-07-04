@@ -492,8 +492,8 @@ const homeContent = {
     },
     heroStats,
     monthlyContributionCard: {
-      deathCountLabel: 'Number of deaths',
-      title: (month: string, amount: string) => `${month}'s Contribution per member: ${amount}`
+      contributionLabel: (month: string) => `${month}'s Contribution per member`,
+      deathCountLabel: 'Number of deaths'
     },
     howIntro: {
       eyebrow: 'How SAGI works',
@@ -600,8 +600,8 @@ const homeContent = {
     },
     heroStats: frenchHeroStats,
     monthlyContributionCard: {
-      deathCountLabel: 'Nombre de décès',
-      title: (month: string, amount: string) => `Cotisation par membre de ${month} : ${amount}`
+      contributionLabel: (month: string) => `Cotisation par membre de ${month}`,
+      deathCountLabel: 'Nombre de décès'
     },
     howIntro: {
       eyebrow: 'Comment fonctionne SAGI',
@@ -870,15 +870,18 @@ function HeroSection({
           ))}
         </div>
 
-        <div className='grid w-full gap-4 rounded-lg border border-primary/35 bg-primary/20 px-4 py-3 text-white shadow-xl shadow-primary/15 backdrop-blur-md sm:px-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center'>
-          <div className='min-w-0'>
-            <p className='text-xl font-extrabold tracking-normal break-words sm:text-2xl'>
-              {copy.monthlyContributionCard.title(contributionMonth, contributionAmount)}
+        <div className='grid w-full gap-3 rounded-lg border border-white/45 bg-white/80 p-3 text-slate-950 shadow-xl shadow-slate-950/10 backdrop-blur-md sm:p-4 md:grid-cols-2'>
+          <div className='min-w-0 rounded-md border border-slate-950/10 bg-white/60 px-4 py-3'>
+            <p className='text-sm font-semibold text-slate-600'>
+              {copy.monthlyContributionCard.contributionLabel(contributionMonth)}
             </p>
+            <p className='text-2xl font-extrabold tabular-nums text-primary sm:text-3xl'>{contributionAmount}</p>
           </div>
-          <div className='min-w-0 md:text-right'>
-            <p className='text-sm font-semibold text-white/76'>{copy.monthlyContributionCard.deathCountLabel}</p>
-            <p className='text-2xl font-extrabold tabular-nums sm:text-3xl'>{heroContributionBanner.deathCount}</p>
+          <div className='min-w-0 rounded-md border border-slate-950/10 bg-white/60 px-4 py-3 md:text-right'>
+            <p className='text-sm font-semibold text-slate-600'>{copy.monthlyContributionCard.deathCountLabel}</p>
+            <p className='text-2xl font-extrabold tabular-nums text-primary sm:text-3xl'>
+              {heroContributionBanner.deathCount}
+            </p>
           </div>
         </div>
       </div>
