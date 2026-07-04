@@ -875,12 +875,14 @@ function HeroSection({
             <p className='text-sm font-semibold text-white/76'>
               {copy.monthlyContributionCard.contributionLabel(contributionMonth)}:
             </p>
-            <p className='text-2xl font-extrabold tabular-nums sm:text-3xl'>{contributionAmount}</p>
+            <p className='text-2xl font-extrabold tabular-nums text-emerald-300 sm:text-3xl'>
+              {contributionAmount}
+            </p>
           </div>
           <div aria-hidden='true' className='h-px w-full bg-white/25 md:h-12 md:w-px' />
           <div className='min-w-0 md:text-right'>
             <p className='text-sm font-semibold text-white/76'>{copy.monthlyContributionCard.deathCountLabel}:</p>
-            <p className='text-2xl font-extrabold tabular-nums sm:text-3xl'>
+            <p className='text-2xl font-extrabold tabular-nums text-purple-300 sm:text-3xl'>
               {heroContributionBanner.deathCount}
             </p>
           </div>
