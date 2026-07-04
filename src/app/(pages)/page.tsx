@@ -870,14 +870,14 @@ function HeroSection({
           ))}
         </div>
 
-        <div className='grid w-full gap-3 rounded-lg border border-primary/35 bg-primary/25 p-3 text-white shadow-xl shadow-primary/15 backdrop-blur-md sm:p-4 md:grid-cols-2'>
-          <div className='min-w-0 rounded-md border border-white/20 bg-primary/15 px-4 py-3'>
+        <div className='grid w-full gap-4 rounded-lg border border-primary/35 bg-primary/25 px-4 py-3 text-white shadow-xl shadow-primary/15 backdrop-blur-md sm:px-5 sm:py-4 md:grid-cols-2 md:items-center'>
+          <div className='min-w-0'>
             <p className='text-sm font-semibold text-white/76'>
               {copy.monthlyContributionCard.contributionLabel(contributionMonth)}
             </p>
             <p className='text-2xl font-extrabold tabular-nums sm:text-3xl'>{contributionAmount}</p>
           </div>
-          <div className='min-w-0 rounded-md border border-white/20 bg-primary/15 px-4 py-3 md:text-right'>
+          <div className='min-w-0 md:text-right'>
             <p className='text-sm font-semibold text-white/76'>{copy.monthlyContributionCard.deathCountLabel}</p>
             <p className='text-2xl font-extrabold tabular-nums sm:text-3xl'>
               {heroContributionBanner.deathCount}
