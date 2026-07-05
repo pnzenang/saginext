@@ -13,10 +13,10 @@ datasource db {
 }
 
 model Profile {
-  id                        String   @id @default(uuid())
-  clerkId                   String   @unique
+  id                        String    @id @default(uuid())
+  clerkId                   String    @unique
   associationName           String
-  associationCode           String   @unique
+  associationCode           String    @unique
   firstDelegateFullName     String
   firstDelegatePhoneNumber  String
   firstDelegateEmail        String
@@ -26,8 +26,9 @@ model Profile {
   thirdDelegateFullName     String
   thirdDelegatePhoneNumber  String
   thirdDelegateEmail        String
-  createdAt                 DateTime @default(now())
-  updateAt                  DateTime @updatedAt
+  internalRulesAcceptedAt   DateTime?
+  createdAt                 DateTime  @default(now())
+  updateAt                  DateTime  @updatedAt
 }
 
 model Member {

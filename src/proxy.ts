@@ -22,6 +22,10 @@ const getCanonicalProfilePath = (pathname: string) => {
 }
 
 export default clerkMiddleware(async (auth, req) => {
+  const requestHeaders = new Headers(req.headers)
+
+  requestHeaders.set('x-pathname', req.nextUrl.pathname)
+
   const canonicalProfilePath = getCanonicalProfilePath(req.nextUrl.pathname)
 
   if (canonicalProfilePath && canonicalProfilePath !== req.nextUrl.pathname) {
@@ -41,6 +45,12 @@ export default clerkMiddleware(async (auth, req) => {
   if (!isPublicRoute(req)) {
     await auth.protect()
   }
+
+  return NextResponse.next({
+    request: {
+      headers: requestHeaders
+    }
+  })
 })
 
 export const config = {

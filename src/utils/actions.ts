@@ -90,11 +90,13 @@ const getAuthUser = async () => {
       clerkId: userId
     },
     select: {
-      id: true
+      id: true,
+      internalRulesAcceptedAt: true
     }
   })
 
   if (!profile) redirect('/profile/create')
+  if (!profile.internalRulesAcceptedAt) redirect('/internal-rules')
 
   return { id: userId }
 }
@@ -708,8 +710,8 @@ export async function createProfileAction(prevState: any, formData: FormData) {
   return createProfileActionBase(prevState, formData)
 }
 
-export async function fetchProfile() {
-  return fetchProfileBase()
+export async function fetchProfile(options?: Parameters<typeof fetchProfileBase>[0]) {
+  return fetchProfileBase(options)
 }
 
 export async function updateProfileAction(prevState: any, formData: FormData): Promise<{ message: string }> {

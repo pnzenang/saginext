@@ -3,8 +3,9 @@ import type { ReactNode } from 'react'
 import { UserButton } from '@clerk/nextjs'
 import { auth } from '@clerk/nextjs/server'
 
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 
 import { LanguageToggle } from '@/components/global/LanguageToggle'
 import SidebarGroupedMenuItems from '@/components/dashboard/SidebarGroupedMenuItems'
@@ -35,7 +36,8 @@ const getDashboardAssociationIdentity = async () => {
   return db.profile.findUnique({
     select: {
       associationCode: true,
-      associationName: true
+      associationName: true,
+      internalRulesAcceptedAt: true
     },
     where: {
       clerkId: userId
@@ -43,9 +45,26 @@ const getDashboardAssociationIdentity = async () => {
   })
 }
 
+const internalRulesAcknowledgementAllowedPaths = new Set(['/internal-rules', '/profile/create'])
+
 const PagesLayout = async ({ children }: Readonly<{ children: ReactNode }>) => {
-  const [cookieStore, associationIdentity] = await Promise.all([cookies(), getDashboardAssociationIdentity()])
+  const [cookieStore, headerStore, associationIdentity] = await Promise.all([
+    cookies(),
+    headers(),
+    getDashboardAssociationIdentity()
+  ])
+
   const language = normalizeLanguage(cookieStore.get(languageCookieName)?.value)
+  const pathname = headerStore.get('x-pathname') ?? ''
+
+  if (
+    associationIdentity &&
+    !associationIdentity.internalRulesAcceptedAt &&
+    !internalRulesAcknowledgementAllowedPaths.has(pathname)
+  ) {
+    redirect('/internal-rules')
+  }
+
   const translatedPagesItems = translateDashboardMenuItems(pagesItems, language)
   const copy = dashboardText[language]
 

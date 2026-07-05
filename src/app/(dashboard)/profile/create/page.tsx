@@ -58,11 +58,12 @@ const CreateProfilePage = async () => {
       clerkId: userId
     },
     select: {
-      id: true
+      id: true,
+      internalRulesAcceptedAt: true
     }
   })
 
-  if (profile) redirect('/all-members')
+  if (profile) redirect(profile.internalRulesAcceptedAt ? '/all-members' : '/internal-rules')
 
   return (
     <section className='flex w-full min-w-0 flex-col overflow-hidden py-8 sm:py-10'>

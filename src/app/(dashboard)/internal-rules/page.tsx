@@ -9,20 +9,29 @@ import {
   Users,
   WalletCards
 } from 'lucide-react'
+import Link from 'next/link'
 
+import FormContainer from '@/components/forms/FormContainer'
+import { SubmitButton } from '@/components/forms/Buttons'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { fetchProfile } from '@/utils/profile-actions'
+import { acceptInternalRulesAction, fetchProfile } from '@/utils/profile-actions'
 import { internalRulesAtGlance, internalRulesDownloadFileName } from '@/utils/internal-rules-at-glance'
 
 const ruleIcons = [UserPlus, Users, Target, ShieldCheck, WalletCards, FileText, AlertTriangle]
 
+const acceptedDateFormatter = new Intl.DateTimeFormat('en-US', {
+  dateStyle: 'medium',
+  timeStyle: 'short'
+})
+
 const InternalRules = async () => {
-  await fetchProfile()
+  const profile = await fetchProfile({ requireInternalRulesAccepted: false })
+  const hasAcceptedInternalRules = Boolean(profile.internalRulesAcceptedAt)
 
   return (
-    <section className='mx-auto flex w-full max-w-7xl flex-col gap-6 px-2 py-4 sm:px-4 sm:py-6'>
+    <section className='flex w-full max-w-none flex-col gap-6 px-0 py-4 sm:py-6'>
       <div className='bg-muted/30 flex flex-col gap-4 rounded-lg border p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between'>
         <div className='max-w-3xl'>
           <Badge variant='secondary' className='mb-3 w-fit'>
@@ -44,7 +53,37 @@ const InternalRules = async () => {
         </Button>
       </div>
 
-      <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-3'>
+      <div className='border-primary/20 bg-primary/5 flex flex-col gap-4 rounded-lg border p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between'>
+        <div className='max-w-3xl'>
+          <h2 className='text-foreground text-lg font-semibold'>Internal Rules Acknowledgement</h2>
+          <p className='text-muted-foreground mt-2 text-sm leading-6'>
+            {hasAcceptedInternalRules
+              ? `Accepted on ${acceptedDateFormatter.format(profile.internalRulesAcceptedAt!)}.`
+              : 'Please read the Internal Rules PDF and confirm that you agree before continuing to the dashboard.'}
+          </p>
+        </div>
+        {hasAcceptedInternalRules ? (
+          <Button asChild className='w-full sm:w-fit'>
+            <Link href='/navigation-instructions'>Continue</Link>
+          </Button>
+        ) : (
+          <FormContainer action={acceptInternalRulesAction} className='max-w-2xl lg:max-w-xl'>
+            <label className='border-primary/30 bg-background flex items-start gap-3 rounded-md border p-4 text-sm leading-6'>
+              <input
+                className='border-primary mt-1 size-4 shrink-0 accent-current'
+                name='internalRulesAccepted'
+                required
+                type='checkbox'
+                value='accepted'
+              />
+              <span>I have read and agree to the terms in the SAGI Internal Rules.</span>
+            </label>
+            <SubmitButton text='Agree and Continue' className='mt-3 w-full sm:w-fit' />
+          </FormContainer>
+        )}
+      </div>
+
+      <div className='grid w-full gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'>
         {internalRulesAtGlance.map((rule, index) => {
           const Icon = ruleIcons[index] ?? CheckCircle2
 

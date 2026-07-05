@@ -39,7 +39,9 @@ export const createProfileAction = async (prevState: any, formData: FormData) =>
       }
     })
 
-    await (await clerkClient()).users.updateUserMetadata(userId, {
+    const client = await clerkClient()
+
+    await client.users.updateUserMetadata(userId, {
       privateMetadata: {
         hasProfile: true
       }
@@ -54,10 +56,14 @@ export const createProfileAction = async (prevState: any, formData: FormData) =>
     return renderError(error)
   }
 
-  redirect('/navigation-instructions')
+  redirect('/internal-rules')
 }
 
-export const fetchProfile = async () => {
+type FetchProfileOptions = {
+  requireInternalRulesAccepted?: boolean
+}
+
+export const fetchProfile = async ({ requireInternalRulesAccepted = true }: FetchProfileOptions = {}) => {
   const userId = await getRequiredUserId()
 
   const profile = await db.profile.findUnique({
@@ -68,7 +74,29 @@ export const fetchProfile = async () => {
 
   if (!profile) redirect('/profile/create')
 
+  if (requireInternalRulesAccepted && !profile.internalRulesAcceptedAt) redirect('/internal-rules')
+
   return profile
+}
+
+export const acceptInternalRulesAction = async (prevState: any, formData: FormData): Promise<{ message: string }> => {
+  const userId = await getRequiredUserId()
+  const accepted = formData.get('internalRulesAccepted') === 'accepted'
+
+  if (!accepted) {
+    return { message: 'Please acknowledge that you have read and agree to the Internal Rules.' }
+  }
+
+  await db.profile.update({
+    data: {
+      internalRulesAcceptedAt: new Date()
+    },
+    where: {
+      clerkId: userId
+    }
+  })
+
+  redirect('/navigation-instructions')
 }
 
 export const updateProfileAction = async (prevState: any, formData: FormData): Promise<{ message: string }> => {
