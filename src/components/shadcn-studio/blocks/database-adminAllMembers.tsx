@@ -76,7 +76,10 @@ import { cn } from '@/lib/utils'
 import { getTableCellLabel } from '@/utils/table'
 import { getSelectFilterValues } from '@/utils/table-filter-values'
 import { formatLongevity } from '@/utils/formatLongevity'
-import { getRegistrationPaymentDeadline, registrationPaymentDeadlineDays } from '@/utils/registration-payment-deadline'
+import {
+  registrationPaymentWarningDescription,
+  registrationPaymentWarningTitle
+} from '@/utils/registration-payment-deadline'
 import {
   awaitingPublicationVestingLongevityDays,
   getAwaitingPublicationVestingCutoff
@@ -93,12 +96,6 @@ declare module '@tanstack/react-table' {
 
 const numberFormatter = new Intl.NumberFormat('en-US')
 const formatNumber = (value: number) => numberFormatter.format(value)
-
-const deadlineDateFormatter = new Intl.DateTimeFormat('en-US', {
-  day: 'numeric',
-  month: 'short',
-  year: 'numeric'
-})
 
 const getVisibleMatriculationNumber = (status: unknown, matriculationNumber: unknown) => {
   if (status === memberStatus.Pending || status === memberStatus.Awaiting) return 'Pending'
@@ -143,9 +140,7 @@ const filterName = (row: Row<MemberType>, columnId: string, filterValue: unknown
 const getRegistrationPaymentWarning = (member: MemberType) => {
   if (member.memberStatus !== memberStatus.Pending) return 'No registration payment warning'
 
-  const deadline = deadlineDateFormatter.format(getRegistrationPaymentDeadline(member.createdAt))
-
-  return `Fee due by ${deadline}. Member will be deleted if fee is not received after ${registrationPaymentDeadlineDays} days.`
+  return `${registrationPaymentWarningTitle} ${registrationPaymentWarningDescription}`
 }
 
 const RegistrationPaymentWarningCell = ({ member }: { member: MemberType }) => {
@@ -158,7 +153,9 @@ const RegistrationPaymentWarningCell = ({ member }: { member: MemberType }) => {
   return (
     <div className='border-destructive/30 bg-destructive/10 text-destructive flex max-w-80 min-w-64 items-start gap-2 rounded-md border px-2.5 py-2 text-xs leading-5 whitespace-normal'>
       <AlertTriangle className='mt-0.5 size-4 shrink-0' aria-hidden='true' />
-      <span className='font-semibold'>{warning}</span>
+      <span>
+        <span className='font-semibold'>{registrationPaymentWarningTitle}</span> {registrationPaymentWarningDescription}
+      </span>
     </div>
   )
 }
