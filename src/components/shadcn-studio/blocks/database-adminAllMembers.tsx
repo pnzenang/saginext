@@ -76,6 +76,7 @@ import { cn } from '@/lib/utils'
 import { getTableCellLabel } from '@/utils/table'
 import { getSelectFilterValues } from '@/utils/table-filter-values'
 import { formatLongevity } from '@/utils/formatLongevity'
+import { getRegistrationPaymentDeadline, registrationPaymentDeadlineDays } from '@/utils/registration-payment-deadline'
 import {
   awaitingPublicationVestingLongevityDays,
   getAwaitingPublicationVestingCutoff
@@ -92,6 +93,12 @@ declare module '@tanstack/react-table' {
 
 const numberFormatter = new Intl.NumberFormat('en-US')
 const formatNumber = (value: number) => numberFormatter.format(value)
+
+const deadlineDateFormatter = new Intl.DateTimeFormat('en-US', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric'
+})
 
 const getVisibleMatriculationNumber = (status: unknown, matriculationNumber: unknown) => {
   if (status === memberStatus.Pending || status === memberStatus.Awaiting) return 'Pending'
@@ -131,6 +138,29 @@ const filterName = (row: Row<MemberType>, columnId: string, filterValue: unknown
   const name = String(row.getValue(columnId) ?? '').toLowerCase()
 
   return searchTerms.every(term => name.includes(term))
+}
+
+const getRegistrationPaymentWarning = (member: MemberType) => {
+  if (member.memberStatus !== memberStatus.Pending) return 'No registration payment warning'
+
+  const deadline = deadlineDateFormatter.format(getRegistrationPaymentDeadline(member.createdAt))
+
+  return `Fee due by ${deadline}. Member will be deleted if fee is not received after ${registrationPaymentDeadlineDays} days.`
+}
+
+const RegistrationPaymentWarningCell = ({ member }: { member: MemberType }) => {
+  const warning = getRegistrationPaymentWarning(member)
+
+  if (member.memberStatus !== memberStatus.Pending) {
+    return <span className='text-muted-foreground text-xs font-medium'>{warning}</span>
+  }
+
+  return (
+    <div className='border-destructive/30 bg-destructive/10 text-destructive flex max-w-80 min-w-64 items-start gap-2 rounded-md border px-2.5 py-2 text-xs leading-5 whitespace-normal'>
+      <AlertTriangle className='mt-0.5 size-4 shrink-0' aria-hidden='true' />
+      <span className='font-semibold'>{warning}</span>
+    </div>
+  )
 }
 
 const columns: ColumnDef<MemberType>[] = [
@@ -286,6 +316,14 @@ const columns: ColumnDef<MemberType>[] = [
       filterVariant: 'select'
     },
     size: 100
+  },
+  {
+    id: 'registrationPaymentWarning',
+    header: 'Registration Payment Warning',
+    accessorFn: row => getRegistrationPaymentWarning(row),
+    cell: ({ row }) => <RegistrationPaymentWarningCell member={row.original} />,
+    enableSorting: false,
+    size: 260
   },
   {
     header: 'Actions',
@@ -482,7 +520,8 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
         'First Name': row.getValue('firstName'),
         Longevity: formatLongevity(createdAt),
         Recommendation: row.getValue('delegateRecommendation'),
-        Status: row.getValue('memberStatus')
+        Status: row.getValue('memberStatus'),
+        'Registration Payment Warning': row.getValue('registrationPaymentWarning')
       }
     })
 
@@ -491,7 +530,16 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
 
     XLSX.utils.book_append_sheet(workbook, worksheet, 'All Members')
 
-    const cols = [{ wch: 12 }, { wch: 18 }, { wch: 28 }, { wch: 18 }, { wch: 32 }, { wch: 28 }, { wch: 22 }]
+    const cols = [
+      { wch: 12 },
+      { wch: 18 },
+      { wch: 28 },
+      { wch: 18 },
+      { wch: 32 },
+      { wch: 28 },
+      { wch: 22 },
+      { wch: 68 }
+    ]
 
     worksheet['!cols'] = cols
 

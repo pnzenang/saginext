@@ -1,3 +1,5 @@
+import { registrationPaymentDeadlineDays, registrationPaymentDeadlineLabel } from './registration-payment-deadline'
+
 const resendApiUrl = 'https://api.resend.com/emails'
 
 const emailDateFormatter = new Intl.DateTimeFormat('en-US', {
@@ -5,9 +7,6 @@ const emailDateFormatter = new Intl.DateTimeFormat('en-US', {
   month: 'long',
   year: 'numeric'
 })
-
-const registrationPaymentDeadlineDays = 60
-const registrationPaymentDeadlineLabel = 'sixty (60) days'
 
 type SendEmailOptions = {
   html: string
