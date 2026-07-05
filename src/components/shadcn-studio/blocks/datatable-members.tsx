@@ -63,7 +63,11 @@ import { usePersistentColumnFilters } from '@/hooks/use-persistent-column-filter
 import { usePagination } from '@/hooks/use-pagination'
 import { cn } from '@/lib/utils'
 import { registrationFeePerEligibleMember } from '@/utils/payment-constants'
-import { getRegistrationPaymentDeadline, registrationPaymentDeadlineDays } from '@/utils/registration-payment-deadline'
+import {
+  getRegistrationPaymentCountdown,
+  getRegistrationPaymentCountdownLabel,
+  registrationPaymentDeadlineDays
+} from '@/utils/registration-payment-deadline'
 import type { AssociationContributionSummary } from '@/utils/sagi-contribution-summary'
 import type { AssociationRegistrationSummary } from '@/utils/sagi-registration-summary'
 import { getTableCellLabel } from '@/utils/table'
@@ -141,9 +145,11 @@ const filterName = (row: Row<MemberType>, columnId: string, filterValue: unknown
 const getRegistrationPaymentWarning = (member: MemberType) => {
   if (member.memberStatus !== memberStatus.Pending) return 'No registration payment warning'
 
-  const deadline = deadlineDateFormatter.format(getRegistrationPaymentDeadline(member.createdAt))
+  const countdown = getRegistrationPaymentCountdown(member.createdAt)
+  const countdownLabel = getRegistrationPaymentCountdownLabel(countdown.daysRemaining)
+  const deadline = deadlineDateFormatter.format(countdown.deadline)
 
-  return `Fee due by ${deadline}. Member will be deleted if fee is not received after ${registrationPaymentDeadlineDays} days.`
+  return `${countdownLabel}. Fee due by ${deadline}. Member will be deleted if fee is not received after ${registrationPaymentDeadlineDays} days.`
 }
 
 const RegistrationPaymentWarningCell = ({ member }: { member: MemberType }) => {

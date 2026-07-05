@@ -21,6 +21,7 @@ import {
   memberStatus,
   memberTransferRequestStatuses,
   nameChangeRequestStatuses,
+  reasonForLeaving,
   type DeceasedMemberDocumentStatus,
   type DeceasedMemberDocumentType,
   type MemberTransferRequestStatus,
@@ -33,6 +34,7 @@ import {
   fetchLatestAssociationContributionAssessment
 } from './sagi-contribution-summary'
 import { awaitingPublicationVestingLongevityDays, getAwaitingPublicationVestingCutoff } from './sagi-member-longevity'
+import { getOverdueRegistrationPaymentCreatedAtCutoff } from './registration-payment-deadline'
 import { registrationBalanceAdjustmentType, registrationFeePerEligibleMember } from './sagi-registration-summary'
 import { contributionPaymentAlertType, registrationPaymentAlertType } from './payment-constants'
 import {
@@ -2767,7 +2769,11 @@ export const submitOutgoingMemberTransferRequestAction = async (
 
   try {
     const memberId = getRequiredFormValue(formData, 'memberId')
-    const receivingAssociationCode = normalizeAssociationCode(getRequiredFormValue(formData, 'receivingAssociationCode'))
+
+    const receivingAssociationCode = normalizeAssociationCode(
+      getRequiredFormValue(formData, 'receivingAssociationCode')
+    )
+
     const initiatingAssociation = await fetchProfile()
     const initiatingAssociationCode = normalizeAssociationCode(initiatingAssociation.associationCode)
 
@@ -3242,6 +3248,84 @@ export const createRemovedMemberActionAdmin = async (
   }
 
   redirect('/admin-all-members')
+}
+
+export const removeOverduePendingMembersAction = async (): Promise<{ message: string }> => {
+  const { userId } = await auth()
+
+  if (!userId) {
+    throw new Error('You must be logged in to access this action')
+  }
+
+  try {
+    const isAdminUser = userId === process.env.ADMIN_USER_ID
+    const overdueCutoff = getOverdueRegistrationPaymentCreatedAtCutoff()
+
+    const overdueMembers = await db.member.findMany({
+      where: {
+        ...(isAdminUser ? {} : { clerkId: userId }),
+        createdAt: {
+          lt: overdueCutoff
+        },
+        memberStatus: memberStatus.Pending
+      }
+    })
+
+    if (overdueMembers.length === 0) {
+      return { message: 'No overdue pending members were found.' }
+    }
+
+    const overdueMemberIds = overdueMembers.map(member => member.id)
+    const overdueMemberMatriculationNumbers = overdueMembers.map(member => member.memberMatriculationNumber)
+
+    await db.$transaction(async tx => {
+      await tx.removedMember.createMany({
+        data: overdueMembers.map(member => ({
+          associationCode: member.associationCode,
+          associationName: member.associationName,
+          clerkId: member.clerkId,
+          countryOfResidence: member.countryOfResidence,
+          dateOfBirth: member.dateOfBirth,
+          delegateRecommendation: member.delegateRecommendation,
+          firstName: member.firstName,
+          lastAndMiddleNames: member.lastAndMiddleNames,
+          memberMatriculationNumber: member.memberMatriculationNumber,
+          memberStatus: member.memberStatus,
+          nameOfBeneficiary: member.nameOfBeneficiary,
+          originalMemberCreatedAt: member.createdAt,
+          originalMemberId: member.id,
+          reasonForLeaving: reasonForLeaving.NoReason,
+          registrationDate: formatRegistrationDate(member.createdAt)
+        }))
+      })
+
+      await tx.associationRegistrationUsage.deleteMany({
+        where: {
+          memberMatriculationNumber: {
+            in: overdueMemberMatriculationNumbers
+          }
+        }
+      })
+
+      await tx.member.deleteMany({
+        where: {
+          id: {
+            in: overdueMemberIds
+          }
+        }
+      })
+    })
+
+    revalidatePaymentViews()
+    revalidatePath('/removed-members')
+    revalidatePath('/admin-all-removed')
+
+    return {
+      message: `${overdueMembers.length} overdue pending member${overdueMembers.length === 1 ? '' : 's'} moved to Removed Members.`
+    }
+  } catch (error) {
+    return renderError(error)
+  }
 }
 
 export const fetchRemovedMembersAction = async () => {

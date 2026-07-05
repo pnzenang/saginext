@@ -44,6 +44,7 @@ import { toast } from 'sonner'
 import * as XLSX from 'xlsx'
 
 import PaginationControls from '@/components/global/PaginationControls'
+import RemoveOverduePendingMembersButton from '@/components/global/RemoveOverduePendingMembersButton'
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -76,7 +77,12 @@ import { cn } from '@/lib/utils'
 import { getTableCellLabel } from '@/utils/table'
 import { getSelectFilterValues } from '@/utils/table-filter-values'
 import { formatLongevity } from '@/utils/formatLongevity'
-import { getRegistrationPaymentDeadline, registrationPaymentDeadlineDays } from '@/utils/registration-payment-deadline'
+import {
+  getRegistrationPaymentCountdown,
+  getRegistrationPaymentCountdownLabel,
+  getOverdueRegistrationPaymentCreatedAtCutoff,
+  registrationPaymentDeadlineDays
+} from '@/utils/registration-payment-deadline'
 import {
   awaitingPublicationVestingLongevityDays,
   getAwaitingPublicationVestingCutoff
@@ -143,9 +149,11 @@ const filterName = (row: Row<MemberType>, columnId: string, filterValue: unknown
 const getRegistrationPaymentWarning = (member: MemberType) => {
   if (member.memberStatus !== memberStatus.Pending) return 'No registration payment warning'
 
-  const deadline = deadlineDateFormatter.format(getRegistrationPaymentDeadline(member.createdAt))
+  const countdown = getRegistrationPaymentCountdown(member.createdAt)
+  const countdownLabel = getRegistrationPaymentCountdownLabel(countdown.daysRemaining)
+  const deadline = deadlineDateFormatter.format(countdown.deadline)
 
-  return `Fee due by ${deadline}. Member will be deleted if fee is not received after ${registrationPaymentDeadlineDays} days.`
+  return `${countdownLabel}. Fee due by ${deadline}. Member will be deleted if fee is not received after ${registrationPaymentDeadlineDays} days.`
 }
 
 const RegistrationPaymentWarningCell = ({ member }: { member: MemberType }) => {
@@ -462,6 +470,14 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
     }
   ]
 
+  const overduePendingMembersCount = useMemo(() => {
+    const overdueCutoffTime = getOverdueRegistrationPaymentCreatedAtCutoff().getTime()
+
+    return data.filter(
+      member => member.memberStatus === memberStatus.Pending && new Date(member.createdAt).getTime() < overdueCutoffTime
+    ).length
+  }, [data])
+
   const exportToCSV = () => {
     const selectedRows = table.getSelectedRowModel().rows
 
@@ -695,6 +711,7 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
                     </form>
                   </AlertDialogContent>
                 </AlertDialog>
+                <RemoveOverduePendingMembersButton overdueCount={overduePendingMembersCount} />
                 <Button
                   type='button'
                   onClick={exportVisibleColumnsToExcel}
