@@ -892,18 +892,30 @@ export const fetchMemberStatusCountsByAssociationCode = async () => {
 }
 
 const fetchContributionCalculationSummary = async () => {
-  const summary = await db.contributionCalculationDeath.aggregate({
-    _count: {
-      _all: true
-    },
-    _sum: {
-      amountToContribute: true
-    }
-  })
+  const [summary, adminFee] = await Promise.all([
+    db.contributionCalculationDeath.aggregate({
+      _count: {
+        _all: true
+      },
+      _sum: {
+        amountToContribute: true
+      }
+    }),
+    db.contributionCalculationAdminFee.findUnique({
+      where: {
+        id: 'current'
+      }
+    })
+  ])
+
+  const deathAmount = roundCurrencyAmount(decimalToNumber(summary._sum.amountToContribute))
+  const adminFeeAmount = roundCurrencyAmount(decimalToNumber(adminFee?.amount))
 
   return {
+    adminFee: adminFeeAmount,
+    deathAmount,
     deathCount: summary._count._all,
-    totalAmount: roundCurrencyAmount(decimalToNumber(summary._sum.amountToContribute))
+    totalAmount: roundCurrencyAmount(deathAmount + adminFeeAmount)
   }
 }
 
@@ -921,7 +933,7 @@ export const createAssociationContributionAssessmentAction = async (
 
   try {
     const dueDate = getRequiredDateFromForm(formData, 'dueDate')
-    const { deathCount, totalAmount } = await fetchContributionCalculationSummary()
+    const { adminFee, deathCount, totalAmount } = await fetchContributionCalculationSummary()
 
     if (deathCount === 0 || totalAmount <= 0) {
       throw new Error('Add at least one death with an amount in Contribution Calculation before distributing.')
@@ -974,7 +986,7 @@ export const createAssociationContributionAssessmentAction = async (
           associationCode: group.associationCode,
           createdBy: user.id,
           eventType: associationPaymentLedgerEventTypes.dueOffset,
-          note: `Contribution due created for ${group.vestedMembersCount} vested member(s). Number of deaths in calculation: ${deathCount}.`,
+          note: `Contribution due created for ${group.vestedMembersCount} vested member(s). Number of deaths in calculation: ${deathCount}. Admin fee: ${currencyFormatter.format(adminFee)}.`,
           paymentType: associationPaymentTypes.contribution
         }))
       })
@@ -983,7 +995,7 @@ export const createAssociationContributionAssessmentAction = async (
     revalidatePaymentViews()
 
     return {
-      message: `Distributed ${currencyFormatter.format(totalAmount)} across ${vestedMembers.length} vested members. Each vested member is ${currencyFormatter.format(amountPerVestedMember)}. Number of deaths in calculation: ${deathCount}.`
+      message: `Distributed ${currencyFormatter.format(totalAmount)} across ${vestedMembers.length} vested members. Each vested member is ${currencyFormatter.format(amountPerVestedMember)}. Number of deaths in calculation: ${deathCount}. Admin fee: ${currencyFormatter.format(adminFee)}.`
     }
   } catch (error) {
     return renderError(error)
@@ -3584,6 +3596,40 @@ export const fetchDeceasedMembersActionAdmin = async () => {
   return deceasedMember
 }
 
+export const saveContributionCalculationAdminFeeAction = async (
+  prevState: any,
+  formData: FormData
+): Promise<{ message: string }> => {
+  const user = await assertAdminUser()
+
+  try {
+    const adminFee = getPositiveDollarAmountFromForm(formData, 'adminFee')
+
+    await db.contributionCalculationAdminFee.upsert({
+      create: {
+        amount: adminFee,
+        createdBy: user.id,
+        id: 'current'
+      },
+      update: {
+        amount: adminFee,
+        createdBy: user.id
+      },
+      where: {
+        id: 'current'
+      }
+    })
+
+    revalidatePath('/admin-contribution-calculation')
+    revalidatePath('/admin-contribution-payments')
+    revalidatePath('/admin-contribution-payments')
+
+    return { message: `Admin fee saved: ${currencyFormatter.format(adminFee)}.` }
+  } catch (error) {
+    return renderError(error)
+  }
+}
+
 export const addContributionCalculationDeathAction = async (
   prevState: any,
   formData: FormData
@@ -3698,6 +3744,7 @@ export const deleteContributionCalculationDeathAction = async (formData: FormDat
   })
 
   revalidatePath('/admin-contribution-calculation')
+  revalidatePath('/admin-contribution-payments')
 }
 
 export const restoreDeceasedMemberAction = async (prevState: { deceasedMemberId: string }) => {

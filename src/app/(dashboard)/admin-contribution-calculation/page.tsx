@@ -11,7 +11,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import {
   addContributionCalculationDeathAction,
   deleteContributionCalculationDeathAction,
-  fetchContributionCalculationDeathsAction
+  fetchContributionCalculationDeathsAction,
+  fetchContributionCalculationSummaryAction,
+  saveContributionCalculationAdminFeeAction
 } from '@/utils/actions'
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
@@ -30,8 +32,10 @@ const formatDate = (value: string) => {
 }
 
 const ContributionCalculationPage = async () => {
-  const calculationDeaths = await fetchContributionCalculationDeathsAction()
-  const totalAmountToContribute = calculationDeaths.reduce((total, death) => total + death.amountToContribute, 0)
+  const [calculationDeaths, calculationSummary] = await Promise.all([
+    fetchContributionCalculationDeathsAction(),
+    fetchContributionCalculationSummaryAction()
+  ])
 
   return (
     <section className='flex w-full min-w-0 flex-col gap-6 overflow-hidden py-8 sm:py-10'>
@@ -91,19 +95,50 @@ const ContributionCalculationPage = async () => {
 
       <Card className='w-full max-w-full min-w-0 overflow-hidden'>
         <CardHeader className='min-w-0'>
-          <div className='flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'>
-            <div className='min-w-0'>
-              <CardTitle className='break-words'>Deaths To Be Contributed</CardTitle>
-              <CardDescription className='mt-1 break-words'>
-                Review the deaths selected for the current contribution calculation.
-              </CardDescription>
+          <div className='flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between'>
+            <div className='flex min-w-0 flex-col gap-4 lg:flex-row lg:items-end'>
+              <div className='min-w-0'>
+                <CardTitle className='break-words'>Deaths To Be Contributed</CardTitle>
+                <CardDescription className='mt-1 break-words'>
+                  Review the deaths selected for the current contribution calculation.
+                </CardDescription>
+              </div>
+
+              <FormContainer
+                action={saveContributionCalculationAdminFeeAction}
+                className='flex max-w-full flex-col gap-2 sm:w-auto sm:min-w-96 sm:flex-row sm:items-end'
+              >
+                <div className='grid min-w-0 flex-1 gap-2'>
+                  <Label htmlFor='adminFee'>Admin Fee</Label>
+                  <div className='relative'>
+                    <DollarSign className='text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2' />
+                    <Input
+                      id='adminFee'
+                      name='adminFee'
+                      type='number'
+                      inputMode='decimal'
+                      min='0.01'
+                      step='0.01'
+                      placeholder='0.00'
+                      defaultValue={calculationSummary.adminFee > 0 ? calculationSummary.adminFee : undefined}
+                      className='bg-background pl-9'
+                      required
+                    />
+                  </div>
+                </div>
+                <SubmitButton text='Save Fee' className='h-10 w-full sm:w-auto' />
+              </FormContainer>
             </div>
+
             <div className='flex flex-wrap gap-2'>
               <Badge variant='outline' className='h-9 rounded-md px-3 text-sm font-semibold'>
                 {calculationDeaths.length} death{calculationDeaths.length === 1 ? '' : 's'}
               </Badge>
               <Badge variant='secondary' className='h-9 rounded-md px-3 text-sm font-semibold'>
-                {currencyFormatter.format(totalAmountToContribute)}
+                Deaths: {currencyFormatter.format(calculationSummary.deathAmount)}
+              </Badge>
+              <Badge variant='secondary' className='h-9 rounded-md px-3 text-sm font-semibold'>
+                Total: {currencyFormatter.format(calculationSummary.totalAmount)}
               </Badge>
             </div>
           </div>
