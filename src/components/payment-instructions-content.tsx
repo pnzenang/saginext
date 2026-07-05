@@ -1,6 +1,15 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowRight, CheckCircle2, CreditCard, FileText, ShieldCheck, Upload, WalletCards } from 'lucide-react'
+import {
+  AlertTriangle,
+  ArrowRight,
+  CheckCircle2,
+  CreditCard,
+  FileText,
+  ShieldCheck,
+  Upload,
+  WalletCards
+} from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -18,6 +27,11 @@ const paymentInstructionsCopy = {
       'Send your payment first, then record it in the correct SAGI payment page so the admin team can match the money to your group without delays.',
     memoReminder: (memoCode: string) =>
       `Add ${memoCode} in the Zelle memo so the payment can be matched to your association.`,
+    pendingMemberWarning: {
+      title: 'Pending member deadline:',
+      description:
+        'Pending members have seventy (70) days to send the registration fee. If the fee is not received within seventy (70) days, the pending member will be deleted.'
+    },
     contributionsCta: 'Contributions Payments',
     registrationsCta: 'Registration Payments',
     memoCodePlaceholder: 'SAGI-USA-{association 4-letter code}',
@@ -78,6 +92,11 @@ const paymentInstructionsCopy = {
       "Envoyez d'abord votre paiement, puis enregistrez-le sur la bonne page de paiement SAGI afin que l'équipe administrative puisse associer l'argent à votre groupe sans délai.",
     memoReminder: (memoCode: string) =>
       `Ajoutez ${memoCode} dans le mémo Zelle afin que le paiement soit associé à votre association.`,
+    pendingMemberWarning: {
+      title: 'Délai pour les membres en attente :',
+      description:
+        "Les membres en attente ont soixante-dix (70) jours pour envoyer les frais d'inscription. Si les frais ne sont pas reçus dans les soixante-dix (70) jours, le membre en attente sera supprimé."
+    },
     contributionsCta: 'Paiements des cotisations',
     registrationsCta: "Paiements d'inscription",
     memoCodePlaceholder: "SAGI-USA-{code d'association à 4 lettres}",
@@ -149,12 +168,17 @@ const PaymentInstructionsContent = ({ associationCode, language = 'en' }: Paymen
           <Badge className='mb-4 w-fit' variant='secondary'>
             {copy.badge}
           </Badge>
-          <h1 className='text-foreground max-w-3xl text-3xl font-semibold tracking-normal sm:text-4xl'>
-            {copy.title}
-          </h1>
+          <h1 className='text-foreground max-w-3xl text-3xl font-semibold tracking-normal sm:text-4xl'>{copy.title}</h1>
           <p className='text-muted-foreground mt-4 max-w-3xl text-base leading-7'>
             {copy.intro} <span className='text-primary font-bold'>{copy.memoReminder(memoCode)}</span>
           </p>
+          <div className='border-destructive/30 bg-destructive/10 text-destructive mt-5 flex max-w-3xl gap-3 rounded-md border p-4 text-sm leading-6'>
+            <AlertTriangle className='mt-0.5 size-5 shrink-0' aria-hidden='true' />
+            <p>
+              <span className='font-semibold'>{copy.pendingMemberWarning.title}</span>{' '}
+              {copy.pendingMemberWarning.description}
+            </p>
+          </div>
           <div className='mt-6 flex flex-col gap-3 sm:flex-row'>
             <Button asChild>
               <Link href='/contributions'>

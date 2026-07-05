@@ -6,6 +6,9 @@ const emailDateFormatter = new Intl.DateTimeFormat('en-US', {
   year: 'numeric'
 })
 
+const registrationPaymentDeadlineDays = 70
+const registrationPaymentDeadlineLabel = 'seventy (70) days'
+
 type SendEmailOptions = {
   html: string
   subject: string
@@ -117,7 +120,7 @@ export const sendMemberAdditionAcknowledgmentEmail = async ({
 }: SendMemberAdditionAcknowledgmentEmailOptions) => {
   const registrationDeadline = new Date(memberAddedAt)
 
-  registrationDeadline.setDate(registrationDeadline.getDate() + 60)
+  registrationDeadline.setDate(registrationDeadline.getDate() + registrationPaymentDeadlineDays)
 
   const feeAmount = formatCurrency(registrationFeeAmount)
   const formattedDeadline = emailDateFormatter.format(registrationDeadline)
@@ -138,7 +141,7 @@ export const sendMemberAdditionAcknowledgmentEmail = async ({
         </p>
         <p>
           The next step in the registration is to send the <strong>${safeFeeAmount}</strong>
-          registration fee within 60 days.
+          registration fee within ${registrationPaymentDeadlineLabel}.
         </p>
         <p>
           <strong>Registration payment deadline:</strong> ${safeRegistrationDeadline}
@@ -152,7 +155,7 @@ export const sendMemberAdditionAcknowledgmentEmail = async ({
       '',
       `Thank you for adding ${memberName} to ${associationName}. This addition helps grow the SAGI family.`,
       '',
-      `The next step in the registration is to send the ${feeAmount} registration fee within 60 days.`,
+      `The next step in the registration is to send the ${feeAmount} registration fee within ${registrationPaymentDeadlineLabel}.`,
       '',
       `Registration payment deadline: ${formattedDeadline}`,
       '',

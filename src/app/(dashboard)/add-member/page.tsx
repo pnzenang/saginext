@@ -5,18 +5,21 @@ import FormSelect from '@/components/forms/FormSelect'
 import MaskDateInput from '@/components/forms/MaskDateInput'
 import { getDashboardLanguage } from '@/lib/get-dashboard-language'
 import { createMemberAction, fetchProfile } from '@/utils/actions'
-import { countryOfResidenceOptions, defaultCountryOfResidence, delegateRecommendation, memberStatus } from '@/utils/types'
+import {
+  countryOfResidenceOptions,
+  defaultCountryOfResidence,
+  delegateRecommendation,
+  memberStatus
+} from '@/utils/types'
 
 const addMemberCopy = {
   en: {
     title: 'add new member',
     introLabel: 'Please read first: ',
-    intro:
-      'Adding members is the first step toward their registration, the waiting period is at least 60 days within which,',
+    intro: 'Adding members is the first step toward their registration. The waiting period is at least 60 days, and',
     introBold:
-      'their $20 registration fees should be received by the admin before they start participating in the program. Also, if the registration fees is not received within the 60 days, the members will be removed from our database.',
-    introAfter:
-      'When you are ready to pay for their registration fee and their anticipated contribution, go to',
+      'their $20 registration fees should be received by the admin within seventy (70) days. Pending members should not start participating in the program before the fee is received. If the registration fees are not received within seventy (70) days, the pending members will be deleted from our database.',
+    introAfter: 'When you are ready to pay for their registration fee and their anticipated contribution, go to',
     registrationPayments: 'Registration Payments',
     introAfterLink: 'in the sidebar to send and record the registration payments of the members you are registering.',
     warning: 'Not following these steps may delay your registration.',
@@ -37,11 +40,10 @@ const addMemberCopy = {
     title: 'ajouter un nouveau membre',
     introLabel: "Veuillez lire d'abord : ",
     intro:
-      "L'ajout d'un membre est la première étape de son inscription. La période d'attente est d'au moins 60 jours pendant laquelle",
+      "L'ajout d'un membre est la première étape de son inscription. La période d'attente est d'au moins 60 jours, et",
     introBold:
-      "les frais d'inscription de 20 $ doivent être reçus par l'administration avant que le membre commence à participer au programme. Si les frais d'inscription ne sont pas reçus dans les 60 jours, le membre sera retiré de notre base de données.",
-    introAfter:
-      "Lorsque vous êtes prêt à payer les frais d'inscription et la contribution prévue, allez à",
+      "les frais d'inscription de 20 $ doivent être reçus par l'administration dans les soixante-dix (70) jours. Les membres en attente ne doivent pas commencer à participer au programme avant la réception des frais. Si les frais d'inscription ne sont pas reçus dans les soixante-dix (70) jours, les membres en attente seront supprimés de notre base de données.",
+    introAfter: "Lorsque vous êtes prêt à payer les frais d'inscription et la contribution prévue, allez à",
     registrationPayments: "Paiements d'inscription",
     introAfterLink:
       "dans la barre latérale pour envoyer et enregistrer les paiements d'inscription des membres que vous inscrivez.",
@@ -79,16 +81,17 @@ const AddMember = async () => {
       <div className='border-primary bg-muted rounded-lg border p-3 sm:p-8'>
         <FormContainer action={createMemberAction}>
           <div className='mt-4 grid gap-4 md:grid-cols-3'>
-            <FormInput
-              type='text'
-              name='lastAndMiddleNames'
-              label={copy.labels.lastAndMiddleNames}
-            />
+            <FormInput type='text' name='lastAndMiddleNames' label={copy.labels.lastAndMiddleNames} />
             {/* <FormInputS type='text' name='middleName' label='member middle name' /> */}
             <FormInput type='text' name='firstName' label={copy.labels.firstName} />
             {/* </div>
           <div className='mt-4 grid gap-4 md:grid-cols-3'> */}
-            <MaskDateInput type='text' name='dateOfBirth' label={copy.labels.dateOfBirth} placeholder='MM / DD / YYYY' />
+            <MaskDateInput
+              type='text'
+              name='dateOfBirth'
+              label={copy.labels.dateOfBirth}
+              placeholder='MM / DD / YYYY'
+            />
             <FormSelect
               name='countryOfResidence'
               label={copy.labels.countryOfResidence}

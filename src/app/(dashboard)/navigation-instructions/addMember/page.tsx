@@ -231,12 +231,12 @@ const AddingPageInstruction = () => {
         </CardHeader>
         <CardContent className='text-muted-foreground space-y-3 text-sm leading-6'>
           <p>
-            The waiting period is at least 60 days. The $20 registration fee should be received within that period
+            The waiting period is at least 60 days. The $20 registration fee should be received within seventy (70) days
             before the member starts participating in the program.
           </p>
           <p>
-            If the registration fee is not received within 60 days, the pending member may be removed from the database.
-            After submitting the member, use Registration Payments to send and record the payment.
+            If the registration fee is not received within seventy (70) days, the pending member will be deleted from
+            the database. After submitting the member, use Registration Payments to send and record the payment.
           </p>
         </CardContent>
       </Card>
