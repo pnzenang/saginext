@@ -44,8 +44,8 @@ const ContributionAssessmentForm = ({
       <CardHeader className='border-primary/20 min-w-0 border-b py-5'>
         <CardTitle className='text-xl leading-tight break-words'>Amount to be contributed this month</CardTitle>
         <CardDescription className='break-words'>
-          The monthly contribution total comes from Contribution Calculation. SAGI divides it by all vested members,
-          then multiplies that amount by the number of vested members under each 4-letter association code.
+          The monthly contribution total comes from Contribution Calculation. Publish Contribution saves the death table
+          and divides the total by all vested members, then multiplies that amount by each association&apos;s vested members.
         </CardDescription>
       </CardHeader>
       <CardContent className='min-w-0 py-5'>
@@ -88,7 +88,7 @@ const ContributionAssessmentForm = ({
               </div>
 
               <SubmitButton
-                text='Distribute To Associations'
+                text='Publish Contribution'
                 disabled={!hasContributionCalculation}
                 className='h-auto min-h-10 w-full min-w-0 px-3 py-2 text-center leading-tight whitespace-normal'
               />
@@ -125,7 +125,7 @@ const ContributionAssessmentForm = ({
             <p className='text-muted-foreground text-sm'>Vested members currently counted: {vestedMembersCount}</p>
             {!hasContributionCalculation ? (
               <p className='text-destructive text-sm font-medium'>
-                Add at least one death in Contribution Calculation before distributing.
+                Add at least one death in Contribution Calculation before publishing.
               </p>
             ) : null}
             {state.message ? <p className='text-primary text-sm font-medium'>{state.message}</p> : null}

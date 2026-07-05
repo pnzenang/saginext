@@ -1,31 +1,13 @@
 import type { ReactNode } from 'react'
 
 import { ClerkProvider } from '@clerk/nextjs'
-import { Inter, Lora, Roboto_Mono } from 'next/font/google'
 import type { Metadata } from 'next'
 
 import { Toaster } from '@/components/ui/sonner'
 import { ThemeProvider } from '@/components/theme-provider'
 import { TooltipProvider } from '@/components/ui/tooltip'
 
-import { cn } from '@/lib/utils'
-
 import './globals.css'
-
-const inter = Inter({
-  variable: '--font-sans',
-  subsets: ['latin']
-})
-
-const lora = Lora({
-  variable: '--font-serif',
-  subsets: ['latin']
-})
-
-const robotoMono = Roboto_Mono({
-  variable: '--font-mono',
-  subsets: ['latin']
-})
 
 export const metadata: Metadata = {
   title: {
@@ -115,11 +97,7 @@ export const metadata: Metadata = {
 
 const RootLayout = ({ children }: Readonly<{ children: ReactNode }>) => {
   return (
-    <html
-      lang='en'
-      className={cn(inter.variable, lora.variable, robotoMono.variable, 'flex min-h-full w-full scroll-smooth')}
-      suppressHydrationWarning
-    >
+    <html lang='en' className='flex min-h-full w-full scroll-smooth' suppressHydrationWarning>
       <body className='flex min-h-full w-full flex-auto flex-col overflow-x-hidden'>
         <ClerkProvider>
           <ThemeProvider attribute='class' enableSystem={false} disableTransitionOnChange>

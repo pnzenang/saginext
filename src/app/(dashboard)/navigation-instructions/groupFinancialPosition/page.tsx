@@ -15,19 +15,20 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { getContributionTableLabel } from '@/utils/contribution-table-label'
 
-const excessPaymentSteps = [
+const getExcessPaymentSteps = (contributionTableLabel: string) => [
   {
     icon: WalletCards,
     title: 'Check the required amount',
     description:
-      'Start by checking the Contribution Table and find the amount listed for your group in front of your 4-letter code.'
+      `Start by checking the ${contributionTableLabel} and find the amount listed for your group in front of your 4-letter code.`
   },
   {
     icon: TrendingUp,
     title: 'Sending more is allowed',
     description:
-      'A delegate can send more than the amount needed in the Contribution Table. The extra amount becomes an excess for the group.'
+      `A delegate can send more than the amount needed in the ${contributionTableLabel}. The extra amount becomes an excess for the group.`
   },
   {
     icon: Hash,
@@ -67,6 +68,9 @@ const avoidConfusionItems = [
 ]
 
 const GroupFinancialPositions = () => {
+  const contributionTableLabel = getContributionTableLabel()
+  const excessPaymentSteps = getExcessPaymentSteps(contributionTableLabel)
+
   return (
     <section className='flex w-full max-w-full min-w-0 flex-col gap-6 px-3 py-4 sm:px-6 sm:py-6 lg:px-8'>
       <div className='bg-card rounded-lg border p-6 shadow-sm sm:p-8'>
@@ -80,8 +84,8 @@ const GroupFinancialPositions = () => {
             </h1>
             <div className='text-muted-foreground mt-4 max-w-4xl space-y-3 text-base leading-7'>
               <p>
-                A delegate can send more than the amount needed in the Contribution Table. When this happens, the extra
-                amount is kept in Financial Positions and shown as an excess for that group.
+                A delegate can send more than the amount needed in the {contributionTableLabel}. When this happens, the
+                extra amount is kept in Financial Positions and shown as an excess for that group.
               </p>
               <p>
                 Even when sending more than required, use the same SAGI bank code or payment information and include
@@ -101,7 +105,7 @@ const GroupFinancialPositions = () => {
                 </Link>
               </Button>
               <Button asChild variant='outline'>
-                <Link href='/contribution-table'>Check Contribution Table</Link>
+                <Link href='/contribution-table'>Check {contributionTableLabel}</Link>
               </Button>
             </div>
           </div>
@@ -116,8 +120,8 @@ const GroupFinancialPositions = () => {
             </CardHeader>
             <CardContent className='text-muted-foreground space-y-3 text-sm leading-6'>
               <p>
-                If your group sends more than the amount listed in the Contribution Table, the extra money is recorded
-                as excess in Financial Positions and will be used in future contributions.
+                If your group sends more than the amount listed in the {contributionTableLabel}, the extra money is
+                recorded as excess in Financial Positions and will be used in future contributions.
               </p>
               <p>
                 The payment should use the correct bank code and include your group&apos;s 4-letter code in the memo so

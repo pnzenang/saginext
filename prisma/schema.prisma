@@ -240,6 +240,7 @@ model AssociationContributionAssessment {
   dueDate               DateTime?
   createdAt             DateTime                                 @default(now())
   updatedAt             DateTime                                 @updatedAt
+  deaths                AssociationContributionAssessmentDeath[]
   groups                AssociationContributionAssessmentGroup[]
 }
 
@@ -254,6 +255,25 @@ model AssociationContributionAssessmentGroup {
   assessment         AssociationContributionAssessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
 
   @@unique([assessmentId, associationCode])
+  @@index([associationCode])
+}
+
+model AssociationContributionAssessmentDeath {
+  id                        String                            @id @default(uuid())
+  assessmentId              String
+  memberMatriculationNumber String
+  firstName                 String
+  lastAndMiddleNames        String
+  registrationDate          String
+  dateOfDeath               String
+  amountToContribute        Decimal                           @db.Decimal(10, 2)
+  associationName           String
+  associationCode           String?
+  createdAt                 DateTime                          @default(now())
+  assessment                AssociationContributionAssessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@index([assessmentId])
+  @@index([memberMatriculationNumber])
   @@index([associationCode])
 }
 

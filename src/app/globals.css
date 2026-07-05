@@ -141,9 +141,9 @@
   --shadow-md: 0px 4px 8px -1px oklch(0 0 0 / 0.1), 0px 2px 4px -2px oklch(0 0 0 / 0.1);
   --shadow-lg: 0px 4px 8px -1px oklch(0 0 0 / 0.1), 0px 4px 6px -2px oklch(0 0 0 / 0.1);
   --shadow-xl: 0px 4px 8px -1px oklch(0 0 0 / 0.1), 0px 8px 10px -2px oklch(0 0 0 / 0.1);
-  --font-sans: Inter, sans-serif;
-  --font-serif: Merriweather, serif;
-  --font-mono: JetBrains Mono, monospace;
+  --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-serif: Lora, ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+  --font-mono: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
   --shadow-opacity: 0.06;
   --shadow-blur: 8px;
   --shadow-spread: -1px;
@@ -299,6 +299,129 @@
 
     [data-mobile-cards='true'] tbody td[data-label='Actions']::before {
       content: none;
+    }
+  }
+
+  @media print {
+    [data-dashboard-shell] {
+      background: white !important;
+      display: block !important;
+      min-height: 0 !important;
+      overflow: visible !important;
+    }
+
+    [data-dashboard-header],
+    [data-slot='sidebar'],
+    [data-slot='sidebar-gap'],
+    [data-slot='sidebar-container'],
+    [data-slot='sidebar-trigger'] {
+      display: none !important;
+    }
+
+    [data-dashboard-main],
+    [data-dashboard-frame],
+    [data-dashboard-frame] > [data-slot='card-content'] {
+      margin: 0 !important;
+      max-width: none !important;
+      min-height: 0 !important;
+      overflow: visible !important;
+      padding: 0 !important;
+      width: 100% !important;
+    }
+
+    [data-dashboard-frame] {
+      border: 0 !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+    }
+
+    @page contribution-table-page {
+      margin: 0.35in;
+      size: landscape;
+    }
+
+    [data-contribution-table-print] {
+      page: contribution-table-page;
+    }
+
+    body:has([data-contribution-table-print]) main,
+    body:has([data-contribution-table-print]) [data-slot='card'],
+    body:has([data-contribution-table-print]) [data-slot='card-content'] {
+      overflow: visible !important;
+    }
+
+    body:has([data-contribution-table-print]) [data-slot='card'] {
+      border-color: var(--border);
+      box-shadow: none !important;
+    }
+
+    [data-contribution-table-print] [data-slot='card'] {
+      break-inside: avoid;
+      gap: 0.5rem !important;
+      padding-block: 0.45rem !important;
+    }
+
+    [data-contribution-table-print] [data-slot='card-header'],
+    [data-contribution-table-print] [data-slot='card-content'] {
+      padding-inline: 0.5rem !important;
+    }
+
+    [data-contribution-table-print] [data-slot='card-title'] {
+      font-size: 0.8rem !important;
+    }
+
+    [data-contribution-table-print] [data-slot='card-description'] {
+      font-size: 0.65rem !important;
+      line-height: 1.2 !important;
+    }
+
+    [data-contribution-table-print] [data-mobile-cards='true'] {
+      border-collapse: collapse !important;
+      border-spacing: 0 !important;
+      display: table !important;
+      min-width: 0 !important;
+      padding: 0 !important;
+      table-layout: auto !important;
+      width: 100% !important;
+    }
+
+    [data-contribution-table-print] [data-mobile-cards='true'] thead {
+      display: table-header-group !important;
+    }
+
+    [data-contribution-table-print] [data-mobile-cards='true'] tbody {
+      display: table-row-group !important;
+    }
+
+    [data-contribution-table-print] [data-mobile-cards='true'] tr {
+      break-inside: avoid;
+      box-shadow: none !important;
+      display: table-row !important;
+    }
+
+    [data-contribution-table-print] [data-mobile-cards='true'] th,
+    [data-contribution-table-print] [data-mobile-cards='true'] td {
+      border: 1px solid var(--border) !important;
+      display: table-cell !important;
+      font-size: 0.58rem !important;
+      line-height: 1.15 !important;
+      min-width: 0 !important;
+      padding: 0.18rem 0.22rem !important;
+      white-space: normal !important;
+      width: auto !important;
+    }
+
+    [data-contribution-table-print] [data-mobile-cards='true'] td::before {
+      content: none !important;
+    }
+
+    [data-contribution-table-print] [data-mobile-cards='true'] td > * {
+      justify-self: auto !important;
+      overflow-wrap: anywhere;
+    }
+
+    [data-contribution-table-print] [data-mobile-cards='true'] th button {
+      color: var(--foreground) !important;
     }
   }
 }

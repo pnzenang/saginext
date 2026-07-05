@@ -14,14 +14,26 @@ import {
 } from 'lucide-react'
 
 import Features from '@/components/shadcn-studio/blocks/features-section-01/features-section-01'
+import { getContributionTableLabel } from '@/utils/contribution-table-label'
 import { fetchProfile } from '@/utils/profile-actions'
 
 const NavigationInstructions = async () => {
   await fetchProfile()
 
+  const contributionTableLabel = getContributionTableLabel()
+
+  const localizedFeaturesList = featuresList.map(feature =>
+    feature.href === '/navigation-instructions/contributionTable'
+      ? {
+          ...feature,
+          title: contributionTableLabel
+        }
+      : feature
+  )
+
   return (
     <div className='flex w-full min-w-0 flex-col items-stretch gap-4'>
-      <Features className='w-full max-w-full' featuresList={featuresList} />
+      <Features className='w-full max-w-full' featuresList={localizedFeaturesList} />
     </div>
   )
 }
@@ -81,7 +93,7 @@ const featuresList = [
   },
   {
     icon: Table,
-    title: 'Contribution Table',
+    title: 'Monthly Contribution',
     description:
       'Here, you will see the names of the new members joining the organization this month or the next month, this not the contribution table, it is just for informational purpose.',
     cardBorderColor: 'border-primary/40 hover:border-primary',

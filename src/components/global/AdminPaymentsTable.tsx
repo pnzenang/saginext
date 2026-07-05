@@ -397,8 +397,6 @@ const AdminPaymentsTable = ({
     return sortedRows.slice(startIndex, startIndex + rowsPerPage)
   }, [activePage, rowsPerPage, sortedRows])
 
-  const currentPageTotals = useMemo(() => getPaymentTotals(paginatedRows), [paginatedRows])
-
   const { pages, showLeftEllipsis, showRightEllipsis } = usePagination({
     currentPage: activePage,
     totalPages,
@@ -407,20 +405,18 @@ const AdminPaymentsTable = ({
 
   const searchLabel = kind === 'contribution' ? 'contribution payments' : 'registration payments'
 
-  const exportPageToExcel = () => {
+  const exportTableToExcel = () => {
     const exportColumns = getExportColumns(kind)
+    const exportTotals = getPaymentTotals(sortedRows)
 
     const worksheetData = [
       exportColumns.map(column => column.label),
-      ...paginatedRows.map(row => exportColumns.map(column => getRawExportValue(row, column))),
+      ...sortedRows.map(row => exportColumns.map(column => getRawExportValue(row, column))),
       exportColumns.map((column, index) => {
         if (index === 0) return 'Total'
 
-        if (
-          column.key in currentPageTotals &&
-          typeof currentPageTotals[column.key as keyof AdminPaymentTotals] === 'number'
-        ) {
-          return Number(currentPageTotals[column.key as keyof AdminPaymentTotals])
+        if (column.key in exportTotals && typeof exportTotals[column.key as keyof AdminPaymentTotals] === 'number') {
+          return Number(exportTotals[column.key as keyof AdminPaymentTotals])
         }
 
         return ''
@@ -523,12 +519,12 @@ const AdminPaymentsTable = ({
           <Button
             type='button'
             size='sm'
-            onClick={exportPageToExcel}
-            disabled={paginatedRows.length === 0}
+            onClick={exportTableToExcel}
+            disabled={sortedRows.length === 0}
             className='w-full sm:w-auto'
           >
             <FileSpreadsheetIcon />
-            Export Page
+            Export File
           </Button>
         </div>
       </div>

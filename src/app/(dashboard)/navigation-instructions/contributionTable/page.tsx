@@ -15,6 +15,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { getContributionTableLabel } from '@/utils/contribution-table-label'
 
 const tableDetails = [
   {
@@ -57,19 +58,22 @@ const groupContributionNotes = [
   'The table helps delegates explain to their members why the group is contributing and how the amount was calculated.'
 ]
 
-const commonMistakes = [
-  'Do not confuse the Contribution Table with the Monthly Additions table.',
+const getCommonMistakes = (contributionTableLabel: string) => [
+  `Do not confuse the ${contributionTableLabel} with the Monthly Additions table.`,
   'Do not send a contribution before checking the amount assigned to your group.',
   'Do not ignore the deceased member details, because they explain who the contribution is for.',
   'Do not forget to record the payment after sending the monthly contribution.'
 ]
 
 const ContributionTable = () => {
+  const contributionTableLabel = getContributionTableLabel()
+  const commonMistakes = getCommonMistakes(contributionTableLabel)
+
   return (
     <section className='flex w-full max-w-full min-w-0 flex-col gap-6 px-3 py-4 sm:px-6 sm:py-6 lg:px-8'>
       <div className='bg-card rounded-lg border p-6 shadow-sm sm:p-8'>
         <Badge className='mb-4 w-fit' variant='secondary'>
-          Contribution Table Instructions
+          {contributionTableLabel} Instructions
         </Badge>
         <div className='grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center'>
           <div>
@@ -78,9 +82,9 @@ const ContributionTable = () => {
             </h1>
             <div className='text-muted-foreground mt-4 max-w-4xl space-y-3 text-base leading-7'>
               <p>
-                The Contribution Table gives delegates the details they need for the monthly contribution. It explains
-                who the contribution is for, when and where the death occurred, how much the family will receive, and
-                how much each group is expected to contribute.
+                The {contributionTableLabel} gives delegates the details they need for the monthly contribution. It
+                explains who the contribution is for, when and where the death occurred, how much the family will receive,
+                and how much each group is expected to contribute.
               </p>
               <p>
                 Use this table before sending payment so your group understands the purpose of the contribution and the
@@ -90,7 +94,7 @@ const ContributionTable = () => {
             <div className='mt-6 flex flex-col gap-3 sm:flex-row'>
               <Button asChild>
                 <Link href='/contribution-table'>
-                  Open Contribution Table
+                  Open {contributionTableLabel}
                   <ArrowRight className='size-4' />
                 </Link>
               </Button>

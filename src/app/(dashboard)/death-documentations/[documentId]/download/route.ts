@@ -22,6 +22,12 @@ const getDownloadHeaders = ({
   'Content-Type': mimeType || 'application/octet-stream'
 })
 
+const contributionTableDocumentTypes = [
+  'death_certificate',
+  'deceased_picture',
+  'ministry_certified_death_certificate'
+]
+
 export const GET = async (_request: Request, { params }: { params: Promise<{ documentId: string }> }) => {
   const { userId } = await auth()
 
@@ -38,6 +44,13 @@ export const GET = async (_request: Request, { params }: { params: Promise<{ doc
       cloudinaryPublicId: true,
       cloudinaryResourceType: true,
       clerkId: true,
+      documentType: true,
+      status: true,
+      deceasedMember: {
+        select: {
+          memberMatriculationNumber: true
+        }
+      },
       fileData: true,
       fileName: true,
       fileSize: true,
@@ -52,7 +65,39 @@ export const GET = async (_request: Request, { params }: { params: Promise<{ doc
     return new Response('Document not found', { status: 404 })
   }
 
-  if (userId !== process.env.ADMIN_USER_ID && document.clerkId !== userId) {
+  const isDocumentOwner = document.clerkId === userId
+  const isAdminUser = userId === process.env.ADMIN_USER_ID
+
+  const isContributionTableDocument =
+    document.status === 'approved' && contributionTableDocumentTypes.includes(document.documentType)
+
+  const currentPublishedContributionTable = isContributionTableDocument
+    ? await db.associationContributionAssessment.findFirst({
+        orderBy: {
+          createdAt: 'desc'
+        },
+        select: {
+          deaths: {
+            select: {
+              id: true
+            },
+            take: 1,
+            where: {
+              memberMatriculationNumber: document.deceasedMember.memberMatriculationNumber
+            }
+          }
+        },
+        where: {
+          deaths: {
+            some: {}
+          }
+        }
+      })
+    : null
+
+  const isCurrentContributionTableDocument = Boolean(currentPublishedContributionTable?.deaths.length)
+
+  if (!isAdminUser && !isDocumentOwner && !isCurrentContributionTableDocument) {
     return new Response('Forbidden', { status: 403 })
   }
 

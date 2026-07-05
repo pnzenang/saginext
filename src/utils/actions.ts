@@ -597,6 +597,7 @@ const revalidatePaymentViews = () => {
   revalidatePath('/admin-contribution-payments')
   revalidatePath('/admin-registration-payments')
   revalidatePath('/admin-all-members')
+  revalidatePath('/contribution-table')
   revalidatePath('/contributions')
   revalidatePath('/registrationsPayments')
   revalidatePath('/all-members')
@@ -892,7 +893,7 @@ export const fetchMemberStatusCountsByAssociationCode = async () => {
 }
 
 const fetchContributionCalculationSummary = async () => {
-  const [summary, adminFee] = await Promise.all([
+  const [summary, adminFee, vestedMembersCount] = await Promise.all([
     db.contributionCalculationDeath.aggregate({
       _count: {
         _all: true
@@ -905,17 +906,25 @@ const fetchContributionCalculationSummary = async () => {
       where: {
         id: 'current'
       }
+    }),
+    db.member.count({
+      where: {
+        memberStatus: memberStatus.Vested
+      }
     })
   ])
 
   const deathAmount = roundCurrencyAmount(decimalToNumber(summary._sum.amountToContribute))
   const adminFeeAmount = roundCurrencyAmount(decimalToNumber(adminFee?.amount))
+  const adminFeeTotal = roundCurrencyAmount(adminFeeAmount * vestedMembersCount)
 
   return {
     adminFee: adminFeeAmount,
+    adminFeeTotal,
     deathAmount,
     deathCount: summary._count._all,
-    totalAmount: roundCurrencyAmount(deathAmount + adminFeeAmount)
+    totalAmount: roundCurrencyAmount(deathAmount + adminFeeTotal),
+    vestedMembersCount
   }
 }
 
@@ -923,6 +932,85 @@ export const fetchContributionCalculationSummaryAction = async () => {
   await assertAdminUser()
 
   return fetchContributionCalculationSummary()
+}
+
+const fetchContributionCalculationDeaths = async () => {
+  const calculationDeaths = await db.contributionCalculationDeath.findMany({
+    include: {
+      deceasedMember: {
+        select: {
+          associationCode: true,
+          associationName: true,
+          dateOfDeath: true,
+          firstName: true,
+          lastAndMiddleNames: true,
+          memberMatriculationNumber: true,
+          registrationDate: true
+        }
+      }
+    },
+    orderBy: {
+      createdAt: 'desc'
+    }
+  })
+
+  return calculationDeaths.map(calculationDeath => ({
+    amountToContribute: decimalToNumber(calculationDeath.amountToContribute),
+    associationCode: calculationDeath.deceasedMember.associationCode ?? '',
+    associationName: calculationDeath.deceasedMember.associationName,
+    createdAt: calculationDeath.createdAt.toISOString(),
+    dateOfDeath: calculationDeath.deceasedMember.dateOfDeath,
+    firstName: calculationDeath.deceasedMember.firstName,
+    id: calculationDeath.id,
+    lastAndMiddleNames: calculationDeath.deceasedMember.lastAndMiddleNames,
+    memberMatriculationNumber: calculationDeath.deceasedMember.memberMatriculationNumber,
+    registrationDate: calculationDeath.deceasedMember.registrationDate
+  }))
+}
+
+const contributionTableDeathCertificateDocumentTypes = [
+  'death_certificate',
+  'ministry_certified_death_certificate'
+]
+
+const contributionTableDocumentTypes = [...contributionTableDeathCertificateDocumentTypes, 'deceased_picture']
+
+type ContributionTableDocument = {
+  fileName: string
+  id: string
+  status: string
+}
+
+const getPreferredContributionTableDocuments = (
+  documents: {
+    deceasedMember: {
+      memberMatriculationNumber: string
+    }
+    documentType: string
+    fileName: string
+    id: string
+    status: string
+  }[],
+  documentTypes: string[]
+) => {
+  const documentsByMatriculationNumber = new Map<string, ContributionTableDocument>()
+
+  documents
+    .filter(document => documentTypes.includes(document.documentType))
+    .forEach(document => {
+      const memberMatriculationNumber = document.deceasedMember.memberMatriculationNumber
+      const currentDocument = documentsByMatriculationNumber.get(memberMatriculationNumber)
+
+      if (currentDocument?.status === 'approved') return
+
+      documentsByMatriculationNumber.set(memberMatriculationNumber, {
+        fileName: document.fileName,
+        id: document.id,
+        status: document.status
+      })
+    })
+
+  return documentsByMatriculationNumber
 }
 
 export const createAssociationContributionAssessmentAction = async (
@@ -933,11 +1021,11 @@ export const createAssociationContributionAssessmentAction = async (
 
   try {
     const dueDate = getRequiredDateFromForm(formData, 'dueDate')
-    const { adminFee, deathCount, totalAmount } = await fetchContributionCalculationSummary()
 
-    if (deathCount === 0 || totalAmount <= 0) {
-      throw new Error('Add at least one death with an amount in Contribution Calculation before distributing.')
-    }
+    const [{ adminFee, deathAmount, deathCount }, calculationDeaths] = await Promise.all([
+      fetchContributionCalculationSummary(),
+      fetchContributionCalculationDeaths()
+    ])
 
     const vestedMembers = await db.member.findMany({
       select: {
@@ -950,6 +1038,13 @@ export const createAssociationContributionAssessmentAction = async (
 
     if (vestedMembers.length === 0) {
       throw new Error('No vested members were found.')
+    }
+
+    const adminFeeTotal = roundCurrencyAmount(adminFee * vestedMembers.length)
+    const totalAmount = roundCurrencyAmount(deathAmount + adminFeeTotal)
+
+    if (deathCount === 0 || calculationDeaths.length === 0 || totalAmount <= 0) {
+      throw new Error('Add at least one death with an amount in Contribution Calculation before publishing.')
     }
 
     const vestedMembersByCode = vestedMembers.reduce((counts, member) => {
@@ -976,6 +1071,18 @@ export const createAssociationContributionAssessmentAction = async (
           totalVestedMembers: vestedMembers.length,
           groups: {
             create: groupEntries
+          },
+          deaths: {
+            create: calculationDeaths.map(death => ({
+              amountToContribute: death.amountToContribute,
+              associationCode: death.associationCode || null,
+              associationName: death.associationName,
+              dateOfDeath: death.dateOfDeath,
+              firstName: death.firstName,
+              lastAndMiddleNames: death.lastAndMiddleNames,
+              memberMatriculationNumber: death.memberMatriculationNumber,
+              registrationDate: death.registrationDate
+            }))
           }
         }
       })
@@ -986,7 +1093,7 @@ export const createAssociationContributionAssessmentAction = async (
           associationCode: group.associationCode,
           createdBy: user.id,
           eventType: associationPaymentLedgerEventTypes.dueOffset,
-          note: `Contribution due created for ${group.vestedMembersCount} vested member(s). Number of deaths in calculation: ${deathCount}. Admin fee: ${currencyFormatter.format(adminFee)}.`,
+          note: `Contribution due created for ${group.vestedMembersCount} vested member(s). Number of deaths in calculation: ${deathCount}. Admin fee: ${currencyFormatter.format(adminFee)} x ${vestedMembers.length} vested member(s) = ${currencyFormatter.format(adminFeeTotal)}.`,
           paymentType: associationPaymentTypes.contribution
         }))
       })
@@ -995,7 +1102,7 @@ export const createAssociationContributionAssessmentAction = async (
     revalidatePaymentViews()
 
     return {
-      message: `Distributed ${currencyFormatter.format(totalAmount)} across ${vestedMembers.length} vested members. Each vested member is ${currencyFormatter.format(amountPerVestedMember)}. Number of deaths in calculation: ${deathCount}. Admin fee: ${currencyFormatter.format(adminFee)}.`
+      message: `Published contribution table for ${deathCount} death${deathCount === 1 ? '' : 's'} and distributed ${currencyFormatter.format(totalAmount)} across ${vestedMembers.length} vested members. Each vested member is ${currencyFormatter.format(amountPerVestedMember)}. Admin fee: ${currencyFormatter.format(adminFee)} x ${vestedMembers.length} = ${currencyFormatter.format(adminFeeTotal)}.`
     }
   } catch (error) {
     return renderError(error)
@@ -1006,88 +1113,157 @@ export const resetAssociationContributionCalculationAction = async (): Promise<{
   const user = await assertAdminUser()
 
   try {
-    const latestAssessment = await fetchLatestAssociationContributionAssessment()
-
-    if (!latestAssessment) {
-      return { message: 'No contribution calculation found to reset.' }
-    }
-
-    const associationContributionPayments = await db.associationContributionPayment.findMany({
-      where: {
-        OR: [{ amountSent: { gt: 0 } }, { amountVerified: { gt: 0 } }]
-      }
-    })
+    const [latestAssessment, associationContributionPayments] = await Promise.all([
+      fetchLatestAssociationContributionAssessment(),
+      db.associationContributionPayment.findMany({
+        where: {
+          OR: [{ amountSent: { gt: 0 } }, { amountVerified: { gt: 0 } }]
+        }
+      })
+    ])
 
     const affectedAssociationCodes = Array.from(
       new Set([
-        ...latestAssessment.groups.map(group => group.associationCode),
+        ...(latestAssessment?.groups.map(group => group.associationCode) ?? []),
         ...associationContributionPayments.map(payment => payment.associationCode)
       ])
     )
 
-    const contributionSummaries = await Promise.all(
-      affectedAssociationCodes.map(associationCode => fetchAssociationContributionSummary(associationCode))
-    )
+    const contributionSummaries =
+      affectedAssociationCodes.length > 0
+        ? await Promise.all(
+            affectedAssociationCodes.map(associationCode => fetchAssociationContributionSummary(associationCode))
+          )
+        : []
 
     const balanceAdjustments = contributionSummaries.map(summary => ({
       amount: Number((summary.balance - summary.amountVerified).toFixed(2)),
       associationCode: summary.associationCode
     }))
 
-    await db.$transaction(async tx => {
-      await Promise.all(
-        associationContributionPayments.map(payment =>
-          createMissingPaymentHistoryLedgerEntries({
-            createdBy: user.id,
-            payment,
-            paymentType: associationPaymentTypes.contribution,
-            tx
-          })
-        )
-      )
+    const paymentAssociationCodes = associationContributionPayments.map(payment => payment.associationCode)
 
-      await tx.associationContributionPayment.updateMany({
-        data: {
-          amountSent: 0,
-          amountVerified: 0,
-          lastSubmittedAt: null,
-          verifiedAt: null
-        },
-        where: {
-          associationCode: {
-            in: associationContributionPayments.map(payment => payment.associationCode)
-          }
-        }
-      })
-
-      await Promise.all(
-        balanceAdjustments.map(adjustment =>
-          tx.associationBalanceAdjustment.upsert({
-            create: {
-              amount: adjustment.amount,
-              associationCode: adjustment.associationCode,
-              balanceType: contributionBalanceAdjustmentType
+    const ledgerTotals =
+      paymentAssociationCodes.length > 0
+        ? await db.associationPaymentLedgerEntry.groupBy({
+            _sum: {
+              amount: true
             },
-            update: {
-              amount: adjustment.amount
-            },
+            by: ['associationCode', 'eventType'],
             where: {
-              associationCode_balanceType: {
-                associationCode: adjustment.associationCode,
-                balanceType: contributionBalanceAdjustmentType
-              }
+              associationCode: {
+                in: paymentAssociationCodes
+              },
+              eventType: {
+                in: [associationPaymentLedgerEventTypes.submitted, associationPaymentLedgerEventTypes.verified]
+              },
+              paymentType: associationPaymentTypes.contribution
             }
           })
-        )
+        : []
+
+    const ledgerTotalsByCodeAndEvent = ledgerTotals.reduce((totals, entry) => {
+      totals.set(`${entry.associationCode}:${entry.eventType}`, decimalToNumber(entry._sum.amount))
+
+      return totals
+    }, new Map<string, number>())
+
+    const missingLedgerEntries = associationContributionPayments.flatMap(payment => {
+      const submittedTotal =
+        ledgerTotalsByCodeAndEvent.get(
+          `${payment.associationCode}:${associationPaymentLedgerEventTypes.submitted}`
+        ) ?? 0
+
+      const verifiedTotal =
+        ledgerTotalsByCodeAndEvent.get(
+          `${payment.associationCode}:${associationPaymentLedgerEventTypes.verified}`
+        ) ?? 0
+
+      const missingSubmittedAmount = roundCurrencyAmount(
+        getSubmittedAmountForPaymentHistory(payment, associationPaymentTypes.contribution) - submittedTotal
       )
 
+      const missingVerifiedAmount = roundCurrencyAmount(decimalToNumber(payment.amountVerified) - verifiedTotal)
+
+      return [
+        ...(missingSubmittedAmount > 0
+          ? [
+              {
+                amount: missingSubmittedAmount,
+                associationCode: payment.associationCode,
+                createdAt: payment.createdAt,
+                createdBy: user.id,
+                eventType: associationPaymentLedgerEventTypes.submitted,
+                note: `${associationPaymentTypes.contribution} payment submitted before payment history was recorded.`,
+                paymentType: associationPaymentTypes.contribution
+              }
+            ]
+          : []),
+        ...(missingVerifiedAmount > 0 && payment.verifiedAt
+          ? [
+              {
+                amount: missingVerifiedAmount,
+                associationCode: payment.associationCode,
+                createdAt: payment.verifiedAt,
+                createdBy: user.id,
+                eventType: associationPaymentLedgerEventTypes.verified,
+                note: `${associationPaymentTypes.contribution} payment verified by SAGI before payment history was recorded.`,
+                paymentType: associationPaymentTypes.contribution
+              }
+            ]
+          : [])
+      ]
+    })
+
+    await db.$transaction(async tx => {
+      if (missingLedgerEntries.length > 0) {
+        await tx.associationPaymentLedgerEntry.createMany({
+          data: missingLedgerEntries
+        })
+      }
+
+      if (associationContributionPayments.length > 0) {
+        await tx.associationContributionPayment.updateMany({
+          data: {
+            amountSent: 0,
+            amountVerified: 0,
+            lastSubmittedAt: null,
+            verifiedAt: null
+          },
+          where: {
+            associationCode: {
+              in: associationContributionPayments.map(payment => payment.associationCode)
+            }
+          }
+        })
+      }
+
+      if (balanceAdjustments.length > 0) {
+        await tx.$executeRaw(Prisma.sql`
+          INSERT INTO "AssociationBalanceAdjustment" ("id", "associationCode", "balanceType", "amount", "createdAt", "updatedAt")
+          VALUES ${Prisma.join(
+            balanceAdjustments.map(adjustment =>
+              Prisma.sql`(${randomUUID()}, ${adjustment.associationCode}, ${contributionBalanceAdjustmentType}, ${adjustment.amount}, NOW(), NOW())`
+            )
+          )}
+          ON CONFLICT ("associationCode", "balanceType")
+          DO UPDATE SET "amount" = EXCLUDED."amount", "updatedAt" = NOW()
+        `)
+      }
+
+      await tx.contributionCalculationDeath.deleteMany()
+      await tx.contributionCalculationAdminFee.deleteMany()
+      await tx.associationContributionAssessmentDeath.deleteMany()
       await tx.associationContributionAssessment.deleteMany()
+    }, {
+      timeout: 20000
     })
 
     revalidatePaymentViews()
+    revalidatePath('/admin-contribution-calculation')
 
     return {
-      message: 'Contribution calculation reset successfully. Balances and payment history were kept.'
+      message: 'Contribution calculation reset successfully. The draft calculation and published contribution table were emptied. Balances and payment history were kept.'
     }
   } catch (error) {
     return renderError(error)
@@ -3697,37 +3873,145 @@ export const addContributionCalculationDeathAction = async (
 export const fetchContributionCalculationDeathsAction = async () => {
   await assertAdminUser()
 
-  const calculationDeaths = await db.contributionCalculationDeath.findMany({
+  return fetchContributionCalculationDeaths()
+}
+
+export const fetchPublishedContributionTableAction = async () => {
+  await getAuthUser()
+  noStore()
+
+  const publishedAssessment = await db.associationContributionAssessment.findFirst({
     include: {
-      deceasedMember: {
-        select: {
-          associationCode: true,
-          associationName: true,
-          dateOfDeath: true,
-          firstName: true,
-          lastAndMiddleNames: true,
-          memberMatriculationNumber: true,
-          registrationDate: true
+      deaths: {
+        orderBy: {
+          createdAt: 'asc'
+        }
+      },
+      groups: {
+        orderBy: {
+          associationCode: 'asc'
         }
       }
     },
     orderBy: {
       createdAt: 'desc'
+    },
+    where: {
+      deaths: {
+        some: {}
+      }
     }
   })
 
-  return calculationDeaths.map(calculationDeath => ({
-    amountToContribute: decimalToNumber(calculationDeath.amountToContribute),
-    associationCode: calculationDeath.deceasedMember.associationCode ?? '',
-    associationName: calculationDeath.deceasedMember.associationName,
-    createdAt: calculationDeath.createdAt.toISOString(),
-    dateOfDeath: calculationDeath.deceasedMember.dateOfDeath,
-    firstName: calculationDeath.deceasedMember.firstName,
-    id: calculationDeath.id,
-    lastAndMiddleNames: calculationDeath.deceasedMember.lastAndMiddleNames,
-    memberMatriculationNumber: calculationDeath.deceasedMember.memberMatriculationNumber,
-    registrationDate: calculationDeath.deceasedMember.registrationDate
-  }))
+  if (!publishedAssessment) return null
+
+  const associationCodes = publishedAssessment.groups.map(group => group.associationCode)
+
+  const deathMatriculationNumbers = publishedAssessment.deaths.map(death => death.memberMatriculationNumber)
+
+  const [profiles, memberAssociationNames, contributionTableDocuments] = await Promise.all([
+    db.profile.findMany({
+      select: {
+        associationCode: true,
+        associationName: true
+      },
+      where: {
+        associationCode: {
+          in: associationCodes
+        }
+      }
+    }),
+    db.member.findMany({
+      distinct: ['associationCode'],
+      orderBy: {
+        associationCode: 'asc'
+      },
+      select: {
+        associationCode: true,
+        associationName: true
+      },
+      where: {
+        associationCode: {
+          in: associationCodes
+        }
+      }
+    }),
+    db.deceasedMemberDocument.findMany({
+      orderBy: {
+        updatedAt: 'desc'
+      },
+      select: {
+        documentType: true,
+        fileName: true,
+        id: true,
+        status: true,
+        deceasedMember: {
+          select: {
+            memberMatriculationNumber: true
+          }
+        }
+      },
+      where: {
+        documentType: {
+          in: contributionTableDocumentTypes
+        },
+        deceasedMember: {
+          memberMatriculationNumber: {
+            in: deathMatriculationNumbers
+          }
+        },
+        status: 'approved'
+      }
+    })
+  ])
+
+  const associationNamesByCode = new Map(profiles.map(profile => [profile.associationCode, profile.associationName]))
+
+  const deathCertificatesByMatriculationNumber = getPreferredContributionTableDocuments(
+    contributionTableDocuments,
+    contributionTableDeathCertificateDocumentTypes
+  )
+
+  const deceasedPicturesByMatriculationNumber = getPreferredContributionTableDocuments(contributionTableDocuments, [
+    'deceased_picture'
+  ])
+
+  memberAssociationNames.forEach(member => {
+    const associationName = member.associationName.trim()
+
+    if (associationName && !associationNamesByCode.has(member.associationCode)) {
+      associationNamesByCode.set(member.associationCode, associationName)
+    }
+  })
+
+  return {
+    amountPerVestedMember: decimalToNumber(publishedAssessment.amountPerVestedMember),
+    createdAt: publishedAssessment.createdAt.toISOString(),
+    deathCount: publishedAssessment.deathCount,
+    deaths: publishedAssessment.deaths.map(death => ({
+      amountToContribute: decimalToNumber(death.amountToContribute),
+      associationCode: death.associationCode ?? '',
+      associationName: death.associationName,
+      createdAt: death.createdAt.toISOString(),
+      dateOfDeath: death.dateOfDeath,
+      deathCertificate: deathCertificatesByMatriculationNumber.get(death.memberMatriculationNumber) ?? null,
+      deceasedPicture: deceasedPicturesByMatriculationNumber.get(death.memberMatriculationNumber) ?? null,
+      firstName: death.firstName,
+      id: death.id,
+      lastAndMiddleNames: death.lastAndMiddleNames,
+      memberMatriculationNumber: death.memberMatriculationNumber,
+      registrationDate: death.registrationDate
+    })),
+    dueDate: publishedAssessment.dueDate?.toISOString() ?? null,
+    groups: publishedAssessment.groups.map(group => ({
+      amountOwed: decimalToNumber(group.amountOwed),
+      associationCode: group.associationCode,
+      associationName: associationNamesByCode.get(group.associationCode) ?? group.associationCode,
+      vestedMembersCount: group.vestedMembersCount
+    })),
+    totalAmount: decimalToNumber(publishedAssessment.totalAmount),
+    totalVestedMembers: publishedAssessment.totalVestedMembers
+  }
 }
 
 export const deleteContributionCalculationDeathAction = async (formData: FormData): Promise<void> => {

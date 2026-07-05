@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/sidebar'
 import db from '@/utils/db'
 import { dashboardText, languageCookieName, normalizeLanguage, translateDashboardMenuItems } from '@/lib/i18n'
-import { pagesItems } from '@/utils/links'
+import { getPagesItems } from '@/utils/links'
 
 export const dynamic = 'force-dynamic'
 
@@ -65,12 +65,16 @@ const PagesLayout = async ({ children }: Readonly<{ children: ReactNode }>) => {
     redirect('/internal-rules')
   }
 
-  const translatedPagesItems = translateDashboardMenuItems(pagesItems, language)
+  const translatedPagesItems = translateDashboardMenuItems(getPagesItems(), language)
   const copy = dashboardText[language]
 
   return (
     <>
-      <div className='bg-muted flex min-h-dvh w-full overflow-x-hidden' lang={language}>
+      <div
+        data-dashboard-shell
+        className='bg-muted flex min-h-dvh w-full overflow-x-hidden print:block print:min-h-0 print:overflow-visible print:bg-white'
+        lang={language}
+      >
         <SidebarProvider>
           <Sidebar collapsible='icon' className='**:data-[slot=sidebar-inner]:bg-muted border-r-0!'>
             <SidebarHeader>
@@ -89,7 +93,10 @@ const PagesLayout = async ({ children }: Readonly<{ children: ReactNode }>) => {
             </SidebarContent>
           </Sidebar>
           <div className='flex min-w-0 flex-1 flex-col'>
-            <header className='bg-muted sticky top-0 z-50 flex items-center justify-between gap-2 px-2 py-2 sm:gap-6 sm:px-6 sm:py-4'>
+            <header
+              data-dashboard-header
+              className='bg-muted sticky top-0 z-50 flex items-center justify-between gap-2 px-2 py-2 sm:gap-6 sm:px-6 sm:py-4 print:hidden'
+            >
               <div className='flex min-w-0 items-center gap-2 sm:gap-4'>
                 <SidebarTrigger className='text-primary size-10 font-extrabold md:size-7 [&_svg]:size-6!' />
                 <LogoSmall className='size-9 shrink-0 sm:hidden' />
@@ -109,8 +116,14 @@ const PagesLayout = async ({ children }: Readonly<{ children: ReactNode }>) => {
                 <UserButton />
               </div>
             </header>
-            <main className='size-full min-w-0 flex-1 overflow-x-hidden px-1 py-2 sm:px-6 sm:py-6'>
-              <Card className='min-h-full w-full max-w-full min-w-0 overflow-hidden rounded-lg sm:rounded-xl'>
+            <main
+              data-dashboard-main
+              className='size-full min-w-0 flex-1 overflow-x-hidden px-1 py-2 sm:px-6 sm:py-6 print:block print:overflow-visible print:p-0'
+            >
+              <Card
+                data-dashboard-frame
+                className='min-h-full w-full max-w-full min-w-0 overflow-hidden rounded-lg sm:rounded-xl print:min-h-0 print:overflow-visible print:rounded-none print:border-0 print:p-0 print:shadow-none'
+              >
                 <CardContent className='h-full min-w-0 px-2 sm:px-6'>
                   <main className='flex w-full min-w-0 flex-1 flex-col *:scroll-mt-20'>{children}</main>
                 </CardContent>

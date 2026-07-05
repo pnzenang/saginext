@@ -23,8 +23,9 @@ import {
 } from 'lucide-react'
 
 import type { MenuItem } from './types'
+import { getContributionTableLabel } from './contribution-table-label'
 
-export const pagesItems: MenuItem[] = [
+export const getPagesItems = (date: Date = new Date()): MenuItem[] => [
   {
     icon: Navigation,
     label: 'Navigation Instructions',
@@ -89,7 +90,7 @@ export const pagesItems: MenuItem[] = [
   },
   {
     icon: Table,
-    label: 'Contribution Table',
+    label: getContributionTableLabel(date),
     href: '/contribution-table'
   },
 
@@ -175,3 +176,5 @@ export const pagesItems: MenuItem[] = [
     href: '/admin-transaction-history'
   }
 ]
+
+export const pagesItems = getPagesItems()

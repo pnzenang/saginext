@@ -1,39 +1,126 @@
-import { Download } from 'lucide-react'
+import { CalendarDays, HeartHandshake, Table2, Users } from 'lucide-react'
 
-import { Button } from '@/components/ui/button'
+import PublishedContributionTables from '@/components/dashboard/PublishedContributionTables'
+import PrintButton from '@/components/global/PrintButton'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { fetchPublishedContributionTableAction } from '@/utils/actions'
+import { getContributionTableLabel } from '@/utils/contribution-table-label'
 
-const contributionSpreadsheetBaseUrl =
-  'https://docs.google.com/spreadsheets/d/e/2PACX-1vRoVS4XFshyjUquUn8dxnY23VJJMYsEcHvNtrYDnuaCKs-WsbLaSyvS0YJe-_V9MeycT5mUZCXXuqgO'
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
-const contributionSpreadsheetEmbedUrl = `${contributionSpreadsheetBaseUrl}/pubhtml?widget=true&headers=false`
-const contributionSpreadsheetExcelUrl = `${contributionSpreadsheetBaseUrl}/pub?output=xlsx`
+const currencyFormatter = new Intl.NumberFormat('en-US', {
+  currency: 'USD',
+  style: 'currency'
+})
 
-const ContributionTable = () => {
+const dateFormatter = new Intl.DateTimeFormat('en-US', {
+  dateStyle: 'medium'
+})
+
+const formatDate = (value: string | null) => {
+  if (!value) return 'Not set'
+
+  const date = new Date(value)
+
+  return Number.isNaN(date.getTime()) ? value : dateFormatter.format(date)
+}
+
+const ContributionTable = async () => {
+  const publishedTable = await fetchPublishedContributionTableAction()
+
+  if (!publishedTable) {
+    const contributionTableLabel = getContributionTableLabel()
+
+    return (
+      <section className='flex w-full min-w-0 flex-col gap-6 overflow-hidden py-8 sm:py-10'>
+        <div className='min-w-0'>
+          <h1 className='text-xl font-semibold tracking-normal break-words md:text-4xl'>{contributionTableLabel}</h1>
+          <p className='text-muted-foreground mt-2 max-w-4xl text-sm leading-6 break-words sm:text-base'>
+            The contribution table will appear here after the admin publishes it.
+          </p>
+        </div>
+
+        <Card className='w-full max-w-full min-w-0'>
+          <CardContent className='text-muted-foreground py-10 text-center text-sm'>
+            No contribution table has been published yet.
+          </CardContent>
+        </Card>
+      </section>
+    )
+  }
+
+  const contributionTableLabel = getContributionTableLabel(publishedTable.dueDate ?? publishedTable.createdAt)
+
   return (
-    <section className='min-w-0'>
-      <p className='text-muted-foreground mx-auto mb-5 max-w-4xl px-4 text-sm leading-6 sm:text-base'>
-        The Contribution Table shows the monthly contribution details for each active case. Use it to review the
-        deceased member&apos;s information, the date and place of death, the benefit amount for the family, and the
-        amount each group is expected to contribute. Before sending payment, delegates should check the table carefully,
-        match the required amount with their group code, and use the table as the official reference for the current
-        contribution period.
-      </p>
-
-      <div className='mx-auto mt-5 flex w-full max-w-19/20 min-w-0 items-center justify-between gap-3'>
-        <h1 className='text-xl font-semibold tracking-normal break-words md:text-4xl'>Sagicam Contributions</h1>
-        <Button asChild size='sm' className='print:hidden'>
-          <a href={contributionSpreadsheetExcelUrl}>
-            <Download />
-            Export Page
-          </a>
-        </Button>
+    <section
+      data-contribution-table-print
+      className='flex w-full min-w-0 flex-col gap-6 overflow-hidden py-8 sm:py-10 print:gap-3 print:overflow-visible print:py-0'
+    >
+      <div className='flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'>
+        <div className='min-w-0'>
+          <Badge className='mb-3 w-fit print:border print:bg-transparent print:text-foreground' variant='secondary'>
+            Published {formatDate(publishedTable.createdAt)}
+          </Badge>
+          <h1 className='text-xl font-semibold tracking-normal break-words md:text-4xl print:text-2xl'>
+            {contributionTableLabel}
+          </h1>
+          <p className='text-muted-foreground mt-2 max-w-4xl text-sm leading-6 break-words sm:text-base print:text-xs print:leading-5'>
+            Review the deceased members included in the published contribution calculation and the amount each
+            association is expected to contribute.
+          </p>
+        </div>
+        <PrintButton label='Print PDF' className='w-fit' />
       </div>
 
-      <iframe
-        title='Sagicam Contributions spreadsheet'
-        src={contributionSpreadsheetEmbedUrl}
-        className='mx-auto mt-3 h-170 w-full max-w-19/20 items-center rounded-lg border'
-      ></iframe>
+      <div className='grid gap-3 sm:grid-cols-2 xl:grid-cols-4'>
+        <Card>
+          <CardHeader className='space-y-1'>
+            <CardTitle className='flex items-center gap-2 text-sm font-semibold'>
+              <HeartHandshake className='text-primary size-4' />
+              Deaths
+            </CardTitle>
+          </CardHeader>
+          <CardContent className='text-2xl font-black'>{publishedTable.deathCount}</CardContent>
+        </Card>
+        <Card>
+          <CardHeader className='space-y-1'>
+            <CardTitle className='flex items-center gap-2 text-sm font-semibold'>
+              <Users className='text-primary size-4' />
+              Vested Members
+            </CardTitle>
+          </CardHeader>
+          <CardContent className='text-2xl font-black'>{publishedTable.totalVestedMembers}</CardContent>
+        </Card>
+        <Card>
+          <CardHeader className='space-y-1'>
+            <CardTitle className='flex items-center gap-2 text-sm font-semibold'>
+              <Table2 className='text-primary size-4' />
+              Total Contribution
+            </CardTitle>
+          </CardHeader>
+          <CardContent className='text-2xl font-black'>
+            {currencyFormatter.format(publishedTable.totalAmount)}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className='space-y-1'>
+            <CardTitle className='flex items-center gap-2 text-sm font-semibold'>
+              <CalendarDays className='text-primary size-4' />
+              Due Date
+            </CardTitle>
+          </CardHeader>
+          <CardContent className='text-2xl font-black'>{formatDate(publishedTable.dueDate)}</CardContent>
+        </Card>
+      </div>
+
+      <PublishedContributionTables
+        amountPerVestedMember={publishedTable.amountPerVestedMember}
+        deaths={publishedTable.deaths}
+        groups={publishedTable.groups}
+        totalVestedMembers={publishedTable.totalVestedMembers}
+      />
     </section>
   )
 }

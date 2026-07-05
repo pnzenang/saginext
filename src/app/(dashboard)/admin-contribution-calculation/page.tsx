@@ -37,6 +37,9 @@ const ContributionCalculationPage = async () => {
     fetchContributionCalculationSummaryAction()
   ])
 
+  const adminFeePerDeath =
+    calculationSummary.deathCount > 0 ? calculationSummary.adminFee / calculationSummary.deathCount : 0
+
   return (
     <section className='flex w-full min-w-0 flex-col gap-6 overflow-hidden py-8 sm:py-10'>
       <div className='min-w-0'>
@@ -95,42 +98,15 @@ const ContributionCalculationPage = async () => {
 
       <Card className='w-full max-w-full min-w-0 overflow-hidden'>
         <CardHeader className='min-w-0'>
-          <div className='flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between'>
-            <div className='flex min-w-0 flex-col gap-4 lg:flex-row lg:items-end'>
-              <div className='min-w-0'>
-                <CardTitle className='break-words'>Deaths To Be Contributed</CardTitle>
-                <CardDescription className='mt-1 break-words'>
-                  Review the deaths selected for the current contribution calculation.
-                </CardDescription>
-              </div>
-
-              <FormContainer
-                action={saveContributionCalculationAdminFeeAction}
-                className='flex max-w-full flex-col gap-2 sm:w-auto sm:min-w-96 sm:flex-row sm:items-end'
-              >
-                <div className='grid min-w-0 flex-1 gap-2'>
-                  <Label htmlFor='adminFee'>Admin Fee</Label>
-                  <div className='relative'>
-                    <DollarSign className='text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2' />
-                    <Input
-                      id='adminFee'
-                      name='adminFee'
-                      type='number'
-                      inputMode='decimal'
-                      min='0.01'
-                      step='0.01'
-                      placeholder='0.00'
-                      defaultValue={calculationSummary.adminFee > 0 ? calculationSummary.adminFee : undefined}
-                      className='bg-background pl-9'
-                      required
-                    />
-                  </div>
-                </div>
-                <SubmitButton text='Save Fee' className='h-10 w-full sm:w-auto' />
-              </FormContainer>
+          <div className='flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between'>
+            <div className='min-w-0'>
+              <CardTitle className='break-words'>Deaths To Be Contributed</CardTitle>
+              <CardDescription className='mt-1 break-words'>
+                Review the deaths selected for the current contribution calculation.
+              </CardDescription>
             </div>
 
-            <div className='flex flex-wrap gap-2'>
+            <div className='flex flex-wrap gap-2 lg:justify-end'>
               <Badge variant='outline' className='h-9 rounded-md px-3 text-sm font-semibold'>
                 {calculationDeaths.length} death{calculationDeaths.length === 1 ? '' : 's'}
               </Badge>
@@ -195,6 +171,42 @@ const ContributionCalculationPage = async () => {
                 )}
               </TableBody>
             </Table>
+          </div>
+
+          <div className='mt-5 flex max-w-full flex-col gap-3 rounded-lg border bg-muted/30 p-4 lg:flex-row lg:items-end lg:justify-between'>
+            <FormContainer
+              action={saveContributionCalculationAdminFeeAction}
+              className='flex max-w-full flex-col gap-2 sm:flex-row sm:items-end lg:w-auto'
+            >
+              <div className='grid min-w-0 gap-2 sm:w-52'>
+                <Label htmlFor='adminFee'>Admin Fee</Label>
+                <div className='relative'>
+                  <DollarSign className='text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2' />
+                  <Input
+                    id='adminFee'
+                    name='adminFee'
+                    type='number'
+                    inputMode='decimal'
+                    min='0.01'
+                    step='0.01'
+                    placeholder='0.00'
+                    defaultValue={calculationSummary.adminFee > 0 ? calculationSummary.adminFee : undefined}
+                    className='bg-background pl-9'
+                    required
+                  />
+                </div>
+              </div>
+              <SubmitButton text='Save Fee' className='h-10 w-full sm:w-auto' />
+            </FormContainer>
+
+            <Badge variant='outline' className='h-9 w-fit rounded-md px-3 text-sm font-semibold'>
+              Per death: {currencyFormatter.format(adminFeePerDeath)}
+            </Badge>
+
+            <Badge variant='secondary' className='h-9 w-fit rounded-md px-3 text-sm font-semibold'>
+              Admin: {currencyFormatter.format(calculationSummary.adminFee)} x{' '}
+              {calculationSummary.vestedMembersCount} = {currencyFormatter.format(calculationSummary.adminFeeTotal)}
+            </Badge>
           </div>
         </CardContent>
       </Card>

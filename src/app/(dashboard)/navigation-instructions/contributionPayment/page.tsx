@@ -16,6 +16,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { getContributionTableLabel } from '@/utils/contribution-table-label'
 
 const paymentSteps = [
   {
@@ -69,6 +70,8 @@ const avoidMistakes = [
 ]
 
 const ContributionPayment = () => {
+  const contributionTableLabel = getContributionTableLabel()
+
   return (
     <section className='flex w-full max-w-full min-w-0 flex-col gap-6 px-3 py-4 sm:px-6 sm:py-6 lg:px-8'>
       <div className='bg-card rounded-lg border p-6 shadow-sm sm:p-8'>
@@ -105,7 +108,7 @@ const ContributionPayment = () => {
                 </Link>
               </Button>
               <Button asChild variant='outline'>
-                <Link href='/contribution-table'>Check Contribution Table</Link>
+                <Link href='/contribution-table'>Check {contributionTableLabel}</Link>
               </Button>
             </div>
           </div>
@@ -225,8 +228,8 @@ const ContributionPayment = () => {
         </CardHeader>
         <CardContent>
           <p className='text-muted-foreground text-sm leading-6'>
-            The amount in the Contribution Table, the amount sent through Zelle, the 4-letter code in the Zelle memo,
-            and the information reported in the Contribution Payment form should all match.
+            The amount in the {contributionTableLabel}, the amount sent through Zelle, the 4-letter code in the Zelle
+            memo, and the information reported in the Contribution Payment form should all match.
           </p>
         </CardContent>
       </Card>

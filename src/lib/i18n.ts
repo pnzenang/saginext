@@ -90,7 +90,6 @@ const dashboardMenuLabelTranslations: Record<string, string> = {
   'All Deceased Members': 'Tous les membres décédés',
   'Payment Instructions': 'Instructions de paiement',
   'Monthly Additions': 'Ajouts mensuels',
-  'Contribution Table': 'Tableau des cotisations',
   'Death Documentations': 'Documents de décès',
   'Name Change & Documentations': 'Changement de nom et documents',
   'Member Transfer': 'Transfert de membre',
@@ -108,8 +107,19 @@ const dashboardMenuLabelTranslations: Record<string, string> = {
   'Admin Transaction History': 'Historique des transactions'
 }
 
-export const translateDashboardMenuLabel = (label: string, language: AppLanguage) =>
-  language === 'fr' ? (dashboardMenuLabelTranslations[label] ?? label) : label
+const contributionTableLabelPattern = /^(.+)'s Contribution Table$/
+
+export const translateDashboardMenuLabel = (label: string, language: AppLanguage) => {
+  if (language !== 'fr') return label
+
+  const contributionTableLabelMatch = label.match(contributionTableLabelPattern)
+
+  if (contributionTableLabelMatch) {
+    return `Tableau des cotisations de ${contributionTableLabelMatch[1]}`
+  }
+
+  return dashboardMenuLabelTranslations[label] ?? label
+}
 
 export const translateDashboardMenuItems = (items: MenuItem[], language: AppLanguage): MenuItem[] =>
   items.map(item => ({

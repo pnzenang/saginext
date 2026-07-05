@@ -1,3 +1,4 @@
+import { Prisma } from '@/generated/prisma/client'
 import type { AdminPaymentRow, AdminPaymentTotals } from '@/components/global/AdminPaymentsTable'
 import AdminPaymentsTable from '@/components/global/AdminPaymentsTableClient'
 import ContributionAssessmentForm from '@/components/dashboard/ContributionAssessmentForm'
@@ -14,11 +15,14 @@ import {
 } from '@/utils/actions'
 import {
   contributionBalanceAdjustmentType,
-  fetchAssociationContributionSummary,
   fetchLatestAssociationContributionAssessment
 } from '@/utils/sagi-contribution-summary'
 import { contributionPaymentAlertType } from '@/utils/payment-constants'
+import { associationPaymentLedgerEventTypes, associationPaymentTypes } from '@/utils/sagi-payment-ledger'
 import { memberStatus } from '@/utils/types'
+
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 const dateFormatter = new Intl.DateTimeFormat('en-US', {
   dateStyle: 'medium'
@@ -27,12 +31,45 @@ const dateFormatter = new Intl.DateTimeFormat('en-US', {
 const decimalToNumber = (value: unknown) => Number(value ?? 0)
 const defaultPaymentAlertResetAt = new Date(0)
 
+type ContributionVerifiedLedgerTotal = {
+  amountVerified: unknown
+  associationCode: string
+}
+
+const roundCurrencyAmount = (amount: number) => Number(amount.toFixed(2))
+
+const fetchContributionVerifiedLedgerTotalsByCode = async (associationCodes: string[]) => {
+  if (associationCodes.length === 0) return new Map<string, number>()
+
+  const totals = await db.$queryRaw<ContributionVerifiedLedgerTotal[]>(Prisma.sql`
+    WITH latest_reset AS (
+      SELECT "associationCode", MAX("createdAt") AS "resetAt"
+      FROM "AssociationPaymentLedgerEntry"
+      WHERE "paymentType" = ${associationPaymentTypes.contribution}
+        AND "eventType" = ${associationPaymentLedgerEventTypes.reset}
+        AND "associationCode" IN (${Prisma.join(associationCodes)})
+      GROUP BY "associationCode"
+    )
+    SELECT ledger."associationCode", COALESCE(SUM(ledger."amount"), 0) AS "amountVerified"
+    FROM "AssociationPaymentLedgerEntry" ledger
+    LEFT JOIN latest_reset
+      ON latest_reset."associationCode" = ledger."associationCode"
+    WHERE ledger."paymentType" = ${associationPaymentTypes.contribution}
+      AND ledger."eventType" = ${associationPaymentLedgerEventTypes.verified}
+      AND ledger."associationCode" IN (${Prisma.join(associationCodes)})
+      AND (latest_reset."resetAt" IS NULL OR ledger."createdAt" > latest_reset."resetAt")
+    GROUP BY ledger."associationCode"
+  `)
+
+  return new Map(totals.map(total => [total.associationCode, roundCurrencyAmount(decimalToNumber(total.amountVerified))]))
+}
+
 const AdminContributionPayments = async () => {
   const [
     profiles,
     payments,
     latestContributionAssessment,
-    contributionTotals,
+    contributionAssessmentGroups,
     contributionUsages,
     balanceAdjustments,
     vestedCounts,
@@ -51,16 +88,19 @@ const AdminContributionPayments = async () => {
       }
     }),
     fetchLatestAssociationContributionAssessment(),
-    db.associationContributionAssessmentGroup.groupBy({
-      _sum: {
-        amountOwed: true
-      },
-      by: ['associationCode'],
+    db.associationContributionAssessmentGroup.findMany({
+      distinct: ['associationCode'],
       orderBy: {
         associationCode: 'asc'
+      },
+      select: {
+        associationCode: true
       }
     }),
     db.associationContributionUsage.findMany({
+      select: {
+        associationCode: true
+      },
       orderBy: {
         associationCode: 'asc'
       }
@@ -86,8 +126,9 @@ const AdminContributionPayments = async () => {
       }
     }),
     db.member.findMany({
+      distinct: ['associationCode'],
       orderBy: {
-        associationName: 'asc'
+        associationCode: 'asc'
       },
       select: {
         associationCode: true,
@@ -105,6 +146,11 @@ const AdminContributionPayments = async () => {
 
   const profilesByCode = new Map(profiles.map(profile => [profile.associationCode, profile]))
   const paymentsByCode = new Map(payments.map(payment => [payment.associationCode, payment]))
+
+  const balanceAdjustmentsByCode = new Map(
+    balanceAdjustments.map(adjustment => [adjustment.associationCode, decimalToNumber(adjustment.amount)])
+  )
+
   const vestedCountsByCode = new Map(vestedCounts.map(item => [item.associationCode, item._count._all]))
   const memberAssociationNamesByCode = new Map<string, string>()
 
@@ -121,7 +167,7 @@ const AdminContributionPayments = async () => {
       ...profilesByCode.keys(),
       ...paymentsByCode.keys(),
       ...(latestContributionAssessment?.groups.map(group => group.associationCode) ?? []),
-      ...contributionTotals.map(group => group.associationCode),
+      ...contributionAssessmentGroups.map(group => group.associationCode),
       ...contributionUsages.map(usage => usage.associationCode),
       ...balanceAdjustments.map(adjustment => adjustment.associationCode),
       ...vestedCountsByCode.keys()
@@ -133,16 +179,37 @@ const AdminContributionPayments = async () => {
     })
   )
 
-  const contributionSummaries = await Promise.all(
-    associationCodes.map(associationCode => fetchAssociationContributionSummary(associationCode, { noStore: true }))
+  const verifiedLedgerTotalsByCode = await fetchContributionVerifiedLedgerTotalsByCode(associationCodes)
+  const amountPerVestedMember = decimalToNumber(latestContributionAssessment?.amountPerVestedMember)
+
+  const contributionAmountsByCode = new Map(
+    associationCodes.map(associationCode => {
+      const payment = paymentsByCode.get(associationCode)
+      const vestedMembers = vestedCountsByCode.get(associationCode) ?? 0
+      const currentAmountSent = decimalToNumber(payment?.amountSent)
+      const currentAmountVerified = decimalToNumber(payment?.amountVerified)
+      const recordedAmountVerified = verifiedLedgerTotalsByCode.get(associationCode) ?? 0
+      const amountVerified = roundCurrencyAmount(Math.max(recordedAmountVerified, currentAmountVerified))
+      const amountOwed = roundCurrencyAmount(amountPerVestedMember * vestedMembers)
+      const manualBalanceAdjustment = balanceAdjustmentsByCode.get(associationCode) ?? 0
+
+      return [
+        associationCode,
+        {
+          amountOwed,
+          amountReceived: roundCurrencyAmount(Math.max(currentAmountSent - currentAmountVerified, 0)),
+          amountVerified,
+          balance: roundCurrencyAmount(amountVerified + manualBalanceAdjustment - amountOwed)
+        }
+      ] as const
+    })
   )
 
-  const contributionSummaryByCode = new Map(contributionSummaries.map(summary => [summary.associationCode, summary]))
   const contributionPaymentAlertResetAt = paymentAlertReset[0]?.resetAt ?? defaultPaymentAlertResetAt
 
   const contributionPaymentAlerts: PaymentSubmissionAlert[] = payments.flatMap(payment => {
     const amountSent =
-      contributionSummaryByCode.get(payment.associationCode)?.amountReceived ?? decimalToNumber(payment.amountSent)
+      contributionAmountsByCode.get(payment.associationCode)?.amountReceived ?? decimalToNumber(payment.amountSent)
 
     if (amountSent <= 0 || !payment.lastSubmittedAt || payment.lastSubmittedAt <= contributionPaymentAlertResetAt) {
       return []
@@ -167,19 +234,19 @@ const AdminContributionPayments = async () => {
 
   const rows: AdminPaymentRow[] = associationCodes.map(associationCode => {
     const profile = profilesByCode.get(associationCode)
-    const contributionSummary = contributionSummaryByCode.get(associationCode)
+    const contributionAmounts = contributionAmountsByCode.get(associationCode)
     const vestedMembers = vestedCountsByCode.get(associationCode) ?? 0
 
     const associationName =
       profile?.associationName.trim() || memberAssociationNamesByCode.get(associationCode) || associationCode
 
     return {
-      amountExpected: contributionSummary?.amountOwed ?? 0,
-      amountSent: contributionSummary?.amountReceived ?? 0,
-      amountVerified: contributionSummary?.amountVerified ?? 0,
+      amountExpected: contributionAmounts?.amountOwed ?? 0,
+      amountSent: contributionAmounts?.amountReceived ?? 0,
+      amountVerified: contributionAmounts?.amountVerified ?? 0,
       associationCode,
       associationName,
-      balance: contributionSummary?.balance ?? 0,
+      balance: contributionAmounts?.balance ?? 0,
       vestedMembers
     }
   })
