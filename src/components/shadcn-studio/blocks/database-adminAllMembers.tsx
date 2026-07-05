@@ -100,12 +100,6 @@ declare module '@tanstack/react-table' {
 const numberFormatter = new Intl.NumberFormat('en-US')
 const formatNumber = (value: number) => numberFormatter.format(value)
 
-const deadlineDateFormatter = new Intl.DateTimeFormat('en-US', {
-  day: 'numeric',
-  month: 'short',
-  year: 'numeric'
-})
-
 const getVisibleMatriculationNumber = (status: unknown, matriculationNumber: unknown) => {
   if (status === memberStatus.Pending || status === memberStatus.Awaiting) return 'Pending'
 
@@ -147,20 +141,25 @@ const filterName = (row: Row<MemberType>, columnId: string, filterValue: unknown
 }
 
 const getRegistrationPaymentWarning = (member: MemberType) => {
-  if (member.memberStatus !== memberStatus.Pending) return 'No registration payment warning'
+  if (member.memberStatus !== memberStatus.Pending) return ''
 
   const countdown = getRegistrationPaymentCountdown(member.createdAt)
   const countdownLabel = getRegistrationPaymentCountdownLabel(countdown.daysRemaining)
-  const deadline = deadlineDateFormatter.format(countdown.deadline)
 
-  return `${countdownLabel}. Fee due by ${deadline}. Member will be deleted if fee is not received after ${registrationPaymentDeadlineDays} days.`
+  return `${countdownLabel}.`
+}
+
+const getRegistrationPaymentSortValue = (member: MemberType) => {
+  if (member.memberStatus !== memberStatus.Pending) return undefined
+
+  return getRegistrationPaymentCountdown(member.createdAt).daysRemaining
 }
 
 const RegistrationPaymentWarningCell = ({ member }: { member: MemberType }) => {
   const warning = getRegistrationPaymentWarning(member)
 
   if (member.memberStatus !== memberStatus.Pending) {
-    return <span className='text-muted-foreground text-xs font-medium'>{warning}</span>
+    return null
   }
 
   return (
@@ -327,10 +326,10 @@ const columns: ColumnDef<MemberType>[] = [
   },
   {
     id: 'registrationPaymentWarning',
-    header: 'Registration Payment Warning',
-    accessorFn: row => getRegistrationPaymentWarning(row),
+    header: `Registration Dues (${registrationPaymentDeadlineDays} days)`,
+    accessorFn: row => getRegistrationPaymentSortValue(row),
     cell: ({ row }) => <RegistrationPaymentWarningCell member={row.original} />,
-    enableSorting: false,
+    sortUndefined: 'last',
     size: 260
   },
   {
@@ -537,7 +536,7 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
         Longevity: formatLongevity(createdAt),
         Recommendation: row.getValue('delegateRecommendation'),
         Status: row.getValue('memberStatus'),
-        'Registration Payment Warning': row.getValue('registrationPaymentWarning')
+        [`Registration Dues (${registrationPaymentDeadlineDays} days)`]: getRegistrationPaymentWarning(row.original)
       }
     })
 
