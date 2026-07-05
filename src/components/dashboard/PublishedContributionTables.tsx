@@ -541,6 +541,7 @@ const PublishedContributionTables = ({
             >
               <TableHeader>
                 <TableRow className='bg-primary hover:bg-primary print:bg-muted print:hover:bg-muted'>
+                  <TableHead className='text-primary-foreground w-12 px-1.5 text-right md:px-2'>No.</TableHead>
                   {groupSortColumns.map(column => (
                     <SortHeader
                       key={column.key}
@@ -575,6 +576,9 @@ const PublishedContributionTables = ({
                       index % 2 === 0 ? 'print:bg-gray-200' : 'print:bg-white'
                     )}
                   >
+                    <TableCell data-label='No.' className='px-1.5 text-right font-semibold md:px-2'>
+                      {index + 1}
+                    </TableCell>
                     <TableCell data-label='Association' className='hidden font-semibold md:table-cell'>
                       {group.associationName}
                     </TableCell>
