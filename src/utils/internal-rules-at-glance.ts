@@ -84,7 +84,7 @@ export const internalRulesAtGlance: InternalRulesAtGlanceSection[] = [
     title: 'Claims, Forum, and Attorney Fees',
     summary: 'The rules limit who may challenge SAGI operations and where disputes are handled.',
     bullets: [
-      'Member associations may challenge operations or request an accounting through the General Assembly or proper legal forum.',
+      'Member associations may challenge operations through the General Assembly or proper legal forum.',
       'Individual members of member associations do not have the same direct right to challenge SAGI operations.',
       'The exclusive forum is generally Montgomery County, Maryland, or the District of Maryland when federal jurisdiction applies.',
       'If SAGI prevails in litigation or similar proceedings, SAGI may recover reasonable attorney fees from the non-prevailing party.'
