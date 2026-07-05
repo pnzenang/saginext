@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import * as XLSX from 'xlsx'
 
+import PrintButton from '@/components/global/PrintButton'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -377,6 +378,7 @@ const AdminTransactionHistoryTable = ({
           />
         </form>
         <div className='flex flex-col gap-2 sm:flex-row sm:items-center'>
+          <PrintButton label='Print PDF' size='sm' className='h-10' />
           <Button
             type='button'
             size='sm'

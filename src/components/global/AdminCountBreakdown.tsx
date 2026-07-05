@@ -6,6 +6,7 @@ import { ArrowUpDown, ChevronDown, ChevronUp, SearchIcon, XIcon } from 'lucide-r
 
 import AdminCountExcelButton from '@/components/global/AdminCountExcelButton'
 import PaginationControls from '@/components/global/PaginationControls'
+import PrintButton from '@/components/global/PrintButton'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -233,7 +234,10 @@ const AdminCountBreakdown = ({ counts, totals }: AdminCountBreakdownProps) => {
         </form>
         <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center'>
           <div className='flex items-center justify-between gap-2 sm:justify-start'>
-            <label htmlFor={rowsPerPageSelectId} className='text-muted-foreground text-sm font-medium whitespace-nowrap'>
+            <label
+              htmlFor={rowsPerPageSelectId}
+              className='text-muted-foreground text-sm font-medium whitespace-nowrap'
+            >
               Rows
             </label>
             <Select value={String(rowsPerPage)} onValueChange={handleRowsPerPageChange}>
@@ -249,7 +253,10 @@ const AdminCountBreakdown = ({ counts, totals }: AdminCountBreakdownProps) => {
               </SelectContent>
             </Select>
           </div>
-          <AdminCountExcelButton counts={paginatedCounts} totals={currentPageTotals} />
+          <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center'>
+            <PrintButton label='Print PDF' />
+            <AdminCountExcelButton counts={paginatedCounts} totals={currentPageTotals} />
+          </div>
         </div>
       </div>
 
@@ -427,7 +434,7 @@ const AdminCountBreakdown = ({ counts, totals }: AdminCountBreakdownProps) => {
             </Table>
           </div>
           {sortedCounts.length > 0 ? (
-            <div className='mt-4 flex flex-col items-center justify-between gap-3 print:hidden sm:flex-row'>
+            <div className='mt-4 flex flex-col items-center justify-between gap-3 sm:flex-row print:hidden'>
               <p className='text-muted-foreground text-sm' aria-live='polite'>
                 Showing {(activePage - 1) * rowsPerPage + 1}-{Math.min(activePage * rowsPerPage, sortedCounts.length)}{' '}
                 of {sortedCounts.length}

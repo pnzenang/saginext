@@ -44,6 +44,7 @@ import {
 
 import Link from 'next/link'
 
+import PrintButton from '@/components/global/PrintButton'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -215,7 +216,9 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
       }[contributionStatus]
 
       return (
-        <Badge className={cn('max-w-full rounded-sm border-none text-xs capitalize focus-visible:outline-none', styles)}>
+        <Badge
+          className={cn('max-w-full rounded-sm border-none text-xs capitalize focus-visible:outline-none', styles)}
+        >
           {row.getValue('contributionStatus')}
         </Badge>
       )
@@ -526,6 +529,10 @@ const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
                 </SelectContent>
               </Select>
             </div>
+            <PrintButton
+              label='Print PDF'
+              className='text-primary focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40 w-full bg-purple-500/10 hover:bg-purple-400/20 sm:w-auto'
+            />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button className='text-primary focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40 w-full bg-purple-500/10 hover:bg-purple-400/20 sm:w-auto'>

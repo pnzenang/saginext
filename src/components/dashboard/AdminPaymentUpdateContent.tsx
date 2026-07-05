@@ -177,7 +177,7 @@ const AdminPaymentUpdateContent = ({ monthYearLabel, rows }: AdminPaymentUpdateC
             key={balanceFilter}
             title={selectedFilter.title}
             emptyMessage={selectedFilter.emptyMessage}
-            defaultSort={{ direction: 'asc', key: 'balance' }}
+            defaultSort={{ direction: 'asc', key: 'associationCode' }}
             rows={filteredRows}
           />
         </>

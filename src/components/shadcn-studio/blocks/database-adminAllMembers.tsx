@@ -44,6 +44,7 @@ import { toast } from 'sonner'
 import * as XLSX from 'xlsx'
 
 import PaginationControls from '@/components/global/PaginationControls'
+import PrintButton from '@/components/global/PrintButton'
 import RemoveOverduePendingMembersButton from '@/components/global/RemoveOverduePendingMembersButton'
 import {
   AlertDialog,
@@ -714,6 +715,10 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
                   </AlertDialogContent>
                 </AlertDialog>
                 <RemoveOverduePendingMembersButton overdueCount={overduePendingMembersCount} />
+                <PrintButton
+                  label='Print PDF'
+                  className='bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40 w-full sm:w-auto'
+                />
                 <Button
                   type='button'
                   onClick={exportVisibleColumnsToExcel}

@@ -273,7 +273,7 @@ const AdminPaymentUpdateTable = ({
                     <TableRow
                       key={row.associationCode}
                       className={cn(
-                        'hover:bg-gray-300 print:table-row',
+                        'h-12 hover:bg-gray-300 print:table-row',
                         index >= pageStartIndex && index < pageEndIndex ? 'odd:bg-gray-200 even:bg-white' : 'hidden',
                         index % 2 === 0 ? 'print:bg-gray-200' : 'print:bg-white'
                       )}

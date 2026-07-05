@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import * as XLSX from 'xlsx'
 
+import PrintButton from '@/components/global/PrintButton'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -73,9 +74,7 @@ const formatDate = (date: string) => dateFormatter.format(new Date(date))
 const MobileValue = ({ label, value }: { label: string; value: string }) => (
   <div className='grid grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] items-start gap-2'>
     <span className='text-muted-foreground min-w-0 text-xs leading-snug font-semibold uppercase'>{label}</span>
-    <span className='min-w-0 justify-self-end text-right text-sm leading-snug font-semibold break-words'>
-      {value}
-    </span>
+    <span className='min-w-0 justify-self-end text-right text-sm leading-snug font-semibold break-words'>{value}</span>
   </div>
 )
 
@@ -92,13 +91,7 @@ const MonthlyAdditionsTable = ({ monthKey, rows }: { monthKey: string; rows: Mon
     if (!normalizedSearch) return rows
 
     return rows.filter(row =>
-      [
-        row.associationCode,
-        row.associationName,
-        row.memberMatriculationNumber,
-        row.firstName,
-        row.lastAndMiddleNames
-      ]
+      [row.associationCode, row.associationName, row.memberMatriculationNumber, row.firstName, row.lastAndMiddleNames]
         .join(' ')
         .toLowerCase()
         .includes(normalizedSearch)
@@ -201,6 +194,7 @@ const MonthlyAdditionsTable = ({ monthKey, rows }: { monthKey: string; rows: Mon
           <Badge variant='outline' className='h-10 w-fit rounded-md px-3 text-sm font-semibold'>
             {sortedRows.length} vested
           </Badge>
+          <PrintButton label='Print PDF' className='h-10' />
           <Button type='button' className='h-10' onClick={handleExportFilteredRows} disabled={sortedRows.length === 0}>
             <FileSpreadsheetIcon />
             Export Results
@@ -210,7 +204,10 @@ const MonthlyAdditionsTable = ({ monthKey, rows }: { monthKey: string; rows: Mon
 
       <div className='border-border max-w-full min-w-0 overflow-hidden rounded-lg border'>
         <div className='hidden overflow-x-auto md:block'>
-          <Table className='[[&_td]:wrap-break-word table-fixed [&_td]:whitespace-normal [&_th]:wrap-break-word [&_th]:whitespace-normal'>
+          <Table
+            data-monthly-additions-table
+            className='[[&_td]:wrap-break-word table-fixed [&_td]:py-3 [&_td]:leading-relaxed [&_td]:whitespace-normal [&_th]:wrap-break-word [&_th]:whitespace-normal'
+          >
             <colgroup>
               {columns.map(column => (
                 <col key={column.key} style={{ width: `${column.width}%` }} />
@@ -251,7 +248,7 @@ const MonthlyAdditionsTable = ({ monthKey, rows }: { monthKey: string; rows: Mon
                 </TableRow>
               ) : (
                 paginatedRows.map(row => (
-                  <TableRow key={row.id} className='odd:bg-muted/30 even:bg-background'>
+                  <TableRow key={row.id} className='h-12 odd:bg-gray-200 even:bg-white hover:bg-gray-300'>
                     <TableCell>
                       <Badge variant='secondary' className='rounded-md font-mono'>
                         {row.associationCode}

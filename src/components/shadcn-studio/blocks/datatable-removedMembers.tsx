@@ -58,6 +58,7 @@ import { getTableCellLabel } from '@/utils/table'
 import { getSelectFilterValues } from '@/utils/table-filter-values'
 import type { RemovedMemberType } from '@/utils/types'
 import PaginationControls from '@/components/global/PaginationControls'
+import PrintButton from '@/components/global/PrintButton'
 import RestoreRemovedMemberButton from '@/components/global/RestoreRemovedMemberButton'
 
 declare module '@tanstack/react-table' {
@@ -400,6 +401,10 @@ const RemovedMembersDataTable = ({ data }: { data: RemovedMemberType[] }) => {
                 </SelectContent>
               </Select>
             </div>
+            <PrintButton
+              label='Print PDF'
+              className='text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40 w-full bg-red-400/10 sm:w-auto'
+            />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button className='text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40 w-full bg-red-400/10 sm:w-auto'>

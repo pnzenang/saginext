@@ -17,7 +17,6 @@ import {
   SearchIcon,
   UploadIcon,
   Cross,
-  Eye,
   Pencil,
   XIcon
 } from 'lucide-react'
@@ -37,9 +36,8 @@ import {
 
 import Link from 'next/link'
 
-import { id } from 'zod/v4/locales'
-
 import PaginationControls from '@/components/global/PaginationControls'
+import PrintButton from '@/components/global/PrintButton'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 
@@ -68,6 +66,7 @@ import { formatLongevity } from '@/utils/formatLongevity'
 import { type MemberType } from '@/utils/types'
 
 declare module '@tanstack/react-table' {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface ColumnMeta<TData extends RowData, TValue> {
     filterVariant?: 'text' | 'range' | 'select'
   }
@@ -418,6 +417,10 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
                 </SelectContent>
               </Select>
             </div>
+            <PrintButton
+              label='Print PDF'
+              className='bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40 w-full sm:w-auto'
+            />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button className='bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40 w-full sm:w-auto'>

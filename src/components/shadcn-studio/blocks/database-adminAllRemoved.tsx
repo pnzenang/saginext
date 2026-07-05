@@ -1,7 +1,6 @@
 'use client'
 import { useId, useMemo, useState } from 'react'
 
-import { IoIosWarning } from 'react-icons/io'
 import day from 'dayjs'
 import advancedFormat from 'dayjs/plugin/advancedFormat'
 import Papa from 'papaparse'
@@ -15,15 +14,11 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   ChevronUpIcon,
-  Ellipsis,
-  Trash2,
   FileSpreadsheetIcon,
   FileTextIcon,
   SearchIcon,
+  Trash2,
   UploadIcon,
-  Cross,
-  Eye,
-  Pencil,
   XIcon
 } from 'lucide-react'
 
@@ -40,17 +35,12 @@ import {
   useReactTable
 } from '@tanstack/react-table'
 
-import Link from 'next/link'
-
-import { id } from 'zod/v4/locales'
-
-import { Badge } from '@/components/ui/badge'
+import PrintButton from '@/components/global/PrintButton'
 import { Button } from '@/components/ui/button'
 
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger
@@ -69,13 +59,13 @@ import { cn } from '@/lib/utils'
 import { getTableCellLabel } from '@/utils/table'
 import { getSelectFilterValues } from '@/utils/table-filter-values'
 import type { RemovedMemberType } from '@/utils/types'
-import { type MemberType } from '@/utils/types'
 import { deleteRemovedMemberAction } from '@/utils/actions'
 import FormContainer from '@/components/forms/FormContainer'
 import PaginationControls from '@/components/global/PaginationControls'
 import RestoreRemovedMemberButton from '@/components/global/RestoreRemovedMemberButton'
 
 declare module '@tanstack/react-table' {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface ColumnMeta<TData extends RowData, TValue> {
     filterVariant?: 'text' | 'range' | 'select'
   }
@@ -94,6 +84,7 @@ const columns: ColumnDef<RemovedMemberType>[] = [
     ),
     size: 100
   },
+
   // {
   //   header: 'Middle Name',
   //   accessorKey: 'middleName',
@@ -189,7 +180,6 @@ const columns: ColumnDef<RemovedMemberType>[] = [
     header: 'Date Removed',
     cell: ({ row }) => {
       const field = row.getValue('createdAt') as Date
-      const time = day(Date.now())
 
       const formattedLongevity = day(field).format('MMM D, YYYY')
 
@@ -414,6 +404,10 @@ const RemovedMembersDataTable = ({ data }: { data: RemovedMemberType[] }) => {
                 </SelectContent>
               </Select>
             </div>
+            <PrintButton
+              label='Print PDF'
+              className='text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40 w-full bg-red-400/10 sm:w-auto'
+            />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button className='text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40 w-full bg-red-400/10 sm:w-auto'>
