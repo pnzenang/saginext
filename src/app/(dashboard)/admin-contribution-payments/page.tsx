@@ -221,16 +221,16 @@ const AdminContributionPayments = async () => {
         </p>
       </div>
 
-      <PaymentSubmissionAlertCard
-        title='New Contribution Payment Submissions'
-        alerts={contributionPaymentAlerts}
-        action={resetContributionPaymentAlertAction}
-      />
-
       <ContributionAssessmentForm
         calculationDeathCount={contributionCalculationSummary.deathCount}
         monthlyContributionTotal={contributionCalculationSummary.totalAmount}
         vestedMembersCount={totalVestedMembers}
+      />
+
+      <PaymentSubmissionAlertCard
+        title='New Contribution Payment Submissions'
+        alerts={contributionPaymentAlerts}
+        action={resetContributionPaymentAlertAction}
       />
 
       <Card className='w-full max-w-full min-w-0 overflow-hidden'>
