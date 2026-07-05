@@ -7,6 +7,7 @@ import db from '@/utils/db'
 import {
   addAssociationContributionBalanceAdjustmentAction,
   addAssociationContributionSentAdjustmentAction,
+  fetchContributionCalculationSummaryAction,
   resetContributionPaymentAlertAction,
   resetAssociationContributionPaymentAction,
   verifyAssociationContributionPaymentAction
@@ -36,7 +37,8 @@ const AdminContributionPayments = async () => {
     balanceAdjustments,
     vestedCounts,
     memberAssociationNames,
-    paymentAlertReset
+    paymentAlertReset,
+    contributionCalculationSummary
   ] = await Promise.all([
     db.profile.findMany({
       orderBy: {
@@ -97,7 +99,8 @@ const AdminContributionPayments = async () => {
       FROM "PaymentAlertReset"
       WHERE "alertType" = ${contributionPaymentAlertType}
       LIMIT 1
-    `
+    `,
+    fetchContributionCalculationSummaryAction()
   ])
 
   const profilesByCode = new Map(profiles.map(profile => [profile.associationCode, profile]))
@@ -224,7 +227,11 @@ const AdminContributionPayments = async () => {
         action={resetContributionPaymentAlertAction}
       />
 
-      <ContributionAssessmentForm vestedMembersCount={totalVestedMembers} />
+      <ContributionAssessmentForm
+        calculationDeathCount={contributionCalculationSummary.deathCount}
+        monthlyContributionTotal={contributionCalculationSummary.totalAmount}
+        vestedMembersCount={totalVestedMembers}
+      />
 
       <Card className='w-full max-w-full min-w-0 overflow-hidden'>
         <CardHeader className='min-w-0'>

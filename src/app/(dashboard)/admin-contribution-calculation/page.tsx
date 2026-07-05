@@ -144,12 +144,7 @@ const ContributionCalculationPage = async () => {
                         {currencyFormatter.format(death.amountToContribute)}
                       </TableCell>
                       <TableCell>
-                        <div className='flex min-w-52 flex-col gap-1'>
-                          <span className='font-semibold'>{death.associationName}</span>
-                          {death.associationCode ? (
-                            <span className='text-muted-foreground text-xs font-semibold'>{death.associationCode}</span>
-                          ) : null}
-                        </div>
+                        <span className='block min-w-52 font-semibold'>{death.associationName}</span>
                       </TableCell>
                       <TableCell>
                         <form action={deleteContributionCalculationDeathAction}>

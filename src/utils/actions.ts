@@ -371,23 +371,6 @@ const getPositiveDollarAmountFromForm = (formData: FormData, fieldName: string) 
   return Number(amount.toFixed(2))
 }
 
-const getOptionalNonNegativeIntegerFromForm = (formData: FormData, fieldName: string, label = fieldName) => {
-  const rawValue = formData.get(fieldName)
-  const value = typeof rawValue === 'string' ? rawValue.trim() : ''
-
-  if (!value) {
-    return null
-  }
-
-  const numberValue = Number(value)
-
-  if (!Number.isInteger(numberValue) || numberValue < 0) {
-    throw new Error(`${label} must be a whole number of 0 or more.`)
-  }
-
-  return numberValue
-}
-
 const getSignedDollarAmountFromForm = (formData: FormData, fieldName: string) => {
   const amount = Number(getRequiredFormValue(formData, fieldName))
 
@@ -908,6 +891,28 @@ export const fetchMemberStatusCountsByAssociationCode = async () => {
   return Object.values(countsByAssociationCode)
 }
 
+const fetchContributionCalculationSummary = async () => {
+  const summary = await db.contributionCalculationDeath.aggregate({
+    _count: {
+      _all: true
+    },
+    _sum: {
+      amountToContribute: true
+    }
+  })
+
+  return {
+    deathCount: summary._count._all,
+    totalAmount: roundCurrencyAmount(decimalToNumber(summary._sum.amountToContribute))
+  }
+}
+
+export const fetchContributionCalculationSummaryAction = async () => {
+  await assertAdminUser()
+
+  return fetchContributionCalculationSummary()
+}
+
 export const createAssociationContributionAssessmentAction = async (
   prevState: any,
   formData: FormData
@@ -915,9 +920,12 @@ export const createAssociationContributionAssessmentAction = async (
   const user = await assertAdminUser()
 
   try {
-    const totalAmount = getPositiveDollarAmountFromForm(formData, 'totalAmount')
-    const deathCount = getOptionalNonNegativeIntegerFromForm(formData, 'deathCount', 'Number of deaths')
     const dueDate = getRequiredDateFromForm(formData, 'dueDate')
+    const { deathCount, totalAmount } = await fetchContributionCalculationSummary()
+
+    if (deathCount === 0 || totalAmount <= 0) {
+      throw new Error('Add at least one death with an amount in Contribution Calculation before distributing.')
+    }
 
     const vestedMembers = await db.member.findMany({
       select: {
@@ -950,7 +958,7 @@ export const createAssociationContributionAssessmentAction = async (
       await tx.associationContributionAssessment.create({
         data: {
           amountPerVestedMember,
-          deathCount: deathCount ?? 0,
+          deathCount,
           dueDate,
           totalAmount,
           totalVestedMembers: vestedMembers.length,
@@ -966,9 +974,7 @@ export const createAssociationContributionAssessmentAction = async (
           associationCode: group.associationCode,
           createdBy: user.id,
           eventType: associationPaymentLedgerEventTypes.dueOffset,
-          note: `Contribution due created for ${group.vestedMembersCount} vested member(s).${
-            deathCount === null ? '' : ` Number of deaths entered: ${deathCount}.`
-          }`,
+          note: `Contribution due created for ${group.vestedMembersCount} vested member(s). Number of deaths in calculation: ${deathCount}.`,
           paymentType: associationPaymentTypes.contribution
         }))
       })
@@ -977,9 +983,7 @@ export const createAssociationContributionAssessmentAction = async (
     revalidatePaymentViews()
 
     return {
-      message: `Distributed ${currencyFormatter.format(totalAmount)} across ${vestedMembers.length} vested members. Each vested member is ${currencyFormatter.format(amountPerVestedMember)}.${
-        deathCount === null ? '' : ` Number of deaths entered: ${deathCount}.`
-      }`
+      message: `Distributed ${currencyFormatter.format(totalAmount)} across ${vestedMembers.length} vested members. Each vested member is ${currencyFormatter.format(amountPerVestedMember)}. Number of deaths in calculation: ${deathCount}.`
     }
   } catch (error) {
     return renderError(error)

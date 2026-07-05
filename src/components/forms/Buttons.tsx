@@ -7,14 +7,15 @@ import { Button } from '../ui/button'
 
 type SubmitButtonProps = {
   className?: string
+  disabled?: boolean
   text?: string
 }
 
-export const SubmitButton = ({ className = '', text = 'submit' }: SubmitButtonProps) => {
+export const SubmitButton = ({ className = '', disabled = false, text = 'submit' }: SubmitButtonProps) => {
   const { pending } = useFormStatus()
 
   return (
-    <Button type='submit' disabled={pending} className={`capitalize ${className}`} size='lg'>
+    <Button type='submit' disabled={pending || disabled} className={`capitalize ${className}`} size='lg'>
       {pending ? (
         <>
           <Loader className='mr-2 h-4 w-4 animate-spin' />
