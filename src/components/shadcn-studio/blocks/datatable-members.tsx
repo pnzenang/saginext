@@ -159,10 +159,10 @@ const RegistrationPaymentWarningCell = ({ member }: { member: MemberType }) => {
   }
 
   return (
-    <div className='border-destructive/30 bg-destructive/10 text-destructive flex max-w-80 min-w-64 items-start gap-2 rounded-md border px-2.5 py-2 text-xs leading-5 whitespace-normal'>
-      <AlertTriangle className='mt-0.5 size-4 shrink-0' aria-hidden='true' />
-      <span className='font-semibold'>{warning}</span>
-    </div>
+    <Badge variant='destructive' className='rounded-sm'>
+      <AlertTriangle aria-hidden='true' />
+      {warning}
+    </Badge>
   )
 }
 
