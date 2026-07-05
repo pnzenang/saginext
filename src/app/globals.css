@@ -361,6 +361,10 @@
       padding-block: 0.45rem !important;
     }
 
+    [data-contribution-table-print] [data-association-contribution-section] {
+      break-inside: auto !important;
+    }
+
     [data-contribution-table-print] [data-slot='card-header'],
     [data-contribution-table-print] [data-slot='card-content'] {
       padding-inline: 0.5rem !important;
@@ -422,6 +426,42 @@
 
     [data-contribution-table-print] [data-mobile-cards='true'] th button {
       color: var(--foreground) !important;
+    }
+
+    [data-contribution-table-print] [data-association-contribution-table] {
+      break-inside: auto !important;
+      page-break-inside: auto;
+    }
+
+    [data-contribution-table-print] [data-association-contribution-table] thead {
+      display: table-header-group !important;
+    }
+
+    [data-contribution-table-print] [data-association-contribution-table] thead th {
+      -webkit-print-color-adjust: exact;
+      background: rgb(243 244 246) !important;
+      print-color-adjust: exact;
+    }
+
+    [data-contribution-table-print] [data-association-contribution-table] tbody tr {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    [data-contribution-table-print] [data-association-contribution-table] tbody tr:nth-child(odd) td {
+      -webkit-print-color-adjust: exact;
+      background: rgb(229 231 235) !important;
+      line-height: 1.35 !important;
+      padding-block: 0.34rem !important;
+      print-color-adjust: exact;
+    }
+
+    [data-contribution-table-print] [data-association-contribution-table] tbody tr:nth-child(even) td {
+      -webkit-print-color-adjust: exact;
+      background: white !important;
+      line-height: 1.35 !important;
+      padding-block: 0.34rem !important;
+      print-color-adjust: exact;
     }
   }
 }

@@ -1,13 +1,15 @@
 'use client'
 
-import { useMemo, useState, type ReactNode } from 'react'
+import { useId, useMemo, useState, type ReactNode } from 'react'
 
 import { ArrowUpDown, ChevronDown, ChevronUp, Download } from 'lucide-react'
 
+import PaginationControls from '@/components/global/PaginationControls'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { usePagination } from '@/hooks/use-pagination'
 import { cn } from '@/lib/utils'
 
 type ContributionTableDocument = {
@@ -77,6 +79,9 @@ const currencyFormatter = new Intl.NumberFormat('en-US', {
 const dateFormatter = new Intl.DateTimeFormat('en-US', {
   dateStyle: 'medium'
 })
+
+const defaultGroupRowsPerPage = 10
+const groupRowsPerPageOptions = [10, 25, 50, 100]
 
 const deathSortColumns: SortColumn<DeathSortKey>[] = [
   { key: 'memberMatriculationNumber', label: 'Matriculation', shortLabel: 'Matric.', className: 'px-1.5 md:px-2' },
@@ -314,6 +319,10 @@ const PublishedContributionTables = ({
     key: 'associationCode'
   })
 
+  const [groupCurrentPage, setGroupCurrentPage] = useState(1)
+  const [groupRowsPerPage, setGroupRowsPerPage] = useState(defaultGroupRowsPerPage)
+  const groupRowsPerPageSelectId = useId()
+
   const sortedDeaths = useMemo(() => {
     const directionMultiplier = deathSort.direction === 'asc' ? 1 : -1
 
@@ -342,6 +351,19 @@ const PublishedContributionTables = ({
     })
   }, [groups, groupSort])
 
+  const groupTotalPages = Math.max(1, Math.ceil(sortedGroups.length / groupRowsPerPage))
+  const activeGroupPage = Math.min(groupCurrentPage, groupTotalPages)
+
+  const {
+    pages: groupPages,
+    showLeftEllipsis: showGroupLeftEllipsis,
+    showRightEllipsis: showGroupRightEllipsis
+  } = usePagination({
+    currentPage: activeGroupPage,
+    paginationItemsToDisplay: 3,
+    totalPages: groupTotalPages
+  })
+
   const handleDeathSort = (key: DeathSortKey) => {
     setDeathSort(currentSort => ({
       direction: getNextDirection(currentSort, key),
@@ -356,9 +378,17 @@ const PublishedContributionTables = ({
     }))
   }
 
+  const handleGroupRowsPerPageChange = (value: string) => {
+    setGroupRowsPerPage(Number(value))
+    setGroupCurrentPage(1)
+  }
+
   return (
     <>
-      <Card className='w-full max-w-full min-w-0 overflow-hidden print:break-inside-avoid print:shadow-none'>
+      <Card
+        data-association-contribution-section
+        className='w-full max-w-full min-w-0 overflow-hidden print:shadow-none'
+      >
         <CardHeader>
           <div className='flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'>
             <div>
@@ -471,18 +501,44 @@ const PublishedContributionTables = ({
                 member.
               </CardDescription>
             </div>
-            <SortControl
-              columns={groupSortColumns}
-              label='Sort associations by'
-              onSort={handleGroupSort}
-              setDirection={direction => setGroupSort(currentSort => ({ ...currentSort, direction }))}
-              sort={groupSort}
-            />
+            <div className='flex flex-col gap-3 print:hidden sm:items-end'>
+              <div className='flex items-center justify-between gap-2 sm:justify-end'>
+                <label
+                  htmlFor={groupRowsPerPageSelectId}
+                  className='text-muted-foreground text-sm font-medium whitespace-nowrap'
+                >
+                  Lines
+                </label>
+                <Select value={String(groupRowsPerPage)} onValueChange={handleGroupRowsPerPageChange}>
+                  <SelectTrigger id={groupRowsPerPageSelectId} size='sm' className='w-24'>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent align='end'>
+                    {groupRowsPerPageOptions.map(option => (
+                      <SelectItem key={option} value={String(option)}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <SortControl
+                columns={groupSortColumns}
+                label='Sort associations by'
+                onSort={handleGroupSort}
+                setDirection={direction => setGroupSort(currentSort => ({ ...currentSort, direction }))}
+                sort={groupSort}
+              />
+            </div>
           </div>
         </CardHeader>
         <CardContent className='min-w-0'>
           <div className='max-w-full overflow-hidden rounded-lg border md:overflow-x-auto print:overflow-visible'>
-            <Table mobileCards className='min-w-0 table-fixed text-xs md:min-w-max md:table-auto md:text-sm'>
+            <Table
+              data-association-contribution-table
+              mobileCards
+              className='min-w-0 table-fixed text-xs md:min-w-max md:table-auto md:text-sm'
+            >
               <TableHeader>
                 <TableRow className='bg-primary hover:bg-primary print:bg-muted print:hover:bg-muted'>
                   {groupSortColumns.map(column => (
@@ -507,8 +563,18 @@ const PublishedContributionTables = ({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sortedGroups.map(group => (
-                  <TableRow key={group.associationCode} className='odd:bg-muted/30 even:bg-background'>
+                {sortedGroups.map((group, index) => (
+                  <TableRow
+                    key={group.associationCode}
+                    className={cn(
+                      'h-12 hover:bg-gray-300 print:table-row',
+                      index >= (activeGroupPage - 1) * groupRowsPerPage &&
+                        index < activeGroupPage * groupRowsPerPage
+                        ? 'odd:bg-gray-200 even:bg-white'
+                        : 'hidden',
+                      index % 2 === 0 ? 'print:bg-gray-200' : 'print:bg-white'
+                    )}
+                  >
                     <TableCell data-label='Association' className='hidden font-semibold md:table-cell'>
                       {group.associationName}
                     </TableCell>
@@ -532,6 +598,34 @@ const PublishedContributionTables = ({
               </TableBody>
             </Table>
           </div>
+          {sortedGroups.length > 0 ? (
+            <div className='mt-4 flex flex-col items-center justify-between gap-3 print:hidden sm:flex-row'>
+              <p className='text-muted-foreground text-sm' aria-live='polite'>
+                Showing {(activeGroupPage - 1) * groupRowsPerPage + 1}-
+                {Math.min(activeGroupPage * groupRowsPerPage, sortedGroups.length)} of {sortedGroups.length}
+              </p>
+              {groupTotalPages > 1 ? (
+                <PaginationControls
+                  activePage={activeGroupPage}
+                  canNext={activeGroupPage < groupTotalPages}
+                  canPrevious={activeGroupPage > 1}
+                  getPageButtonClassName={isActive =>
+                    isActive
+                      ? undefined
+                      : 'bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40'
+                  }
+                  iconClassName='text-primary'
+                  labelClassName='text-primary max-sm:hidden'
+                  onNext={() => setGroupCurrentPage(Math.min(groupTotalPages, activeGroupPage + 1))}
+                  onPageChange={setGroupCurrentPage}
+                  onPrevious={() => setGroupCurrentPage(Math.max(1, activeGroupPage - 1))}
+                  pages={groupPages}
+                  showLeftEllipsis={showGroupLeftEllipsis}
+                  showRightEllipsis={showGroupRightEllipsis}
+                />
+              ) : null}
+            </div>
+          ) : null}
         </CardContent>
       </Card>
     </>
