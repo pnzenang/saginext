@@ -131,8 +131,8 @@ const MemberRegistration = () => {
                 reviewed.
               </p>
               <p>
-                The waiting period is at least 60 days. The $20 registration fee should be received within seventy (70)
-                days. If the fee is not received within seventy (70) days, the pending member will be deleted from the
+                The waiting period is at least 60 days. The $20 registration fee should be received within sixty (60)
+                days. If the fee is not received within sixty (60) days, the pending member will be deleted from the
                 database.
               </p>
             </CardContent>

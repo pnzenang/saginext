@@ -6,8 +6,8 @@ const emailDateFormatter = new Intl.DateTimeFormat('en-US', {
   year: 'numeric'
 })
 
-const registrationPaymentDeadlineDays = 70
-const registrationPaymentDeadlineLabel = 'seventy (70) days'
+const registrationPaymentDeadlineDays = 60
+const registrationPaymentDeadlineLabel = 'sixty (60) days'
 
 type SendEmailOptions = {
   html: string

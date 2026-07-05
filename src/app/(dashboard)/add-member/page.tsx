@@ -18,7 +18,7 @@ const addMemberCopy = {
     introLabel: 'Please read first: ',
     intro: 'Adding members is the first step toward their registration. The waiting period is at least 60 days, and',
     introBold:
-      'their $20 registration fees should be received by the admin within seventy (70) days. Pending members should not start participating in the program before the fee is received. If the registration fees are not received within seventy (70) days, the pending members will be deleted from our database.',
+      'their $20 registration fees should be received by the admin within sixty (60) days. Pending members should not start participating in the program before the fee is received. If the registration fees are not received within sixty (60) days, the pending members will be deleted from our database.',
     introAfter: 'When you are ready to pay for their registration fee and their anticipated contribution, go to',
     registrationPayments: 'Registration Payments',
     introAfterLink: 'in the sidebar to send and record the registration payments of the members you are registering.',
@@ -42,7 +42,7 @@ const addMemberCopy = {
     intro:
       "L'ajout d'un membre est la première étape de son inscription. La période d'attente est d'au moins 60 jours, et",
     introBold:
-      "les frais d'inscription de 20 $ doivent être reçus par l'administration dans les soixante-dix (70) jours. Les membres en attente ne doivent pas commencer à participer au programme avant la réception des frais. Si les frais d'inscription ne sont pas reçus dans les soixante-dix (70) jours, les membres en attente seront supprimés de notre base de données.",
+      "les frais d'inscription de 20 $ doivent être reçus par l'administration dans les soixante (60) jours. Les membres en attente ne doivent pas commencer à participer au programme avant la réception des frais. Si les frais d'inscription ne sont pas reçus dans les soixante (60) jours, les membres en attente seront supprimés de notre base de données.",
     introAfter: "Lorsque vous êtes prêt à payer les frais d'inscription et la contribution prévue, allez à",
     registrationPayments: "Paiements d'inscription",
     introAfterLink:

@@ -30,7 +30,7 @@ const paymentInstructionsCopy = {
     pendingMemberWarning: {
       title: 'Pending member deadline:',
       description:
-        'Pending members have seventy (70) days to send the registration fee. If the fee is not received within seventy (70) days, the pending member will be deleted.'
+        'Pending members have sixty (60) days to send the registration fee. If the fee is not received within sixty (60) days, the pending member will be deleted.'
     },
     contributionsCta: 'Contributions Payments',
     registrationsCta: 'Registration Payments',
@@ -95,7 +95,7 @@ const paymentInstructionsCopy = {
     pendingMemberWarning: {
       title: 'Délai pour les membres en attente :',
       description:
-        "Les membres en attente ont soixante-dix (70) jours pour envoyer les frais d'inscription. Si les frais ne sont pas reçus dans les soixante-dix (70) jours, le membre en attente sera supprimé."
+        "Les membres en attente ont soixante (60) jours pour envoyer les frais d'inscription. Si les frais ne sont pas reçus dans les soixante (60) jours, le membre en attente sera supprimé."
     },
     contributionsCta: 'Paiements des cotisations',
     registrationsCta: "Paiements d'inscription",
