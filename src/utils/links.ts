@@ -19,7 +19,8 @@ import {
   Megaphone,
   Table,
   FileCheck,
-  ArrowLeftRight
+  ArrowLeftRight,
+  BellDot
 } from 'lucide-react'
 
 import type { MenuItem } from './types'
@@ -164,6 +165,11 @@ export const getPagesItems = (date: Date = new Date()): MenuItem[] => [
     icon: Wallet,
     label: 'Admin Contribution Payments',
     href: '/admin-contribution-payments'
+  },
+  {
+    icon: BellDot,
+    label: 'Payment Update',
+    href: '/admin-payment-update'
   },
   {
     icon: WalletCards,

@@ -102,6 +102,7 @@ const dashboardMenuLabelTranslations: Record<string, string> = {
   'Admin All Deceased': 'Tous les membres décédés',
   'Admin Count ': 'Décompte',
   'Contribution Calculation': 'Calcul des cotisations',
+  'Payment Update': 'Mise à jour des paiements',
   'Admin Contribution Payments': 'Paiements des cotisations',
   'Admin Registration Payments': "Paiements d'inscription",
   'Admin Transaction History': 'Historique des transactions'

@@ -595,7 +595,9 @@ const getCurrentAssociationCode = async (clerkId: string) => {
 
 const revalidatePaymentViews = () => {
   revalidatePath('/admin-contribution-payments')
+  revalidatePath('/admin-payment-update')
   revalidatePath('/admin-registration-payments')
+  revalidatePath('/admin-transaction-history')
   revalidatePath('/admin-all-members')
   revalidatePath('/contribution-table')
   revalidatePath('/contributions')
@@ -1113,11 +1115,44 @@ export const resetAssociationContributionCalculationAction = async (): Promise<{
   const user = await assertAdminUser()
 
   try {
-    const [latestAssessment, associationContributionPayments] = await Promise.all([
+    const [
+      latestAssessment,
+      associationContributionPayments,
+      contributionAssessmentGroups,
+      contributionUsages,
+      balanceAdjustments,
+      profiles,
+      members
+    ] = await Promise.all([
       fetchLatestAssociationContributionAssessment(),
-      db.associationContributionPayment.findMany({
+      db.associationContributionPayment.findMany(),
+      db.associationContributionAssessmentGroup.findMany({
+        select: {
+          associationCode: true
+        }
+      }),
+      db.associationContributionUsage.findMany({
+        select: {
+          associationCode: true
+        }
+      }),
+      db.associationBalanceAdjustment.findMany({
+        select: {
+          associationCode: true
+        },
         where: {
-          OR: [{ amountSent: { gt: 0 } }, { amountVerified: { gt: 0 } }]
+          balanceType: contributionBalanceAdjustmentType
+        }
+      }),
+      db.profile.findMany({
+        select: {
+          associationCode: true
+        }
+      }),
+      db.member.findMany({
+        distinct: ['associationCode'],
+        select: {
+          associationCode: true
         }
       })
     ])
@@ -1125,9 +1160,14 @@ export const resetAssociationContributionCalculationAction = async (): Promise<{
     const affectedAssociationCodes = Array.from(
       new Set([
         ...(latestAssessment?.groups.map(group => group.associationCode) ?? []),
-        ...associationContributionPayments.map(payment => payment.associationCode)
+        ...associationContributionPayments.map(payment => payment.associationCode),
+        ...contributionAssessmentGroups.map(group => group.associationCode),
+        ...contributionUsages.map(usage => usage.associationCode),
+        ...balanceAdjustments.map(adjustment => adjustment.associationCode),
+        ...profiles.map(profile => profile.associationCode),
+        ...members.map(member => member.associationCode)
       ])
-    )
+    ).filter(Boolean)
 
     const contributionSummaries =
       affectedAssociationCodes.length > 0
@@ -1136,10 +1176,23 @@ export const resetAssociationContributionCalculationAction = async (): Promise<{
           )
         : []
 
-    const balanceAdjustments = contributionSummaries.map(summary => ({
-      amount: Number((summary.balance - summary.amountVerified).toFixed(2)),
-      associationCode: summary.associationCode
-    }))
+    const resetLedgerEntries = contributionSummaries
+      .filter(
+        summary =>
+          summary.amountOwed !== 0 ||
+          summary.amountReceived !== 0 ||
+          summary.amountVerified !== 0 ||
+          summary.balance !== 0 ||
+          summary.manualBalanceAdjustment !== 0
+      )
+      .map(summary => ({
+        amount: summary.balance,
+        associationCode: summary.associationCode,
+        createdBy: user.id,
+        eventType: associationPaymentLedgerEventTypes.reset,
+        note: 'Contribution calculation reset. Payment Update cleared for the new contribution cycle.',
+        paymentType: associationPaymentTypes.contribution
+      }))
 
     const paymentAssociationCodes = associationContributionPayments.map(payment => payment.associationCode)
 
@@ -1170,14 +1223,11 @@ export const resetAssociationContributionCalculationAction = async (): Promise<{
 
     const missingLedgerEntries = associationContributionPayments.flatMap(payment => {
       const submittedTotal =
-        ledgerTotalsByCodeAndEvent.get(
-          `${payment.associationCode}:${associationPaymentLedgerEventTypes.submitted}`
-        ) ?? 0
+        ledgerTotalsByCodeAndEvent.get(`${payment.associationCode}:${associationPaymentLedgerEventTypes.submitted}`) ??
+        0
 
       const verifiedTotal =
-        ledgerTotalsByCodeAndEvent.get(
-          `${payment.associationCode}:${associationPaymentLedgerEventTypes.verified}`
-        ) ?? 0
+        ledgerTotalsByCodeAndEvent.get(`${payment.associationCode}:${associationPaymentLedgerEventTypes.verified}`) ?? 0
 
       const missingSubmittedAmount = roundCurrencyAmount(
         getSubmittedAmountForPaymentHistory(payment, associationPaymentTypes.contribution) - submittedTotal
@@ -1215,55 +1265,58 @@ export const resetAssociationContributionCalculationAction = async (): Promise<{
       ]
     })
 
-    await db.$transaction(async tx => {
-      if (missingLedgerEntries.length > 0) {
-        await tx.associationPaymentLedgerEntry.createMany({
-          data: missingLedgerEntries
-        })
-      }
+    await db.$transaction(
+      async tx => {
+        if (missingLedgerEntries.length > 0) {
+          await tx.associationPaymentLedgerEntry.createMany({
+            data: missingLedgerEntries
+          })
+        }
 
-      if (associationContributionPayments.length > 0) {
-        await tx.associationContributionPayment.updateMany({
-          data: {
-            amountSent: 0,
-            amountVerified: 0,
-            lastSubmittedAt: null,
-            verifiedAt: null
-          },
-          where: {
-            associationCode: {
-              in: associationContributionPayments.map(payment => payment.associationCode)
+        if (associationContributionPayments.length > 0) {
+          await tx.associationContributionPayment.updateMany({
+            data: {
+              amountSent: 0,
+              amountVerified: 0,
+              lastSubmittedAt: null,
+              verifiedAt: null
+            },
+            where: {
+              associationCode: {
+                in: associationContributionPayments.map(payment => payment.associationCode)
+              }
             }
+          })
+        }
+
+        await tx.associationBalanceAdjustment.deleteMany({
+          where: {
+            balanceType: contributionBalanceAdjustmentType
           }
         })
-      }
 
-      if (balanceAdjustments.length > 0) {
-        await tx.$executeRaw(Prisma.sql`
-          INSERT INTO "AssociationBalanceAdjustment" ("id", "associationCode", "balanceType", "amount", "createdAt", "updatedAt")
-          VALUES ${Prisma.join(
-            balanceAdjustments.map(adjustment =>
-              Prisma.sql`(${randomUUID()}, ${adjustment.associationCode}, ${contributionBalanceAdjustmentType}, ${adjustment.amount}, NOW(), NOW())`
-            )
-          )}
-          ON CONFLICT ("associationCode", "balanceType")
-          DO UPDATE SET "amount" = EXCLUDED."amount", "updatedAt" = NOW()
-        `)
-      }
+        if (resetLedgerEntries.length > 0) {
+          await tx.associationPaymentLedgerEntry.createMany({
+            data: resetLedgerEntries
+          })
+        }
 
-      await tx.contributionCalculationDeath.deleteMany()
-      await tx.contributionCalculationAdminFee.deleteMany()
-      await tx.associationContributionAssessmentDeath.deleteMany()
-      await tx.associationContributionAssessment.deleteMany()
-    }, {
-      timeout: 20000
-    })
+        await tx.contributionCalculationDeath.deleteMany()
+        await tx.contributionCalculationAdminFee.deleteMany()
+        await tx.associationContributionAssessmentDeath.deleteMany()
+        await tx.associationContributionAssessment.deleteMany()
+      },
+      {
+        timeout: 20000
+      }
+    )
 
     revalidatePaymentViews()
     revalidatePath('/admin-contribution-calculation')
 
     return {
-      message: 'Contribution calculation reset successfully. The draft calculation and published contribution table were emptied. Balances and payment history were kept.'
+      message:
+        'Contribution calculation reset successfully. The draft calculation, published contribution table, and Payment Update totals were reset to zero.'
     }
   } catch (error) {
     return renderError(error)
@@ -1695,6 +1748,9 @@ export const resetAssociationContributionPaymentAction = async (formData: FormDa
       }
     })
 
+    const currentSummary = await fetchAssociationContributionSummary(associationCode)
+    const balanceAdjustmentAmount = currentSummary.amountOwed
+
     await db.$transaction(async tx => {
       await createMissingPaymentHistoryLedgerEntries({
         createdBy: user.id,
@@ -1719,6 +1775,43 @@ export const resetAssociationContributionPaymentAction = async (formData: FormDa
         },
         where: {
           associationCode
+        }
+      })
+
+      if (balanceAdjustmentAmount === 0) {
+        await tx.associationBalanceAdjustment.deleteMany({
+          where: {
+            associationCode,
+            balanceType: contributionBalanceAdjustmentType
+          }
+        })
+      } else {
+        await tx.associationBalanceAdjustment.upsert({
+          create: {
+            amount: balanceAdjustmentAmount,
+            associationCode,
+            balanceType: contributionBalanceAdjustmentType
+          },
+          update: {
+            amount: balanceAdjustmentAmount
+          },
+          where: {
+            associationCode_balanceType: {
+              associationCode,
+              balanceType: contributionBalanceAdjustmentType
+            }
+          }
+        })
+      }
+
+      await tx.associationPaymentLedgerEntry.create({
+        data: {
+          amount: currentSummary.balance,
+          associationCode,
+          createdBy: user.id,
+          eventType: associationPaymentLedgerEventTypes.reset,
+          note: 'Contribution payment and balance reset to zero by SAGI.',
+          paymentType: associationPaymentTypes.contribution
         }
       })
     })
