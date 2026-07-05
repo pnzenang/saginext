@@ -48,7 +48,7 @@ const RemoveOverduePendingMembersButton = ({ overdueCount }: RemoveOverduePendin
           disabled={overdueCount === 0}
         >
           <Trash2 />
-          Remove Overdue Pending ({overdueCount})
+          Remove ({overdueCount})
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
@@ -85,7 +85,7 @@ const RemoveOverduePendingSubmitButton = ({ disabled }: { disabled: boolean }) =
           Removing...
         </>
       ) : (
-        'Remove overdue pending'
+        'Remove'
       )}
     </Button>
   )
