@@ -163,7 +163,10 @@ const RegistrationPaymentWarningCell = ({ member }: { member: MemberType }) => {
   }
 
   return (
-    <Badge variant='destructive' className='rounded-sm'>
+    <Badge
+      variant='outline'
+      className='border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive/40 dark:bg-destructive/15 rounded-sm'
+    >
       <AlertTriangle aria-hidden='true' />
       {warning}
     </Badge>

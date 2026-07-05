@@ -43,11 +43,7 @@ const RemoveOverduePendingMembersButton = ({ overdueCount }: RemoveOverduePendin
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button
-          variant='outline'
-          className='border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/15 hover:text-destructive focus-visible:ring-destructive/20 dark:border-destructive/40 dark:bg-destructive/15 dark:hover:bg-destructive/20 w-full sm:w-auto'
-          disabled={overdueCount === 0}
-        >
+        <Button variant='destructive' className='w-full sm:w-auto' disabled={overdueCount === 0}>
           <Trash2 />
           Overdue Registration ({overdueCount})
         </Button>
