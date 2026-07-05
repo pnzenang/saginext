@@ -1,18 +1,129 @@
-const MonthlyAdditions = () => {
-  return (
-    <section>
-      <p className='text-muted-foreground mx-auto mb-5 max-w-4xl px-4 text-sm leading-6 sm:text-base'>
-        Here, you will see the additions of the month. The month refers to the current monthly membership cycle shown in
-        the table. It lists new members who have been added for this month, and it may also include members prepared for
-        the next month when their registration is already being processed. This page is for information only, so use it
-        to review new additions and confirm names, groups, and dates before checking the contribution table or making
-        any payment.
-      </p>
+import { unstable_noStore as noStore } from 'next/cache'
 
-      <iframe
-        src='https://docs.google.com/spreadsheets/d/e/2PACX-1vRjLs17xpmqB_mCXD7o0aaHKvXP_5TIrxStmT-iPe6WNFPAb6xlGnXeIPPK2g34HYZxljEMvgoIoQqX/pubhtml?widget=true&amp;headers=false'
-        className='mx-auto mt-5 h-160 w-full max-w-19/20 items-center rounded-lg border'
-      ></iframe>
+import AutoRefreshAt from '@/components/dashboard/AutoRefreshAt'
+import db from '@/utils/db'
+import { memberStatus } from '@/utils/types'
+
+import MonthlyAdditionsTable, { type MonthlyAdditionRow } from './MonthlyAdditionsTable'
+
+const monthlyAdditionsTimeZone = 'America/New_York'
+
+const monthTitleFormatter = new Intl.DateTimeFormat('en-US', {
+  month: 'long',
+  timeZone: monthlyAdditionsTimeZone,
+  year: 'numeric'
+})
+
+const timeZonePartsFormatter = new Intl.DateTimeFormat('en-US', {
+  day: '2-digit',
+  hour: '2-digit',
+  hourCycle: 'h23',
+  minute: '2-digit',
+  month: '2-digit',
+  second: '2-digit',
+  timeZone: monthlyAdditionsTimeZone,
+  year: 'numeric'
+})
+
+const getTimeZoneParts = (date: Date) => {
+  const parts = timeZonePartsFormatter.formatToParts(date)
+
+  return {
+    day: Number(parts.find(part => part.type === 'day')?.value ?? 1),
+    hour: Number(parts.find(part => part.type === 'hour')?.value ?? 0),
+    minute: Number(parts.find(part => part.type === 'minute')?.value ?? 0),
+    month: Number(parts.find(part => part.type === 'month')?.value ?? 1),
+    second: Number(parts.find(part => part.type === 'second')?.value ?? 0),
+    year: Number(parts.find(part => part.type === 'year')?.value ?? 1970)
+  }
+}
+
+const getTimeZoneOffsetMs = (date: Date) => {
+  const parts = getTimeZoneParts(date)
+
+  const sameWallTimeInUtc = Date.UTC(
+    parts.year,
+    parts.month - 1,
+    parts.day,
+    parts.hour,
+    parts.minute,
+    parts.second
+  )
+
+  return sameWallTimeInUtc - date.getTime()
+}
+
+const getZonedMonthBoundary = (year: number, monthIndex: number) => {
+  const utcGuess = new Date(Date.UTC(year, monthIndex, 1))
+
+  return new Date(utcGuess.getTime() - getTimeZoneOffsetMs(utcGuess))
+}
+
+const getCurrentMonthRange = () => {
+  const now = new Date()
+  const { month, year } = getTimeZoneParts(now)
+  const monthIndex = month - 1
+  const monthStart = getZonedMonthBoundary(year, monthIndex)
+  const nextMonthStart = getZonedMonthBoundary(year, monthIndex + 1)
+  const monthKey = `${year}-${String(month).padStart(2, '0')}`
+
+  return { monthKey, monthStart, nextMonthStart }
+}
+
+const MonthlyAdditions = async () => {
+  noStore()
+
+  const { monthKey, monthStart, nextMonthStart } = getCurrentMonthRange()
+
+  const members = await db.member.findMany({
+    orderBy: [
+      { updatedAt: 'desc' },
+      { associationCode: 'asc' },
+      { lastAndMiddleNames: 'asc' },
+      { firstName: 'asc' }
+    ],
+    select: {
+      associationCode: true,
+      associationName: true,
+      firstName: true,
+      id: true,
+      lastAndMiddleNames: true,
+      memberMatriculationNumber: true,
+      updatedAt: true
+    },
+    where: {
+      memberStatus: memberStatus.Vested,
+      updatedAt: {
+        gte: monthStart,
+        lt: nextMonthStart
+      }
+    }
+  })
+
+  const rows: MonthlyAdditionRow[] = members.map(member => ({
+    associationCode: member.associationCode,
+    associationName: member.associationName,
+    firstName: member.firstName,
+    id: member.id,
+    lastAndMiddleNames: member.lastAndMiddleNames,
+    memberMatriculationNumber: member.memberMatriculationNumber,
+    vestedAt: member.updatedAt.toISOString()
+  }))
+
+  return (
+    <section className='max-w-full min-w-0 space-y-6 py-4 sm:py-10'>
+      <AutoRefreshAt refreshAt={nextMonthStart.toISOString()} />
+
+      <div className='flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between'>
+        <div className='min-w-0'>
+          <h1 className='text-3xl font-semibold tracking-normal sm:text-4xl'>
+            Added This Month of {monthTitleFormatter.format(monthStart)}
+          </h1>
+          <p className='text-muted-foreground mt-2 text-sm'>Members marked vested during the current month.</p>
+        </div>
+      </div>
+
+      <MonthlyAdditionsTable rows={rows} monthKey={monthKey} />
     </section>
   )
 }

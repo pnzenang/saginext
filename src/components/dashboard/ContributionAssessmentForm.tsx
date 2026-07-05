@@ -90,7 +90,7 @@ const ContributionAssessmentForm = ({ vestedMembersCount }: ContributionAssessme
               </div>
 
               <SubmitButton
-                text='Distribute amount to associations'
+                text='Distribute To Associations'
                 className='h-auto min-h-10 w-full min-w-0 px-3 py-2 text-center leading-tight whitespace-normal'
               />
             </form>

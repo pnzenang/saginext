@@ -98,7 +98,21 @@ model DeceasedMember {
   contributionStatus        String
   createdAt                 DateTime                 @default(now())
   updatedAt                 DateTime                 @updatedAt
+  contributionCalculation   ContributionCalculationDeath?
   documents                 DeceasedMemberDocument[]
+}
+
+model ContributionCalculationDeath {
+  id                        String         @id @default(uuid())
+  deceasedMemberId          String         @unique
+  memberMatriculationNumber String         @unique
+  amountToContribute        Decimal        @db.Decimal(10, 2)
+  createdBy                 String
+  createdAt                 DateTime       @default(now())
+  updatedAt                 DateTime       @updatedAt
+  deceasedMember            DeceasedMember @relation(fields: [deceasedMemberId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
 }
 
 model DeceasedMemberDocument {

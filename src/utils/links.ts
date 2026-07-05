@@ -13,6 +13,7 @@ import {
   Wallet,
   WalletCards,
   CreditCard,
+  Calculator,
   History,
   List,
   Megaphone,
@@ -152,6 +153,11 @@ export const pagesItems: MenuItem[] = [
     icon: UserCog,
     label: 'Admin Count ',
     href: '/admin-count'
+  },
+  {
+    icon: Calculator,
+    label: 'Contribution Calculation',
+    href: '/admin-contribution-calculation'
   },
   {
     icon: Wallet,

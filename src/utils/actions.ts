@@ -3580,6 +3580,122 @@ export const fetchDeceasedMembersActionAdmin = async () => {
   return deceasedMember
 }
 
+export const addContributionCalculationDeathAction = async (
+  prevState: any,
+  formData: FormData
+): Promise<{ message: string }> => {
+  const user = await assertAdminUser()
+
+  try {
+    const memberMatriculationNumber = String(formData.get('memberMatriculationNumber') ?? '')
+      .trim()
+      .toUpperCase()
+
+    const amountToContribute = Number(formData.get('amountToContribute'))
+
+    if (!memberMatriculationNumber) {
+      throw new Error('Enter the deceased member matriculation number.')
+    }
+
+    if (!Number.isFinite(amountToContribute) || amountToContribute <= 0) {
+      throw new Error('Enter an amount greater than $0.00.')
+    }
+
+    const deceasedMember = await db.deceasedMember.findFirst({
+      where: {
+        memberMatriculationNumber
+      },
+      select: {
+        firstName: true,
+        id: true,
+        lastAndMiddleNames: true,
+        memberMatriculationNumber: true
+      }
+    })
+
+    if (!deceasedMember) {
+      throw new Error('No deceased member was found with that matriculation number.')
+    }
+
+    await db.contributionCalculationDeath.upsert({
+      create: {
+        amountToContribute: roundCurrencyAmount(amountToContribute),
+        createdBy: user.id,
+        deceasedMemberId: deceasedMember.id,
+        memberMatriculationNumber: deceasedMember.memberMatriculationNumber
+      },
+      update: {
+        amountToContribute: roundCurrencyAmount(amountToContribute),
+        createdBy: user.id,
+        memberMatriculationNumber: deceasedMember.memberMatriculationNumber
+      },
+      where: {
+        deceasedMemberId: deceasedMember.id
+      }
+    })
+
+    revalidatePath('/admin-contribution-calculation')
+
+    return {
+      message: `${deceasedMember.firstName} ${deceasedMember.lastAndMiddleNames} is ready for contribution calculation.`
+    }
+  } catch (error) {
+    return renderError(error)
+  }
+}
+
+export const fetchContributionCalculationDeathsAction = async () => {
+  await assertAdminUser()
+
+  const calculationDeaths = await db.contributionCalculationDeath.findMany({
+    include: {
+      deceasedMember: {
+        select: {
+          associationCode: true,
+          associationName: true,
+          dateOfDeath: true,
+          firstName: true,
+          lastAndMiddleNames: true,
+          memberMatriculationNumber: true,
+          registrationDate: true
+        }
+      }
+    },
+    orderBy: {
+      createdAt: 'desc'
+    }
+  })
+
+  return calculationDeaths.map(calculationDeath => ({
+    amountToContribute: decimalToNumber(calculationDeath.amountToContribute),
+    associationCode: calculationDeath.deceasedMember.associationCode ?? '',
+    associationName: calculationDeath.deceasedMember.associationName,
+    createdAt: calculationDeath.createdAt.toISOString(),
+    dateOfDeath: calculationDeath.deceasedMember.dateOfDeath,
+    firstName: calculationDeath.deceasedMember.firstName,
+    id: calculationDeath.id,
+    lastAndMiddleNames: calculationDeath.deceasedMember.lastAndMiddleNames,
+    memberMatriculationNumber: calculationDeath.deceasedMember.memberMatriculationNumber,
+    registrationDate: calculationDeath.deceasedMember.registrationDate
+  }))
+}
+
+export const deleteContributionCalculationDeathAction = async (formData: FormData): Promise<void> => {
+  await assertAdminUser()
+
+  const contributionCalculationDeathId = String(formData.get('contributionCalculationDeathId') ?? '')
+
+  if (!contributionCalculationDeathId) return
+
+  await db.contributionCalculationDeath.delete({
+    where: {
+      id: contributionCalculationDeathId
+    }
+  })
+
+  revalidatePath('/admin-contribution-calculation')
+}
+
 export const restoreDeceasedMemberAction = async (prevState: { deceasedMemberId: string }) => {
   const user = await getAuthUser()
   const { deceasedMemberId } = prevState
