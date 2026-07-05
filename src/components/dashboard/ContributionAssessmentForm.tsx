@@ -115,7 +115,7 @@ const ContributionAssessmentForm = ({
               }}
             >
               <SubmitButton
-                text='Zero all balances'
+                text='Zero All Balances'
                 className='h-auto min-h-10 w-full min-w-0 bg-orange-600 px-3 py-2 whitespace-normal text-white hover:bg-orange-700'
               />
             </form>

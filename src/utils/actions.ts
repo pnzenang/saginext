@@ -1120,7 +1120,7 @@ export const resetAssociationContributionCalculationAction = async (): Promise<{
       associationContributionPayments,
       contributionAssessmentGroups,
       contributionUsages,
-      balanceAdjustments,
+      existingBalanceAdjustments,
       profiles,
       members
     ] = await Promise.all([
@@ -1163,7 +1163,7 @@ export const resetAssociationContributionCalculationAction = async (): Promise<{
         ...associationContributionPayments.map(payment => payment.associationCode),
         ...contributionAssessmentGroups.map(group => group.associationCode),
         ...contributionUsages.map(usage => usage.associationCode),
-        ...balanceAdjustments.map(adjustment => adjustment.associationCode),
+        ...existingBalanceAdjustments.map(adjustment => adjustment.associationCode),
         ...profiles.map(profile => profile.associationCode),
         ...members.map(member => member.associationCode)
       ])
@@ -1175,6 +1175,11 @@ export const resetAssociationContributionCalculationAction = async (): Promise<{
             affectedAssociationCodes.map(associationCode => fetchAssociationContributionSummary(associationCode))
           )
         : []
+
+    const balanceCarryForwards = contributionSummaries.map(summary => ({
+      amount: summary.balance,
+      associationCode: summary.associationCode
+    }))
 
     const resetLedgerEntries = contributionSummaries
       .filter(
@@ -1289,11 +1294,18 @@ export const resetAssociationContributionCalculationAction = async (): Promise<{
           })
         }
 
-        await tx.associationBalanceAdjustment.deleteMany({
-          where: {
-            balanceType: contributionBalanceAdjustmentType
-          }
-        })
+        if (balanceCarryForwards.length > 0) {
+          await tx.$executeRaw(Prisma.sql`
+            INSERT INTO "AssociationBalanceAdjustment" ("id", "associationCode", "balanceType", "amount", "createdAt", "updatedAt")
+            VALUES ${Prisma.join(
+              balanceCarryForwards.map(carryForward =>
+                Prisma.sql`(${randomUUID()}, ${carryForward.associationCode}, ${contributionBalanceAdjustmentType}, ${carryForward.amount}, NOW(), NOW())`
+              )
+            )}
+            ON CONFLICT ("associationCode", "balanceType")
+            DO UPDATE SET "amount" = EXCLUDED."amount", "updatedAt" = NOW()
+          `)
+        }
 
         if (resetLedgerEntries.length > 0) {
           await tx.associationPaymentLedgerEntry.createMany({
@@ -1316,7 +1328,7 @@ export const resetAssociationContributionCalculationAction = async (): Promise<{
 
     return {
       message:
-        'Contribution calculation reset successfully. The draft calculation, published contribution table, and Payment Update totals were reset to zero.'
+        'Contribution calculation reset successfully. The draft calculation and published contribution table were emptied. Payment Update was cleared and contribution balances were kept.'
     }
   } catch (error) {
     return renderError(error)
@@ -1749,7 +1761,7 @@ export const resetAssociationContributionPaymentAction = async (formData: FormDa
     })
 
     const currentSummary = await fetchAssociationContributionSummary(associationCode)
-    const balanceAdjustmentAmount = currentSummary.amountOwed
+    const balanceAdjustmentAmount = roundCurrencyAmount(currentSummary.balance + currentSummary.amountOwed)
 
     await db.$transaction(async tx => {
       await createMissingPaymentHistoryLedgerEntries({
@@ -1810,7 +1822,7 @@ export const resetAssociationContributionPaymentAction = async (formData: FormDa
           associationCode,
           createdBy: user.id,
           eventType: associationPaymentLedgerEventTypes.reset,
-          note: 'Contribution payment and balance reset to zero by SAGI.',
+          note: 'Contribution payment reset by SAGI. Contribution balance carried forward.',
           paymentType: associationPaymentTypes.contribution
         }
       })
