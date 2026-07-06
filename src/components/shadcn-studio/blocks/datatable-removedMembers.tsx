@@ -296,12 +296,20 @@ const RemovedMembersDataTable = ({ data }: { data: RemovedMemberType[] }) => {
     <div className='border-destructive w-full min-w-0 overflow-hidden rounded-lg border'>
       <div className='border-b'>
         <div className='flex flex-col gap-4 border-b p-4 sm:p-6'>
-          <span className='text-xl leading-tight font-semibold text-red-500 sm:text-3xl lg:text-5xl'>
-            REMOVED MEMBERS{' '}
-          </span>
+          <div className='flex flex-wrap items-baseline gap-x-3 gap-y-1 text-red-500'>
+            <span className='text-xl leading-tight font-semibold sm:text-3xl lg:text-5xl'>REMOVED MEMBERS</span>
+            <span className='inline-flex max-w-3xl items-center gap-1 text-sm leading-5 font-medium sm:text-base lg:text-lg'>
+              <span className='text-4xl leading-none font-light sm:text-5xl'>(</span>
+              <span className='flex min-w-0 flex-col'>
+                <span className='whitespace-nowrap'>If a member was removed by mistake,</span>
+                <span className='whitespace-nowrap'>click the Restore button within 48h to put him/her back.</span>
+              </span>
+              <span className='text-4xl leading-none font-light sm:text-5xl'>)</span>
+            </span>
+          </div>
 
           <div className='flex items-center justify-between gap-3 py-2 max-sm:flex-col max-sm:items-stretch sm:px-6 sm:py-4'>
-            <p className='text-sm font-extrabold text-red-500 sm:whitespace-nowrap' aria-live='polite'>
+            <p className='text-sm leading-5 font-extrabold text-red-500' aria-live='polite'>
               <span>{table.getRowCount().toString()} Member(s) removed so far </span>
             </p>
 

@@ -42,8 +42,8 @@ const RemoveMember = async ({ params }: { params: { id: string } }) => {
       <div>
         {!isWithdrawalBlocked ? (
           <p className='text-xs text-red-500 sm:text-lg'>
-            Check your entry well before submission as the process is not reversible once submitted. Sorry to see your
-            member go.
+            Check your entry well before submission. If this removal is a mistake, you can restore the member from
+            Removed Members within 48 hours by clicking the Restore button. Sorry to see your member go.
           </p>
         ) : null}
       </div>

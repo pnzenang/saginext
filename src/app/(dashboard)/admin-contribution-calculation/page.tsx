@@ -128,7 +128,7 @@ const ContributionCalculationPage = async () => {
                   <TableHead className='text-primary-foreground'>First Name</TableHead>
                   <TableHead className='text-primary-foreground'>Last and Middle Names</TableHead>
                   <TableHead className='text-primary-foreground'>Registration Date</TableHead>
-                  <TableHead className='text-primary-foreground'>Date Deceased</TableHead>
+                  <TableHead className='text-primary-foreground'>Date of Death</TableHead>
                   <TableHead className='text-primary-foreground'>Amount</TableHead>
                   <TableHead className='text-primary-foreground'>Association</TableHead>
                   <TableHead className='text-primary-foreground'>Action</TableHead>
