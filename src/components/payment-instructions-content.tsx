@@ -30,7 +30,7 @@ const paymentInstructionsCopy = {
     pendingMemberWarning: {
       title: 'Pending member deadline:',
       description:
-        'Pending members have sixty (60) days to send the registration fee. If the fee is not received within sixty (60) days, the pending member will be deleted.'
+        'Pending members have sixty (60) days to send the registration fee. If the fee is not received within sixty (60) days, the pending member may be deleted.'
     },
     contributionsCta: 'Contributions Payments',
     registrationsCta: 'Registration Payments',
