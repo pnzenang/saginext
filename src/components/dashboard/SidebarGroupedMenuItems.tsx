@@ -33,7 +33,13 @@ const sidebarSubLinkClass =
 const isAdminItem = (item: MenuItem) =>
   item.href.startsWith('/admin-') || item.label.trim().toLowerCase().startsWith('admin')
 
-const getAdminLabel = (label: string) => label.trim().replace(/^admin\s+/i, '')
+const getAdminLabel = (label: string) => {
+  const trimmedLabel = label.trim()
+
+  if (trimmedLabel.toLowerCase() === 'admin count') return trimmedLabel
+
+  return trimmedLabel.replace(/^admin\s+/i, '')
+}
 
 const SidebarLinkItem = ({ item }: { item: MenuItem }) => (
   <SidebarMenuItem>

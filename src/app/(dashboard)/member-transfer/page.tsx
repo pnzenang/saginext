@@ -62,7 +62,7 @@ const MemberTransferPage = async () => {
   ).length
 
   return (
-    <section className='grid w-full max-w-full min-w-0 gap-5 overflow-hidden px-0 py-4 sm:px-6 sm:py-8 lg:px-8'>
+    <section className='grid w-full max-w-full min-w-0 shrink-0 gap-5 overflow-visible px-0 py-4 sm:px-6 sm:py-8 lg:px-8'>
       <AutoRefreshAt refreshAt={nextCancelledTransferRefreshAt} />
 
       <div className='flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between'>

@@ -14,6 +14,7 @@ import { submitNameChangeRequestAction } from '@/utils/actions'
 
 type NameChangeMemberOption = {
   associationCode: string
+  associationName: string
   firstName: string
   id: string
   lastAndMiddleNames: string
@@ -23,7 +24,10 @@ type NameChangeMemberOption = {
 const maxVisibleMembers = 10
 
 const getMemberSearchValue = (member: NameChangeMemberOption) =>
-  `${member.firstName} ${member.lastAndMiddleNames} ${member.memberMatriculationNumber} ${member.associationCode}`.toLowerCase()
+  `${member.firstName} ${member.lastAndMiddleNames} ${member.memberMatriculationNumber} ${member.associationCode} ${member.associationName}`.toLowerCase()
+
+const formatAssociationLabel = (associationCode: string, associationName?: string | null) =>
+  associationName ? `${associationCode} - ${associationName}` : associationCode
 
 const NameChangeProposalForm = ({ members }: { members: NameChangeMemberOption[] }) => {
   const [searchQuery, setSearchQuery] = useState('')
@@ -81,7 +85,7 @@ const NameChangeProposalForm = ({ members }: { members: NameChangeMemberOption[]
                 type='search'
                 value={searchQuery}
                 onChange={event => handleSearchChange(event.target.value)}
-                placeholder='Search by name, matriculation, or association code'
+                placeholder='Search by name, matriculation, association code, or association name'
                 className='pl-9'
               />
             </div>
@@ -95,7 +99,7 @@ const NameChangeProposalForm = ({ members }: { members: NameChangeMemberOption[]
               </p>
             </div>
             {filteredMembers.length === 0 ? (
-              <p className='text-muted-foreground rounded-md border bg-muted/30 p-3 text-sm'>
+              <p className='text-muted-foreground bg-muted/30 rounded-md border p-3 text-sm'>
                 No members match your search.
               </p>
             ) : (
@@ -110,7 +114,7 @@ const NameChangeProposalForm = ({ members }: { members: NameChangeMemberOption[]
                       aria-pressed={isSelected}
                       onClick={() => setSelectedMemberId(member.id)}
                       className={cn(
-                        'grid min-w-0 gap-1 rounded-md border bg-background/70 p-3 text-left text-sm transition-colors hover:border-primary/60 hover:bg-muted/40',
+                        'bg-background/70 hover:border-primary/60 hover:bg-muted/40 grid min-w-0 gap-1 rounded-md border p-3 text-left text-sm transition-colors',
                         isSelected && 'border-primary bg-primary/10'
                       )}
                     >
@@ -118,7 +122,8 @@ const NameChangeProposalForm = ({ members }: { members: NameChangeMemberOption[]
                         {member.firstName} {member.lastAndMiddleNames}
                       </span>
                       <span className='text-muted-foreground text-xs'>
-                        Matriculation: {member.memberMatriculationNumber} · Association: {member.associationCode}
+                        Matriculation: {member.memberMatriculationNumber} · Association:{' '}
+                        {formatAssociationLabel(member.associationCode, member.associationName)}
                       </span>
                     </button>
                   )
@@ -132,7 +137,7 @@ const NameChangeProposalForm = ({ members }: { members: NameChangeMemberOption[]
             ) : null}
           </div>
 
-          <div className='grid gap-2 rounded-md border bg-muted/30 p-3 sm:grid-cols-2'>
+          <div className='bg-muted/30 grid gap-2 rounded-md border p-3 sm:grid-cols-2'>
             <div className='min-w-0'>
               <p className='text-muted-foreground text-xs font-semibold'>Current first name</p>
               <p className='mt-1 font-extrabold break-words'>

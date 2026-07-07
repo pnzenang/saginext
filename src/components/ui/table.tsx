@@ -2,11 +2,15 @@
 
 import * as React from 'react'
 
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 
 type TableProps = React.ComponentProps<'table'> & {
   mobileCards?: boolean
 }
+
+const getTooltipTitle = (title: React.HTMLAttributes<HTMLElement>['title']) =>
+  typeof title === 'string' && title.trim() ? title : undefined
 
 function Table({ className, mobileCards = false, ...props }: TableProps) {
   return (
@@ -55,8 +59,10 @@ function TableRow({ className, ...props }: React.ComponentProps<'tr'>) {
   )
 }
 
-function TableHead({ className, ...props }: React.ComponentProps<'th'>) {
-  return (
+function TableHead({ className, title, children, 'aria-label': ariaLabel, ...props }: React.ComponentProps<'th'>) {
+  const tooltipTitle = getTooltipTitle(title)
+
+  const tableHead = (
     <th
       data-slot='table-head'
       scope='col'
@@ -64,21 +70,51 @@ function TableHead({ className, ...props }: React.ComponentProps<'th'>) {
         'text-foreground h-10 px-2 text-left align-middle font-medium whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
         className
       )}
+      aria-label={ariaLabel ?? tooltipTitle}
       {...props}
-    />
+    >
+      {children}
+    </th>
+  )
+
+  if (!tooltipTitle) return tableHead
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{tableHead}</TooltipTrigger>
+      <TooltipContent side='top' sideOffset={4}>
+        {tooltipTitle}
+      </TooltipContent>
+    </Tooltip>
   )
 }
 
-function TableCell({ className, ...props }: React.ComponentProps<'td'>) {
-  return (
+function TableCell({ className, title, children, 'aria-label': ariaLabel, ...props }: React.ComponentProps<'td'>) {
+  const tooltipTitle = getTooltipTitle(title)
+
+  const tableCell = (
     <td
       data-slot='table-cell'
       className={cn(
         'p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
         className
       )}
+      aria-label={ariaLabel ?? tooltipTitle}
       {...props}
-    />
+    >
+      {children}
+    </td>
+  )
+
+  if (!tooltipTitle) return tableCell
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{tableCell}</TooltipTrigger>
+      <TooltipContent side='top' sideOffset={4}>
+        {tooltipTitle}
+      </TooltipContent>
+    </Tooltip>
   )
 }
 

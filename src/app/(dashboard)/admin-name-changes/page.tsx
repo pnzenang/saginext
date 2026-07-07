@@ -1,6 +1,6 @@
-import { FilePenLine, FileText } from 'lucide-react'
+import { FilePenLine } from 'lucide-react'
 
-import NameChangeRequestCard from '@/components/dashboard/NameChangeRequestCard'
+import NameChangeRequestList from '@/components/dashboard/NameChangeRequestList'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { fetchAdminNameChangeRequestsAction } from '@/utils/actions'
@@ -10,7 +10,7 @@ const AdminNameChangesPage = async () => {
   const pendingReviewCount = requests.filter(request => request.status === 'submitted').length
 
   return (
-    <section className='grid w-full max-w-full min-w-0 gap-5 overflow-hidden px-0 py-4 sm:px-6 sm:py-8 lg:px-8'>
+    <section className='grid w-full max-w-full min-w-0 shrink-0 gap-5 overflow-visible px-0 py-4 sm:px-6 sm:py-8 lg:px-8'>
       <div className='flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between'>
         <div>
           <h1 className='text-2xl font-extrabold tracking-normal sm:text-3xl'>Admin Name Changes</h1>
@@ -50,21 +50,14 @@ const AdminNameChangesPage = async () => {
           <FilePenLine className='text-primary size-5' />
           <h2 className='text-lg font-extrabold'>All name change requests</h2>
         </div>
-        {requests.length === 0 ? (
-          <Card className='rounded-lg'>
-            <CardContent className='py-8 text-center'>
-              <FileText className='text-muted-foreground mx-auto mb-3 size-8' />
-              <p className='font-semibold'>No name change requests found.</p>
-              <p className='text-muted-foreground mt-1 text-sm'>Delegate requests will appear here.</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className='grid gap-4 xl:grid-cols-2 2xl:grid-cols-3'>
-            {requests.map(request => (
-              <NameChangeRequestCard key={request.id} request={request} isAdminUser />
-            ))}
-          </div>
-        )}
+        <NameChangeRequestList
+          emptyDescription='Delegate requests will appear here.'
+          emptyTitle='No name change requests found.'
+          isAdminUser
+          requests={requests}
+          searchPlaceholder='Search name, matriculation, association code, association name, or status'
+          storageKey='sagi:admin-name-changes:request-search'
+        />
       </div>
     </section>
   )

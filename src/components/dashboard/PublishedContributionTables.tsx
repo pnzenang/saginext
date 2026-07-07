@@ -164,13 +164,17 @@ const compareDates = (left: string | null | undefined, right: string | null | un
   return compareText(left, right)
 }
 
-const getNextDirection = <T extends string,>(sort: SortState<T>, key: T): SortDirection => {
+const getNextDirection = <T extends string>(sort: SortState<T>, key: T): SortDirection => {
   if (sort.key !== key) return 'asc'
 
   return sort.direction === 'asc' ? 'desc' : 'asc'
 }
 
-const compareDeathRows = (left: PublishedContributionDeathRow, right: PublishedContributionDeathRow, key: DeathSortKey) => {
+const compareDeathRows = (
+  left: PublishedContributionDeathRow,
+  right: PublishedContributionDeathRow,
+  key: DeathSortKey
+) => {
   if (key === 'amountToContribute') return left.amountToContribute - right.amountToContribute
   if (key === 'dateOfDeath') return compareDates(left.dateOfDeath, right.dateOfDeath)
   if (key === 'registrationDate') return compareDates(left.registrationDate, right.registrationDate)
@@ -180,7 +184,11 @@ const compareDeathRows = (left: PublishedContributionDeathRow, right: PublishedC
   return compareText(left[key], right[key])
 }
 
-const compareGroupRows = (left: PublishedContributionGroupRow, right: PublishedContributionGroupRow, key: GroupSortKey) => {
+const compareGroupRows = (
+  left: PublishedContributionGroupRow,
+  right: PublishedContributionGroupRow,
+  key: GroupSortKey
+) => {
   if (key === 'amountOwed') return left.amountOwed - right.amountOwed
   if (key === 'vestedMembersCount') return left.vestedMembersCount - right.vestedMembersCount
 
@@ -195,13 +203,7 @@ const SortIcon = ({ active, direction }: { active: boolean; direction: SortDirec
   return <ChevronDown className='size-3.5 opacity-80 print:hidden' aria-hidden='true' />
 }
 
-const ContributionTableDocumentLink = ({
-  document,
-  label
-}: {
-  document: ContributionTableDocument
-  label: string
-}) => {
+const ContributionTableDocumentLink = ({ document, label }: { document: ContributionTableDocument; label: string }) => {
   if (!document) {
     return (
       <span className='text-muted-foreground text-[10px] font-medium sm:text-xs'>
@@ -214,7 +216,7 @@ const ContributionTableDocumentLink = ({
   return (
     <a
       href={`/death-documentations/${document.id}/download`}
-      className='text-primary inline-flex items-center justify-center gap-1 text-xs font-semibold underline-offset-4 hover:underline print:text-foreground print:no-underline'
+      className='text-primary print:text-foreground inline-flex items-center justify-center gap-1 text-xs font-semibold underline-offset-4 hover:underline print:no-underline'
       title={`${label}: ${document.fileName}`}
     >
       <Download className='size-3.5 print:hidden' />
@@ -230,7 +232,8 @@ function SortHeader<T extends string>({
   className,
   onSort,
   sort,
-  sortKey
+  sortKey,
+  title
 }: {
   align?: 'center' | 'left' | 'right'
   children: ReactNode
@@ -238,11 +241,13 @@ function SortHeader<T extends string>({
   onSort: (key: T) => void
   sort: SortState<T>
   sortKey: T
+  title?: string
 }) {
   const active = sort.key === sortKey
 
   return (
     <TableHead
+      title={title}
       aria-sort={active ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
       className={cn('text-primary-foreground', className)}
     >
@@ -250,7 +255,7 @@ function SortHeader<T extends string>({
         type='button'
         onClick={() => onSort(sortKey)}
         className={cn(
-          'inline-flex w-full items-center gap-1 text-primary-foreground transition hover:opacity-85 print:pointer-events-none',
+          'text-primary-foreground inline-flex w-full items-center gap-1 transition hover:opacity-85 print:pointer-events-none',
           align === 'center' && 'justify-center text-center',
           align === 'right' && 'justify-end text-right'
         )}
@@ -262,7 +267,7 @@ function SortHeader<T extends string>({
   )
 }
 
-const SortControl = <T extends string,>({
+const SortControl = <T extends string>({
   columns,
   label,
   onSort,
@@ -408,7 +413,10 @@ const PublishedContributionTables = ({
         </CardHeader>
         <CardContent className='min-w-0'>
           <div className='max-w-full overflow-hidden rounded-lg border md:overflow-x-auto print:overflow-visible'>
-            <Table mobileCards className='min-w-0 table-fixed text-[11px] sm:text-xs md:min-w-max md:table-auto md:text-sm'>
+            <Table
+              mobileCards
+              className='min-w-0 table-fixed text-[11px] sm:text-xs md:min-w-max md:table-auto md:text-sm'
+            >
               <TableHeader>
                 <TableRow className='bg-primary hover:bg-primary print:bg-muted print:hover:bg-muted'>
                   {deathSortColumns.map(column => (
@@ -419,6 +427,7 @@ const PublishedContributionTables = ({
                       onSort={handleDeathSort}
                       sort={deathSort}
                       sortKey={column.key}
+                      title={column.label}
                     >
                       {column.shortLabel ? (
                         <>
@@ -444,13 +453,13 @@ const PublishedContributionTables = ({
                     <TableRow key={death.id} className='odd:bg-muted/30 even:bg-background'>
                       <TableCell
                         data-label='Matriculation'
-                        className='whitespace-normal break-all px-1.5 font-mono font-semibold md:px-2 md:text-sm md:whitespace-nowrap'
+                        className='px-1.5 font-mono font-semibold break-all whitespace-normal md:px-2 md:text-sm md:whitespace-nowrap'
                       >
                         {death.memberMatriculationNumber}
                       </TableCell>
                       <TableCell
                         data-label='First Name'
-                        className='whitespace-normal px-1.5 font-semibold break-words md:px-2'
+                        className='px-1.5 font-semibold break-words whitespace-normal md:px-2'
                       >
                         {death.firstName}
                       </TableCell>
@@ -462,7 +471,7 @@ const PublishedContributionTables = ({
                       </TableCell>
                       <TableCell
                         data-label='Date of Death'
-                        className='px-1.5 whitespace-normal break-words md:min-w-40 md:px-2 md:whitespace-nowrap'
+                        className='px-1.5 break-words whitespace-normal md:min-w-40 md:px-2 md:whitespace-nowrap'
                       >
                         {formatDate(death.dateOfDeath)}
                       </TableCell>
@@ -501,7 +510,7 @@ const PublishedContributionTables = ({
                 member.
               </CardDescription>
             </div>
-            <div className='flex flex-col gap-3 print:hidden sm:items-end'>
+            <div className='flex flex-col gap-3 sm:items-end print:hidden'>
               <div className='flex items-center justify-between gap-2 sm:justify-end'>
                 <label
                   htmlFor={groupRowsPerPageSelectId}
@@ -541,7 +550,9 @@ const PublishedContributionTables = ({
             >
               <TableHeader>
                 <TableRow className='bg-primary hover:bg-primary print:bg-muted print:hover:bg-muted'>
-                  <TableHead className='text-primary-foreground w-12 px-1.5 text-right md:px-2'>No.</TableHead>
+                  <TableHead title='Number' className='text-primary-foreground w-12 px-1.5 text-right md:px-2'>
+                    No.
+                  </TableHead>
                   {groupSortColumns.map(column => (
                     <SortHeader
                       key={column.key}
@@ -550,6 +561,7 @@ const PublishedContributionTables = ({
                       onSort={handleGroupSort}
                       sort={groupSort}
                       sortKey={column.key}
+                      title={column.label}
                     >
                       {column.shortLabel ? (
                         <>
@@ -569,8 +581,7 @@ const PublishedContributionTables = ({
                     key={group.associationCode}
                     className={cn(
                       'h-12 hover:bg-gray-300 print:table-row',
-                      index >= (activeGroupPage - 1) * groupRowsPerPage &&
-                        index < activeGroupPage * groupRowsPerPage
+                      index >= (activeGroupPage - 1) * groupRowsPerPage && index < activeGroupPage * groupRowsPerPage
                         ? 'odd:bg-gray-200 even:bg-white'
                         : 'hidden',
                       index % 2 === 0 ? 'print:bg-gray-200' : 'print:bg-white'
@@ -603,7 +614,7 @@ const PublishedContributionTables = ({
             </Table>
           </div>
           {sortedGroups.length > 0 ? (
-            <div className='mt-4 flex flex-col items-center justify-between gap-3 print:hidden sm:flex-row'>
+            <div className='mt-4 flex flex-col items-center justify-between gap-3 sm:flex-row print:hidden'>
               <p className='text-muted-foreground text-sm' aria-live='polite'>
                 Showing {(activeGroupPage - 1) * groupRowsPerPage + 1}-
                 {Math.min(activeGroupPage * groupRowsPerPage, sortedGroups.length)} of {sortedGroups.length}

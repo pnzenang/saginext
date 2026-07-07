@@ -2,7 +2,8 @@
 
 import { useId, useMemo, useState } from 'react'
 
-import { ArrowUpDown, ChevronDown, ChevronUp, SearchIcon, XIcon } from 'lucide-react'
+import { ArrowUpDown, ChevronDown, ChevronUp, Eye, SearchIcon, XIcon } from 'lucide-react'
+import Link from 'next/link'
 
 import AdminCountExcelButton from '@/components/global/AdminCountExcelButton'
 import PaginationControls from '@/components/global/PaginationControls'
@@ -274,7 +275,15 @@ const AdminCountBreakdown = ({ counts, totals }: AdminCountBreakdownProps) => {
                       <p className='line-clamp-2 text-sm font-semibold' title={item.associationName}>
                         {item.associationName}
                       </p>
-                      <p className='text-muted-foreground text-xs'>{item.associationCode}</p>
+                      <div className='mt-1 flex flex-wrap items-center gap-2'>
+                        <p className='text-muted-foreground text-xs'>{item.associationCode}</p>
+                        <Button asChild size='xs' variant='outline' className='h-7 gap-1 px-2 text-xs'>
+                          <Link href={`/admin-delegate-view/${encodeURIComponent(item.associationCode)}`}>
+                            <Eye className='size-3.5' aria-hidden='true' />
+                            View
+                          </Link>
+                        </Button>
+                      </div>
                     </div>
                     <div className='grid grid-cols-2 gap-2 text-sm sm:grid-cols-5'>
                       <div>
@@ -349,6 +358,7 @@ const AdminCountBreakdown = ({ counts, totals }: AdminCountBreakdownProps) => {
                     return (
                       <TableHead
                         key={column.key}
+                        title={column.label}
                         aria-sort={isActive ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
                         className={cn(
                           'text-primary-foreground px-1 lg:px-2',
@@ -381,7 +391,22 @@ const AdminCountBreakdown = ({ counts, totals }: AdminCountBreakdownProps) => {
                       <TableCell className='truncate px-1 py-4 font-medium lg:px-2' title={item.associationName}>
                         {item.associationName}
                       </TableCell>
-                      <TableCell className='px-1 py-4 lg:px-2'>{item.associationCode}</TableCell>
+                      <TableCell className='px-1 py-4 lg:px-2'>
+                        <div className='flex min-w-0 flex-col items-start gap-1.5'>
+                          <span className='font-medium'>{item.associationCode}</span>
+                          <Button
+                            asChild
+                            size='xs'
+                            variant='outline'
+                            className='h-6 gap-1 px-1.5 text-[11px] print:hidden'
+                          >
+                            <Link href={`/admin-delegate-view/${encodeURIComponent(item.associationCode)}`}>
+                              <Eye className='size-3' aria-hidden='true' />
+                              View
+                            </Link>
+                          </Button>
+                        </div>
+                      </TableCell>
                       <TableCell className='px-1 py-4 text-right font-bold text-green-600 lg:px-2 dark:text-green-400'>
                         {formatNumber(item.vested)}
                       </TableCell>

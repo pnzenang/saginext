@@ -11,6 +11,7 @@ type MembersDataTableProps = {
   currentContribution: AssociationContributionSummary
   currentRegistrationPayment: AssociationRegistrationSummary
   data: MemberType[]
+  readOnly?: boolean
 }
 
 const MembersDataTable = dynamic(() => import('@/components/shadcn-studio/blocks/datatable-members'), {

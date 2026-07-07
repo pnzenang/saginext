@@ -451,9 +451,13 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
             {table.getHeaderGroups().map(headerGroup => (
               <TableRow key={headerGroup.id} className='bg-primary hover:bg-primary/80 h-14 border-t'>
                 {headerGroup.headers.map(header => {
+                  const headerTitle =
+                    typeof header.column.columnDef.header === 'string' ? header.column.columnDef.header : undefined
+
                   return (
                     <TableHead
                       key={header.id}
+                      title={headerTitle}
                       style={{ width: `${header.getSize()}px` }}
                       className='font-extrabold text-white first:pl-4 last:px-4'
                     >

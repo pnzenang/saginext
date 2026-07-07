@@ -21,6 +21,12 @@ const getCanonicalProfilePath = (pathname: string) => {
   return profileRoutes.get(normalizedPathname)
 }
 
+const getCanonicalAdminDeceasedPath = (pathname: string) => {
+  const match = pathname.match(/^\/admin-deceased(?=$|\/)(.*)$/i)
+
+  return match ? `/admin-all-deceased${match[1] ?? ''}` : undefined
+}
+
 export default clerkMiddleware(async (auth, req) => {
   const requestHeaders = new Headers(req.headers)
 
@@ -40,6 +46,16 @@ export default clerkMiddleware(async (auth, req) => {
 
   if (isAdminRoute(req) && !isAdmin) {
     return NextResponse.redirect(new URL('/', req.url))
+  }
+
+  const canonicalAdminDeceasedPath = getCanonicalAdminDeceasedPath(req.nextUrl.pathname)
+
+  if (canonicalAdminDeceasedPath && canonicalAdminDeceasedPath !== req.nextUrl.pathname) {
+    const url = req.nextUrl.clone()
+
+    url.pathname = canonicalAdminDeceasedPath
+
+    return NextResponse.redirect(url)
   }
 
   if (!isPublicRoute(req)) {

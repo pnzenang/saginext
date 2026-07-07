@@ -48,7 +48,7 @@ const AdminProfilesPage = async () => {
   const summaryCards = [
     {
       icon: Building2,
-      label: 'Profiles',
+      label: 'Delegate Profiles',
       value: totalProfiles
     },
     {
@@ -65,15 +65,15 @@ const AdminProfilesPage = async () => {
 
   return (
     <section className='py-8 sm:py-10'>
-      <div className='mx-auto w-full max-w-9xl space-y-6 px-2 sm:px-6 lg:px-8'>
+      <div className='max-w-9xl mx-auto w-full space-y-6 px-2 sm:px-6 lg:px-8'>
         <div className='space-y-2'>
           <Badge variant='outline' className='border-primary/40 text-primary bg-background px-3 py-1 text-sm'>
             Admin
           </Badge>
           <div className='space-y-1'>
-            <h1 className='text-2xl font-semibold tracking-tight md:text-4xl'>Association Profiles</h1>
+            <h1 className='text-2xl font-semibold tracking-tight md:text-4xl'>Admin View Delegates</h1>
             <p className='text-muted-foreground max-w-3xl leading-7'>
-              Review every delegate profile, association code, contact email, and phone number collected in SAGI.
+              View every delegate profile, association code, contact email, and phone number collected in SAGI.
             </p>
           </div>
         </div>

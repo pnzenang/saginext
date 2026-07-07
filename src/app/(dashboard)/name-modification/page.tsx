@@ -1,6 +1,6 @@
-import { FilePenLine, FileText, Upload } from 'lucide-react'
+import { FilePenLine, Upload } from 'lucide-react'
 
-import NameChangeRequestCard from '@/components/dashboard/NameChangeRequestCard'
+import NameChangeRequestList from '@/components/dashboard/NameChangeRequestList'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { fetchNameChangeDocumentationPageAction } from '@/utils/actions'
@@ -12,7 +12,7 @@ const NameModification = async () => {
   const requiredActionCount = requests.filter(request => request.status === 'documentation_requested').length
 
   return (
-    <section className='grid w-full max-w-full min-w-0 gap-5 overflow-hidden px-0 py-4 sm:px-6 sm:py-8 lg:px-8'>
+    <section className='grid w-full max-w-full min-w-0 shrink-0 gap-5 overflow-visible px-0 py-4 sm:px-6 sm:py-8 lg:px-8'>
       <div className='flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between'>
         <div>
           <h1 className='text-2xl font-extrabold tracking-normal sm:text-3xl'>Name Change & Documentations</h1>
@@ -66,21 +66,14 @@ const NameModification = async () => {
           <FilePenLine className='text-primary size-5' />
           <h2 className='text-lg font-extrabold'>Your requests</h2>
         </div>
-        {requests.length === 0 ? (
-          <Card className='rounded-lg'>
-            <CardContent className='py-8 text-center'>
-              <FileText className='text-muted-foreground mx-auto mb-3 size-8' />
-              <p className='font-semibold'>No name change requests found.</p>
-              <p className='text-muted-foreground mt-1 text-sm'>Submitted requests will appear here.</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className='grid gap-4 xl:grid-cols-2 2xl:grid-cols-3'>
-            {requests.map(request => (
-              <NameChangeRequestCard key={request.id} request={request} isAdminUser={false} />
-            ))}
-          </div>
-        )}
+        <NameChangeRequestList
+          emptyDescription='Submitted requests will appear here.'
+          emptyTitle='No name change requests found.'
+          isAdminUser={false}
+          requests={requests}
+          searchPlaceholder='Search name, matriculation, association code, association name, or status'
+          storageKey='sagi:name-change:request-search'
+        />
       </div>
     </section>
   )

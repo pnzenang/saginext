@@ -18,6 +18,7 @@ import { nameChangeRequestStatusLabels, type NameChangeRequestStatus } from '@/u
 export type NameChangeRequestCardData = {
   id: string
   associationCode: string
+  associationName?: string | null
   createdAt: Date
   currentFirstName: string
   currentLastAndMiddleNames: string
@@ -25,6 +26,10 @@ export type NameChangeRequestCardData = {
   fileName?: string | null
   fileSize?: number | null
   member?: {
+    associationCode?: string | null
+    associationName?: string | null
+    firstName?: string | null
+    lastAndMiddleNames?: string | null
     memberMatriculationNumber: string
   } | null
   rejectionReason?: string | null
@@ -41,6 +46,9 @@ const dateTimeFormatter = new Intl.DateTimeFormat('en-US', {
 })
 
 const formatDateTime = (date: Date) => dateTimeFormatter.format(date)
+
+const formatAssociationLabel = (associationCode: string, associationName?: string | null) =>
+  associationName ? `${associationCode} - ${associationName}` : associationCode
 
 const getStatusLabel = (status: string) => nameChangeRequestStatusLabels[status as NameChangeRequestStatus] ?? status
 
@@ -124,6 +132,30 @@ const getRequestNoteClassName = (status: string) =>
     ? 'border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300'
     : 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-300'
 
+const NameDetailGroup = ({
+  firstName,
+  lastAndMiddleNames,
+  title
+}: {
+  firstName: string
+  lastAndMiddleNames: string
+  title: string
+}) => (
+  <div className='bg-background/70 grid gap-3 rounded-md border p-3'>
+    <p className='text-muted-foreground text-xs font-semibold'>{title}</p>
+    <div className='grid gap-2 sm:grid-cols-2'>
+      <div className='bg-muted/30 min-w-0 rounded-md border px-3 py-2'>
+        <p className='text-muted-foreground text-[11px] font-semibold uppercase'>First name</p>
+        <p className='mt-1 font-extrabold break-words'>{firstName}</p>
+      </div>
+      <div className='bg-muted/30 min-w-0 rounded-md border px-3 py-2'>
+        <p className='text-muted-foreground text-[11px] font-semibold uppercase'>Last and middle names</p>
+        <p className='mt-1 font-extrabold break-words'>{lastAndMiddleNames}</p>
+      </div>
+    </div>
+  </div>
+)
+
 const NameChangeRequestCard = ({
   isAdminUser,
   request
@@ -137,7 +169,7 @@ const NameChangeRequestCard = ({
   const isApproved = request.status === 'approved'
 
   return (
-    <div className='grid min-w-0 gap-4 rounded-md border bg-muted/20 p-4'>
+    <div className='bg-muted/20 grid min-w-0 gap-4 rounded-md border p-4'>
       <div className='flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'>
         <div className='min-w-0'>
           <div className='flex items-center gap-2 text-sm font-extrabold'>
@@ -147,7 +179,9 @@ const NameChangeRequestCard = ({
             </span>
           </div>
           <div className='text-muted-foreground mt-1 grid gap-1 text-xs'>
-            <span>Delegate association code: {request.associationCode}</span>
+            <span>
+              Delegate association: {formatAssociationLabel(request.associationCode, request.associationName)}
+            </span>
             <span>Matriculation: {request.member?.memberMatriculationNumber ?? 'Unavailable'}</span>
             <span>Submitted: {formatDateTime(request.createdAt)}</span>
           </div>
@@ -155,19 +189,17 @@ const NameChangeRequestCard = ({
         <RequestStatusBadge status={request.status} />
       </div>
 
-      <div className='grid gap-2 text-sm sm:grid-cols-2'>
-        <div className='rounded-md border bg-background/70 p-3'>
-          <p className='text-muted-foreground text-xs font-semibold'>{isApproved ? 'Previous name' : 'Current name'}</p>
-          <p className='mt-1 font-extrabold break-words'>
-            {request.currentFirstName} {request.currentLastAndMiddleNames}
-          </p>
-        </div>
-        <div className='rounded-md border bg-background/70 p-3'>
-          <p className='text-muted-foreground text-xs font-semibold'>{isApproved ? 'Name approved' : 'Requested name'}</p>
-          <p className='mt-1 font-extrabold break-words'>
-            {request.requestedFirstName} {request.requestedLastAndMiddleNames}
-          </p>
-        </div>
+      <div className='grid gap-2 text-sm'>
+        <NameDetailGroup
+          firstName={request.currentFirstName}
+          lastAndMiddleNames={request.currentLastAndMiddleNames}
+          title={isApproved ? 'Previous name' : 'Current name'}
+        />
+        <NameDetailGroup
+          firstName={request.requestedFirstName}
+          lastAndMiddleNames={request.requestedLastAndMiddleNames}
+          title={isApproved ? 'Approved name' : 'Requested name'}
+        />
       </div>
 
       {request.rejectionReason ? (
@@ -199,7 +231,7 @@ const NameChangeRequestCard = ({
       {canUploadDocumentation ? (
         <FormContainer
           action={uploadNameChangeDocumentationAction}
-          className='grid gap-2 rounded-md border bg-background/70 p-3'
+          className='bg-background/70 grid gap-2 rounded-md border p-3'
         >
           <input type='hidden' name='requestId' value={request.id} />
           <div className='grid gap-1.5'>

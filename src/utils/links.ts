@@ -123,8 +123,8 @@ export const getPagesItems = (date: Date = new Date()): MenuItem[] => [
   },
   {
     icon: Building2,
-    label: 'Admin Profiles',
-    href: '/admin-profiles'
+    label: 'Admin View Delegates',
+    href: '/admin-view-delegates'
   },
   {
     icon: UserCog,
@@ -152,8 +152,13 @@ export const getPagesItems = (date: Date = new Date()): MenuItem[] => [
     href: '/admin-all-deceased'
   },
   {
+    icon: FileStack,
+    label: 'Admin Death Documentations',
+    href: '/admin-death-documentations'
+  },
+  {
     icon: UserCog,
-    label: 'Admin Count ',
+    label: 'Admin Count',
     href: '/admin-count'
   },
   {

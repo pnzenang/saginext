@@ -21,7 +21,7 @@ import {
   XIcon
 } from 'lucide-react'
 
-import type { Column, ColumnDef, PaginationState, RowData } from '@tanstack/react-table'
+import type { Cell, Column, ColumnDef, PaginationState, RowData } from '@tanstack/react-table'
 import {
   flexRender,
   getCoreRowModel,
@@ -54,7 +54,6 @@ import { usePersistentColumnFilters } from '@/hooks/use-persistent-column-filter
 import { usePagination } from '@/hooks/use-pagination'
 
 import { cn } from '@/lib/utils'
-import { getTableCellLabel } from '@/utils/table'
 import { getSelectFilterValues } from '@/utils/table-filter-values'
 import type { RemovedMemberType } from '@/utils/types'
 import PaginationControls from '@/components/global/PaginationControls'
@@ -65,12 +64,13 @@ declare module '@tanstack/react-table' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface ColumnMeta<TData extends RowData, TValue> {
     filterVariant?: 'text' | 'range' | 'select'
+    label?: string
   }
 }
 
 const columns: ColumnDef<RemovedMemberType>[] = [
   {
-    header: 'Last And Middle Names',
+    header: 'Last/Middle',
     accessorKey: 'lastAndMiddleNames',
     cell: ({ row }) => (
       <div className='flex items-center gap-2'>
@@ -79,7 +79,10 @@ const columns: ColumnDef<RemovedMemberType>[] = [
         </div>
       </div>
     ),
-    size: 100
+    meta: {
+      label: 'Last and Middle Names'
+    },
+    size: 230
   },
 
   // {
@@ -95,7 +98,7 @@ const columns: ColumnDef<RemovedMemberType>[] = [
   //   size: 100
   // },
   {
-    header: 'First Name',
+    header: 'First',
     accessorKey: 'firstName',
     cell: ({ row }) => (
       <div className='flex items-center gap-2'>
@@ -103,11 +106,15 @@ const columns: ColumnDef<RemovedMemberType>[] = [
           <span className='font-medium'>{row.getValue('firstName')}</span>
         </div>
       </div>
-    )
+    ),
+    meta: {
+      label: 'First Name'
+    },
+    size: 150
   },
 
   {
-    header: 'Matriculation',
+    header: 'Matric.',
     accessorKey: 'memberMatriculationNumber',
     cell: ({ row }) => (
       <div className='flex items-center gap-2'>
@@ -116,7 +123,10 @@ const columns: ColumnDef<RemovedMemberType>[] = [
         </div>
       </div>
     ),
-    size: 150
+    meta: {
+      label: 'Matriculation'
+    },
+    size: 115
   },
   {
     header: 'Code',
@@ -128,7 +138,10 @@ const columns: ColumnDef<RemovedMemberType>[] = [
         </div>
       </div>
     ),
-    size: 150
+    meta: {
+      label: 'Association Code'
+    },
+    size: 68
   },
 
   // {
@@ -144,7 +157,7 @@ const columns: ColumnDef<RemovedMemberType>[] = [
   //   size: 150
   // },
   {
-    header: 'Reason For Leaving',
+    header: 'Reason',
     accessorKey: 'reasonForLeaving',
     cell: ({ row }) => (
       <div className='flex items-center gap-2'>
@@ -154,13 +167,14 @@ const columns: ColumnDef<RemovedMemberType>[] = [
       </div>
     ),
     meta: {
-      filterVariant: 'select'
+      filterVariant: 'select',
+      label: 'Reason For Leaving'
     },
-    size: 150
+    size: 118
   },
   {
     accessorKey: 'registrationDate', // The key in your data object
-    header: 'Registration Date',
+    header: 'Reg. Date',
     cell: ({ row }) => {
       const field = row.getValue('registrationDate') as string
       const fieldDate = new Date(field)
@@ -169,12 +183,15 @@ const columns: ColumnDef<RemovedMemberType>[] = [
 
       return <div>{formattedRegistrationDate}</div>
     },
-    size: 100
+    meta: {
+      label: 'Registration Date'
+    },
+    size: 78
   },
 
   {
     accessorKey: 'createdAt', // The key in your data object
-    header: 'Date Removed',
+    header: 'Removed',
     cell: ({ row }) => {
       const field = row.getValue('createdAt') as Date
 
@@ -182,15 +199,31 @@ const columns: ColumnDef<RemovedMemberType>[] = [
 
       return <div>{formattedLongevity}</div>
     },
-    size: 150
+    meta: {
+      label: 'Date Removed'
+    },
+    size: 86
   },
   {
-    header: 'Actions',
+    header: 'Act.',
     id: 'actions',
     cell: ({ row: { original } }) => <RowActions removedMember={original} />,
-    size: 120
+    meta: {
+      label: 'Actions'
+    },
+    size: 92
   }
 ]
+
+const getColumnLabel = (column: Column<RemovedMemberType, unknown>) => {
+  const metaLabel = column.columnDef.meta?.label
+
+  if (typeof metaLabel === 'string' && metaLabel.trim()) return metaLabel
+
+  return typeof column.columnDef.header === 'string' ? column.columnDef.header : column.id
+}
+
+const getRemovedMemberTableCellLabel = (cell: Cell<RemovedMemberType, unknown>) => getColumnLabel(cell.column)
 
 const RemovedMembersDataTable = ({ data }: { data: RemovedMemberType[] }) => {
   const [columnFilters, setColumnFilters] = usePersistentColumnFilters('sagi:removed-members:columnFilters')
@@ -438,22 +471,25 @@ const RemovedMembersDataTable = ({ data }: { data: RemovedMemberType[] }) => {
             </DropdownMenu>
           </div>
         </div>
-        <Table mobileCards>
+        <Table mobileCards className='table-fixed text-xs sm:min-w-0 lg:text-sm'>
           <TableHeader>
             {table.getHeaderGroups().map(headerGroup => (
               <TableRow key={headerGroup.id} className='h-14 border-t bg-red-400 hover:bg-red-300'>
                 {headerGroup.headers.map(header => {
+                  const headerTitle = getColumnLabel(header.column)
+
                   return (
                     <TableHead
                       key={header.id}
+                      title={headerTitle}
                       style={{ width: `${header.getSize()}px` }}
-                      className='font-extrabold text-white first:pl-4 last:px-4'
+                      className='px-1.5 leading-tight font-extrabold whitespace-normal text-white first:pl-3 last:px-3'
                     >
                       {header.isPlaceholder ? null : header.column.getCanSort() ? (
                         <div
                           className={cn(
                             header.column.getCanSort() &&
-                              'inline-flex h-full cursor-pointer items-center gap-1.5 select-none'
+                              'inline-flex h-full cursor-pointer items-center gap-1 select-none'
                           )}
                           onClick={header.column.getToggleSortingHandler()}
                           onKeyDown={e => {
@@ -486,13 +522,13 @@ const RemovedMembersDataTable = ({ data }: { data: RemovedMemberType[] }) => {
               table.getRowModel().rows.map(row => (
                 <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'} className='hover:bg-red-400/30'>
                   {row.getVisibleCells().map(cell => {
-                    const cellLabel = getTableCellLabel(cell)
+                    const cellLabel = getRemovedMemberTableCellLabel(cell)
 
                     return (
                       <TableCell
                         key={cell.id}
                         data-label={cellLabel}
-                        className='h-14 first:w-12.5 first:pl-4 last:w-29 last:px-4'
+                        className='h-14 px-1.5 whitespace-normal first:pl-3 last:w-24 last:px-3'
                       >
                         <span className='sr-only'>{cellLabel}: </span>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -537,7 +573,7 @@ function Filter({ column }: { column: Column<any, unknown> }) {
   const id = useId()
   const columnFilterValue = column.getFilterValue()
   const { filterVariant } = column.columnDef.meta ?? {}
-  const columnHeader = typeof column.columnDef.header === 'string' ? column.columnDef.header : ''
+  const columnHeader = getColumnLabel(column)
   const filterValue = (columnFilterValue ?? '') as string
   const searchLabel = column.id === 'lastAndMiddleNames' ? 'last or middle name' : columnHeader.toLowerCase()
 
@@ -609,5 +645,5 @@ function Filter({ column }: { column: Column<any, unknown> }) {
 }
 
 function RowActions({ removedMember }: { removedMember: RemovedMemberType }) {
-  return <RestoreRemovedMemberButton removedMember={removedMember} />
+  return <RestoreRemovedMemberButton removedMember={removedMember} compact />
 }

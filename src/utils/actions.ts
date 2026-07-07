@@ -35,7 +35,11 @@ import {
 } from './sagi-contribution-summary'
 import { awaitingPublicationVestingLongevityDays, getAwaitingPublicationVestingCutoff } from './sagi-member-longevity'
 import { getOverdueRegistrationPaymentCreatedAtCutoff } from './registration-payment-deadline'
-import { registrationBalanceAdjustmentType, registrationFeePerEligibleMember } from './sagi-registration-summary'
+import {
+  fetchAssociationRegistrationSummary,
+  registrationBalanceAdjustmentType,
+  registrationFeePerEligibleMember
+} from './sagi-registration-summary'
 import { contributionPaymentAlertType, registrationPaymentAlertType } from './payment-constants'
 import {
   deleteCloudinaryDocument,
@@ -609,6 +613,7 @@ const revalidatePaymentViews = () => {
 
 const revalidateDeathDocumentationViews = () => {
   revalidatePath('/admin-all-deceased')
+  revalidatePath('/admin-death-documentations')
   revalidatePath('/death-documentations')
   revalidatePath('/deceased-members')
 }
@@ -800,52 +805,42 @@ export const fetchMembersForAdmin = async () => {
 
 export const fetchMemberStatusCountsByAssociationCode = async () => {
   await assertAdminUser()
+  noStore()
 
-  const counts = await db.member.groupBy({
-    by: ['associationCode', 'memberStatus'],
-    where: {
-      memberStatus: {
-        in: Object.values(memberStatus)
+  const [counts, profiles, memberAssociationNames] = await Promise.all([
+    db.member.groupBy({
+      by: ['associationCode', 'memberStatus'],
+      where: {
+        memberStatus: {
+          in: Object.values(memberStatus)
+        }
+      },
+      _count: {
+        _all: true
+      },
+      orderBy: {
+        associationCode: 'asc'
       }
-    },
-    _count: {
-      _all: true
-    },
-    orderBy: {
-      associationCode: 'asc'
-    }
-  })
-
-  const associationCodes = [...new Set(counts.map(item => item.associationCode))]
-
-  const profiles = await db.profile.findMany({
-    where: {
-      associationCode: {
-        in: associationCodes
+    }),
+    db.profile.findMany({
+      orderBy: [{ associationName: 'asc' }, { associationCode: 'asc' }],
+      select: {
+        associationCode: true,
+        associationName: true
       }
-    },
-    select: {
-      associationCode: true,
-      associationName: true
-    }
-  })
+    }),
+    db.member.findMany({
+      select: {
+        associationCode: true,
+        associationName: true
+      },
+      orderBy: {
+        associationName: 'asc'
+      }
+    })
+  ])
 
   const associationNamesByCode = new Map(profiles.map(profile => [profile.associationCode, profile.associationName]))
-
-  const memberAssociationNames = await db.member.findMany({
-    where: {
-      associationCode: {
-        in: associationCodes
-      }
-    },
-    select: {
-      associationCode: true,
-      associationName: true
-    },
-    orderBy: {
-      associationName: 'asc'
-    }
-  })
 
   for (const member of memberAssociationNames) {
     if (!associationNamesByCode.has(member.associationCode)) {
@@ -853,45 +848,112 @@ export const fetchMemberStatusCountsByAssociationCode = async () => {
     }
   }
 
-  const countsByAssociationCode = counts.reduce<
-    Record<
-      string,
-      {
-        associationCode: string
-        associationName: string
-        vested: number
-        pending: number
-        awaitingPublication: number
-        notInGoodStanding: number
-        total: number
-      }
-    >
-  >((acc, item) => {
-    const associationCode = item.associationCode
+  const associationCodes = Array.from(
+    new Set([...profiles.map(profile => profile.associationCode), ...counts.map(item => item.associationCode)])
+  ).sort((firstCode, secondCode) => firstCode.localeCompare(secondCode, undefined, { sensitivity: 'base' }))
 
-    acc[associationCode] ??= {
+  type AssociationStatusCounts = {
+    associationCode: string
+    associationName: string
+    vested: number
+    pending: number
+    awaitingPublication: number
+    notInGoodStanding: number
+    total: number
+  }
+
+  const countsByAssociationCode = Object.fromEntries(
+    associationCodes.map(associationCode => [
       associationCode,
-      associationName: associationNamesByCode.get(associationCode) ?? associationCode,
-      vested: 0,
-      pending: 0,
-      awaitingPublication: 0,
-      notInGoodStanding: 0,
-      total: 0
-    }
+      {
+        associationCode,
+        associationName: associationNamesByCode.get(associationCode) ?? associationCode,
+        vested: 0,
+        pending: 0,
+        awaitingPublication: 0,
+        notInGoodStanding: 0,
+        total: 0
+      }
+    ])
+  ) as Record<string, AssociationStatusCounts>
+
+  for (const item of counts) {
+    const associationCode = item.associationCode
+    const associationCounts = countsByAssociationCode[associationCode]
 
     const count = item._count._all
 
-    if (item.memberStatus === memberStatus.Vested) acc[associationCode].vested += count
-    if (item.memberStatus === memberStatus.Pending) acc[associationCode].pending += count
-    if (item.memberStatus === memberStatus.Awaiting) acc[associationCode].awaitingPublication += count
-    if (item.memberStatus === memberStatus.Delinquent) acc[associationCode].notInGoodStanding += count
+    if (item.memberStatus === memberStatus.Vested) associationCounts.vested += count
+    if (item.memberStatus === memberStatus.Pending) associationCounts.pending += count
+    if (item.memberStatus === memberStatus.Awaiting) associationCounts.awaitingPublication += count
+    if (item.memberStatus === memberStatus.Delinquent) associationCounts.notInGoodStanding += count
 
-    acc[associationCode].total += count
-
-    return acc
-  }, {})
+    associationCounts.total += count
+  }
 
   return Object.values(countsByAssociationCode)
+}
+
+export const fetchAdminDelegateDashboardPreviewAction = async (associationCodeInput: string) => {
+  noStore()
+  await assertAdminUser()
+
+  const associationCode = associationCodeInput.trim().toUpperCase()
+
+  if (!associationCode) return null
+
+  const [profile, members, currentContribution, currentRegistrationPayment] = await Promise.all([
+    db.profile.findUnique({
+      select: {
+        associationCode: true,
+        associationName: true,
+        firstDelegateEmail: true,
+        firstDelegateFullName: true,
+        firstDelegatePhoneNumber: true,
+        secondDelegateEmail: true,
+        secondDelegateFullName: true,
+        secondDelegatePhoneNumber: true,
+        thirdDelegateEmail: true,
+        thirdDelegateFullName: true,
+        thirdDelegatePhoneNumber: true
+      },
+      where: {
+        associationCode
+      }
+    }),
+    db.member.findMany({
+      orderBy: { createdAt: 'desc' },
+      where: {
+        associationCode
+      }
+    }),
+    fetchAssociationContributionSummary(associationCode, { noStore: true }),
+    fetchAssociationRegistrationSummary(associationCode, { noStore: true })
+  ])
+
+  if (!profile && members.length === 0) return null
+
+  const fallbackAssociationName =
+    members.find(member => member.associationName.trim())?.associationName.trim() || associationCode
+
+  return {
+    currentContribution,
+    currentRegistrationPayment,
+    delegate: profile ?? {
+      associationCode,
+      associationName: fallbackAssociationName,
+      firstDelegateEmail: '',
+      firstDelegateFullName: '',
+      firstDelegatePhoneNumber: '',
+      secondDelegateEmail: '',
+      secondDelegateFullName: '',
+      secondDelegatePhoneNumber: '',
+      thirdDelegateEmail: '',
+      thirdDelegateFullName: '',
+      thirdDelegatePhoneNumber: ''
+    },
+    members
+  }
 }
 
 const fetchContributionCalculationSummary = async () => {
@@ -970,10 +1032,7 @@ const fetchContributionCalculationDeaths = async () => {
   }))
 }
 
-const contributionTableDeathCertificateDocumentTypes = [
-  'death_certificate',
-  'ministry_certified_death_certificate'
-]
+const contributionTableDeathCertificateDocumentTypes = ['death_certificate', 'ministry_certified_death_certificate']
 
 const contributionTableDocumentTypes = [...contributionTableDeathCertificateDocumentTypes, 'deceased_picture']
 
@@ -1298,8 +1357,9 @@ export const resetAssociationContributionCalculationAction = async (): Promise<{
           await tx.$executeRaw(Prisma.sql`
             INSERT INTO "AssociationBalanceAdjustment" ("id", "associationCode", "balanceType", "amount", "createdAt", "updatedAt")
             VALUES ${Prisma.join(
-              balanceCarryForwards.map(carryForward =>
-                Prisma.sql`(${randomUUID()}, ${carryForward.associationCode}, ${contributionBalanceAdjustmentType}, ${carryForward.amount}, NOW(), NOW())`
+              balanceCarryForwards.map(
+                carryForward =>
+                  Prisma.sql`(${randomUUID()}, ${carryForward.associationCode}, ${contributionBalanceAdjustmentType}, ${carryForward.amount}, NOW(), NOW())`
               )
             )}
             ON CONFLICT ("associationCode", "balanceType")
@@ -2225,6 +2285,46 @@ export const vestEligibleAwaitingPublicationMembersAction = async (): Promise<{ 
   }
 }
 
+const addNameChangeAssociationNames = async <
+  T extends {
+    associationCode: string
+    member?: {
+      associationName?: string | null
+    } | null
+  }
+>(
+  requests: T[]
+) => {
+  const associationCodes = [...new Set(requests.map(request => request.associationCode))]
+
+  if (associationCodes.length === 0) {
+    return requests.map(request => ({
+      ...request,
+      associationName: request.member?.associationName?.trim() || null
+    }))
+  }
+
+  const profiles = await db.profile.findMany({
+    select: {
+      associationCode: true,
+      associationName: true
+    },
+    where: {
+      associationCode: {
+        in: associationCodes
+      }
+    }
+  })
+
+  const associationNamesByCode = new Map(profiles.map(profile => [profile.associationCode, profile.associationName]))
+
+  return requests.map(request => ({
+    ...request,
+    associationName:
+      associationNamesByCode.get(request.associationCode) ?? request.member?.associationName?.trim() ?? null
+  }))
+}
+
 export const fetchNameChangeDocumentationPageAction = async () => {
   const user = await getAuthUser()
 
@@ -2232,6 +2332,7 @@ export const fetchNameChangeDocumentationPageAction = async () => {
     orderBy: [{ associationCode: 'asc' }, { lastAndMiddleNames: 'asc' }, { firstName: 'asc' }],
     select: {
       associationCode: true,
+      associationName: true,
       firstName: true,
       id: true,
       lastAndMiddleNames: true,
@@ -2245,6 +2346,8 @@ export const fetchNameChangeDocumentationPageAction = async () => {
       include: {
         member: {
           select: {
+            associationCode: true,
+            associationName: true,
             firstName: true,
             lastAndMiddleNames: true,
             memberMatriculationNumber: true
@@ -2260,7 +2363,7 @@ export const fetchNameChangeDocumentationPageAction = async () => {
       return []
     })
 
-  return { members, requests }
+  return { members, requests: await addNameChangeAssociationNames(requests) }
 }
 
 export const fetchAdminNameChangeRequestsAction = async () => {
@@ -2271,6 +2374,8 @@ export const fetchAdminNameChangeRequestsAction = async () => {
       include: {
         member: {
           select: {
+            associationCode: true,
+            associationName: true,
             firstName: true,
             lastAndMiddleNames: true,
             memberMatriculationNumber: true
@@ -2279,6 +2384,7 @@ export const fetchAdminNameChangeRequestsAction = async () => {
       },
       orderBy: { createdAt: 'desc' }
     })
+    .then(addNameChangeAssociationNames)
     .catch(error => {
       console.error('Unable to load admin name change requests', error)
 
@@ -3275,9 +3381,10 @@ export const cancelMemberTransferRequestAction = async (prevState: { requestId: 
 
     await db.memberTransferRequest.update({
       data: {
-        rejectionReason: requestInitiatorClerkId === request.initiatingClerkId
-          ? copy.cancelledByInitiatingDelegateReason
-          : copy.cancelledByReceivingDelegateReason,
+        rejectionReason:
+          requestInitiatorClerkId === request.initiatingClerkId
+            ? copy.cancelledByInitiatingDelegateReason
+            : copy.cancelledByReceivingDelegateReason,
         status: 'cancelled'
       },
       where: {
@@ -4172,7 +4279,9 @@ export const restoreDeceasedMemberAction = async (prevState: { deceasedMemberId:
     })
 
     if (!isWithinMemberRemovalRestoreWindow(deceasedMember.createdAt)) {
-      throw new Error('This death announcement can no longer be restored because the 48-hour reversal window has expired')
+      throw new Error(
+        'This death announcement can no longer be restored because the 48-hour reversal window has expired'
+      )
     }
 
     if (
@@ -4278,11 +4387,8 @@ export const restoreDeceasedMemberAction = async (prevState: { deceasedMemberId:
   }
 }
 
-export const fetchDeathDocumentationCasesAction = async () => {
-  const user = await getAuthUser()
-  const isAdminUser = user.id === process.env.ADMIN_USER_ID
-
-  const deceasedMembers = await db.deceasedMember.findMany({
+const fetchDeathDocumentationCases = (where: Prisma.DeceasedMemberWhereInput) =>
+  db.deceasedMember.findMany({
     include: {
       documents: {
         orderBy: { updatedAt: 'desc' },
@@ -4303,14 +4409,35 @@ export const fetchDeathDocumentationCasesAction = async () => {
       }
     },
     orderBy: { createdAt: 'desc' },
-    where: isAdminUser
-      ? {}
-      : {
-          clerkId: user.id
-        }
+    where
   })
 
-  return { deceasedMembers, isAdminUser }
+export const fetchDelegateDeathDocumentationCasesAction = async () => {
+  const user = await getAuthUser()
+
+  noStore()
+
+  const deceasedMembers = await fetchDeathDocumentationCases({
+    clerkId: user.id
+  })
+
+  return { deceasedMembers }
+}
+
+export const fetchAdminDeathDocumentationCasesAction = async () => {
+  await assertAdminUser()
+
+  noStore()
+
+  const deceasedMembers = await fetchDeathDocumentationCases({})
+
+  return { deceasedMembers }
+}
+
+export const fetchDeathDocumentationCasesAction = async () => {
+  const { deceasedMembers } = await fetchDelegateDeathDocumentationCasesAction()
+
+  return { deceasedMembers, isAdminUser: false }
 }
 
 export const updateDeathDocumentationDetailsAction = async (

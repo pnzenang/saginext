@@ -37,7 +37,13 @@ const formatTimeRemaining = (milliseconds: number) => {
   return `${hours}h ${minutes}m ${seconds}s`
 }
 
-const RestoreRemovedMemberButton = ({ removedMember }: { removedMember: RemovedMemberType }) => {
+const RestoreRemovedMemberButton = ({
+  compact = false,
+  removedMember
+}: {
+  compact?: boolean
+  removedMember: RemovedMemberType
+}) => {
   const [isOpen, setIsOpen] = useState(false)
   const [now, setNow] = useState(() => Date.now())
   const restoreRemovedMember = restoreRemovedMemberAction.bind(null, { removedMemberId: removedMember.id })
@@ -88,15 +94,19 @@ const RestoreRemovedMemberButton = ({ removedMember }: { removedMember: RemovedM
       <Tooltip open={isOpen} onOpenChange={handleOpenChange}>
         <TooltipTrigger asChild>
           <div className='inline-flex'>
-            <FormContainer action={restoreRemovedMember}>
+            <FormContainer action={restoreRemovedMember} className={compact ? 'w-fit' : undefined}>
               <Button
                 type='submit'
-                size='sm'
+                size={compact ? 'xs' : 'sm'}
                 variant='outline'
-                className={buttonClass}
+                className={
+                  compact
+                    ? 'h-7 gap-1 rounded-md border-emerald-200 px-2 text-[11px] text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800'
+                    : buttonClass
+                }
                 aria-label='Restore removed member'
               >
-                <UserCheck className='size-4' aria-hidden='true' />
+                <UserCheck className={compact ? 'size-3.5' : 'size-4'} aria-hidden='true' />
                 Restore
               </Button>
             </FormContainer>

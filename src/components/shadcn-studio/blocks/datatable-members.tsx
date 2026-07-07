@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react'
 import { useEffect, useId, useMemo, useState } from 'react'
 
-import type { Column, ColumnDef, ColumnFiltersState, PaginationState, RowData, Row } from '@tanstack/react-table'
+import type { Cell, Column, ColumnDef, ColumnFiltersState, PaginationState, RowData, Row } from '@tanstack/react-table'
 import {
   flexRender,
   getCoreRowModel,
@@ -71,7 +71,6 @@ import {
 } from '@/utils/registration-payment-deadline'
 import type { AssociationContributionSummary } from '@/utils/sagi-contribution-summary'
 import type { AssociationRegistrationSummary } from '@/utils/sagi-registration-summary'
-import { getTableCellLabel } from '@/utils/table'
 import { getSelectFilterValues } from '@/utils/table-filter-values'
 import { formatLongevity } from '@/utils/formatLongevity'
 import { memberStatus, type MemberType } from '@/utils/types'
@@ -80,6 +79,7 @@ declare module '@tanstack/react-table' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface ColumnMeta<TData extends RowData, TValue> {
     filterVariant?: 'text' | 'range' | 'select'
+    label?: string
   }
 }
 
@@ -162,7 +162,7 @@ const RegistrationPaymentWarningCell = ({ member }: { member: MemberType }) => {
   return (
     <Badge
       variant='outline'
-      className='border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive/40 dark:bg-destructive/15 rounded-sm'
+      className='border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive/40 dark:bg-destructive/15 max-w-full shrink rounded-sm text-left break-words whitespace-normal'
     >
       <AlertTriangle aria-hidden='true' />
       {warning}
@@ -181,10 +181,13 @@ const columns: ColumnDef<MemberType>[] = [
         </div>
       </div>
     ),
-    size: 100
+    meta: {
+      label: 'Association Code'
+    },
+    size: 72
   },
   {
-    header: 'Matriculation',
+    header: 'Matric.',
     accessorKey: 'memberMatriculationNumber',
     cell: ({ row }) => {
       const status = row.getValue('memberStatus')
@@ -198,10 +201,13 @@ const columns: ColumnDef<MemberType>[] = [
         </div>
       )
     },
-    size: 100
+    meta: {
+      label: 'Matriculation'
+    },
+    size: 96
   },
   {
-    header: 'Last and Middle Names',
+    header: 'Last/Middle',
     accessorKey: 'lastAndMiddleNames',
     cell: ({ row }) => (
       <div className='flex items-center gap-2'>
@@ -210,10 +216,13 @@ const columns: ColumnDef<MemberType>[] = [
         </div>
       </div>
     ),
-    size: 100
+    meta: {
+      label: 'Last and Middle Names'
+    },
+    size: 180
   },
   {
-    header: 'First Name',
+    header: 'First',
     accessorKey: 'firstName',
     cell: ({ row }) => (
       <div className='flex items-center gap-2'>
@@ -222,7 +231,10 @@ const columns: ColumnDef<MemberType>[] = [
         </div>
       </div>
     ),
-    size: 100
+    meta: {
+      label: 'First Name'
+    },
+    size: 130
   },
   {
     id: 'name',
@@ -233,16 +245,19 @@ const columns: ColumnDef<MemberType>[] = [
 
   {
     accessorKey: 'createdAt', // The key in your data object
-    header: 'Longevity',
+    header: 'Long.',
     cell: ({ row }) => {
       const field = row.getValue('createdAt') as Date
 
       return <div>{formatLongevity(field)}</div>
     },
-    size: 160
+    meta: {
+      label: 'Longevity'
+    },
+    size: 112
   },
   {
-    header: 'Recommendation',
+    header: 'Rec.',
     accessorKey: 'delegateRecommendation',
     cell: ({ row }) => {
       const recommendation = row.getValue('delegateRecommendation') as string
@@ -269,15 +284,21 @@ const columns: ColumnDef<MemberType>[] = [
       }[recommendation]
 
       return (
-        <Badge className={cn('rounded-sm border capitalize focus-visible:outline-none', styles)}>
+        <Badge
+          className={cn(
+            'max-w-full shrink rounded-sm border text-left break-words whitespace-normal capitalize focus-visible:outline-none',
+            styles
+          )}
+        >
           {row.getValue('delegateRecommendation')}
         </Badge>
       )
     },
     meta: {
-      filterVariant: 'select'
+      filterVariant: 'select',
+      label: 'Recommendation'
     },
-    size: 100
+    size: 112
   },
 
   {
@@ -304,20 +325,24 @@ const columns: ColumnDef<MemberType>[] = [
       )
     },
     meta: {
-      filterVariant: 'select'
+      filterVariant: 'select',
+      label: 'Status'
     },
-    size: 100
+    size: 88
   },
   {
     id: 'registrationPaymentWarning',
-    header: `Registration Dues (${registrationPaymentDeadlineDays} days)`,
+    header: 'Reg. Dues',
     accessorFn: row => getRegistrationPaymentSortValue(row),
     cell: ({ row }) => <RegistrationPaymentWarningCell member={row.original} />,
     sortUndefined: 'last',
-    size: 260
+    meta: {
+      label: `Registration Dues (${registrationPaymentDeadlineDays} days)`
+    },
+    size: 150
   },
   {
-    header: 'Actions',
+    header: 'Act.',
     accessorKey: 'id',
     cell: ({ row: { original } }) => {
       // Destructuring 'id' directly from the row data
@@ -325,9 +350,22 @@ const columns: ColumnDef<MemberType>[] = [
 
       return <RowActions memberId={id} />
     },
-    size: 20
+    meta: {
+      label: 'Actions'
+    },
+    size: 56
   }
 ]
+
+const getColumnLabel = (column: Column<MemberType, unknown>) => {
+  const metaLabel = column.columnDef.meta?.label
+
+  if (typeof metaLabel === 'string' && metaLabel.trim()) return metaLabel
+
+  return typeof column.columnDef.header === 'string' ? column.columnDef.header : column.id
+}
+
+const getMemberTableCellLabel = (cell: Cell<MemberType, unknown>) => getColumnLabel(cell.column)
 
 const PaymentSummaryRow = ({ label, value }: { label: ReactNode; value: number }) => (
   <div className='text-primary/80 flex items-start justify-between gap-4'>
@@ -422,9 +460,20 @@ type MembersDataTableProps = {
   currentContribution: AssociationContributionSummary
   currentRegistrationPayment: AssociationRegistrationSummary
   data: MemberType[]
+  readOnly?: boolean
 }
 
-const MembersDataTable = ({ currentContribution, currentRegistrationPayment, data }: MembersDataTableProps) => {
+const MembersDataTable = ({
+  currentContribution,
+  currentRegistrationPayment,
+  data,
+  readOnly = false
+}: MembersDataTableProps) => {
+  const tableColumns = useMemo(
+    () => (readOnly ? columns.filter(column => column.header !== 'Act.') : columns),
+    [readOnly]
+  )
+
   const [columnFilters, setColumnFilters] = usePersistentColumnFilters('sagi:all-members:columnFilters')
 
   const pageSize = 200
@@ -440,7 +489,7 @@ const MembersDataTable = ({ currentContribution, currentRegistrationPayment, dat
 
   const table = useReactTable({
     data,
-    columns,
+    columns: tableColumns,
     initialState: {
       columnVisibility: {
         name: false
@@ -669,12 +718,14 @@ const MembersDataTable = ({ currentContribution, currentRegistrationPayment, dat
               )
             })}
           </div>
-          <div className='w-full pb-2'>
-            <AssociationPaymentNavigationCards
-              currentContribution={currentContribution}
-              currentRegistrationPayment={currentRegistrationPayment}
-            />
-          </div>
+          {!readOnly ? (
+            <div className='w-full pb-2'>
+              <AssociationPaymentNavigationCards
+                currentContribution={currentContribution}
+                currentRegistrationPayment={currentRegistrationPayment}
+              />
+            </div>
+          ) : null}
           <div className='flex items-center justify-between gap-3 py-2 max-sm:flex-col max-sm:items-stretch sm:px-6 sm:py-4'>
             <p className='text-primary text-sm font-extrabold sm:whitespace-nowrap' aria-live='polite'>
               <span>{formatNumber(table.getRowCount())} Member(s) Found</span>
@@ -816,17 +867,20 @@ const MembersDataTable = ({ currentContribution, currentRegistrationPayment, dat
             </div>
           </div>
         </div>
-        <Table mobileCards className='md:max-lg:text-xs'>
+        <Table mobileCards className='table-fixed text-xs sm:min-w-0 lg:text-sm'>
           <TableHeader>
             {table.getHeaderGroups().map(headerGroup => (
               <TableRow key={headerGroup.id} className='bg-primary hover:bg-primary/80 h-14 border-t'>
                 {headerGroup.headers.map(header => {
+                  const headerTitle = getColumnLabel(header.column)
+
                   return (
                     <TableHead
                       key={header.id}
+                      title={headerTitle}
                       style={{ width: `${header.getSize()}px` }}
                       className={cn(
-                        'font-extrabold text-white first:pl-4 last:px-4 md:max-lg:px-1 md:max-lg:first:pl-2 md:max-lg:last:px-2',
+                        'px-1.5 leading-tight font-extrabold whitespace-normal text-white first:pl-3 last:px-3',
                         getResponsiveColumnClassName(header.column.id)
                       )}
                     >
@@ -834,7 +888,7 @@ const MembersDataTable = ({ currentContribution, currentRegistrationPayment, dat
                         <div
                           className={cn(
                             header.column.getCanSort() &&
-                              'inline-flex h-full cursor-pointer items-center gap-1.5 select-none'
+                              'inline-flex h-full cursor-pointer items-center gap-1 select-none'
                           )}
                           onClick={header.column.getToggleSortingHandler()}
                           onKeyDown={e => {
@@ -867,14 +921,14 @@ const MembersDataTable = ({ currentContribution, currentRegistrationPayment, dat
               table.getRowModel().rows.map(row => (
                 <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'} className='hover:bg-primary/30'>
                   {row.getVisibleCells().map(cell => {
-                    const cellLabel = getTableCellLabel(cell)
+                    const cellLabel = getMemberTableCellLabel(cell)
 
                     return (
                       <TableCell
                         key={cell.id}
                         data-label={cellLabel}
                         className={cn(
-                          'h-14 first:w-12.5 first:pl-4 last:w-29 last:px-4 md:max-lg:px-1 md:max-lg:first:pl-2 md:max-lg:last:px-2',
+                          'h-14 px-1.5 whitespace-normal first:w-12.5 first:pl-3 last:w-20 last:px-3',
                           getResponsiveColumnClassName(cell.column.id)
                         )}
                       >
@@ -926,7 +980,7 @@ function Filter({ column }: { column: Column<any, unknown> }) {
   const id = useId()
   const columnFilterValue = column.getFilterValue()
   const { filterVariant } = column.columnDef.meta ?? {}
-  const columnHeader = typeof column.columnDef.header === 'string' ? column.columnDef.header : ''
+  const columnHeader = getColumnLabel(column)
   const filterValue = (columnFilterValue ?? '') as string
   const searchLabel = column.id === 'name' ? 'names' : columnHeader.toLowerCase()
 

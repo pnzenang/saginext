@@ -26,7 +26,7 @@ import {
   XIcon
 } from 'lucide-react'
 
-import type { Column, ColumnDef, PaginationState, RowData } from '@tanstack/react-table'
+import type { Cell, Column, ColumnDef, PaginationState, RowData } from '@tanstack/react-table'
 import {
   flexRender,
   getCoreRowModel,
@@ -62,7 +62,6 @@ import { usePersistentColumnFilters } from '@/hooks/use-persistent-column-filter
 import { usePagination } from '@/hooks/use-pagination'
 
 import { cn } from '@/lib/utils'
-import { getTableCellLabel } from '@/utils/table'
 import { getSelectFilterValues } from '@/utils/table-filter-values'
 
 import PaginationControls from '@/components/global/PaginationControls'
@@ -73,12 +72,13 @@ declare module '@tanstack/react-table' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface ColumnMeta<TData extends RowData, TValue> {
     filterVariant?: 'text' | 'range' | 'select'
+    label?: string
   }
 }
 
 const columns: ColumnDef<DeceasedMemberType>[] = [
   {
-    header: 'Last And Middle Names',
+    header: 'Last/Middle',
     accessorKey: 'lastAndMiddleNames',
     cell: ({ row }) => (
       <div className='flex min-w-0 items-center gap-2'>
@@ -87,6 +87,9 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
         </div>
       </div>
     ),
+    meta: {
+      label: 'Last and Middle Names'
+    },
     size: 92
   },
 
@@ -103,7 +106,7 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
   //   size: 100
   // },
   {
-    header: 'First Name',
+    header: 'First',
     accessorKey: 'firstName',
     cell: ({ row }) => (
       <div className='flex min-w-0 items-center gap-2'>
@@ -112,11 +115,14 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
         </div>
       </div>
     ),
+    meta: {
+      label: 'First Name'
+    },
     size: 72
   },
 
   {
-    header: 'Matriculation',
+    header: 'Matric.',
     accessorKey: 'memberMatriculationNumber',
     cell: ({ row }) => (
       <div className='flex min-w-0 items-center gap-2'>
@@ -125,10 +131,13 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
         </div>
       </div>
     ),
+    meta: {
+      label: 'Matriculation'
+    },
     size: 94
   },
   {
-    header: `Group's Name`,
+    header: 'Group',
     accessorKey: 'associationName',
     cell: ({ row }) => (
       <div className='flex min-w-0 items-center gap-2'>
@@ -137,10 +146,13 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
         </div>
       </div>
     ),
+    meta: {
+      label: `Group's Name`
+    },
     size: 96
   },
   {
-    header: 'Place of Death(State)',
+    header: 'Place',
     accessorKey: 'placeOfDeath',
     cell: ({ row }) => (
       <div className='flex min-w-0 items-center gap-2'>
@@ -149,12 +161,15 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
         </div>
       </div>
     ),
+    meta: {
+      label: 'Place of Death(State)'
+    },
     size: 88
   },
 
   {
     accessorKey: 'registrationDate', // The key in your data object
-    header: 'Registration Date',
+    header: 'Reg. Date',
     cell: ({ row }) => {
       const field = row.getValue('registrationDate') as string
       const fieldDate = new Date(field)
@@ -163,11 +178,14 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
 
       return <div>{formattedRegistrationDate}</div>
     },
+    meta: {
+      label: 'Registration Date'
+    },
     size: 82
   },
   {
     accessorKey: 'dateOfDeath', // The key in your data object
-    header: 'Date of Death',
+    header: 'Death',
     cell: ({ row }) => {
       const field = row.getValue('dateOfDeath') as string
       const fieldDate = new Date(field)
@@ -176,11 +194,14 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
 
       return <div>{formattedDateOfDeath}</div>
     },
+    meta: {
+      label: 'Date of Death'
+    },
     size: 82
   },
   {
     accessorKey: 'createdAt', // The key in your data object
-    header: 'Date Announced',
+    header: 'Announced',
     cell: ({ row }) => {
       const field = row.getValue('createdAt') as Date
 
@@ -188,10 +209,13 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
 
       return <div>{formattedAnnouncementDate}</div>
     },
+    meta: {
+      label: 'Date Announced'
+    },
     size: 82
   },
   {
-    header: 'contribution status',
+    header: 'Contrib.',
     accessorKey: 'contributionStatus',
     cell: ({ row }) => {
       const contributionStatus = row.getValue('contributionStatus') as string
@@ -209,24 +233,41 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
 
       return (
         <Badge
-          className={cn('max-w-full rounded-sm border-none text-xs capitalize focus-visible:outline-none', styles)}
+          className={cn(
+            'max-w-full whitespace-normal rounded-sm border-none text-left text-xs break-words capitalize focus-visible:outline-none',
+            styles
+          )}
         >
           {row.getValue('contributionStatus')}
         </Badge>
       )
     },
     meta: {
-      filterVariant: 'select'
+      filterVariant: 'select',
+      label: 'Contribution Status'
     },
     size: 92
   },
   {
-    header: 'Actions',
+    header: 'Act.',
     accessorKey: 'id',
     cell: ({ row: { original } }) => <RowActions deceasedMember={original} />,
-    size: 58
+    meta: {
+      label: 'Actions'
+    },
+    size: 92
   }
 ]
+
+const getColumnLabel = (column: Column<DeceasedMemberType, unknown>) => {
+  const metaLabel = column.columnDef.meta?.label
+
+  if (typeof metaLabel === 'string' && metaLabel.trim()) return metaLabel
+
+  return typeof column.columnDef.header === 'string' ? column.columnDef.header : column.id
+}
+
+const getDeceasedMemberTableCellLabel = (cell: Cell<DeceasedMemberType, unknown>) => getColumnLabel(cell.column)
 
 const numberFormatter = new Intl.NumberFormat('en-US')
 const formatNumber = (value: number) => numberFormatter.format(value)
@@ -564,9 +605,12 @@ const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
             {table.getHeaderGroups().map(headerGroup => (
               <TableRow key={headerGroup.id} className='h-14 border-t bg-purple-500 hover:bg-purple-400'>
                 {headerGroup.headers.map(header => {
+                  const headerTitle = getColumnLabel(header.column)
+
                   return (
                     <TableHead
                       key={header.id}
+                      title={headerTitle}
                       style={{ width: `${header.getSize()}px` }}
                       className='px-1.5 text-xs leading-tight font-extrabold whitespace-normal text-white first:pl-3 last:px-3'
                     >
@@ -611,13 +655,13 @@ const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
                   className='hover:bg-purple-300/30'
                 >
                   {row.getVisibleCells().map(cell => {
-                    const cellLabel = getTableCellLabel(cell)
+                    const cellLabel = getDeceasedMemberTableCellLabel(cell)
 
                     return (
                       <TableCell
                         key={cell.id}
                         data-label={cellLabel}
-                        className='h-14 px-1.5 whitespace-normal first:pl-3 last:px-3'
+                        className='h-14 px-1.5 whitespace-normal first:pl-3 last:w-24 last:px-3'
                       >
                         <span className='sr-only'>{cellLabel}: </span>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -662,7 +706,7 @@ function Filter({ column }: { column: Column<any, unknown> }) {
   const id = useId()
   const columnFilterValue = column.getFilterValue()
   const { filterVariant } = column.columnDef.meta ?? {}
-  const columnHeader = typeof column.columnDef.header === 'string' ? column.columnDef.header : ''
+  const columnHeader = getColumnLabel(column)
   const filterValue = (columnFilterValue ?? '') as string
   const searchLabel = column.id === 'lastAndMiddleNames' ? 'last or middle name' : columnHeader.toLowerCase()
 
@@ -734,5 +778,5 @@ function Filter({ column }: { column: Column<any, unknown> }) {
 }
 
 function RowActions({ deceasedMember }: { deceasedMember: DeceasedMemberType }) {
-  return <RestoreDeceasedMemberButton deceasedMember={deceasedMember} />
+  return <RestoreDeceasedMemberButton deceasedMember={deceasedMember} compact />
 }

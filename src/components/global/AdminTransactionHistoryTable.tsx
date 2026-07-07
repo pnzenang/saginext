@@ -424,6 +424,7 @@ const AdminTransactionHistoryTable = ({
                   return (
                     <TableHead
                       key={column.key}
+                      title={column.label}
                       className='text-primary-foreground h-16'
                       style={getColumnStyle(column.key)}
                       aria-sort={isActive ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}

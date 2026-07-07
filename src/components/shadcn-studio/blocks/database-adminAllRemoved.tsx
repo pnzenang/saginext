@@ -22,7 +22,7 @@ import {
   XIcon
 } from 'lucide-react'
 
-import type { Column, ColumnDef, PaginationState, RowData } from '@tanstack/react-table'
+import type { Cell, Column, ColumnDef, PaginationState, RowData } from '@tanstack/react-table'
 import {
   flexRender,
   getCoreRowModel,
@@ -56,7 +56,6 @@ import { usePersistentColumnFilters } from '@/hooks/use-persistent-column-filter
 import { usePagination } from '@/hooks/use-pagination'
 
 import { cn } from '@/lib/utils'
-import { getTableCellLabel } from '@/utils/table'
 import { getSelectFilterValues } from '@/utils/table-filter-values'
 import type { RemovedMemberType } from '@/utils/types'
 import { deleteRemovedMemberAction } from '@/utils/actions'
@@ -68,12 +67,13 @@ declare module '@tanstack/react-table' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface ColumnMeta<TData extends RowData, TValue> {
     filterVariant?: 'text' | 'range' | 'select'
+    label?: string
   }
 }
 
 const columns: ColumnDef<RemovedMemberType>[] = [
   {
-    header: 'Last And Middle Names',
+    header: 'Last/Middle',
     accessorKey: 'lastAndMiddleNames',
     cell: ({ row }) => (
       <div className='flex items-center gap-2'>
@@ -82,7 +82,10 @@ const columns: ColumnDef<RemovedMemberType>[] = [
         </div>
       </div>
     ),
-    size: 100
+    meta: {
+      label: 'Last and Middle Names'
+    },
+    size: 230
   },
 
   // {
@@ -98,7 +101,7 @@ const columns: ColumnDef<RemovedMemberType>[] = [
   //   size: 100
   // },
   {
-    header: 'First Name',
+    header: 'First',
     accessorKey: 'firstName',
     cell: ({ row }) => (
       <div className='flex items-center gap-2'>
@@ -106,11 +109,15 @@ const columns: ColumnDef<RemovedMemberType>[] = [
           <span className='font-medium'>{row.getValue('firstName')}</span>
         </div>
       </div>
-    )
+    ),
+    meta: {
+      label: 'First Name'
+    },
+    size: 150
   },
 
   {
-    header: 'Matriculation',
+    header: 'Matric.',
     accessorKey: 'memberMatriculationNumber',
     cell: ({ row }) => (
       <div className='flex items-center gap-2'>
@@ -119,7 +126,10 @@ const columns: ColumnDef<RemovedMemberType>[] = [
         </div>
       </div>
     ),
-    size: 150
+    meta: {
+      label: 'Matriculation'
+    },
+    size: 115
   },
   {
     header: 'Code',
@@ -131,7 +141,10 @@ const columns: ColumnDef<RemovedMemberType>[] = [
         </div>
       </div>
     ),
-    size: 150
+    meta: {
+      label: 'Association Code'
+    },
+    size: 68
   },
 
   // {
@@ -147,7 +160,7 @@ const columns: ColumnDef<RemovedMemberType>[] = [
   //   size: 150
   // },
   {
-    header: 'Reason For Leaving',
+    header: 'Reason',
     accessorKey: 'reasonForLeaving',
     cell: ({ row }) => (
       <div className='flex items-center gap-2'>
@@ -157,13 +170,14 @@ const columns: ColumnDef<RemovedMemberType>[] = [
       </div>
     ),
     meta: {
-      filterVariant: 'select'
+      filterVariant: 'select',
+      label: 'Reason For Leaving'
     },
-    size: 150
+    size: 118
   },
   {
     accessorKey: 'registrationDate', // The key in your data object
-    header: 'Registration Date',
+    header: 'Reg. Date',
     cell: ({ row }) => {
       const field = row.getValue('registrationDate') as string
       const fieldDate = new Date(field)
@@ -172,12 +186,15 @@ const columns: ColumnDef<RemovedMemberType>[] = [
 
       return <div>{formattedRegistrationDate}</div>
     },
-    size: 100
+    meta: {
+      label: 'Registration Date'
+    },
+    size: 78
   },
 
   {
     accessorKey: 'createdAt', // The key in your data object
-    header: 'Date Removed',
+    header: 'Removed',
     cell: ({ row }) => {
       const field = row.getValue('createdAt') as Date
 
@@ -185,15 +202,31 @@ const columns: ColumnDef<RemovedMemberType>[] = [
 
       return <div>{formattedLongevity}</div>
     },
-    size: 150
+    meta: {
+      label: 'Date Removed'
+    },
+    size: 86
   },
   {
-    header: 'Actions',
+    header: 'Act.',
     id: 'actions',
     cell: ({ row: { original } }) => <RowActions removedMember={original} />,
-    size: 160
+    meta: {
+      label: 'Actions'
+    },
+    size: 132
   }
 ]
+
+const getColumnLabel = (column: Column<RemovedMemberType, unknown>) => {
+  const metaLabel = column.columnDef.meta?.label
+
+  if (typeof metaLabel === 'string' && metaLabel.trim()) return metaLabel
+
+  return typeof column.columnDef.header === 'string' ? column.columnDef.header : column.id
+}
+
+const getRemovedMemberTableCellLabel = (cell: Cell<RemovedMemberType, unknown>) => getColumnLabel(cell.column)
 
 const RemovedMembersDataTable = ({ data }: { data: RemovedMemberType[] }) => {
   const [columnFilters, setColumnFilters] = usePersistentColumnFilters('sagi:admin-all-removed:columnFilters')
@@ -300,9 +333,7 @@ const RemovedMembersDataTable = ({ data }: { data: RemovedMemberType[] }) => {
       <div className='border-b'>
         <div className='flex flex-col gap-4 border-b p-4 sm:p-6'>
           <div className='flex flex-wrap items-baseline gap-x-3 gap-y-1 text-red-500'>
-            <span className='text-xl leading-tight font-semibold sm:text-3xl lg:text-5xl'>
-              REMOVED MEMBERS (Admin)
-            </span>
+            <span className='text-xl leading-tight font-semibold sm:text-3xl lg:text-5xl'>REMOVED MEMBERS (Admin)</span>
             <span className='inline-flex max-w-3xl items-center gap-1 text-sm leading-5 font-medium sm:text-base lg:text-lg'>
               <span className='text-4xl leading-none font-light sm:text-5xl'>(</span>
               <span className='flex min-w-0 flex-col'>
@@ -443,22 +474,25 @@ const RemovedMembersDataTable = ({ data }: { data: RemovedMemberType[] }) => {
             </DropdownMenu>
           </div>
         </div>
-        <Table mobileCards>
+        <Table mobileCards className='table-fixed text-xs sm:min-w-0 lg:text-sm'>
           <TableHeader>
             {table.getHeaderGroups().map(headerGroup => (
               <TableRow key={headerGroup.id} className='h-14 border-t bg-red-400 hover:bg-red-300'>
                 {headerGroup.headers.map(header => {
+                  const headerTitle = getColumnLabel(header.column)
+
                   return (
                     <TableHead
                       key={header.id}
+                      title={headerTitle}
                       style={{ width: `${header.getSize()}px` }}
-                      className='font-extrabold text-white first:pl-4 last:px-4'
+                      className='px-1.5 leading-tight font-extrabold whitespace-normal text-white first:pl-3 last:px-3'
                     >
                       {header.isPlaceholder ? null : header.column.getCanSort() ? (
                         <div
                           className={cn(
                             header.column.getCanSort() &&
-                              'inline-flex h-full cursor-pointer items-center gap-1.5 select-none'
+                              'inline-flex h-full cursor-pointer items-center gap-1 select-none'
                           )}
                           onClick={header.column.getToggleSortingHandler()}
                           onKeyDown={e => {
@@ -491,13 +525,13 @@ const RemovedMembersDataTable = ({ data }: { data: RemovedMemberType[] }) => {
               table.getRowModel().rows.map(row => (
                 <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'} className='hover:bg-red-400/30'>
                   {row.getVisibleCells().map(cell => {
-                    const cellLabel = getTableCellLabel(cell)
+                    const cellLabel = getRemovedMemberTableCellLabel(cell)
 
                     return (
                       <TableCell
                         key={cell.id}
                         data-label={cellLabel}
-                        className='h-14 first:w-12.5 first:pl-4 last:w-29 last:px-4'
+                        className='h-14 px-1.5 whitespace-normal first:pl-3 last:w-32 last:px-3'
                       >
                         <span className='sr-only'>{cellLabel}: </span>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -542,7 +576,7 @@ function Filter({ column }: { column: Column<any, unknown> }) {
   const id = useId()
   const columnFilterValue = column.getFilterValue()
   const { filterVariant } = column.columnDef.meta ?? {}
-  const columnHeader = typeof column.columnDef.header === 'string' ? column.columnDef.header : ''
+  const columnHeader = getColumnLabel(column)
   const filterValue = (columnFilterValue ?? '') as string
   const searchLabel = column.id === 'lastAndMiddleNames' ? 'last or middle name' : columnHeader.toLowerCase()
 
@@ -618,7 +652,7 @@ function RowActions({ removedMember }: { removedMember: RemovedMemberType }) {
 
   return (
     <div className='flex items-center gap-2'>
-      <RestoreRemovedMemberButton removedMember={removedMember} />
+      <RestoreRemovedMemberButton removedMember={removedMember} compact />
       <FormContainer action={deleteRemovedMember}>
         <Button size='icon' variant='ghost' className='rounded-full p-2 hover:bg-red-300' aria-label='Delete item'>
           <Trash2 className='text-destructive size-5' aria-hidden='true' />

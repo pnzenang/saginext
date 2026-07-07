@@ -234,7 +234,10 @@ const AdminPaymentUpdateTable = ({
             </colgroup>
             <TableHeader>
               <TableRow className='bg-primary hover:bg-primary'>
-                <TableHead className='text-primary-foreground truncate px-1.5 text-right whitespace-nowrap'>
+                <TableHead
+                  title='Number'
+                  className='text-primary-foreground truncate px-1.5 text-right whitespace-nowrap'
+                >
                   No.
                 </TableHead>
                 {columns.map(column => {
@@ -243,6 +246,7 @@ const AdminPaymentUpdateTable = ({
                   return (
                     <TableHead
                       key={column.key}
+                      title={column.label}
                       aria-sort={isActive ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
                       className={cn(
                         'text-primary-foreground overflow-hidden whitespace-nowrap',

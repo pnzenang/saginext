@@ -15,10 +15,10 @@ const DEATH_ANNOUNCEMENT_RESTORE_WINDOW_MS = 48 * 60 * 60 * 1000
 const hasRestoreDetails = (deceasedMember: DeceasedMemberType) =>
   Boolean(
     deceasedMember.associationCode &&
-      deceasedMember.dateOfBirth &&
-      deceasedMember.delegateRecommendation &&
-      deceasedMember.memberStatus &&
-      deceasedMember.nameOfBeneficiary
+    deceasedMember.dateOfBirth &&
+    deceasedMember.delegateRecommendation &&
+    deceasedMember.memberStatus &&
+    deceasedMember.nameOfBeneficiary
   )
 
 const getRestoreTimeRemaining = (deceasedMember: DeceasedMemberType, now: number) => {
@@ -38,7 +38,13 @@ const formatTimeRemaining = (milliseconds: number) => {
   return `${hours}h ${minutes}m ${seconds}s`
 }
 
-const RestoreDeceasedMemberButton = ({ deceasedMember }: { deceasedMember: DeceasedMemberType }) => {
+const RestoreDeceasedMemberButton = ({
+  compact = false,
+  deceasedMember
+}: {
+  compact?: boolean
+  deceasedMember: DeceasedMemberType
+}) => {
   const [isOpen, setIsOpen] = useState(false)
   const [now, setNow] = useState(() => Date.now())
   const restoreDeceasedMember = restoreDeceasedMemberAction.bind(null, { deceasedMemberId: deceasedMember.id })
@@ -63,6 +69,8 @@ const RestoreDeceasedMemberButton = ({ deceasedMember }: { deceasedMember: Decea
   }, [isOpen])
 
   useEffect(() => {
+    if (!hasDetails) return
+
     const timeUntilExpiration = getRestoreTimeRemaining(deceasedMember, Date.now())
 
     if (timeUntilExpiration <= 0) return
@@ -72,7 +80,7 @@ const RestoreDeceasedMemberButton = ({ deceasedMember }: { deceasedMember: Decea
     }, timeUntilExpiration)
 
     return () => window.clearTimeout(timeout)
-  }, [deceasedMember])
+  }, [deceasedMember, hasDetails])
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open)
@@ -87,15 +95,19 @@ const RestoreDeceasedMemberButton = ({ deceasedMember }: { deceasedMember: Decea
       <Tooltip open={isOpen} onOpenChange={handleOpenChange}>
         <TooltipTrigger asChild>
           <div className='inline-flex'>
-            <FormContainer action={restoreDeceasedMember}>
+            <FormContainer action={restoreDeceasedMember} className={compact ? 'w-fit' : undefined}>
               <Button
                 type='submit'
-                size='sm'
+                size={compact ? 'xs' : 'sm'}
                 variant='outline'
-                className={buttonClass}
+                className={
+                  compact
+                    ? 'h-7 gap-1 rounded-md border-emerald-200 px-2 text-[11px] text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800'
+                    : buttonClass
+                }
                 aria-label='Restore death announcement'
               >
-                <UserCheck className='size-4' aria-hidden='true' />
+                <UserCheck className={compact ? 'size-3.5' : 'size-4'} aria-hidden='true' />
                 Restore
               </Button>
             </FormContainer>

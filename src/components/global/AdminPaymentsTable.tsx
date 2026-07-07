@@ -106,42 +106,46 @@ const getExportColumns = (kind: PaymentKind) => {
   return columns
 }
 
-const actionColumnWidthRem = 14
-const sentAdjustmentColumnWidthRem = 9
 const defaultPaymentRowsPerPage = 10
 const paymentRowsPerPageOptions = [10, 25, 50, 100]
 
-const columnWidthRemByKey: Record<SortKey, number> = {
-  amountExpected: 9,
-  amountSent: 9,
-  amountVerified: 9,
-  associationCode: 5,
-  associationName: 16,
-  awaitingPublication: 6,
-  balance: 10,
-  pendingMembers: 6,
-  vestedMembers: 6
+const desktopColumnWidthPercentByKind: Record<PaymentKind, Partial<Record<SortKey, number>>> = {
+  contribution: {
+    amountExpected: 10,
+    amountSent: 10,
+    amountVerified: 10,
+    associationCode: 6,
+    associationName: 18,
+    balance: 15,
+    vestedMembers: 6
+  },
+  registration: {
+    amountExpected: 12,
+    amountSent: 12,
+    amountVerified: 13,
+    associationCode: 6,
+    awaitingPublication: 5,
+    balance: 16,
+    pendingMembers: 5,
+    vestedMembers: 5
+  }
 }
 
 const getColumnSizeClassName = (column: AdminPaymentColumn) => {
-  if (column.key === 'associationName') return 'w-64 min-w-64'
-  if (column.key === 'associationCode') return 'w-20 min-w-20'
-  if (['vestedMembers', 'awaitingPublication', 'pendingMembers'].includes(column.key)) return 'w-24 min-w-24'
-  if (['amountExpected', 'amountSent', 'amountVerified'].includes(column.key)) return 'w-36 min-w-36'
+  if (column.key === 'associationName') return 'min-w-0'
+  if (column.key === 'associationCode') return 'min-w-0'
+  if (['vestedMembers', 'awaitingPublication', 'pendingMembers'].includes(column.key)) return 'min-w-0'
+  if (['amountExpected', 'amountSent', 'amountVerified'].includes(column.key)) return 'min-w-0'
 
-  return ''
+  return 'min-w-0'
 }
 
-const getColumnWidthRem = (column: AdminPaymentColumn) => columnWidthRemByKey[column.key]
+const getColumnWidthPercent = (kind: PaymentKind, column: AdminPaymentColumn) =>
+  desktopColumnWidthPercentByKind[kind][column.key] ?? 8
 
-const getTableWidthRem = (
-  tableColumns: AdminPaymentColumn[],
-  showSentAdjustment: boolean,
-  balanceColumn?: AdminPaymentColumn
-) =>
-  tableColumns.reduce((totalWidth, column) => totalWidth + getColumnWidthRem(column), actionColumnWidthRem) +
-  (showSentAdjustment ? sentAdjustmentColumnWidthRem : 0) +
-  (balanceColumn ? getColumnWidthRem(balanceColumn) : 0)
+const getSentAdjustmentColumnWidthPercent = (kind: PaymentKind) => (kind === 'contribution' ? 9 : 10)
+
+const getActionColumnWidthPercent = (kind: PaymentKind) => (kind === 'contribution' ? 16 : 16)
 
 const shouldRenderSentAdjustmentBeforeColumn = (column: AdminPaymentColumn, showSentAdjustment: boolean) =>
   showSentAdjustment && column.key === 'amountSent'
@@ -271,10 +275,10 @@ const PaymentSentAdjustmentForm = ({
         inputMode='decimal'
         step='0.01'
         placeholder='+/- 0.00'
-        className='h-8 px-2 text-xs'
+        className='h-7 px-1.5 text-[11px]'
         required
       />
-      <Button type='submit' size='xs' variant='outline' className='h-8 w-full px-2'>
+      <Button type='submit' size='xs' variant='outline' className='h-7 w-full gap-1 px-1 text-[11px]'>
         <Plus className='size-3' />
         Sent
       </Button>
@@ -300,12 +304,21 @@ const PaymentControls = ({
 
   return (
     <div
-      className={cn('grid w-56 max-w-full min-w-0 gap-2 max-sm:w-full', showAdjustment ? 'grid-cols-2' : 'grid-cols-1')}
+      className={cn(
+        'grid w-full max-w-full min-w-0 gap-1.5 max-sm:w-full',
+        showAdjustment ? 'grid-cols-2' : 'grid-cols-1'
+      )}
     >
       <div className='grid gap-1.5'>
         <form action={verifyAction}>
           <input type='hidden' name='associationCode' value={row.associationCode} />
-          <Button type='submit' size='xs' variant='outline' disabled={!hasSubmittedPayment} className='h-8 w-full px-2'>
+          <Button
+            type='submit'
+            size='xs'
+            variant='outline'
+            disabled={!hasSubmittedPayment}
+            className='h-7 w-full gap-1 px-1 text-[11px]'
+          >
             <CheckCircle2 className='size-3' />
             Verify
           </Button>
@@ -317,7 +330,7 @@ const PaymentControls = ({
             size='xs'
             variant='destructive'
             disabled={!hasSubmittedPayment}
-            className='h-8 w-full px-2'
+            className='h-7 w-full gap-1 px-1 text-[11px]'
           >
             <RotateCcw className='size-3' />
             Reset
@@ -337,10 +350,10 @@ const PaymentControls = ({
             inputMode='decimal'
             step='0.01'
             placeholder='+/- 0.00'
-            className='h-8 px-2 text-xs'
+            className='h-7 px-1.5 text-[11px]'
             required
           />
-          <Button type='submit' size='xs' variant='secondary' className='h-8 w-full px-2'>
+          <Button type='submit' size='xs' variant='secondary' className='h-7 w-full gap-1 px-1 text-[11px]'>
             <Plus className='size-3' />
             Add
           </Button>
@@ -364,7 +377,6 @@ const AdminPaymentsTable = ({
   const showAdjustment = true
   const showSentAdjustment = Boolean(sentAdjustmentAction)
   const tableColumns = columns.filter(column => column.key !== 'balance')
-  const tableWidthRem = getTableWidthRem(tableColumns, showSentAdjustment, balanceColumn)
   const [sortKey, setSortKey] = useState<SortKey>('associationCode')
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
   const [searchQuery, setSearchQuery] = useState('')
@@ -500,7 +512,10 @@ const AdminPaymentsTable = ({
         </form>
         <div className='flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center'>
           <div className='flex items-center justify-between gap-2 sm:justify-start'>
-            <label htmlFor={rowsPerPageSelectId} className='text-muted-foreground text-sm font-medium whitespace-nowrap'>
+            <label
+              htmlFor={rowsPerPageSelectId}
+              className='text-muted-foreground text-sm font-medium whitespace-nowrap'
+            >
               Rows
             </label>
             <Select value={String(rowsPerPage)} onValueChange={handleRowsPerPageChange}>
@@ -528,23 +543,23 @@ const AdminPaymentsTable = ({
           </Button>
         </div>
       </div>
-      <div className='hidden w-full min-w-0 overflow-x-auto lg:block'>
+      <div className='hidden w-full min-w-0 overflow-hidden lg:block'>
         <Table
-          className='table-fixed text-xs [&_td]:whitespace-normal [&_th]:whitespace-normal'
+          className='min-w-0 table-fixed text-[11px] xl:text-xs [&_td]:whitespace-normal [&_th]:whitespace-normal'
           style={{
-            minWidth: `${tableWidthRem}rem`,
+            tableLayout: 'fixed',
             width: '100%'
           }}
         >
           <colgroup>
             {tableColumns.flatMap(column => [
               ...(shouldRenderSentAdjustmentBeforeColumn(column, showSentAdjustment)
-                ? [<col key='sentAdjustment' style={{ width: `${sentAdjustmentColumnWidthRem}rem` }} />]
+                ? [<col key='sentAdjustment' style={{ width: `${getSentAdjustmentColumnWidthPercent(kind)}%` }} />]
                 : []),
-              <col key={column.key} style={{ width: `${getColumnWidthRem(column)}rem` }} />
+              <col key={column.key} style={{ width: `${getColumnWidthPercent(kind, column)}%` }} />
             ])}
-            <col style={{ width: `${actionColumnWidthRem}rem` }} />
-            {balanceColumn ? <col style={{ width: `${getColumnWidthRem(balanceColumn)}rem` }} /> : null}
+            <col style={{ width: `${getActionColumnWidthPercent(kind)}%` }} />
+            {balanceColumn ? <col style={{ width: `${getColumnWidthPercent(kind, balanceColumn)}%` }} /> : null}
           </colgroup>
           <TableHeader>
             <TableRow className='bg-primary hover:bg-primary'>
@@ -556,13 +571,15 @@ const AdminPaymentsTable = ({
                     {shouldRenderSentAdjustmentBeforeColumn(column, showSentAdjustment) ? (
                       <TableHead
                         key='sentAdjustment'
-                        className='text-primary-foreground h-14 w-36 min-w-36 px-2 text-center'
+                        title='Adjust Sent'
+                        className='text-primary-foreground h-14 min-w-0 px-1.5 text-center'
                       >
-                        Adjust Sent
+                        <span className='block leading-tight break-words'>Adjust Sent</span>
                       </TableHead>
                     ) : null}
                     <TableHead
                       key={column.key}
+                      title={column.label}
                       aria-sort={isActive ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
                       className={cn(
                         'text-primary-foreground h-14 px-2',
@@ -573,32 +590,35 @@ const AdminPaymentsTable = ({
                       <button
                         type='button'
                         className={cn(
-                          'flex min-h-10 w-full items-center gap-1.5 text-left font-semibold',
+                          'flex min-h-10 w-full min-w-0 items-center gap-1 text-left font-semibold',
                           column.align === 'right' ? 'justify-end text-right' : 'justify-start'
                         )}
                         onClick={() => handleSort(column.key)}
                       >
-                        <span>{column.label}</span>
+                        <span className='min-w-0 leading-tight break-words'>{column.label}</span>
                         {getSortIcon(isActive, sortDirection)}
                       </button>
                     </TableHead>
                   </Fragment>
                 )
               })}
-              <TableHead className='text-primary-foreground h-14 w-56 min-w-56 px-2 text-center'>Actions</TableHead>
+              <TableHead title='Actions' className='text-primary-foreground h-14 min-w-0 px-1.5 text-center'>
+                Actions
+              </TableHead>
               {balanceColumn ? (
                 <TableHead
+                  title={balanceColumn.label}
                   aria-sort={
                     sortKey === balanceColumn.key ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'
                   }
-                  className='text-primary-foreground h-14 w-40 min-w-40 px-2 text-right'
+                  className='text-primary-foreground h-14 min-w-0 px-1.5 text-right'
                 >
                   <button
                     type='button'
-                    className='flex min-h-10 w-full items-center justify-end gap-1.5 text-right font-semibold'
+                    className='flex min-h-10 w-full min-w-0 items-center justify-end gap-1 text-right font-semibold'
                     onClick={() => handleSort(balanceColumn.key)}
                   >
-                    <span>{balanceColumn.label}</span>
+                    <span className='min-w-0 leading-tight break-words'>{balanceColumn.label}</span>
                     {getSortIcon(sortKey === balanceColumn.key, sortDirection)}
                   </button>
                 </TableHead>
@@ -621,17 +641,17 @@ const AdminPaymentsTable = ({
                   {tableColumns.map(column => (
                     <Fragment key={column.key}>
                       {shouldRenderSentAdjustmentBeforeColumn(column, showSentAdjustment) && sentAdjustmentAction ? (
-                        <TableCell key='sentAdjustment' className='w-36 min-w-36 px-2 py-3 align-middle'>
+                        <TableCell key='sentAdjustment' className='min-w-0 px-1.5 py-3 align-middle'>
                           <PaymentSentAdjustmentForm action={sentAdjustmentAction} kind={kind} row={row} />
                         </TableCell>
                       ) : null}
                       <TableCell
                         key={column.key}
                         className={cn(
-                          'px-2 py-4 font-semibold',
+                          'min-w-0 px-1.5 py-4 font-semibold break-words',
                           getColumnSizeClassName(column),
                           column.key === 'associationName' && 'text-foreground text-sm font-bold',
-                          column.align === 'right' && 'text-right text-sm tabular-nums',
+                          column.align === 'right' && 'text-right text-xs tabular-nums xl:text-sm',
                           getValueClassName(row, column)
                         )}
                       >
@@ -639,7 +659,7 @@ const AdminPaymentsTable = ({
                       </TableCell>
                     </Fragment>
                   ))}
-                  <TableCell className='w-56 min-w-56 px-2 py-3'>
+                  <TableCell className='min-w-0 px-1.5 py-3'>
                     <PaymentControls
                       adjustAction={adjustAction}
                       row={row}
@@ -649,8 +669,8 @@ const AdminPaymentsTable = ({
                     />
                   </TableCell>
                   {balanceColumn ? (
-                    <TableCell className='w-40 min-w-40 px-2 py-3 text-right align-middle'>
-                      <BalanceCard balance={row.balance} className='h-[4.375rem] w-full justify-center' />
+                    <TableCell className='min-w-0 px-1.5 py-3 text-right align-middle'>
+                      <BalanceCard balance={row.balance} className='h-[4.375rem] w-full min-w-0 justify-center px-1' />
                     </TableCell>
                   ) : null}
                 </TableRow>
@@ -663,14 +683,14 @@ const AdminPaymentsTable = ({
                 {tableColumns.map(column => (
                   <Fragment key={column.key}>
                     {shouldRenderSentAdjustmentBeforeColumn(column, showSentAdjustment) ? (
-                      <TableCell key='sentAdjustment' className='w-36 min-w-36' />
+                      <TableCell key='sentAdjustment' className='min-w-0' />
                     ) : null}
                     <TableCell
                       key={column.key}
                       className={cn(
-                        'px-2 py-4',
+                        'min-w-0 px-1.5 py-4 break-words',
                         getColumnSizeClassName(column),
-                        column.align === 'right' && 'text-right text-base tabular-nums'
+                        column.align === 'right' && 'text-right text-sm tabular-nums xl:text-base'
                       )}
                     >
                       {column.key === 'associationCode'
@@ -684,10 +704,13 @@ const AdminPaymentsTable = ({
                     </TableCell>
                   </Fragment>
                 ))}
-                <TableCell className='w-56 min-w-56' />
+                <TableCell className='min-w-0' />
                 {balanceColumn ? (
-                  <TableCell className='w-40 min-w-40 px-2 py-3 text-right align-middle'>
-                    <BalanceCard balance={displayedTotals.balance} className='h-[4.375rem] w-full justify-center' />
+                  <TableCell className='min-w-0 px-1.5 py-3 text-right align-middle'>
+                    <BalanceCard
+                      balance={displayedTotals.balance}
+                      className='h-[4.375rem] w-full min-w-0 justify-center px-1'
+                    />
                   </TableCell>
                 ) : null}
               </TableRow>
