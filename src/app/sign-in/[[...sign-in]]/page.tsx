@@ -52,7 +52,7 @@ const SignInPage = () => {
         <AuthLoadingCard />
       </ClerkLoading>
       <ClerkLoaded>
-        <SignIn forceRedirectUrl='/profile/create' signUpUrl='/sign-up' appearance={authAppearance} />
+        <SignIn forceRedirectUrl='/all-members' signUpUrl='/sign-up' appearance={authAppearance} />
       </ClerkLoaded>
     </section>
   )

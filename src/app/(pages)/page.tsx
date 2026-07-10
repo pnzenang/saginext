@@ -217,6 +217,113 @@ const monthFormatters: Record<HomeLanguage, Intl.DateTimeFormat> = {
   })
 }
 
+type RotatingHeroImage = {
+  src: string
+  alt: Record<HomeLanguage, string>
+  objectPosition: string
+}
+
+const rotatingHeroImages: RotatingHeroImage[] = [
+  {
+    src: '/images/hero/sagi-hero-jan-feb.png',
+    alt: {
+      en: 'Community members reviewing support documents together',
+      fr: 'Membres de la communauté examinant ensemble des documents de soutien'
+    },
+    objectPosition: '58% center'
+  },
+  {
+    src: '/images/hero/sagi-hero-february.png',
+    alt: {
+      en: 'Community members welcoming a family with support documents',
+      fr: 'Membres de la communauté accueillant une famille avec des documents de soutien'
+    },
+    objectPosition: '62% center'
+  },
+  {
+    src: '/images/hero/sagi-hero-mar-apr.png',
+    alt: {
+      en: 'Multigenerational family reviewing support information at home',
+      fr: 'Famille multigénérationnelle consultant des informations de soutien à la maison'
+    },
+    objectPosition: '62% center'
+  },
+  {
+    src: '/images/hero/sagi-hero-april.png',
+    alt: {
+      en: 'Family and delegate reviewing membership support information',
+      fr: 'Famille et déléguée consultant des informations de soutien'
+    },
+    objectPosition: '62% center'
+  },
+  {
+    src: '/images/hero/sagi-hero-may-jun.png',
+    alt: {
+      en: 'Community delegates organizing member support records',
+      fr: 'Délégués communautaires organisant les dossiers de soutien des membres'
+    },
+    objectPosition: '62% center'
+  },
+  {
+    src: '/images/hero/sagi-hero-june.png',
+    alt: {
+      en: 'Delegate team reconciling member records and contribution details',
+      fr: 'Équipe de délégués vérifiant les dossiers des membres et les cotisations'
+    },
+    objectPosition: '63% center'
+  },
+  {
+    src: '/images/hero/sagi-hero-jul-aug.png',
+    alt: {
+      en: 'Community members meeting in a circle for mutual aid support',
+      fr: 'Membres de la communauté réunis en cercle pour un soutien solidaire'
+    },
+    objectPosition: '54% center'
+  },
+  {
+    src: '/images/hero/sagi-hero-august.png',
+    alt: {
+      en: 'Community members exchanging support forms after a member session',
+      fr: 'Membres de la communauté échangeant des formulaires après une séance'
+    },
+    objectPosition: '65% center'
+  },
+  {
+    src: '/images/hero/sagi-hero-sep-oct.png',
+    alt: {
+      en: 'Family and community members gathered for a dignified support moment',
+      fr: 'Famille et membres de la communauté réunis dans un moment de soutien digne'
+    },
+    objectPosition: '62% center'
+  },
+  {
+    src: '/images/hero/sagi-hero-october.png',
+    alt: {
+      en: 'Family and delegate having a compassionate support conversation',
+      fr: 'Famille et déléguée dans une conversation de soutien compatissante'
+    },
+    objectPosition: '66% center'
+  },
+  {
+    src: '/images/hero/sagi-hero-nov-dec.png',
+    alt: {
+      en: 'Family members reviewing contribution records together',
+      fr: 'Membres d’une famille examinant ensemble des dossiers de cotisation'
+    },
+    objectPosition: '62% center'
+  },
+  {
+    src: '/images/hero/sagi-hero-december.png',
+    alt: {
+      en: 'Delegates reviewing year-end contribution records together',
+      fr: 'Délégués examinant ensemble les dossiers de cotisation de fin d’année'
+    },
+    objectPosition: '64% center'
+  }
+]
+
+const getRotatingHeroImage = (date: Date) => rotatingHeroImages[date.getMonth()] ?? rotatingHeroImages[0]
+
 const totalRegisteredLabels: Record<HomeLanguage, string> = {
   en: 'total registered to date',
   fr: 'total des inscrits à ce jour'
@@ -799,8 +906,10 @@ function HeroSection({
   totalRegisteredMembers: number
 }) {
   const heroStatsWithTotalRegistered = [getTotalRegisteredStat(totalRegisteredMembers, language), ...copy.heroStats]
+  const currentDate = new Date()
+  const heroImage = getRotatingHeroImage(currentDate)
   const contributionAmount = currencyFormatter.format(heroContributionBanner.amountPerMember)
-  const contributionMonth = monthFormatters[language].format(new Date())
+  const contributionMonth = monthFormatters[language].format(currentDate)
 
   return (
     <section
@@ -808,15 +917,17 @@ function HeroSection({
       className='relative isolate mt-3 min-h-[82svh] overflow-hidden pt-28 pb-16 sm:mt-4 sm:pt-32 lg:pt-36'
     >
       <Image
-        src='/images/hero-compassionate-support.webp'
-        alt={copy.hero.imageAlt}
+        src={heroImage.src}
+        alt={heroImage.alt[language]}
         fill
         priority
         sizes='100vw'
-        className='-z-20 object-cover brightness-110 saturate-105'
+        className='-z-20 object-cover brightness-105 saturate-105'
+        style={{ objectPosition: heroImage.objectPosition }}
       />
-      <div className='absolute inset-0 -z-10 bg-white/10' />
-      <div className='absolute inset-0 -z-10 bg-linear-to-r from-slate-950/58 via-slate-950/26 to-white/12' />
+      <div className='absolute inset-0 -z-10 bg-slate-950/20' />
+      <div className='absolute inset-0 -z-10 bg-linear-to-r from-slate-950/82 via-slate-950/48 to-slate-950/12' />
+      <div className='from-background absolute inset-x-0 bottom-0 -z-10 h-32 bg-linear-to-t to-transparent' />
 
       <div className='mx-auto flex max-w-7xl flex-col gap-12 px-4 sm:px-6 lg:px-8'>
         <div className='max-w-4xl space-y-7'>

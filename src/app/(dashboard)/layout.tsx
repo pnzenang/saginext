@@ -25,12 +25,13 @@ import {
 import db from '@/utils/db'
 import { dashboardText, languageCookieName, normalizeLanguage, translateDashboardMenuItems } from '@/lib/i18n'
 import { getPagesItems } from '@/utils/links'
+import { contributionPaymentAlertType, registrationPaymentAlertType } from '@/utils/payment-constants'
 
 export const dynamic = 'force-dynamic'
 
-const getDashboardAssociationIdentity = async () => {
-  const { userId } = await auth()
+const defaultPaymentAlertResetAt = new Date(0)
 
+const getDashboardAssociationIdentity = async (userId?: string | null) => {
   if (!userId) return null
 
   return db.profile.findUnique({
@@ -45,13 +46,126 @@ const getDashboardAssociationIdentity = async () => {
   })
 }
 
+const getPaymentAlertResetAt = async (alertType: string) => {
+  const alertReset = await db.paymentAlertReset.findUnique({
+    select: {
+      resetAt: true
+    },
+    where: {
+      alertType
+    }
+  })
+
+  return alertReset?.resetAt ?? defaultPaymentAlertResetAt
+}
+
+const getContributionPaymentAlertCount = async () => {
+  const resetAt = await getPaymentAlertResetAt(contributionPaymentAlertType)
+
+  const payments = await db.associationContributionPayment.findMany({
+    select: {
+      amountSent: true,
+      amountVerified: true,
+      lastSubmittedAt: true
+    },
+    where: {
+      lastSubmittedAt: {
+        gt: resetAt
+      }
+    }
+  })
+
+  return payments.filter(payment => Number(payment.amountSent ?? 0) - Number(payment.amountVerified ?? 0) > 0).length
+}
+
+const getRegistrationPaymentAlertCount = async () => {
+  const resetAt = await getPaymentAlertResetAt(registrationPaymentAlertType)
+
+  return db.associationRegistrationPayment.count({
+    where: {
+      amountSent: {
+        gt: 0
+      },
+      lastSubmittedAt: {
+        gt: resetAt
+      }
+    }
+  })
+}
+
+type DashboardSidebarActionCounts = Record<string, number>
+
+const getDashboardSidebarActionCounts = async (userId?: string | null): Promise<DashboardSidebarActionCounts> => {
+  if (!userId) return {}
+
+  const isAdminUser = userId === process.env.ADMIN_USER_ID
+
+  const [nameChangeDocumentationCount, memberTransferCount, adminCounts] = await Promise.all([
+    db.nameChangeRequest.count({
+      where: {
+        clerkId: userId,
+        status: 'documentation_requested'
+      }
+    }),
+    db.memberTransferRequest.count({
+      where: {
+        OR: [
+          {
+            initiatingClerkId: userId,
+            status: 'receiving_delegate_pending'
+          },
+          {
+            receivingClerkId: userId,
+            status: 'initiating_delegate_approved'
+          }
+        ]
+      }
+    }),
+    isAdminUser
+      ? Promise.all([
+          db.nameChangeRequest.count({
+            where: {
+              status: 'submitted'
+            }
+          }),
+          db.memberTransferRequest.count({
+            where: {
+              status: 'receiving_delegate_approved'
+            }
+          }),
+          getContributionPaymentAlertCount(),
+          getRegistrationPaymentAlertCount()
+        ])
+      : Promise.resolve<[number, number, number, number]>([0, 0, 0, 0])
+  ])
+
+  const [adminNameChangeCount, adminMemberTransferCount, adminContributionPaymentCount, adminRegistrationPaymentCount] =
+    adminCounts
+
+  return {
+    '/admin-contribution-payments': adminContributionPaymentCount,
+    '/admin-member-transfers': adminMemberTransferCount,
+    '/admin-name-changes': adminNameChangeCount,
+    '/admin-registration-payments': adminRegistrationPaymentCount,
+    '/member-transfer': memberTransferCount,
+    '/name-modification': nameChangeDocumentationCount
+  } satisfies DashboardSidebarActionCounts
+}
+
+const addSidebarActionCounts = (items: ReturnType<typeof getPagesItems>, actionCounts: DashboardSidebarActionCounts) =>
+  items.map(item => ({
+    ...item,
+    alertCount: actionCounts[item.href] ?? 0
+  }))
+
 const internalRulesAcknowledgementAllowedPaths = new Set(['/internal-rules', '/profile/create'])
 
 const PagesLayout = async ({ children }: Readonly<{ children: ReactNode }>) => {
-  const [cookieStore, headerStore, associationIdentity] = await Promise.all([
-    cookies(),
-    headers(),
-    getDashboardAssociationIdentity()
+  const [cookieStore, headerStore, authData] = await Promise.all([cookies(), headers(), auth()])
+
+  const [associationIdentity, sidebarActionCounts] = await Promise.all([
+    getDashboardAssociationIdentity(authData.userId),
+    getDashboardSidebarActionCounts(authData.userId)
   ])
 
   const language = normalizeLanguage(cookieStore.get(languageCookieName)?.value)
@@ -65,7 +179,11 @@ const PagesLayout = async ({ children }: Readonly<{ children: ReactNode }>) => {
     redirect('/internal-rules')
   }
 
-  const translatedPagesItems = translateDashboardMenuItems(getPagesItems(), language)
+  const translatedPagesItems = translateDashboardMenuItems(
+    addSidebarActionCounts(getPagesItems(), sidebarActionCounts),
+    language
+  )
+
   const copy = dashboardText[language]
 
   return (

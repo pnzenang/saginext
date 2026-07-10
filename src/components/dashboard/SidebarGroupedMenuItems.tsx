@@ -14,6 +14,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubItem
 } from '../ui/sidebar'
+import { cn } from '@/lib/utils'
 import type { MenuItem } from '@/utils/types'
 import { SidebarActiveDropdownButton, SidebarActiveMenuButton, SidebarActiveSubButton } from './SidebarActiveMenuButton'
 
@@ -41,61 +42,111 @@ const getAdminLabel = (label: string) => {
   return trimmedLabel.replace(/^admin\s+/i, '')
 }
 
+const formatActionCount = (count: number) => (count > 99 ? '99+' : String(count))
+
+const getActionCountLabel = (count: number) => `${count} action${count === 1 ? '' : 's'} required`
+
+const SidebarActionBadge = ({
+  className,
+  count,
+  showCollapsedDot = false
+}: {
+  className?: string
+  count?: number
+  showCollapsedDot?: boolean
+}) => {
+  if (!count || count <= 0) return null
+
+  return (
+    <>
+      <span
+        aria-label={getActionCountLabel(count)}
+        className={cn(
+          'ml-2 flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-amber-500 px-1.5 text-[10px] leading-none font-black text-amber-950 tabular-nums ring-1 ring-amber-200',
+          'group-data-[collapsible=icon]:hidden',
+          className
+        )}
+        title={getActionCountLabel(count)}
+      >
+        {formatActionCount(count)}
+      </span>
+      {showCollapsedDot ? (
+        <span
+          aria-hidden='true'
+          className='ring-sidebar absolute top-1 right-1 hidden size-2 rounded-full bg-amber-500 ring-2 group-data-[collapsible=icon]:block'
+        />
+      ) : null}
+    </>
+  )
+}
+
+const getSidebarTooltip = (item: MenuItem) =>
+  item.alertCount && item.alertCount > 0 ? `${item.label}: ${getActionCountLabel(item.alertCount)}` : item.label
+
 const SidebarLinkItem = ({ item }: { item: MenuItem }) => (
   <SidebarMenuItem>
-    <SidebarActiveMenuButton tooltip={item.label} href={item.href} className={sidebarLinkClass}>
+    <SidebarActiveMenuButton tooltip={getSidebarTooltip(item)} href={item.href} className={sidebarLinkClass}>
       <Link href={item.href}>
         <item.icon />
-        <span className='truncate capitalize'>{item.label}</span>
+        <span className='min-w-0 flex-1 truncate capitalize'>{item.label}</span>
+        <SidebarActionBadge count={item.alertCount} showCollapsedDot />
       </Link>
     </SidebarActiveMenuButton>
   </SidebarMenuItem>
 )
 
 const SidebarDropdownMenu = ({
+  alertCount,
   icon: Icon,
   title,
   subtitle,
   items,
   formatLabel = label => label
 }: {
+  alertCount?: number
   icon: MenuItem['icon']
   title: string
   subtitle?: string
   items: MenuItem[]
   formatLabel?: (label: string) => string
-}) => (
-  <Collapsible asChild>
-    <SidebarMenuItem>
-      <SidebarActiveDropdownButton title={title} className={sidebarDropdownClass}>
-        <Icon />
-        <span className='flex min-w-0 flex-col'>
-          <span className='truncate capitalize'>{title}</span>
-          {subtitle ? (
-            <span className='text-muted-foreground truncate text-xs font-normal normal-case group-data-[collapsible=icon]:hidden'>
-              {subtitle}
-            </span>
-          ) : null}
-        </span>
-        <ChevronRight className='ml-auto transition-transform duration-200' />
-      </SidebarActiveDropdownButton>
-      <CollapsibleContent>
-        <SidebarMenuSub>
-          {items.map(item => (
-            <SidebarMenuSubItem key={item.href}>
-              <SidebarActiveSubButton href={item.href} className={sidebarSubLinkClass}>
-                <Link href={item.href}>
-                  <item.icon />
-                  <span className='truncate capitalize'>{formatLabel(item.label)}</span>
-                </Link>
-              </SidebarActiveSubButton>
-            </SidebarMenuSubItem>
-          ))}
-        </SidebarMenuSub>
-      </CollapsibleContent>
-    </SidebarMenuItem>
-  </Collapsible>
-)
+}) => {
+  const tooltipTitle = alertCount && alertCount > 0 ? `${title}: ${getActionCountLabel(alertCount)}` : title
+
+  return (
+    <Collapsible asChild>
+      <SidebarMenuItem>
+        <SidebarActiveDropdownButton title={tooltipTitle} className={sidebarDropdownClass}>
+          <Icon />
+          <span className='flex min-w-0 flex-1 flex-col'>
+            <span className='truncate capitalize'>{title}</span>
+            {subtitle ? (
+              <span className='text-muted-foreground truncate text-xs font-normal normal-case group-data-[collapsible=icon]:hidden'>
+                {subtitle}
+              </span>
+            ) : null}
+          </span>
+          <SidebarActionBadge count={alertCount} showCollapsedDot />
+          <ChevronRight className='shrink-0 transition-transform duration-200' />
+        </SidebarActiveDropdownButton>
+        <CollapsibleContent>
+          <SidebarMenuSub>
+            {items.map(item => (
+              <SidebarMenuSubItem key={item.href}>
+                <SidebarActiveSubButton href={item.href} className={sidebarSubLinkClass}>
+                  <Link href={item.href}>
+                    <item.icon />
+                    <span className='min-w-0 flex-1 truncate capitalize'>{formatLabel(item.label)}</span>
+                    <SidebarActionBadge count={item.alertCount} />
+                  </Link>
+                </SidebarActiveSubButton>
+              </SidebarMenuSubItem>
+            ))}
+          </SidebarMenuSub>
+        </CollapsibleContent>
+      </SidebarMenuItem>
+    </Collapsible>
+  )
+}
 
 const SidebarGroupedMenuItems = async ({
   data,
@@ -110,6 +161,7 @@ const SidebarGroupedMenuItems = async ({
   const isAdminUser = userId === process.env.ADMIN_USER_ID
   const adminItems = isAdminUser ? data.filter(isAdminItem) : []
   const firstAdminItemIndex = data.findIndex(isAdminItem)
+  const adminAlertCount = adminItems.reduce((total, item) => total + (item.alertCount ?? 0), 0)
 
   return (
     <SidebarGroup className='justify-center pt-3 md:pt-16'>
@@ -123,6 +175,7 @@ const SidebarGroupedMenuItems = async ({
               return (
                 <SidebarDropdownMenu
                   key='admin-menu'
+                  alertCount={adminAlertCount}
                   icon={UserCog}
                   title={adminLabel}
                   items={adminItems}

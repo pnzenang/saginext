@@ -7,6 +7,7 @@ export type MenuSubItem = {
 }
 
 export type MenuItem = {
+  alertCount?: number
   icon: ComponentType
   label: string
   href: string
