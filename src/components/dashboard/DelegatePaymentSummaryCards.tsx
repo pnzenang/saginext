@@ -69,19 +69,12 @@ const DelegatePaymentSummaryCards = ({ contribution, registration }: DelegatePay
         <SummaryRow label='Amount Sent' value={contribution.amountReceived} />
         <SummaryRow label='Amount Verified SAGI' value={contribution.amountVerified} />
         <SummaryRow label='Contribution Dues' value={contribution.amountOwed} />
-        <SummaryRow label='Existing Balance' value={contribution.existingBalance} />
-        {contribution.manualBalanceAdjustment !== 0 ? (
-          <SummaryRow label='Balance Adjustment' value={contribution.manualBalanceAdjustment} />
-        ) : null}
       </PaymentSummaryCard>
 
       <PaymentSummaryCard title='Registration payment summary' balance={registration.balance}>
         <SummaryRow label='Amount Sent' value={registration.amountReceived} />
         <SummaryRow label='Amount Verified SAGI' value={registration.amountVerified} />
         <SummaryRow label='Used for Registration' value={registration.balanceDues} />
-        {registration.manualBalanceAdjustment !== 0 ? (
-          <SummaryRow label='Balance Adjustment' value={registration.manualBalanceAdjustment} />
-        ) : null}
       </PaymentSummaryCard>
     </div>
   </section>

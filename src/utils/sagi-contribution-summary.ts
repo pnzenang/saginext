@@ -55,57 +55,51 @@ export const fetchAssociationContributionSummary = async (
   const latestAssessment = await fetchLatestAssociationContributionAssessment()
   const amountPerVestedMember = decimalToNumber(latestAssessment?.amountPerVestedMember)
 
-  const [
-    payment,
-    balanceAdjustment,
-    vestedMembersCount,
-    contributionAssessmentGroups,
-    paymentLedgerTotals
-  ] = await Promise.all([
-    db.associationContributionPayment.findUnique({
-      where: {
-        associationCode
-      }
-    }),
-    db.associationBalanceAdjustment.findUnique({
-      where: {
-        associationCode_balanceType: {
-          associationCode,
-          balanceType: contributionBalanceAdjustmentType
+  const [payment, balanceAdjustment, vestedMembersCount, contributionAssessmentGroups, paymentLedgerTotals] =
+    await Promise.all([
+      db.associationContributionPayment.findUnique({
+        where: {
+          associationCode
         }
-      }
-    }),
-    db.member.count({
-      where: {
-        associationCode,
-        memberStatus: memberStatus.Vested
-      }
-    }),
-    db.associationContributionAssessmentGroup.findMany({
-      include: {
-        assessment: {
-          select: {
-            createdAt: true,
-            dueDate: true
+      }),
+      db.associationBalanceAdjustment.findUnique({
+        where: {
+          associationCode_balanceType: {
+            associationCode,
+            balanceType: contributionBalanceAdjustmentType
           }
         }
-      },
-      where: {
-        associationCode
-      }
-    }),
-    fetchAssociationPaymentLedgerTotals(associationCode, associationPaymentTypes.contribution, {
-      noStore: options.noStore
-    })
-  ])
+      }),
+      db.member.count({
+        where: {
+          associationCode,
+          memberStatus: memberStatus.Vested
+        }
+      }),
+      db.associationContributionAssessmentGroup.findMany({
+        include: {
+          assessment: {
+            select: {
+              createdAt: true,
+              dueDate: true
+            }
+          }
+        },
+        where: {
+          associationCode
+        }
+      }),
+      fetchAssociationPaymentLedgerTotals(associationCode, associationPaymentTypes.contribution, {
+        noStore: options.noStore
+      })
+    ])
 
   const amountOwed = Number((amountPerVestedMember * vestedMembersCount).toFixed(2))
   const currentAmountSent = decimalToNumber(payment?.amountSent)
-  const currentAmountVerified = decimalToNumber(payment?.amountVerified)
-  const amountReceived = Number(Math.max(currentAmountSent - currentAmountVerified, 0).toFixed(2))
+  const amountReceived = Number(Math.max(currentAmountSent, 0).toFixed(2))
   const amountVerified = paymentLedgerTotals.amountVerified
   const manualBalanceAdjustment = decimalToNumber(balanceAdjustment?.amount)
-  const existingBalance = 0
+  const existingBalance = manualBalanceAdjustment
 
   const contributionDueMonthsByDate = contributionAssessmentGroups.reduce((groups, group) => {
     const dueDate = group.assessment.dueDate ?? group.assessment.createdAt
@@ -140,7 +134,7 @@ export const fetchAssociationContributionSummary = async (
     amountReceived,
     amountVerified,
     associationCode,
-    balance: Number((amountVerified + manualBalanceAdjustment - amountOwed).toFixed(2)),
+    balance: Number((amountVerified + existingBalance - amountOwed).toFixed(2)),
     contributionDueMonths: fallbackContributionDueMonths,
     deathCount: latestAssessment?.deathCount ?? 0,
     dueDate: latestAssessment?.dueDate?.toISOString() ?? null,

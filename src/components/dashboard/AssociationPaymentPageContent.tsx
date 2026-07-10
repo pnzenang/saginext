@@ -63,7 +63,6 @@ const associationPaymentCopy = {
     amountSent: 'Amount Sent',
     amountVerifiedSagi: 'Amount Verified SAGI',
     amountVerifiedConnector: 'Amount Verified',
-    balanceAdjustment: 'Balance Adjustment',
     contributionAmountDetail: (count: number, amount: string) => `${count} vested member(s) x ${amount}`,
     contributionAmountSent: 'Contribution amount sent',
     contributionAmountTitle: (month: string, amount: string) => `${month}'s Contribution: ${amount}`,
@@ -77,7 +76,6 @@ const associationPaymentCopy = {
     deathCount: (count: number) => `Number of deaths: ${count}`,
     due: 'Due',
     dueDate: 'Due date',
-    existingBalance: 'Existing Balance',
     historyDescription: 'Dues, amount sent, and SAGI verified totals are shown in the cards below.',
     historyTitle: 'Payment history',
     instructionsText: 'Send the Zelle payment first, then record the exact amount here for SAGI verification.',
@@ -111,7 +109,6 @@ const associationPaymentCopy = {
     amountSent: 'Montant envoyé',
     amountVerifiedSagi: 'Montant vérifié SAGI',
     amountVerifiedConnector: 'Montant vérifié',
-    balanceAdjustment: 'Ajustement du solde',
     contributionAmountDetail: (count: number, amount: string) => `${count} membre(s) acquis x ${amount}`,
     contributionAmountSent: 'Montant de cotisation envoyé',
     contributionAmountTitle: (month: string, amount: string) => `Cotisation de ${month} : ${amount}`,
@@ -125,7 +122,6 @@ const associationPaymentCopy = {
     deathCount: (count: number) => `Nombre de décès : ${count}`,
     due: 'Échéance',
     dueDate: "Date d'échéance",
-    existingBalance: 'Solde existant',
     historyDescription: 'Les cotisations, montants envoyés et montants vérifiés par SAGI sont affichés ci-dessous.',
     historyTitle: 'Historique des paiements',
     instructionsText:
@@ -133,7 +129,7 @@ const associationPaymentCopy = {
     instructionsTitle: 'Instructions de paiement',
     introPrefix: 'Scannez ou cliquez sur le code QR pour envoyer le paiement par Zelle. Ajoutez',
     introSuffix:
-      "dans le mémo afin que le paiement soit associé à votre association, puis enregistrez le montant envoyé.",
+      'dans le mémo afin que le paiement soit associé à votre association, puis enregistrez le montant envoyé.',
     memberAdded: (date: string) => `Membre(s) ajouté(s) le ${date}`,
     paymentFound: 'Paiement retrouvé',
     paymentQrAlt: 'Code QR de paiement SAGI',
@@ -293,9 +289,7 @@ const SummaryCard = ({
     <p className='text-lg font-extrabold break-words sm:text-xl'>{title}</p>
     <div className='mt-2 grid gap-1.5 text-sm font-semibold'>{children}</div>
     <BalanceRow balance={balance} copy={balanceCopy} />
-    <p className='text-primary/70 mt-auto pt-4 text-[10px] leading-tight font-medium break-words'>
-      {disclaimer}
-    </p>
+    <p className='text-primary/70 mt-auto pt-4 text-[10px] leading-tight font-medium break-words'>{disclaimer}</p>
   </div>
 )
 
@@ -326,13 +320,7 @@ type PaymentSummaryRow = {
   value: number
 }
 
-const PaymentSummaryCard = ({
-  connectorFallback,
-  row
-}: {
-  connectorFallback: string
-  row: PaymentSummaryRow
-}) => {
+const PaymentSummaryCard = ({ connectorFallback, row }: { connectorFallback: string; row: PaymentSummaryRow }) => {
   const hasEntries = row.entries && row.entries.length > 0
 
   return (
@@ -598,7 +586,11 @@ const AssociationPaymentPageContent = (props: AssociationPaymentPageContentProps
           id: 'contribution-due',
           label: copy.contributionDue,
           meta:
-            contributionDueDateGroups.length > 0 ? undefined : dueDate ? `${copy.due} ${formatDate(dueDate)}` : undefined,
+            contributionDueDateGroups.length > 0
+              ? undefined
+              : dueDate
+                ? `${copy.due} ${formatDate(dueDate)}`
+                : undefined,
           value: contributionDueDateGroups.length > 0 ? contributionDueSummaryValue : props.contribution.amountOwed
         }
       ]
@@ -673,9 +665,7 @@ const AssociationPaymentPageContent = (props: AssociationPaymentPageContentProps
           </div>
           <div className='border-primary/20 bg-primary/10 text-primary flex h-full min-h-32 min-w-0 flex-col justify-center rounded-md border px-3 py-3 sm:px-4'>
             <p className='text-lg font-extrabold break-words sm:text-xl'>{copy.instructionsTitle}</p>
-            <p className='text-primary/80 mt-1 text-sm font-semibold break-words'>
-              {copy.instructionsText}
-            </p>
+            <p className='text-primary/80 mt-1 text-sm font-semibold break-words'>{copy.instructionsText}</p>
           </div>
         </div>
 
@@ -714,10 +704,6 @@ const AssociationPaymentPageContent = (props: AssociationPaymentPageContentProps
               <SummaryRow label={copy.amountSent} value={props.contribution.amountReceived} />
               <SummaryRow label={copy.amountVerifiedSagi} value={props.contribution.amountVerified} />
               <SummaryRow label={copy.contributionDues} value={props.contribution.amountOwed} />
-              <SummaryRow label={copy.existingBalance} value={props.contribution.existingBalance} />
-              {props.contribution.manualBalanceAdjustment > 0 ? (
-                <SummaryRow label={copy.balanceAdjustment} value={props.contribution.manualBalanceAdjustment} />
-              ) : null}
             </SummaryCard>
           ) : (
             <SummaryCard
@@ -729,9 +715,6 @@ const AssociationPaymentPageContent = (props: AssociationPaymentPageContentProps
               <SummaryRow label={copy.amountSent} value={props.registration.amountReceived} />
               <SummaryRow label={copy.amountVerifiedSagi} value={props.registration.amountVerified} />
               <SummaryRow label={copy.usedForRegistration} value={props.registration.balanceDues} />
-              {props.registration.manualBalanceAdjustment > 0 ? (
-                <SummaryRow label={copy.balanceAdjustment} value={props.registration.manualBalanceAdjustment} />
-              ) : null}
             </SummaryCard>
           )}
         </div>
