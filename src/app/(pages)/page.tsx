@@ -322,7 +322,17 @@ const rotatingHeroImages: RotatingHeroImage[] = [
   }
 ]
 
-const getRotatingHeroImage = (date: Date) => rotatingHeroImages[date.getMonth()] ?? rotatingHeroImages[0]
+const heroImageRotationIntervalDays = 10
+const millisecondsPerDay = 24 * 60 * 60 * 1000
+
+const getRotatingHeroImage = (date: Date) => {
+  const startOfYear = Date.UTC(date.getUTCFullYear(), 0, 1)
+  const startOfDay = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())
+  const dayOfYearIndex = Math.floor((startOfDay - startOfYear) / millisecondsPerDay)
+  const imageIndex = Math.floor(dayOfYearIndex / heroImageRotationIntervalDays) % rotatingHeroImages.length
+
+  return rotatingHeroImages[imageIndex] ?? rotatingHeroImages[0]
+}
 
 const totalRegisteredLabels: Record<HomeLanguage, string> = {
   en: 'total registered to date',
