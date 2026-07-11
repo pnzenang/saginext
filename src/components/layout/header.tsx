@@ -1,19 +1,24 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 
 import { LogIn } from 'lucide-react'
 
-import type { Navigation } from '@/components/blocks/header-navigation'
+import type { Navigation, NavigationItem } from '@/components/blocks/header-navigation'
 import { HeaderNavigation, HeaderNavigationSmallScreen } from '@/components/blocks/header-navigation'
 import { LanguageToggle } from '@/components/global/LanguageToggle'
 import { ModeToggle } from '@/components/layout/mode-toggle'
 import { PrimarySwipeButton } from '@/components/ui/swipe-button'
 
-import { normalizeLanguage, siteHeaderText, type AppLanguage } from '@/lib/i18n'
+import {
+  normalizeLanguage,
+  siteHeaderText,
+  translateSiteHeaderNavigationLabel,
+  type AppLanguage
+} from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 
 import Logo from '@/components/logo'
@@ -30,6 +35,56 @@ const Header = ({ navigationData, language = 'en', className }: HeaderProps) => 
   const searchParams = useSearchParams()
   const currentLanguage = normalizeLanguage(searchParams.get('lang') ?? language)
   const copy = siteHeaderText[currentLanguage]
+
+  const translatedNavigationData = useMemo<Navigation[]>(() => {
+    const translateLabel = (label: string) => translateSiteHeaderNavigationLabel(label, currentLanguage)
+
+    const translateItem = (item: NavigationItem): NavigationItem => ({
+      ...item,
+      title: translateLabel(item.title),
+      description: item.description ? translateLabel(item.description) : item.description
+    })
+
+    return navigationData.map(navItem => {
+      const title = translateLabel(navItem.title)
+
+      if ('href' in navItem && navItem.href) {
+        const translatedNavItem = {
+          ...navItem,
+          title
+        } as Navigation
+
+        return translatedNavItem
+      }
+
+      if ('imageSection' in navItem && navItem.imageSection) {
+        const translatedNavItem = {
+          ...navItem,
+          title,
+          subtitle: translateLabel(navItem.subtitle),
+          imgSubtitle: translateLabel(navItem.imgSubtitle),
+          items: navItem.items?.map(translateItem),
+          imageSection: {
+            ...navItem.imageSection,
+            title: translateLabel(navItem.imageSection.title),
+            description: navItem.imageSection.description
+              ? translateLabel(navItem.imageSection.description)
+              : navItem.imageSection.description
+          }
+        } as Navigation
+
+        return translatedNavItem
+      }
+
+      const translatedNavItem = {
+        ...navItem,
+        title,
+        items: navItem.items?.map(translateItem)
+      } as Navigation
+
+      return translatedNavItem
+    })
+  }, [currentLanguage, navigationData])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -66,7 +121,7 @@ const Header = ({ navigationData, language = 'en', className }: HeaderProps) => 
         </div>
 
         {/* Navigation */}
-        <HeaderNavigation navigationData={navigationData} className='max-lg:hidden' />
+        <HeaderNavigation navigationData={translatedNavigationData} className='max-lg:hidden' />
 
         {/* Actions */}
         <div className='flex shrink-0 items-center gap-3'>
@@ -89,7 +144,7 @@ const Header = ({ navigationData, language = 'en', className }: HeaderProps) => 
               </Link>
             </PrimarySwipeButton>
 
-            <HeaderNavigationSmallScreen navigationData={navigationData} />
+            <HeaderNavigationSmallScreen navigationData={translatedNavigationData} />
           </div>
         </div>
       </div>

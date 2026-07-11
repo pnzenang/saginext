@@ -62,6 +62,17 @@ export const siteHeaderText = {
   }
 } as const
 
+const siteHeaderNavigationLabelTranslations: Record<string, string> = {
+  Home: 'Accueil',
+  'How It Works': 'Fonctionnement',
+  Status: 'Statut',
+  Dashboard: 'Tableau de bord',
+  Contact: 'Contact'
+}
+
+export const translateSiteHeaderNavigationLabel = (label: string, language: AppLanguage) =>
+  language === 'fr' ? (siteHeaderNavigationLabelTranslations[label] ?? label) : label
+
 export const dashboardText = {
   en: {
     brand: 'SAGI-USA',
