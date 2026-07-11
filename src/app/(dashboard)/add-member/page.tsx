@@ -6,7 +6,7 @@ import MaskDateInput from '@/components/forms/MaskDateInput'
 import { getDashboardLanguage } from '@/lib/get-dashboard-language'
 import { createMemberAction, fetchProfile } from '@/utils/actions'
 import {
-  countryOfResidenceOptions,
+  addMemberCountryOfResidenceOptions,
   defaultCountryOfResidence,
   delegateRecommendation,
   memberStatus
@@ -95,7 +95,7 @@ const AddMember = async () => {
             <FormSelect
               name='countryOfResidence'
               label={copy.labels.countryOfResidence}
-              items={countryOfResidenceOptions}
+              items={addMemberCountryOfResidenceOptions}
               defaultValue={defaultCountryOfResidence}
             />
             <FormInput type='text' name='nameOfBeneficiary' label={copy.labels.nameOfBeneficiary} />

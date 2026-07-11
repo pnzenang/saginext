@@ -4,12 +4,14 @@ import type { ZodSchema } from 'zod'
 import {
   contributionStatus,
   countryOfResidenceOptions,
+  defaultCountryOfResidence,
   delegateRecommendation,
   memberStatus,
   reasonForLeaving
 } from './types'
 
 const countryOfResidenceSchema = z.enum(countryOfResidenceOptions)
+const addMemberCountryOfResidenceSchema = z.literal(defaultCountryOfResidence)
 
 export const profileSchema = z.object({
   associationName: z.string().toUpperCase().min(4, { message: 'Association name must be at least 4 characters' }),
@@ -52,6 +54,10 @@ export const memberSchema = z.object({
     .min(2, { message: 'the member las name should be at least 2 characters' }),
   delegateRecommendation: z.enum(delegateRecommendation),
   memberStatus: z.enum(memberStatus)
+})
+
+export const createMemberSchema = memberSchema.extend({
+  countryOfResidence: addMemberCountryOfResidenceSchema
 })
 
 export const RemovedMemberSchema = z.object({

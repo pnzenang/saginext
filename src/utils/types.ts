@@ -36,6 +36,7 @@ export enum memberStatus {
 export const countryOfResidenceOptions = ['UNITED STATES', 'CANADA', 'MEXICO'] as const
 export type CountryOfResidenceOption = (typeof countryOfResidenceOptions)[number]
 export const defaultCountryOfResidence = countryOfResidenceOptions[0]
+export const addMemberCountryOfResidenceOptions = [defaultCountryOfResidence] as const
 
 export const getCountryOfResidenceDefault = (country?: string | null): CountryOfResidenceOption => {
   const normalizedCountry = country?.trim().toUpperCase()

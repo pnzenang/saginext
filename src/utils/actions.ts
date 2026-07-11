@@ -12,7 +12,7 @@ import { after } from 'next/server'
 import { customAlphabet } from 'nanoid'
 
 import db from './db'
-import { DeceasedMemberSchema, memberSchema, RemovedMemberSchema, validateWithZodSchema } from './schemas'
+import { createMemberSchema, DeceasedMemberSchema, memberSchema, RemovedMemberSchema, validateWithZodSchema } from './schemas'
 import { Prisma } from '@/generated/prisma/client'
 import {
   deceasedMemberDocumentLabels,
@@ -714,7 +714,7 @@ export const createMemberAction = async (provState: any, formData: FormData): Pr
 
   try {
     const rawData = Object.fromEntries(formData)
-    const validatedFields = validateWithZodSchema(memberSchema, rawData)
+    const validatedFields = validateWithZodSchema(createMemberSchema, rawData)
     const memberMatriculationNumber = `AS${validatedFields.associationCode}${randomMatriculation()}`
 
     const delegateProfile = await db.profile.findUnique({
