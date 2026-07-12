@@ -1,6 +1,15 @@
 import { ClerkLoaded, ClerkLoading, SignIn } from '@clerk/nextjs'
+import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
+
+export const metadata: Metadata = {
+  title: 'Sign in',
+  robots: {
+    index: false,
+    follow: false
+  }
+}
 
 const authAppearance = {
   elements: {

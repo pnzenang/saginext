@@ -74,6 +74,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { usePersistentColumnFilters } from '@/hooks/use-persistent-column-filters'
 import { usePagination } from '@/hooks/use-pagination'
+import { formatMemberStatus, type AppLanguage } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { getSelectFilterValues } from '@/utils/table-filter-values'
 import { formatLongevity } from '@/utils/formatLongevity'
@@ -101,8 +102,159 @@ declare module '@tanstack/react-table' {
 const numberFormatter = new Intl.NumberFormat('en-US')
 const formatNumber = (value: number) => numberFormatter.format(value)
 
-const getVisibleMatriculationNumber = (status: unknown, matriculationNumber: unknown) => {
-  if (status === memberStatus.Pending || status === memberStatus.Awaiting) return 'Pending'
+const adminMemberTableCopy = {
+  en: {
+    actions: {
+      announceDeath: "Announce Member's Death",
+      edit: "Edit Member's Details",
+      open: 'Open member actions',
+      remove: 'Remove Member'
+    },
+    all: 'All',
+    autoVest: {
+      button: (days: number, count: number) => `Vest ${days}+ Days (${count})`,
+      cancel: 'Cancel',
+      confirm: 'Move to Vested',
+      description: (count: number) =>
+        `This will move ${count} member${count === 1 ? '' : 's'} from Awaiting Publication to Vested. No contribution credit will be created.`,
+      pending: 'Please wait...',
+      title: 'Move eligible members to Vested?'
+    },
+    columns: {
+      actions: 'Actions',
+      actionsShort: 'Act.',
+      associationCode: 'Association Code',
+      code: 'Code',
+      firstName: 'First Name',
+      firstShort: 'First',
+      lastAndMiddleNames: 'Last and Middle Names',
+      lastAndMiddleShort: 'Last/Middle',
+      longevity: 'Longevity',
+      longevityShort: 'Long.',
+      matriculation: 'Matriculation',
+      matriculationShort: 'Matric.',
+      name: 'Name',
+      recommendation: 'Recommendation',
+      recommendationShort: 'Rec.',
+      registrationDues: `Registration Dues (${registrationPaymentDeadlineDays} days)`,
+      registrationDuesShort: 'Reg. Dues',
+      status: 'Status'
+    },
+    export: {
+      all: 'Export All',
+      asCsv: 'Export as CSV',
+      asExcel: 'Export as Excel',
+      asJson: 'Export as JSON',
+      page: 'Export Page',
+      printPdf: 'Print PDF'
+    },
+    filters: {
+      clear: (label: string) => `Clear ${label} search`,
+      names: 'names',
+      search: (label: string) => `Search ${label}`,
+      select: (label: string) => `Select ${label}`,
+      show: 'Show',
+      resultsPlaceholder: 'Select number of results'
+    },
+    found: (count: string) => `${count} Member(s) Found`,
+    noMembers: 'No Member Found, add members.',
+    pagination: {
+      next: 'Next',
+      nextAria: 'Go to next page',
+      previous: 'Previous',
+      previousAria: 'Go to previous page'
+    },
+    pendingMatriculation: 'Pending',
+    summary: {
+      awaiting: 'Awaiting',
+      delinquent: 'Delinquent',
+      pending: 'Pending',
+      total: 'Total Membership',
+      vested: 'Vested'
+    },
+    title: 'All Active Members (Admin)'
+  },
+  fr: {
+    actions: {
+      announceDeath: 'Annoncer le décès du membre',
+      edit: 'Modifier les détails du membre',
+      open: 'Ouvrir les actions du membre',
+      remove: 'Retirer le membre'
+    },
+    all: 'Tous',
+    autoVest: {
+      button: (days: number, count: number) => `Acquérir ${days}+ jours (${count})`,
+      cancel: 'Annuler',
+      confirm: 'Passer à acquis',
+      description: (count: number) =>
+        `Cette action déplacera ${count} membre${count === 1 ? '' : 's'} de En attente de publication vers Acquis. Aucun crédit de cotisation ne sera créé.`,
+      pending: 'Veuillez patienter...',
+      title: 'Passer les membres admissibles à acquis ?'
+    },
+    columns: {
+      actions: 'Actions',
+      actionsShort: 'Act.',
+      associationCode: "Code de l'association",
+      code: 'Code',
+      firstName: 'Prénom',
+      firstShort: 'Prénom',
+      lastAndMiddleNames: 'Nom et prénoms intermédiaires',
+      lastAndMiddleShort: 'Nom/prénoms',
+      longevity: 'Ancienneté',
+      longevityShort: 'Anc.',
+      matriculation: 'Matricule',
+      matriculationShort: 'Matric.',
+      name: 'Nom',
+      recommendation: 'Recommandation',
+      recommendationShort: 'Reco.',
+      registrationDues: `Frais d'inscription (${registrationPaymentDeadlineDays} jours)`,
+      registrationDuesShort: 'Frais inscr.',
+      status: 'Statut'
+    },
+    export: {
+      all: 'Tout exporter',
+      asCsv: 'Exporter en CSV',
+      asExcel: 'Exporter en Excel',
+      asJson: 'Exporter en JSON',
+      page: 'Exporter la page',
+      printPdf: 'Imprimer PDF'
+    },
+    filters: {
+      clear: (label: string) => `Effacer la recherche ${label}`,
+      names: 'noms',
+      search: (label: string) => `Rechercher ${label}`,
+      select: (label: string) => `Sélectionner ${label}`,
+      show: 'Afficher',
+      resultsPlaceholder: 'Sélectionner le nombre de résultats'
+    },
+    found: (count: string) => `${count} membre(s) trouvé(s)`,
+    noMembers: 'Aucun membre trouvé, ajoutez des membres.',
+    pagination: {
+      next: 'Suivant',
+      nextAria: 'Aller à la page suivante',
+      previous: 'Précédent',
+      previousAria: 'Aller à la page précédente'
+    },
+    pendingMatriculation: 'En attente',
+    summary: {
+      awaiting: 'En attente de publication',
+      delinquent: 'Pas en règle',
+      pending: 'En attente',
+      total: 'Total des membres',
+      vested: 'Acquis'
+    },
+    title: 'Tous les membres actifs (admin)'
+  }
+} as const
+
+type AdminMemberTableCopy = (typeof adminMemberTableCopy)[AppLanguage]
+
+const getVisibleMatriculationNumber = (
+  status: unknown,
+  matriculationNumber: unknown,
+  pendingLabel = 'Pending'
+) => {
+  if (status === memberStatus.Pending || status === memberStatus.Awaiting) return pendingLabel
 
   return String(matriculationNumber ?? '')
 }
@@ -141,11 +293,11 @@ const filterName = (row: Row<MemberType>, columnId: string, filterValue: unknown
   return searchTerms.every(term => name.includes(term))
 }
 
-const getRegistrationPaymentWarning = (member: MemberType) => {
+const getRegistrationPaymentWarning = (member: MemberType, language: AppLanguage) => {
   if (member.memberStatus !== memberStatus.Pending) return ''
 
   const countdown = getRegistrationPaymentCountdown(member.createdAt)
-  const countdownLabel = getRegistrationPaymentCountdownLabel(countdown.daysRemaining)
+  const countdownLabel = getRegistrationPaymentCountdownLabel(countdown.daysRemaining, language)
 
   return `${countdownLabel}.`
 }
@@ -156,8 +308,8 @@ const getRegistrationPaymentSortValue = (member: MemberType) => {
   return getRegistrationPaymentCountdown(member.createdAt).daysRemaining
 }
 
-const RegistrationPaymentWarningCell = ({ member }: { member: MemberType }) => {
-  const warning = getRegistrationPaymentWarning(member)
+const RegistrationPaymentWarningCell = ({ language, member }: { language: AppLanguage; member: MemberType }) => {
+  const warning = getRegistrationPaymentWarning(member, language)
 
   if (member.memberStatus !== memberStatus.Pending) {
     return null
@@ -174,9 +326,9 @@ const RegistrationPaymentWarningCell = ({ member }: { member: MemberType }) => {
   )
 }
 
-const columns: ColumnDef<MemberType>[] = [
+const getColumns = (copy: AdminMemberTableCopy, language: AppLanguage): ColumnDef<MemberType>[] => [
   {
-    header: 'Code',
+    header: copy.columns.code,
     accessorKey: 'associationCode',
     cell: ({ row }) => (
       <div className='flex items-center gap-2'>
@@ -187,12 +339,12 @@ const columns: ColumnDef<MemberType>[] = [
     ),
     meta: {
       filterVariant: 'select',
-      label: 'Association Code'
+      label: copy.columns.associationCode
     },
     size: 56
   },
   {
-    header: 'Matric.',
+    header: copy.columns.matriculationShort,
     accessorKey: 'memberMatriculationNumber',
     cell: ({ row }) => {
       const status = row.getValue('memberStatus')
@@ -201,18 +353,20 @@ const columns: ColumnDef<MemberType>[] = [
       return (
         <div className='flex items-center gap-2'>
           <div className='flex flex-col'>
-            <span className='font-medium'>{getVisibleMatriculationNumber(status, matriculationNumber)}</span>
+            <span className='font-medium'>
+              {getVisibleMatriculationNumber(status, matriculationNumber, copy.pendingMatriculation)}
+            </span>
           </div>
         </div>
       )
     },
     meta: {
-      label: 'Matriculation'
+      label: copy.columns.matriculation
     },
     size: 120
   },
   {
-    header: 'Last/Middle',
+    header: copy.columns.lastAndMiddleShort,
     accessorKey: 'lastAndMiddleNames',
     cell: ({ row }) => (
       <div className='flex items-center gap-2'>
@@ -222,7 +376,7 @@ const columns: ColumnDef<MemberType>[] = [
       </div>
     ),
     meta: {
-      label: 'Last and Middle Names'
+      label: copy.columns.lastAndMiddleNames
     },
     size: 220
   },
@@ -240,7 +394,7 @@ const columns: ColumnDef<MemberType>[] = [
   //   size: 100
   // },
   {
-    header: 'First',
+    header: copy.columns.firstShort,
     accessorKey: 'firstName',
     cell: ({ row }) => (
       <div className='flex items-center gap-2'>
@@ -250,32 +404,32 @@ const columns: ColumnDef<MemberType>[] = [
       </div>
     ),
     meta: {
-      label: 'First Name'
+      label: copy.columns.firstName
     },
     size: 140
   },
   {
     id: 'name',
-    header: 'Name',
+    header: copy.columns.name,
     accessorFn: row => `${row.lastAndMiddleNames} ${row.firstName}`,
     filterFn: filterName
   },
 
   {
     accessorKey: 'createdAt', // The key in your data object
-    header: 'Long.',
+    header: copy.columns.longevityShort,
     cell: ({ row }) => {
       const field = row.getValue('createdAt') as Date
 
-      return <div>{formatLongevity(field)}</div>
+      return <div>{formatLongevity(field, new Date(), language)}</div>
     },
     meta: {
-      label: 'Longevity'
+      label: copy.columns.longevity
     },
     size: 80
   },
   {
-    header: 'Rec.',
+    header: copy.columns.recommendationShort,
     accessorKey: 'delegateRecommendation',
     cell: ({ row }) => {
       const recommendation = row.getValue('delegateRecommendation') as string
@@ -314,13 +468,13 @@ const columns: ColumnDef<MemberType>[] = [
     },
     meta: {
       filterVariant: 'select',
-      label: 'Recommendation'
+      label: copy.columns.recommendation
     },
     size: 86
   },
 
   {
-    header: 'Status',
+    header: copy.columns.status,
     accessorKey: 'memberStatus',
     cell: ({ row }) => {
       const status = row.getValue('memberStatus') as string
@@ -338,38 +492,38 @@ const columns: ColumnDef<MemberType>[] = [
 
       return (
         <Badge className={cn('rounded-sm border-none capitalize focus-visible:outline-none', styles)}>
-          {row.getValue('memberStatus')}
+          {formatMemberStatus(status, language)}
         </Badge>
       )
     },
     meta: {
       filterVariant: 'select',
-      label: 'Status'
+      label: copy.columns.status
     },
     size: 88
   },
   {
     id: 'registrationPaymentWarning',
-    header: 'Reg. Dues',
+    header: copy.columns.registrationDuesShort,
     accessorFn: row => getRegistrationPaymentSortValue(row),
-    cell: ({ row }) => <RegistrationPaymentWarningCell member={row.original} />,
+    cell: ({ row }) => <RegistrationPaymentWarningCell language={language} member={row.original} />,
     sortUndefined: 'last',
     meta: {
-      label: `Registration Dues (${registrationPaymentDeadlineDays} days)`
+      label: copy.columns.registrationDues
     },
     size: 150
   },
   {
-    header: 'Act.',
+    header: copy.columns.actionsShort,
     accessorKey: 'id',
     cell: ({ row: { original } }) => {
       // Destructuring 'id' directly from the row data
       const { id } = original
 
-      return <RowActions memberId={id} />
+      return <RowActions copy={copy.actions} memberId={id} />
     },
     meta: {
-      label: 'Actions'
+      label: copy.columns.actions
     },
     size: 56
   }
@@ -385,7 +539,8 @@ const getColumnLabel = (column: Column<MemberType, unknown>) => {
 
 const getMemberTableCellLabel = (cell: Cell<MemberType, unknown>) => getColumnLabel(cell.column)
 
-const MembersDataTable = ({ data }: { data: MemberType[] }) => {
+const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; language?: AppLanguage }) => {
+  const copy = adminMemberTableCopy[language]
   const [columnFilters, setColumnFilters] = usePersistentColumnFilters('sagi:admin-all-members:columnFilters')
 
   const [autoVestState, autoVestFormAction] = useActionState(vestEligibleAwaitingPublicationMembersAction, {
@@ -407,9 +562,11 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
     if (autoVestState.message) toast(autoVestState.message)
   }, [autoVestState.message])
 
+  const tableColumns = useMemo(() => getColumns(copy, language), [copy, language])
+
   const table = useReactTable({
     data,
-    columns,
+    columns: tableColumns,
     initialState: {
       columnVisibility: {
         name: false
@@ -473,35 +630,35 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
 
   const summaryCards = [
     {
-      label: 'Vested',
+      label: copy.summary.vested,
       value: summaryTotals.vested,
       icon: ShieldCheck,
       colorClassName: 'text-green-600 dark:text-green-400',
       cardClassName: 'border-green-500/20 bg-green-500/10'
     },
     {
-      label: 'Awaiting',
+      label: copy.summary.awaiting,
       value: summaryTotals.awaiting,
       icon: Clock,
       colorClassName: 'text-blue-600 dark:text-blue-400',
       cardClassName: 'border-blue-500/20 bg-blue-500/10'
     },
     {
-      label: 'Pending',
+      label: copy.summary.pending,
       value: summaryTotals.pending,
       icon: Hourglass,
       colorClassName: 'text-amber-600 dark:text-amber-400',
       cardClassName: 'border-amber-500/20 bg-amber-500/10'
     },
     {
-      label: 'Delinquent',
+      label: copy.summary.delinquent,
       value: summaryTotals.delinquent,
       icon: AlertTriangle,
       colorClassName: 'text-destructive',
       cardClassName: 'border-destructive/20 bg-destructive/10'
     },
     {
-      label: 'Total Membership',
+      label: copy.summary.total,
       value: summaryTotals.total,
       icon: Users,
       colorClassName: 'text-foreground',
@@ -566,17 +723,18 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
       const createdAt = row.getValue('createdAt') as Date
 
       return {
-        Code: row.getValue('associationCode'),
-        Matriculation: getVisibleMatriculationNumber(
+        [copy.columns.code]: row.getValue('associationCode'),
+        [copy.columns.matriculation]: getVisibleMatriculationNumber(
           row.getValue('memberStatus'),
-          row.getValue('memberMatriculationNumber')
+          row.getValue('memberMatriculationNumber'),
+          copy.pendingMatriculation
         ),
-        'Last And Middle Names': row.getValue('lastAndMiddleNames'),
-        'First Name': row.getValue('firstName'),
-        Longevity: formatLongevity(createdAt),
-        Recommendation: row.getValue('delegateRecommendation'),
-        Status: row.getValue('memberStatus'),
-        [`Registration Dues (${registrationPaymentDeadlineDays} days)`]: getRegistrationPaymentWarning(row.original)
+        [copy.columns.lastAndMiddleNames]: row.getValue('lastAndMiddleNames'),
+        [copy.columns.firstName]: row.getValue('firstName'),
+        [copy.columns.longevity]: formatLongevity(createdAt, new Date(), language),
+        [copy.columns.recommendation]: row.getValue('delegateRecommendation'),
+        [copy.columns.status]: formatMemberStatus(row.getValue('memberStatus') as string, language),
+        [copy.columns.registrationDues]: getRegistrationPaymentWarning(row.original, language)
       }
     })
 
@@ -632,9 +790,7 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
     <div className='border-primary w-full min-w-0 overflow-hidden rounded-lg border'>
       <div className='border-b'>
         <div className='flex flex-col gap-4 border-b p-4 sm:p-6'>
-          <span className='text-xl leading-tight font-semibold sm:text-3xl lg:text-5xl'>
-            All Active Members (Admin)
-          </span>
+          <span className='text-xl leading-tight font-semibold sm:text-3xl lg:text-5xl'>{copy.title}</span>
           <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-5'>
             {summaryCards.map(status => {
               const Icon = status.icon
@@ -660,7 +816,7 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
           </div>
           <div className='flex items-center justify-between gap-3 py-2 max-sm:flex-col max-sm:items-stretch sm:px-6 sm:py-4'>
             <p className='text-primary text-sm font-extrabold sm:whitespace-nowrap' aria-live='polite'>
-              <span>{formatNumber(table.getRowCount())} Member(s) Found</span>
+              <span>{copy.found(formatNumber(table.getRowCount()))}</span>
             </p>
 
             <div className='flex w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:items-center'>
@@ -672,10 +828,10 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
                       variant={'ghost'}
                       onClick={() => table.previousPage()}
                       disabled={!table.getCanPreviousPage()}
-                      aria-label='Go to previous page'
+                      aria-label={copy.pagination.previousAria}
                     >
                       <ChevronLeftIcon aria-hidden='true' className='text-primary' />
-                      <span className='text-primary max-sm:hidden'>Previous</span>
+                      <span className='text-primary max-sm:hidden'>{copy.pagination.previous}</span>
                     </Button>
                   </PaginationItem>
 
@@ -714,9 +870,9 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
                       variant={'ghost'}
                       onClick={() => table.nextPage()}
                       disabled={!table.getCanNextPage()}
-                      aria-label='Go to next page'
+                      aria-label={copy.pagination.nextAria}
                     >
-                      <span className='text-primary max-sm:hidden'>Next</span>
+                      <span className='text-primary max-sm:hidden'>{copy.pagination.next}</span>
                       <ChevronRightIcon aria-hidden='true' className='text-primary' />
                     </Button>
                   </PaginationItem>
@@ -730,29 +886,25 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
                       disabled={eligibleAutoVestCount === 0}
                     >
                       <ShieldCheck />
-                      Vest {awaitingPublicationVestingLongevityDays}+ Days ({eligibleAutoVestCount})
+                      {copy.autoVest.button(awaitingPublicationVestingLongevityDays, eligibleAutoVestCount)}
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Move eligible members to Vested?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This will move {eligibleAutoVestCount} member
-                        {eligibleAutoVestCount === 1 ? '' : 's'} from Awaiting Publication to Vested. No contribution
-                        credit will be created.
-                      </AlertDialogDescription>
+                      <AlertDialogTitle>{copy.autoVest.title}</AlertDialogTitle>
+                      <AlertDialogDescription>{copy.autoVest.description(eligibleAutoVestCount)}</AlertDialogDescription>
                     </AlertDialogHeader>
                     <form action={autoVestFormAction}>
                       <AlertDialogFooter>
-                        <AlertDialogCancel type='button'>Cancel</AlertDialogCancel>
-                        <AutoVestSubmitButton disabled={eligibleAutoVestCount === 0} />
+                        <AlertDialogCancel type='button'>{copy.autoVest.cancel}</AlertDialogCancel>
+                        <AutoVestSubmitButton copy={copy.autoVest} disabled={eligibleAutoVestCount === 0} />
                       </AlertDialogFooter>
                     </form>
                   </AlertDialogContent>
                 </AlertDialog>
-                <RemoveOverduePendingMembersButton overdueCount={overduePendingMembersCount} />
+                <RemoveOverduePendingMembersButton language={language} overdueCount={overduePendingMembersCount} />
                 <PrintButton
-                  label='Print PDF'
+                  label={copy.export.printPdf}
                   className='bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40 w-full sm:w-auto'
                 />
                 <Button
@@ -762,28 +914,28 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
                   className='bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40 w-full sm:w-auto'
                 >
                   <FileSpreadsheetIcon />
-                  Export Page
+                  {copy.export.page}
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button className='bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40 w-full sm:w-auto'>
                       <UploadIcon />
-                      Export All
+                      {copy.export.all}
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align='end'>
                     <DropdownMenuItem onClick={exportToCSV}>
                       <FileTextIcon className='mr-2 size-4' />
-                      Export as CSV
+                      {copy.export.asCsv}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={exportToExcel}>
                       <FileSpreadsheetIcon className='mr-2 size-4' />
-                      Export as Excel
+                      {copy.export.asExcel}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={exportToJSON}>
                       <FileTextIcon className='mr-2 size-4' />
-                      Export as JSON
+                      {copy.export.asJson}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -801,16 +953,16 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
         </div>
         <div className='flex items-start gap-4 p-4 max-sm:flex-col sm:items-center sm:justify-between sm:p-6'>
           <div className='grid w-full grid-cols-1 gap-2 sm:grid-cols-2 xl:flex xl:items-center'>
-            <Filter column={table.getColumn('associationCode')!} />
-            <Filter column={table.getColumn('name')!} />
+            <Filter column={table.getColumn('associationCode')!} copy={copy} language={language} />
+            <Filter column={table.getColumn('name')!} copy={copy} language={language} />
 
-            <Filter column={table.getColumn('delegateRecommendation')!} />
-            <Filter column={table.getColumn('memberStatus')!} />
+            <Filter column={table.getColumn('delegateRecommendation')!} copy={copy} language={language} />
+            <Filter column={table.getColumn('memberStatus')!} copy={copy} language={language} />
           </div>
           <div className='flex w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-between'>
             <div className='flex items-center gap-2'>
               <Label htmlFor='#rowSelect' className=''>
-                Show
+                {copy.filters.show}
               </Label>
               <Select
                 value={table.getState().pagination.pageSize.toString()}
@@ -819,7 +971,7 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
                 }}
               >
                 <SelectTrigger id='rowSelect' className='w-full whitespace-nowrap sm:w-fit'>
-                  <SelectValue placeholder='Select number of results' />
+                  <SelectValue placeholder={copy.filters.resultsPlaceholder} />
                 </SelectTrigger>
                 <SelectContent className='[&_*[role=option]]:pr-8 [&_*[role=option]]:pl-2 [&_*[role=option]>span]:right-2 [&_*[role=option]>span]:left-auto'>
                   {[5, 10, 25, 50, 100, 200].map(pageSize => (
@@ -907,7 +1059,7 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
             ) : (
               <TableRow>
                 <TableCell colSpan={table.getVisibleLeafColumns().length} className='h-24 text-center'>
-                  No Member Found, add members.
+                  {copy.noMembers}
                 </TableCell>
               </TableRow>
             )}
@@ -930,6 +1082,10 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
             onPageChange={page => table.setPageIndex(page - 1)}
             onPrevious={() => table.previousPage()}
             pages={pages}
+            nextAriaLabel={copy.pagination.nextAria}
+            nextLabel={copy.pagination.next}
+            previousAriaLabel={copy.pagination.previousAria}
+            previousLabel={copy.pagination.previous}
             showLeftEllipsis={showLeftEllipsis}
             showRightEllipsis={showRightEllipsis}
           />
@@ -941,7 +1097,13 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
 
 export default MembersDataTable
 
-function AutoVestSubmitButton({ disabled }: { disabled: boolean }) {
+function AutoVestSubmitButton({
+  copy,
+  disabled
+}: {
+  copy: AdminMemberTableCopy['autoVest']
+  disabled: boolean
+}) {
   const { pending } = useFormStatus()
 
   return (
@@ -953,22 +1115,30 @@ function AutoVestSubmitButton({ disabled }: { disabled: boolean }) {
       {pending ? (
         <>
           <Loader className='animate-spin' />
-          Please wait...
+          {copy.pending}
         </>
       ) : (
-        'Move to Vested'
+        copy.confirm
       )}
     </Button>
   )
 }
 
-function Filter({ column }: { column: Column<any, unknown> }) {
+function Filter({
+  column,
+  copy,
+  language
+}: {
+  column: Column<any, unknown>
+  copy: AdminMemberTableCopy
+  language: AppLanguage
+}) {
   const id = useId()
   const columnFilterValue = column.getFilterValue()
   const { filterVariant } = column.columnDef.meta ?? {}
   const columnHeader = getColumnLabel(column)
   const filterValue = (columnFilterValue ?? '') as string
-  const searchLabel = column.id === 'name' ? 'names' : columnHeader.toLowerCase()
+  const searchLabel = column.id === 'name' ? copy.filters.names : columnHeader.toLowerCase()
 
   const sortedUniqueValues = useMemo(() => {
     if (filterVariant === 'range') return []
@@ -988,13 +1158,13 @@ function Filter({ column }: { column: Column<any, unknown> }) {
           }}
         >
           <SelectTrigger id={`${id}-select`} className='w-full capitalize'>
-            <SelectValue placeholder={`Select ${columnHeader}`} />
+            <SelectValue placeholder={copy.filters.select(columnHeader)} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value='all'>All</SelectItem>
+            <SelectItem value='all'>{copy.all}</SelectItem>
             {sortedUniqueValues.map(value => (
               <SelectItem key={String(value)} value={String(value)} className='capitalize'>
-                {String(value)}
+                {column.id === 'memberStatus' ? formatMemberStatus(String(value), language) : String(value)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -1014,7 +1184,7 @@ function Filter({ column }: { column: Column<any, unknown> }) {
           className='peer pr-9 pl-9'
           value={filterValue}
           onChange={e => column.setFilterValue(e.target.value)}
-          placeholder={`Search ${searchLabel}`}
+          placeholder={copy.filters.search(searchLabel)}
           type='text'
         />
         <div className='text-muted-foreground/80 pointer-events-none absolute inset-y-0 left-0 flex items-center justify-center pl-3 peer-disabled:opacity-50'>
@@ -1027,7 +1197,7 @@ function Filter({ column }: { column: Column<any, unknown> }) {
             size='icon-xs'
             className='text-muted-foreground hover:text-foreground absolute top-1/2 right-1.5 -translate-y-1/2 rounded-full'
             onClick={() => column.setFilterValue(undefined)}
-            aria-label={`Clear ${searchLabel} search`}
+            aria-label={copy.filters.clear(searchLabel)}
           >
             <XIcon className='size-3.5' />
           </Button>
@@ -1037,12 +1207,12 @@ function Filter({ column }: { column: Column<any, unknown> }) {
   )
 }
 
-function RowActions({ memberId }: { memberId: string }) {
+function RowActions({ copy, memberId }: { copy: AdminMemberTableCopy['actions']; memberId: string }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <div className='flex'>
-          <Button size='icon' variant='ghost' className='rounded-full p-2' aria-label='Edit item'>
+          <Button size='icon' variant='ghost' className='rounded-full p-2' aria-label={copy.open}>
             <Ellipsis className='size-6' aria-hidden='true' />
           </Button>
         </div>
@@ -1053,7 +1223,7 @@ function RowActions({ memberId }: { memberId: string }) {
             <Link href={`/admin-all-members/${memberId}/edit`}>
               <span className='flex gap-3 text-blue-500'>
                 <Pencil className='text-blue-500' />
-                Edit Member&apos;s Details
+                {copy.edit}
               </span>
             </Link>
           </DropdownMenuItem>
@@ -1061,7 +1231,7 @@ function RowActions({ memberId }: { memberId: string }) {
             <Link href={`/admin-all-members/${memberId}/deathAnnouncement`}>
               <span className='flex gap-3 text-purple-500'>
                 <Cross className='text-purple-500' />
-                Announce Member&apos;s Dead
+                {copy.announceDeath}
               </span>
             </Link>
           </DropdownMenuItem>
@@ -1069,7 +1239,7 @@ function RowActions({ memberId }: { memberId: string }) {
             <Link href={`/admin-all-members/${memberId}/removeMember`}>
               <span className='flex gap-3 text-red-500'>
                 <Trash2 className='text-red-500' />
-                Remove Member
+                {copy.remove}
               </span>
             </Link>
           </DropdownMenuItem>

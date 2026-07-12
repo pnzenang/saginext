@@ -17,11 +17,15 @@ type PaginationControlsProps = {
   getPageButtonClassName?: (isActive: boolean) => string | undefined
   iconClassName?: string
   labelClassName?: string
+  nextAriaLabel?: string
+  nextLabel?: string
   onNext: () => void
   onPageChange: (page: number) => void
   onPrevious: () => void
   pageButtonVariant?: (isActive: boolean) => ButtonVariant
   pages: number[]
+  previousAriaLabel?: string
+  previousLabel?: string
   showLeftEllipsis: boolean
   showRightEllipsis: boolean
 }
@@ -33,11 +37,15 @@ const PaginationControls = ({
   getPageButtonClassName,
   iconClassName,
   labelClassName = 'max-sm:hidden',
+  nextAriaLabel = 'Go to next page',
+  nextLabel = 'Next',
   onNext,
   onPageChange,
   onPrevious,
   pageButtonVariant,
   pages,
+  previousAriaLabel = 'Go to previous page',
+  previousLabel = 'Previous',
   showLeftEllipsis,
   showRightEllipsis
 }: PaginationControlsProps) => {
@@ -51,10 +59,10 @@ const PaginationControls = ({
             variant='ghost'
             onClick={onPrevious}
             disabled={!canPrevious}
-            aria-label='Go to previous page'
+            aria-label={previousAriaLabel}
           >
             <ChevronLeftIcon aria-hidden='true' className={iconClassName} />
-            <span className={labelClassName}>Previous</span>
+            <span className={labelClassName}>{previousLabel}</span>
           </Button>
         </PaginationItem>
 
@@ -96,9 +104,9 @@ const PaginationControls = ({
             variant='ghost'
             onClick={onNext}
             disabled={!canNext}
-            aria-label='Go to next page'
+            aria-label={nextAriaLabel}
           >
-            <span className={labelClassName}>Next</span>
+            <span className={labelClassName}>{nextLabel}</span>
             <ChevronRightIcon aria-hidden='true' className={iconClassName} />
           </Button>
         </PaginationItem>

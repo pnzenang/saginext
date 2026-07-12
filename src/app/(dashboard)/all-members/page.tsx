@@ -1,6 +1,7 @@
 import { Card } from '@/components/ui/card'
 
 import MembersDataTable from '@/components/shadcn-studio/blocks/datatable-members-client'
+import { getDashboardLanguage } from '@/lib/get-dashboard-language'
 import { fetchMembers, fetchProfile } from '@/utils/actions'
 import { fetchAssociationContributionSummary } from '@/utils/sagi-contribution-summary'
 import { fetchAssociationRegistrationSummary } from '@/utils/sagi-registration-summary'
@@ -9,7 +10,7 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 const DataTablePreview = async () => {
-  const profile = await fetchProfile()
+  const [language, profile] = await Promise.all([getDashboardLanguage(), fetchProfile()])
 
   const [members, currentContribution, currentRegistrationPayment] = await Promise.all([
     fetchMembers(profile.clerkId),
@@ -25,6 +26,7 @@ const DataTablePreview = async () => {
             currentContribution={currentContribution}
             currentRegistrationPayment={currentRegistrationPayment}
             data={members}
+            language={language}
           />
         </Card>
       </div>

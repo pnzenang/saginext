@@ -1,19 +1,14 @@
 {
-  "name": "Swipe - Mobile App Landing page",
-  "short_name": "Swipe",
-  "description": "Track expenses, manage budgets, and achieve your financial goals with Swipe - the app that puts you in control of your money.",
+  "name": "SAGI: Active Solidarity Ltd.",
+  "short_name": "SAGI",
+  "description": "SAGI helps members and families prepare for funeral expenses through shared contributions and organized mutual aid support.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#ECF4F4",
-  "theme_color": "#1EB8CE",
+  "background_color": "#F8FAFC",
+  "theme_color": "#0CA25A",
   "orientation": "portrait-primary",
-  "categories": [
-    "expense tracking",
-    "budget management",
-    "financial goals",
-    "money management"
-  ],
+  "categories": ["mutual aid", "funeral support", "member contributions", "community support"],
   "icons": [
     {
       "src": "/favicon/android-chrome-192x192.png",
@@ -57,10 +52,10 @@
       "url": "/"
     },
     {
-      "name": "Blog",
-      "short_name": "Blog",
-      "description": "Read our blog",
-      "url": "/blog"
+      "name": "Sign in",
+      "short_name": "Sign in",
+      "description": "Open the SAGI member dashboard",
+      "url": "/sign-in"
     }
   ]
 }

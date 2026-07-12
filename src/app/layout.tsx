@@ -6,18 +6,21 @@ import type { Metadata } from 'next'
 import { Toaster } from '@/components/ui/sonner'
 import { ThemeProvider } from '@/components/theme-provider'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { siteDescription, siteKeywords, siteName, siteTitle, siteUrl } from '@/lib/site'
 
 import './globals.css'
 
 export const metadata: Metadata = {
   title: {
     template: '%s - SAGI',
-    default: 'SAGI: Active Solidarity Ltd.'
+    default: siteTitle
   },
-  description:
-    'SAGI is a mutual aid community helping members and families prepare for funeral expenses through shared contributions and organized support.',
+  description: siteDescription,
   robots: 'index,follow',
-  keywords: ['SAGI', 'mutual aid', 'funeral support', 'member contributions', 'family support'],
+  keywords: siteKeywords,
+  alternates: {
+    canonical: '/'
+  },
   icons: {
     icon: [
       {
@@ -63,24 +66,24 @@ export const metadata: Metadata = {
       }
     ]
   },
-  metadataBase: new URL(`${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}`),
+  metadataBase: new URL(siteUrl),
   openGraph: {
     title: {
       template: '%s - SAGI',
-      default: 'SAGI: Active Solidarity Ltd.'
+      default: siteTitle
     },
     description:
       'A mutual aid community where low monthly contributions create real funeral support for families when it matters most.',
     type: 'website',
-    siteName: 'SAGI',
-    url: `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}`,
+    siteName,
+    url: '/',
     images: [
       {
         url: '/images/og-image.png',
         type: 'image/png',
         width: 1200,
         height: 630,
-        alt: 'SAGI: Active Solidarity Ltd.'
+        alt: siteTitle
       }
     ]
   },
@@ -88,7 +91,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: {
       template: '%s - SAGI',
-      default: 'SAGI: Active Solidarity Ltd.'
+      default: siteTitle
     },
     description:
       'SAGI helps members and families prepare for funeral expenses through shared contributions and organized support.'

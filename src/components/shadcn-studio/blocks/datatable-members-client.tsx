@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic'
 
 import { MemberTableSkeleton } from '@/components/global/PageLoadingSkeletons'
+import type { AppLanguage } from '@/lib/i18n'
 import type { AssociationContributionSummary } from '@/utils/sagi-contribution-summary'
 import type { AssociationRegistrationSummary } from '@/utils/sagi-registration-summary'
 import type { MemberType } from '@/utils/types'
@@ -11,6 +12,7 @@ type MembersDataTableProps = {
   currentContribution: AssociationContributionSummary
   currentRegistrationPayment: AssociationRegistrationSummary
   data: MemberType[]
+  language?: AppLanguage
   readOnly?: boolean
 }
 

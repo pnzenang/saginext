@@ -18,9 +18,9 @@ const RelatedBlogSection = ({ posts }: { posts: PostMetadata[] }) => {
           <Badge className='border-primary text-primary px-3 py-1 text-sm [&>svg]:size-6' variant='outline'>
             <LogoVector className='animation-duration-[2s] size-6 animate-spin' /> TRENDING
           </Badge>
-          <h2 className='text-2xl font-semibold md:text-3xl lg:text-4xl'>Related Post</h2>
+          <h2 className='text-2xl font-semibold md:text-3xl lg:text-4xl'>Related Posts</h2>
           <p className='text-muted-foreground text-base md:text-xl'>
-            Expand your knowledge with these helpful reads on managing money smarter.
+            Continue reading guidance from the SAGI resource library.
           </p>
         </div>
 

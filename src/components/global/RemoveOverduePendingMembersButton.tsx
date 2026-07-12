@@ -19,15 +19,42 @@ import {
   AlertDialogTrigger
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
+import type { AppLanguage } from '@/lib/i18n'
 import { removeOverduePendingMembersAction } from '@/utils/actions'
 import { registrationPaymentDeadlineDays } from '@/utils/registration-payment-deadline'
 
 type RemoveOverduePendingMembersButtonProps = {
+  language?: AppLanguage
   overdueCount: number
 }
 
-const RemoveOverduePendingMembersButton = ({ overdueCount }: RemoveOverduePendingMembersButtonProps) => {
+const removeOverdueCopy = {
+  en: {
+    button: (count: number) => `Overdue Registration (${count})`,
+    cancel: 'Cancel',
+    description: (count: number) =>
+      `This will move ${count} pending member${count === 1 ? '' : 's'} past the ${registrationPaymentDeadlineDays}-day registration fee deadline to Removed Members and delete the active member record. If this is a mistake, the member can be restored from Removed Members within 48 hours.`,
+    pending: 'Removing...',
+    submit: 'Remove',
+    title: 'Remove overdue pending members?'
+  },
+  fr: {
+    button: (count: number) => `Inscriptions en retard (${count})`,
+    cancel: 'Annuler',
+    description: (count: number) =>
+      `Cette action déplacera ${count} membre${count === 1 ? '' : 's'} en attente ayant dépassé le délai de ${registrationPaymentDeadlineDays} jours pour les frais d'inscription vers les membres retirés et supprimera son dossier actif. En cas d'erreur, le membre peut être restauré depuis les membres retirés dans les 48 heures.`,
+    pending: 'Suppression...',
+    submit: 'Retirer',
+    title: 'Retirer les membres en attente en retard ?'
+  }
+} as const
+
+const RemoveOverduePendingMembersButton = ({
+  language = 'en',
+  overdueCount
+}: RemoveOverduePendingMembersButtonProps) => {
   const router = useRouter()
+  const copy = removeOverdueCopy[language]
 
   const [state, formAction] = useActionState(removeOverduePendingMembersAction, {
     message: ''
@@ -45,25 +72,21 @@ const RemoveOverduePendingMembersButton = ({ overdueCount }: RemoveOverduePendin
       <AlertDialogTrigger asChild>
         <Button variant='destructive' className='w-full sm:w-auto' disabled={overdueCount === 0}>
           <Trash2 />
-          Overdue Registration ({overdueCount})
+          {copy.button(overdueCount)}
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle className='flex items-center gap-2'>
             <AlertTriangle className='text-destructive size-5' aria-hidden='true' />
-            Remove overdue pending members?
+            {copy.title}
           </AlertDialogTitle>
-          <AlertDialogDescription>
-            This will move {overdueCount} pending member{overdueCount === 1 ? '' : 's'} past the{' '}
-            {registrationPaymentDeadlineDays}-day registration fee deadline to Removed Members and delete the active
-            member record. If this is a mistake, the member can be restored from Removed Members within 48 hours.
-          </AlertDialogDescription>
+          <AlertDialogDescription>{copy.description(overdueCount)}</AlertDialogDescription>
         </AlertDialogHeader>
         <form action={formAction}>
           <AlertDialogFooter>
-            <AlertDialogCancel type='button'>Cancel</AlertDialogCancel>
-            <RemoveOverduePendingSubmitButton disabled={overdueCount === 0} />
+            <AlertDialogCancel type='button'>{copy.cancel}</AlertDialogCancel>
+            <RemoveOverduePendingSubmitButton copy={copy} disabled={overdueCount === 0} />
           </AlertDialogFooter>
         </form>
       </AlertDialogContent>
@@ -71,7 +94,13 @@ const RemoveOverduePendingMembersButton = ({ overdueCount }: RemoveOverduePendin
   )
 }
 
-const RemoveOverduePendingSubmitButton = ({ disabled }: { disabled: boolean }) => {
+const RemoveOverduePendingSubmitButton = ({
+  copy,
+  disabled
+}: {
+  copy: (typeof removeOverdueCopy)[AppLanguage]
+  disabled: boolean
+}) => {
   const { pending } = useFormStatus()
 
   return (
@@ -79,10 +108,10 @@ const RemoveOverduePendingSubmitButton = ({ disabled }: { disabled: boolean }) =
       {pending ? (
         <>
           <Loader className='animate-spin' />
-          Removing...
+          {copy.pending}
         </>
       ) : (
-        'Remove'
+        copy.submit
       )}
     </Button>
   )

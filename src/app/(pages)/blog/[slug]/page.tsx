@@ -20,6 +20,7 @@ import RelatedBlogSection from '@/components/blog/related-blog-section/related-b
 import CTA from '@/components/blocks/cta-section'
 
 import { getPostBySlug, getPosts } from '@/lib/posts'
+import { siteDescription, siteName, siteUrl } from '@/lib/site'
 
 export async function generateStaticParams() {
   const posts = await getPosts()
@@ -43,7 +44,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     description: metadata.description,
     keywords: metadata.keywords,
     alternates: {
-      canonical: `${process.env.NEXT_PUBLIC_APP_URL}/blog/${metadata.slug}`
+      canonical: `/blog/${metadata.slug}`
+    },
+    robots: {
+      index: false,
+      follow: true
     }
   }
 }
@@ -82,26 +87,25 @@ const BlogDetailsPage = async ({ params }: { params: Promise<{ slug: string }> }
       {
         '@context': 'https://schema.org',
         '@type': 'WebSite',
-        '@id': `${process.env.NEXT_PUBLIC_APP_URL}#website`,
-        name: 'Swipe',
-        description:
-          'Track expenses, manage budgets, and achieve your financial goals with Swipe - the app that puts you in control of your money.',
-        url: `${process.env.NEXT_PUBLIC_APP_URL}`,
+        '@id': `${siteUrl}#website`,
+        name: siteName,
+        description: siteDescription,
+        url: siteUrl,
         inLanguage: 'en-US'
       },
       {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
-        '@id': `${process.env.NEXT_PUBLIC_APP_URL}#webpage`,
+        '@id': `${siteUrl}/blog/${metadata.slug}#webpage`,
         name: `Blog: ${metadata.title}`,
         description: metadata.description,
-        url: `${process.env.NEXT_PUBLIC_APP_URL}/blog/${metadata.slug}`,
+        url: `${siteUrl}/blog/${metadata.slug}`,
         isPartOf: {
-          '@id': `${process.env.NEXT_PUBLIC_APP_URL}#website`
+          '@id': `${siteUrl}#website`
         },
         potentialAction: {
           '@type': 'ReadAction',
-          target: [`${process.env.NEXT_PUBLIC_APP_URL}/blog/${metadata.slug}`]
+          target: [`${siteUrl}/blog/${metadata.slug}`]
         }
       },
       {
@@ -112,19 +116,19 @@ const BlogDetailsPage = async ({ params }: { params: Promise<{ slug: string }> }
             '@type': 'ListItem',
             position: 1,
             name: 'Home',
-            item: `${process.env.NEXT_PUBLIC_APP_URL}`
+            item: siteUrl
           },
           {
             '@type': 'ListItem',
             position: 2,
             name: 'Blog',
-            item: `${process.env.NEXT_PUBLIC_APP_URL}/blog`
+            item: `${siteUrl}/blog`
           },
           {
             '@type': 'ListItem',
             position: 3,
             name: metadata.title,
-            item: `${process.env.NEXT_PUBLIC_APP_URL}/blog/${metadata.slug}`
+            item: `${siteUrl}/blog/${metadata.slug}`
           }
         ]
       }

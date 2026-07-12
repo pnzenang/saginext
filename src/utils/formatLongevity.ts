@@ -1,13 +1,32 @@
 import day, { type ConfigType } from 'dayjs'
 
+type LongevityLanguage = 'en' | 'fr'
+
+const getLongevityUnits = (language: LongevityLanguage, years: number) =>
+  language === 'fr'
+    ? {
+        years: years > 1 ? 'ans' : 'an',
+        months: 'mois',
+        days: 'j'
+      }
+    : {
+        years: 'yr',
+        months: 'mo',
+        days: 'd'
+      }
+
 const formatLongevityUnit = (value: number, unit: string) => `${value} ${unit}`
 
-export const formatLongevity = (startDate: ConfigType, endDate: ConfigType = new Date()) => {
+export const formatLongevity = (
+  startDate: ConfigType,
+  endDate: ConfigType = new Date(),
+  language: LongevityLanguage = 'en'
+) => {
   const start = day(startDate).startOf('day')
   const end = day(endDate).startOf('day')
 
   if (!start.isValid() || !end.isValid() || start.valueOf() > end.valueOf()) {
-    return '0 d'
+    return language === 'fr' ? '0 j' : '0 d'
   }
 
   const years = end.diff(start, 'year')
@@ -15,11 +34,12 @@ export const formatLongevity = (startDate: ConfigType, endDate: ConfigType = new
   const months = end.diff(afterYears, 'month')
   const afterMonths = afterYears.add(months, 'month')
   const days = end.diff(afterMonths, 'day')
+  const units = getLongevityUnits(language, years)
 
   const longevityParts = [
-    years > 0 ? formatLongevityUnit(years, 'yr') : null,
-    months > 0 ? formatLongevityUnit(months, 'mo') : null,
-    formatLongevityUnit(days, 'd')
+    years > 0 ? formatLongevityUnit(years, units.years) : null,
+    months > 0 ? formatLongevityUnit(months, units.months) : null,
+    formatLongevityUnit(days, units.days)
   ].filter(Boolean)
 
   return longevityParts.join(', ')
