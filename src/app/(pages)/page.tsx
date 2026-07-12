@@ -217,6 +217,10 @@ const monthFormatters: Record<HomeLanguage, Intl.DateTimeFormat> = {
   })
 }
 
+const heroContributionBannerVisibleFrom = new Date('2026-07-31T00:00:00-04:00')
+
+const isHeroContributionBannerVisible = (date: Date) => date >= heroContributionBannerVisibleFrom
+
 type RotatingHeroImage = {
   src: string
   alt: Record<HomeLanguage, string>
@@ -687,6 +691,9 @@ const homeContent = {
       infoTitle: 'Contact Information',
       infoDescription:
         "If you could not find the information you were looking for, please don't hesitate to contact us.",
+      whatsappAriaLabel: 'Chat with SAGI on WhatsApp',
+      whatsappLabel: 'Chat with SAGI',
+      whatsappMessage: 'Hello SAGI, I need help.',
       form: {
         nameLabel: 'Your Name',
         namePlaceholder: 'Enter your name here...',
@@ -796,6 +803,9 @@ const homeContent = {
       infoTitle: 'Coordonnées',
       infoDescription:
         'Si vous n’avez pas trouvé l’information que vous cherchiez, n’hésitez pas à nous contacter.',
+      whatsappAriaLabel: 'Discuter avec SAGI sur WhatsApp',
+      whatsappLabel: 'Discuter avec SAGI',
+      whatsappMessage: "Bonjour SAGI, j’ai besoin d’aide.",
       form: {
         nameLabel: 'Votre nom',
         namePlaceholder: 'Entrez votre nom ici...',
@@ -847,9 +857,10 @@ const Home = async ({ searchParams }: { searchParams?: Promise<HomeSearchParams>
   const params = searchParams ? await searchParams : undefined
   const language = getLanguage(params, cookieStore.get(languageCookieName)?.value)
   const copy = homeContent[language]
+  const shouldShowHeroContributionBanner = isHeroContributionBannerVisible(new Date())
 
   const [heroContributionBanner, totalRegisteredMembers] = await Promise.all([
-    fetchHeroContributionBanner(),
+    shouldShowHeroContributionBanner ? fetchHeroContributionBanner() : Promise.resolve(null),
     fetchTotalRegisteredMembers()
   ])
 
@@ -911,14 +922,18 @@ function HeroSection({
   totalRegisteredMembers
 }: {
   copy: HomeContent
-  heroContributionBanner: Awaited<ReturnType<typeof fetchHeroContributionBanner>>
+  heroContributionBanner: Awaited<ReturnType<typeof fetchHeroContributionBanner>> | null
   language: HomeLanguage
   totalRegisteredMembers: number
 }) {
   const heroStatsWithTotalRegistered = [getTotalRegisteredStat(totalRegisteredMembers, language), ...copy.heroStats]
   const currentDate = new Date()
   const heroImage = getRotatingHeroImage(currentDate)
-  const contributionAmount = currencyFormatter.format(heroContributionBanner.amountPerMember)
+
+  const contributionAmount = heroContributionBanner
+    ? currencyFormatter.format(heroContributionBanner.amountPerMember)
+    : null
+
   const contributionMonth = monthFormatters[language].format(currentDate)
 
   return (
@@ -991,23 +1006,25 @@ function HeroSection({
           ))}
         </div>
 
-        <div className='grid w-full gap-4 rounded-lg border border-primary/30 bg-primary/20 px-4 py-3 text-white shadow-xl shadow-primary/10 backdrop-blur-md sm:px-5 sm:py-4 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:items-center'>
-          <div className='min-w-0'>
-            <p className='text-sm font-semibold text-white/76'>
-              {copy.monthlyContributionCard.contributionLabel(contributionMonth)}:
-            </p>
-            <p className='text-2xl font-extrabold tabular-nums text-emerald-300 sm:text-3xl'>
-              {contributionAmount}
-            </p>
+        {heroContributionBanner ? (
+          <div className='grid w-full gap-4 rounded-lg border border-primary/30 bg-primary/20 px-4 py-3 text-white shadow-xl shadow-primary/10 backdrop-blur-md sm:px-5 sm:py-4 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:items-center'>
+            <div className='min-w-0'>
+              <p className='text-sm font-semibold text-white/76'>
+                {copy.monthlyContributionCard.contributionLabel(contributionMonth)}:
+              </p>
+              <p className='text-2xl font-extrabold tabular-nums text-emerald-300 sm:text-3xl'>
+                {contributionAmount}
+              </p>
+            </div>
+            <div aria-hidden='true' className='h-px w-full bg-white/25 md:h-12 md:w-px' />
+            <div className='min-w-0 md:text-right'>
+              <p className='text-sm font-semibold text-white/76'>{copy.monthlyContributionCard.deathCountLabel}:</p>
+              <p className='text-2xl font-extrabold tabular-nums text-purple-300 sm:text-3xl'>
+                {heroContributionBanner.deathCount}
+              </p>
+            </div>
           </div>
-          <div aria-hidden='true' className='h-px w-full bg-white/25 md:h-12 md:w-px' />
-          <div className='min-w-0 md:text-right'>
-            <p className='text-sm font-semibold text-white/76'>{copy.monthlyContributionCard.deathCountLabel}:</p>
-            <p className='text-2xl font-extrabold tabular-nums text-purple-300 sm:text-3xl'>
-              {heroContributionBanner.deathCount}
-            </p>
-          </div>
-        </div>
+        ) : null}
       </div>
     </section>
   )

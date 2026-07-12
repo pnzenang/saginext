@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 
 import { cookies } from 'next/headers'
 
+import FloatingWhatsAppLink from '@/components/global/FloatingWhatsAppLink'
 import Header from '@/components/layout/header'
 import Footer from '@/components/layout/footer/footer'
 
@@ -23,6 +24,8 @@ const PagesLayout = async ({ children }: Readonly<{ children: ReactNode }>) => {
 
         {/* Footer Section */}
         <Footer />
+
+        <FloatingWhatsAppLink initialLanguage={language} />
       </div>
     </>
   )

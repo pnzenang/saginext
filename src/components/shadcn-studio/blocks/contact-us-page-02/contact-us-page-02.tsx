@@ -1,14 +1,18 @@
-import { PhoneIcon, MailIcon, MapPinIcon } from 'lucide-react'
+import { MailIcon, MapPinIcon, MessageCircleIcon, PhoneIcon } from 'lucide-react'
 
 import { Card, CardContent } from '@/components/ui/card'
 
 import ContactForm, { type ContactFormCopy } from '@/components/shadcn-studio/blocks/contact-us-page-02/contact-form'
+import { getSagiWhatsAppUrl, sagiPhoneDisplay, sagiPhoneHref } from '@/utils/sagi-contact'
 
 type ContactCopy = {
   title: string
   description: string
   infoTitle: string
   infoDescription: string
+  whatsappAriaLabel: string
+  whatsappLabel: string
+  whatsappMessage: string
   form: ContactFormCopy
 }
 
@@ -17,6 +21,9 @@ const defaultCopy: ContactCopy = {
   description: "Have a question or need assistance? Contact us and let's find a solution together!",
   infoTitle: 'Contact Information',
   infoDescription: "If you could not find the information you were looking for, please don't hesitate to contact us.",
+  whatsappAriaLabel: 'Chat with SAGI on WhatsApp',
+  whatsappLabel: 'Chat with us on WhatsApp',
+  whatsappMessage: 'Hello SAGI, I need help.',
   form: {
     nameLabel: 'Your Name',
     namePlaceholder: 'Enter your name here...',
@@ -56,7 +63,21 @@ const ContactUs = ({ copy = defaultCopy }: { copy?: ContactCopy }) => {
                   {/* Phone */}
                   <div className='flex items-start gap-4 text-lg font-semibold'>
                     <PhoneIcon className='text-primary size-7 shrink-0' />
-                    <a href='tel:+1-804-214-6390'>(804) 214-6390</a>
+                    <a href={sagiPhoneHref}>{sagiPhoneDisplay}</a>
+                  </div>
+
+                  {/* WhatsApp */}
+                  <div className='flex items-start gap-4'>
+                    <MessageCircleIcon className='text-primary size-7 shrink-0' />
+                    <a
+                      aria-label={copy.whatsappAriaLabel}
+                      className='text-lg font-semibold hover:underline'
+                      href={getSagiWhatsAppUrl(copy.whatsappMessage)}
+                      rel='noopener noreferrer'
+                      target='_blank'
+                    >
+                      {copy.whatsappLabel}
+                    </a>
                   </div>
 
                   {/* Email */}
