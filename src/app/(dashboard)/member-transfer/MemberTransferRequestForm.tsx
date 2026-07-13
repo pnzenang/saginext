@@ -31,8 +31,28 @@ type MemberTransferAssociationOption = {
 
 const maxVisibleMembers = 10
 
-const getMemberNameSearchValue = (member: MemberTransferMemberOption) =>
-  `${member.firstName} ${member.lastAndMiddleNames} ${member.memberMatriculationNumber} ${member.associationCode} ${member.associationName} ${member.memberStatus}`.toLowerCase()
+const normalizeSearchText = (value: string) =>
+  value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .trim()
+
+const getSearchTokens = (value: string) => normalizeSearchText(value).split(' ').filter(Boolean)
+
+const getMemberSearchValue = (member: MemberTransferMemberOption) =>
+  normalizeSearchText(
+    `${member.firstName} ${member.lastAndMiddleNames} ${member.memberMatriculationNumber} ${member.associationCode} ${member.associationName} ${member.memberStatus}`
+  )
+
+const memberMatchesSearch = (member: MemberTransferMemberOption, searchTokens: string[]) => {
+  if (searchTokens.length === 0) return true
+
+  const searchableMemberValue = getMemberSearchValue(member)
+
+  return searchTokens.every(token => searchableMemberValue.includes(token))
+}
 
 const formatAssociationLabel = (associationCode: string, associationName?: string | null) =>
   associationName ? `${associationCode} - ${associationName}` : associationCode
@@ -152,11 +172,11 @@ const MemberTransferRequestForm = ({
   )
 
   const filteredMembers = useMemo(() => {
-    const normalizedSearch = searchQuery.trim().toLowerCase()
+    const searchTokens = getSearchTokens(searchQuery)
 
-    if (!normalizedSearch) return members
+    if (searchTokens.length === 0) return members
 
-    return members.filter(member => getMemberNameSearchValue(member).includes(normalizedSearch))
+    return members.filter(member => memberMatchesSearch(member, searchTokens))
   }, [members, searchQuery])
 
   const displayedMembers = filteredMembers.slice(0, maxVisibleMembers)
@@ -178,7 +198,7 @@ const MemberTransferRequestForm = ({
     setSearchQuery(nextSearchQuery)
 
     const selectedMemberStillMatches =
-      selectedMember && getMemberNameSearchValue(selectedMember).includes(nextSearchQuery.trim().toLowerCase())
+      selectedMember && memberMatchesSearch(selectedMember, getSearchTokens(nextSearchQuery))
 
     if (!selectedMemberStillMatches) {
       setSelectedMemberId('')
