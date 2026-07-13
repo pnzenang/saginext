@@ -1,10 +1,14 @@
+import { auth } from '@clerk/nextjs/server'
+
 import { unstable_noStore as noStore } from 'next/cache'
+import { redirect } from 'next/navigation'
 
 import type {
   AdminTransactionHistoryRow,
   AdminTransactionHistoryTotals
 } from '@/components/global/AdminTransactionHistoryTable'
 import AdminTransactionHistoryTable from '@/components/global/AdminTransactionHistoryTableClient'
+import ResetTransactionHistoryButton from '@/components/global/ResetTransactionHistoryButton'
 import db from '@/utils/db'
 import { associationPaymentLedgerEventTypes, associationPaymentTypes } from '@/utils/sagi-payment-ledger'
 
@@ -50,6 +54,11 @@ const isAssociationSubmittedAmount = (eventType: string, note?: string | null) =
 
 const AdminTransactionHistory = async () => {
   noStore()
+
+  const { userId } = await auth()
+
+  if (!userId) redirect('/sign-in')
+  if (userId !== process.env.ADMIN_USER_ID) redirect('/all-members')
 
   const ledgerEntries = await db.associationPaymentLedgerEntry.findMany({
     orderBy: {
@@ -115,6 +124,7 @@ const AdminTransactionHistory = async () => {
             separated by column.
           </p>
         </div>
+        <ResetTransactionHistoryButton transactionCount={totals.transactionCount} />
       </div>
 
       <AdminTransactionHistoryTable rows={rows} totals={totals} />

@@ -611,6 +611,38 @@ const revalidatePaymentViews = () => {
   revalidatePath('/admin-count')
 }
 
+const resettableTransactionHistoryEventTypes = [
+  associationPaymentLedgerEventTypes.manualAdjustment,
+  associationPaymentLedgerEventTypes.reset,
+  associationPaymentLedgerEventTypes.submitted,
+  associationPaymentLedgerEventTypes.verified
+]
+
+export const resetTransactionHistoryAction = async (): Promise<{ message: string }> => {
+  await assertAdminUser()
+
+  try {
+    const deletedHistory = await db.associationPaymentLedgerEntry.deleteMany({
+      where: {
+        eventType: {
+          in: resettableTransactionHistoryEventTypes
+        }
+      }
+    })
+
+    revalidatePaymentViews()
+
+    return {
+      message:
+        deletedHistory.count === 0
+          ? 'No transaction history records were found to reset.'
+          : `${deletedHistory.count} transaction history record${deletedHistory.count === 1 ? '' : 's'} reset successfully.`
+    }
+  } catch (error) {
+    return renderError(error)
+  }
+}
+
 const revalidateDeathDocumentationViews = () => {
   revalidatePath('/admin-all-deceased')
   revalidatePath('/admin-death-documentations')
