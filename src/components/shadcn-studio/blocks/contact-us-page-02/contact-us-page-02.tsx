@@ -3,7 +3,7 @@ import { MailIcon, MapPinIcon, MessageCircleIcon, PhoneIcon } from 'lucide-react
 import { Card, CardContent } from '@/components/ui/card'
 
 import ContactForm, { type ContactFormCopy } from '@/components/shadcn-studio/blocks/contact-us-page-02/contact-form'
-import { getSagiWhatsAppUrl, sagiPhoneDisplay, sagiPhoneHref } from '@/utils/sagi-contact'
+import { getSagiWhatsAppUrl, sagiPhoneDisplay, sagiPhoneHref, sagiWhatsAppContacts } from '@/utils/sagi-contact'
 
 type ContactCopy = {
   title: string
@@ -43,20 +43,16 @@ const ContactUs = ({ copy = defaultCopy }: { copy?: ContactCopy }) => {
       <div className='mx-auto max-w-7xl px-4 sm:px-6 lg:px-8'>
         <div className='mb-12 space-y-4 text-center sm:mb-16 lg:mb-24'>
           <h2 className='text-2xl font-semibold md:text-3xl lg:text-6xl'>{copy.title}</h2>
-          <p className='text-muted-foreground text-xl'>
-            {copy.description}
-          </p>
+          <p className='text-muted-foreground text-xl'>{copy.description}</p>
         </div>
 
-        <Card className='border bg-background shadow-none'>
+        <Card className='bg-background border shadow-none'>
           <CardContent className='grid gap-6 p-6 md:grid-cols-2'>
             <Card className='border-primary/20 bg-primary/10 h-full py-8 shadow-none'>
               <CardContent className='space-y-7'>
                 <div className='space-y-2'>
                   <h2 className='text-primary text-2xl font-semibold'>{copy.infoTitle}</h2>
-                  <p className='text-muted-foreground'>
-                    {copy.infoDescription}
-                  </p>
+                  <p className='text-muted-foreground'>{copy.infoDescription}</p>
                 </div>
 
                 <div className='space-y-7'>
@@ -69,15 +65,25 @@ const ContactUs = ({ copy = defaultCopy }: { copy?: ContactCopy }) => {
                   {/* WhatsApp */}
                   <div className='flex items-start gap-4'>
                     <MessageCircleIcon className='text-primary size-7 shrink-0' />
-                    <a
-                      aria-label={copy.whatsappAriaLabel}
-                      className='text-lg font-semibold hover:underline'
-                      href={getSagiWhatsAppUrl(copy.whatsappMessage)}
-                      rel='noopener noreferrer'
-                      target='_blank'
-                    >
-                      {copy.whatsappLabel}
-                    </a>
+                    <div className='space-y-2'>
+                      {sagiWhatsAppContacts.map(contact => (
+                        <a
+                          aria-label={`${copy.whatsappAriaLabel}: ${contact.display}`}
+                          className='block hover:underline'
+                          href={getSagiWhatsAppUrl(copy.whatsappMessage, contact.phone)}
+                          key={contact.id}
+                          rel='noopener noreferrer'
+                          target='_blank'
+                        >
+                          <span className='block text-lg font-semibold'>
+                            {sagiWhatsAppContacts.length > 1 ? contact.label : copy.whatsappLabel}
+                          </span>
+                          {sagiWhatsAppContacts.length > 1 ? (
+                            <span className='text-muted-foreground block text-sm'>{contact.display}</span>
+                          ) : null}
+                        </a>
+                      ))}
+                    </div>
                   </div>
 
                   {/* Email */}

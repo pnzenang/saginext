@@ -9,7 +9,7 @@ import {
 } from '@/utils/actions'
 import {
   countryOfResidenceOptions,
-  delegateRecommendation,
+  delegateRecommendationOptions,
   getCountryOfResidenceDefault,
   memberStatus
 } from '@/utils/types'
@@ -72,7 +72,7 @@ const EditMemberDetailPage = async ({ params }: { params: { id: string } }) => {
 
               <FormSelect
                 label='delegate recommendation'
-                items={Object.values(delegateRecommendation)}
+                items={delegateRecommendationOptions}
                 name='delegateRecommendation'
                 defaultValue={member.delegateRecommendation}
               />

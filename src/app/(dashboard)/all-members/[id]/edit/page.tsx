@@ -3,7 +3,7 @@ import FormContainer from '@/components/forms/FormContainer'
 import FormInput from '@/components/forms/FormInput'
 import FormSelect from '@/components/forms/FormSelect'
 import { fetchSingleMemberDetails, updateMemberDetailsAction } from '@/utils/actions'
-import { countryOfResidenceOptions, delegateRecommendation, getCountryOfResidenceDefault } from '@/utils/types'
+import { countryOfResidenceOptions, delegateRecommendationOptions, getCountryOfResidenceDefault } from '@/utils/types'
 
 const EditMemberDetailPage = async ({ params }: { params: { id: string } }) => {
   const { id } = await params
@@ -79,7 +79,7 @@ const EditMemberDetailPage = async ({ params }: { params: { id: string } }) => {
               />
               <FormSelect
                 label='delegate recommendation'
-                items={Object.values(delegateRecommendation)}
+                items={delegateRecommendationOptions}
                 name='delegateRecommendation'
                 defaultValue={member.delegateRecommendation}
               />

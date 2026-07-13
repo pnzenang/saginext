@@ -155,7 +155,7 @@ const featuresList = [
     icon: ArrowRightLeft,
     title: 'Transfer ',
     description:
-      'This is a 3 steps process, the receiving group select Transfer_In, the departed group select Transfer_Out, the admin team reviews the case and transfer the member.',
+      'Use Member Transfer to submit one request, get approval from the other delegate, and let admin complete the member record update.',
     cardBorderColor: 'border-primary/40 hover:border-primary',
     avatarTextColor: 'text-primary',
     avatarBgColor: 'bg-primary/10',

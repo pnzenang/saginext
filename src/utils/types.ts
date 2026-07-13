@@ -26,6 +26,15 @@ export enum delegateRecommendation {
   TransferOut = 'transfer_Out'
 }
 
+export const delegateRecommendationOptions = [
+  delegateRecommendation.Confirm,
+  delegateRecommendation.TransferFromSagicam,
+  delegateRecommendation.TransferFromSagiEurope,
+  delegateRecommendation.TransferFromSAgiNigeria,
+  delegateRecommendation.TransferFromSagiGhana,
+  delegateRecommendation.TransferFromSagiCoteDivoire
+] as const
+
 export enum memberStatus {
   Pending = 'pending',
   Awaiting = 'awaiting_publication',

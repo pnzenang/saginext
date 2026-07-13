@@ -58,9 +58,9 @@ const transferFormCopy = {
       receivingAssociationLabel: 'Receiving association',
       searchLabel: 'Search outside members',
       searchPlaceholder: 'Search name, matriculation, association code, association name, or status',
-      selectLabel: 'Select member to transfer in',
+      selectLabel: 'Select member to request',
       submitText: 'Send release request',
-      title: 'Request a member transfer in'
+      title: 'Request a member from another association'
     },
     matches: (count: number) => `${count} match${count === 1 ? '' : 'es'}`,
     noOtherAssociations: 'No other delegate associations are available.',
@@ -72,9 +72,9 @@ const transferFormCopy = {
       receivingAssociationLabel: 'Receiving association',
       searchLabel: 'Search your members',
       searchPlaceholder: 'Search name, matriculation, association code, association name, or status',
-      selectLabel: 'Select member to transfer out',
-      submitText: 'Start transfer out',
-      title: 'Start a member transfer out'
+      selectLabel: 'Select member to send',
+      submitText: 'Send transfer request',
+      title: 'Send a member to another association'
     },
     selectMember: 'Select a member',
     selectReceivingAssociation: 'Select receiving association',
@@ -98,9 +98,9 @@ const transferFormCopy = {
       receivingAssociationLabel: 'Association destinataire',
       searchLabel: 'Rechercher des membres externes',
       searchPlaceholder: "Rechercher par nom, matricule, code d'association, nom d'association ou statut",
-      selectLabel: 'Sélectionner le membre à transférer vers votre association',
+      selectLabel: 'Sélectionner le membre à demander',
       submitText: 'Envoyer la demande de libération',
-      title: 'Demander un transfert entrant'
+      title: 'Demander un membre à une autre association'
     },
     matches: (count: number) => `${count} résultat${count === 1 ? '' : 's'}`,
     noOtherAssociations: 'Aucune autre association déléguée n’est disponible.',
@@ -112,9 +112,9 @@ const transferFormCopy = {
       receivingAssociationLabel: 'Association destinataire',
       searchLabel: 'Rechercher vos membres',
       searchPlaceholder: "Rechercher par nom, matricule, code d'association, nom d'association ou statut",
-      selectLabel: 'Sélectionner le membre à transférer',
-      submitText: 'Démarrer le transfert sortant',
-      title: 'Démarrer un transfert sortant'
+      selectLabel: 'Sélectionner le membre à envoyer',
+      submitText: 'Envoyer la demande de transfert',
+      title: 'Envoyer un membre à une autre association'
     },
     selectMember: 'Sélectionner un membre',
     selectReceivingAssociation: 'Sélectionner l’association destinataire',

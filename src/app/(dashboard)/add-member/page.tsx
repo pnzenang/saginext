@@ -9,6 +9,7 @@ import {
   addMemberCountryOfResidenceOptions,
   defaultCountryOfResidence,
   delegateRecommendation,
+  delegateRecommendationOptions,
   memberStatus
 } from '@/utils/types'
 
@@ -117,7 +118,7 @@ const AddMember = async () => {
             />
             <FormSelect
               label={copy.labels.delegateRecommendation}
-              items={Object.values(delegateRecommendation)}
+              items={delegateRecommendationOptions}
               name='delegateRecommendation'
               defaultValue={delegateRecommendation.Confirm}
             />
