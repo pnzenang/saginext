@@ -1,7 +1,11 @@
+import { auth } from '@clerk/nextjs/server'
+
 import { unstable_noStore as noStore } from 'next/cache'
+import { redirect } from 'next/navigation'
 
 import { Building2, Mail, Phone, UsersRound } from 'lucide-react'
 
+import RemoveAssociationProfileButton from '@/components/dashboard/RemoveAssociationProfileButton'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -20,6 +24,11 @@ const formatDate = (date: Date) => dateFormatter.format(date)
 const AdminProfilesPage = async () => {
   noStore()
 
+  const { userId } = await auth()
+
+  if (!userId) redirect('/sign-in')
+  if (userId !== process.env.ADMIN_USER_ID) redirect('/all-members')
+
   const profiles = await db.profile.findMany({
     orderBy: [{ associationName: 'asc' }, { createdAt: 'desc' }],
     select: {
@@ -29,6 +38,7 @@ const AdminProfilesPage = async () => {
       firstDelegateEmail: true,
       firstDelegateFullName: true,
       firstDelegatePhoneNumber: true,
+      id: true,
       secondDelegateEmail: true,
       secondDelegateFullName: true,
       secondDelegatePhoneNumber: true,
@@ -110,11 +120,12 @@ const AdminProfilesPage = async () => {
                         <TableHead>Second Delegate</TableHead>
                         <TableHead>Board Member</TableHead>
                         <TableHead>Created</TableHead>
+                        <TableHead>Action</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {profiles.map(profile => (
-                        <TableRow key={profile.associationCode}>
+                        <TableRow key={profile.id}>
                           <TableCell className='min-w-64'>
                             <div className='space-y-1'>
                               <p className='font-medium whitespace-normal'>{profile.associationName}</p>
@@ -147,6 +158,13 @@ const AdminProfilesPage = async () => {
                             />
                           </TableCell>
                           <TableCell>{formatDate(profile.createdAt)}</TableCell>
+                          <TableCell>
+                            <RemoveAssociationProfileButton
+                              associationCode={profile.associationCode}
+                              associationName={profile.associationName}
+                              profileId={profile.id}
+                            />
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -155,7 +173,7 @@ const AdminProfilesPage = async () => {
 
                 <div className='grid gap-3 p-3 md:hidden'>
                   {profiles.map(profile => (
-                    <Card key={profile.associationCode} className='rounded-lg shadow-none'>
+                    <Card key={profile.id} className='rounded-lg shadow-none'>
                       <CardContent className='space-y-4'>
                         <div className='space-y-2'>
                           <div className='flex flex-wrap items-start justify-between gap-2'>
@@ -186,6 +204,11 @@ const AdminProfilesPage = async () => {
                             phone={profile.thirdDelegatePhoneNumber}
                           />
                         </div>
+                        <RemoveAssociationProfileButton
+                          associationCode={profile.associationCode}
+                          associationName={profile.associationName}
+                          profileId={profile.id}
+                        />
                       </CardContent>
                     </Card>
                   ))}
