@@ -155,7 +155,7 @@ const featuresList = [
     icon: ArrowRightLeft,
     title: 'Transfer ',
     description:
-      'Use Member Transfer to submit one request, get approval from the other delegate, and let admin complete the member record update.',
+      'Use Member Transfer for members already in this database. Use Add Member with a transfer-from recommendation only when the member comes from another SAGI database, such as SAGICAM or SAGINIGERIA.',
     cardBorderColor: 'border-primary/40 hover:border-primary',
     avatarTextColor: 'text-primary',
     avatarBgColor: 'bg-primary/10',

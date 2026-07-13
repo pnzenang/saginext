@@ -22,7 +22,7 @@ const memberFields = [
   'Country of residence: choose the member country from the dropdown.',
   'Name of beneficiary: enter the person who should be listed as beneficiary.',
   'Association name and association code: these are filled automatically from your profile.',
-  'Delegate recommendation: leave it as Confirm when you are recommending the member.',
+  'Delegate recommendation: leave it as Confirm unless the member is coming from another SAGI database, such as SAGICAM or SAGINIGERIA. For those cases, choose the matching transfer-from recommendation.',
   'Member status: this starts as Pending until registration is completed.'
 ]
 
@@ -70,6 +70,7 @@ const commonMistakes = [
   'Do not abbreviate the last name, middle name, first name, or beneficiary name.',
   'Do not enter the first name in the last name field.',
   'Do not change the association name or code if those fields are already filled from your profile.',
+  'Do not use a transfer-from recommendation for a member already listed in this SAGI database. Use Member Transfer instead.',
   'Do not forget to record the registration payment after sending it.'
 ]
 

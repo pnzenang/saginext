@@ -57,8 +57,9 @@ const adminReviewItems = [
 
 const transferRules = [
   'A member transfer does not require any fee.',
-  'Do not register the same member again in Add Member.',
-  'Do not change the delegate recommendation to process a member transfer.',
+  'Do not register the same member again in Add Member unless the member is coming from another SAGI database, such as SAGICAM or SAGINIGERIA.',
+  'Do not change the delegate recommendation to process a transfer between associations already in this database.',
+  'Use the matching transfer-from delegate recommendation only when the member is coming from a different SAGI database.',
   'Use the Member Transfer page so both delegates and admin can review the same request.'
 ]
 
@@ -82,6 +83,10 @@ const MemberTransfer = () => {
               <p>
                 Delegates should use the Member Transfer page for this process. The member should not be registered
                 again, and the delegate recommendation should not be changed to complete a transfer.
+              </p>
+              <p>
+                The exception is when the member is coming from a different SAGI database, such as SAGICAM or
+                SAGINIGERIA. In that case, add the member and select the matching transfer-from delegate recommendation.
               </p>
               <p>
                 Once the second delegate approves the request, the admin team reviews it and completes the database
@@ -117,6 +122,10 @@ const MemberTransfer = () => {
               <p>
                 The transfer should be handled from the Member Transfer page. Do not create a duplicate member record
                 and do not use delegate recommendation options for this workflow.
+              </p>
+              <p>
+                Use Add Member with a transfer-from recommendation only for members coming from a different SAGI
+                database, such as SAGICAM or SAGINIGERIA.
               </p>
               <p>
                 After both delegates approve, the admin team completes the record update with the correct receiving
