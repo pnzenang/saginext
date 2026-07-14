@@ -403,14 +403,19 @@ const getRequiredDateFromForm = (formData: FormData, fieldName: string) => {
 
 const formatRegistrationDate = (date: Date) => registrationDateFormatter.format(date)
 
-const createPendingRegistrationUsage = async ({
-  associationCode,
-  memberMatriculationNumber
-}: {
-  associationCode: string
-  memberMatriculationNumber: string
-}) => {
-  await db.associationRegistrationUsage.upsert({
+type RegistrationUsageClient = Pick<typeof db, 'associationRegistrationUsage'>
+
+const createRegistrationUsage = async (
+  client: RegistrationUsageClient,
+  {
+    associationCode,
+    memberMatriculationNumber
+  }: {
+    associationCode: string
+    memberMatriculationNumber: string
+  }
+) => {
+  await client.associationRegistrationUsage.upsert({
     create: {
       amountUsed: registrationFeePerEligibleMember,
       associationCode,
@@ -420,6 +425,27 @@ const createPendingRegistrationUsage = async ({
       amountUsed: registrationFeePerEligibleMember,
       associationCode
     },
+    where: {
+      memberMatriculationNumber
+    }
+  })
+}
+
+const createPendingRegistrationUsage = async ({
+  associationCode,
+  memberMatriculationNumber
+}: {
+  associationCode: string
+  memberMatriculationNumber: string
+}) => {
+  await createRegistrationUsage(db, { associationCode, memberMatriculationNumber })
+}
+
+const removeRegistrationUsage = async (
+  client: RegistrationUsageClient,
+  memberMatriculationNumber: string
+) => {
+  await client.associationRegistrationUsage.deleteMany({
     where: {
       memberMatriculationNumber
     }
@@ -762,20 +788,24 @@ export const createMemberAction = async (provState: any, formData: FormData): Pr
       throw new Error('Delegate profile was not found.')
     }
 
-    const member = await db.member.create({
-      data: {
-        ...validatedFields,
-        clerkId: user.id,
-        memberMatriculationNumber
-      }
-    })
-
-    if (validatedFields.memberStatus === memberStatus.Pending) {
-      await createPendingRegistrationUsage({
-        associationCode: validatedFields.associationCode,
-        memberMatriculationNumber
+    const member = await db.$transaction(async tx => {
+      const createdMember = await tx.member.create({
+        data: {
+          ...validatedFields,
+          clerkId: user.id,
+          memberMatriculationNumber
+        }
       })
-    }
+
+      if (validatedFields.memberStatus === memberStatus.Pending) {
+        await createRegistrationUsage(tx, {
+          associationCode: validatedFields.associationCode,
+          memberMatriculationNumber
+        })
+      }
+
+      return createdMember
+    })
 
     revalidatePaymentViews()
 
@@ -3602,13 +3632,7 @@ export const createRemovedMemberAction = async (provState: any, formData: FormDa
         }
       })
 
-      if (member.memberStatus === memberStatus.Pending) {
-        await tx.associationRegistrationUsage.deleteMany({
-          where: {
-            memberMatriculationNumber: member.memberMatriculationNumber
-          }
-        })
-      }
+      await removeRegistrationUsage(tx, member.memberMatriculationNumber)
 
       await tx.member.delete({
         where: {
@@ -3665,13 +3689,7 @@ export const createRemovedMemberActionAdmin = async (
         }
       })
 
-      if (member.memberStatus === memberStatus.Pending) {
-        await tx.associationRegistrationUsage.deleteMany({
-          where: {
-            memberMatriculationNumber: member.memberMatriculationNumber
-          }
-        })
-      }
+      await removeRegistrationUsage(tx, member.memberMatriculationNumber)
 
       await tx.member.delete({
         where: {
@@ -3824,8 +3842,13 @@ export const restoreRemovedMemberAction = async (prevState: { removedMemberId: s
       throw new Error('This removed member record is missing the original details needed for restoration')
     }
 
-    await db.$transaction([
-      db.member.create({
+    const associationName = removedMember.associationName
+    const delegateRecommendation = removedMember.delegateRecommendation
+    const restoredMemberStatus = removedMember.memberStatus
+    const nameOfBeneficiary = removedMember.nameOfBeneficiary
+
+    await db.$transaction(async tx => {
+      await tx.member.create({
         data: {
           ...(removedMember.originalMemberId ? { id: removedMember.originalMemberId } : {}),
           clerkId: removedMember.clerkId,
@@ -3834,34 +3857,43 @@ export const restoreRemovedMemberAction = async (prevState: { removedMemberId: s
           dateOfBirth: removedMember.dateOfBirth,
           countryOfResidence: removedMember.countryOfResidence,
           memberMatriculationNumber: removedMember.memberMatriculationNumber,
-          delegateRecommendation: removedMember.delegateRecommendation,
-          memberStatus: removedMember.memberStatus,
-          nameOfBeneficiary: removedMember.nameOfBeneficiary,
-          associationName: removedMember.associationName,
+          delegateRecommendation,
+          memberStatus: restoredMemberStatus,
+          nameOfBeneficiary,
+          associationName,
           associationCode: removedMember.associationCode,
           ...(removedMember.originalMemberCreatedAt ? { createdAt: removedMember.originalMemberCreatedAt } : {})
         }
-      }),
-      db.removedMember.delete({
+      })
+
+      await createRegistrationUsage(tx, {
+        associationCode: removedMember.associationCode,
+        memberMatriculationNumber: removedMember.memberMatriculationNumber
+      })
+
+      await tx.removedMember.delete({
         where: {
           id: removedMember.id
         }
       })
-    ])
 
-    if (removedMember.memberStatus === memberStatus.Pending) {
-      await createPendingRegistrationUsage({
-        associationCode: removedMember.associationCode,
-        memberMatriculationNumber: removedMember.memberMatriculationNumber
-      })
-    }
-
-    if (removedMember.memberStatus === memberStatus.Vested) {
-      await createVestedContributionCredit({
-        associationCode: removedMember.associationCode,
-        memberMatriculationNumber: removedMember.memberMatriculationNumber
-      })
-    }
+      if (restoredMemberStatus === memberStatus.Vested) {
+        await tx.associationContributionCredit.upsert({
+          create: {
+            amountCredited: contributionCreditPerVestedMember,
+            associationCode: removedMember.associationCode,
+            memberMatriculationNumber: removedMember.memberMatriculationNumber
+          },
+          update: {
+            amountCredited: contributionCreditPerVestedMember,
+            associationCode: removedMember.associationCode
+          },
+          where: {
+            memberMatriculationNumber: removedMember.memberMatriculationNumber
+          }
+        })
+      }
+    })
 
     revalidatePath('/removed-members')
     revalidatePath('/all-members')
@@ -3918,6 +3950,11 @@ export const createDeceasedMemberAction = async (provState: any, formData: FormD
       db.member.delete({
         where: {
           id: memberId
+        }
+      }),
+      db.associationRegistrationUsage.deleteMany({
+        where: {
+          memberMatriculationNumber: member.memberMatriculationNumber
         }
       })
     ])
@@ -3988,6 +4025,11 @@ export const createDeceasedMemberActionAdmin = async (
       db.member.delete({
         where: {
           id: memberId
+        }
+      }),
+      db.associationRegistrationUsage.deleteMany({
+        where: {
+          memberMatriculationNumber: member.memberMatriculationNumber
         }
       })
     ])
@@ -4353,6 +4395,11 @@ export const restoreDeceasedMemberAction = async (prevState: { deceasedMemberId:
         where: {
           id: deceasedMember.id
         }
+      })
+
+      await createRegistrationUsage(tx, {
+        associationCode,
+        memberMatriculationNumber: deceasedMember.memberMatriculationNumber
       })
 
       if (restoredMemberStatus === memberStatus.Vested) {

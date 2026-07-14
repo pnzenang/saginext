@@ -3,6 +3,7 @@ import { unstable_noStore as noStore } from 'next/cache'
 import db from './db'
 import { registrationFeePerEligibleMember } from './payment-constants'
 import { associationPaymentTypes, fetchAssociationPaymentLedgerTotals } from './sagi-payment-ledger'
+import { memberStatus } from './types'
 
 export const registrationBalanceAdjustmentType = 'registration'
 export { registrationFeePerEligibleMember } from './payment-constants'
@@ -100,26 +101,34 @@ export const fetchAssociationRegistrationSummary = async (
 
   const memberMatriculationNumbers = Array.from(registrationUsageByMemberNumber.keys())
 
-  const registrationMembers =
-    memberMatriculationNumbers.length > 0
-      ? await db.member.findMany({
-          orderBy: {
-            createdAt: 'desc'
-          },
-          select: {
-            firstName: true,
-            lastAndMiddleNames: true,
-            createdAt: true,
-            memberMatriculationNumber: true
-          },
-          where: {
-            associationCode,
-            memberMatriculationNumber: {
-              in: memberMatriculationNumbers
-            }
-          }
-        })
-      : []
+  const registrationMembers = await db.member.findMany({
+    orderBy: {
+      createdAt: 'desc'
+    },
+    select: {
+      firstName: true,
+      lastAndMiddleNames: true,
+      createdAt: true,
+      memberMatriculationNumber: true
+    },
+    where: {
+      associationCode,
+      OR: [
+        ...(memberMatriculationNumbers.length > 0
+          ? [
+              {
+                memberMatriculationNumber: {
+                  in: memberMatriculationNumbers
+                }
+              }
+            ]
+          : []),
+        {
+          memberStatus: memberStatus.Pending
+        }
+      ]
+    }
+  })
 
   const registrationMembersWithAmounts = registrationMembers.map(member => ({
     ...member,
