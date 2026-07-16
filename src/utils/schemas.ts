@@ -13,9 +13,15 @@ import {
 const countryOfResidenceSchema = z.enum(countryOfResidenceOptions)
 const addMemberCountryOfResidenceSchema = z.literal(defaultCountryOfResidence)
 
+const associationCodeSchema = z
+  .string()
+  .trim()
+  .toUpperCase()
+  .regex(/^[A-Z]{4}$/, { message: 'Association code must be exactly 4 letters with no numbers' })
+
 export const profileSchema = z.object({
   associationName: z.string().toUpperCase().min(4, { message: 'Association name must be at least 4 characters' }),
-  associationCode: z.string().toUpperCase().length(4, { message: 'Association code must be exactly 4 characters' }),
+  associationCode: associationCodeSchema,
   firstDelegateFullName: z.string().toUpperCase().min(2, { message: 'Association name must be at least 2 characters' }),
   firstDelegatePhoneNumber: z
     .string()
@@ -41,7 +47,7 @@ export const memberSchema = z.object({
 
   // middleName: z.string().toUpperCase(),
   associationName: z.string().toUpperCase(),
-  associationCode: z.string().toUpperCase(),
+  associationCode: associationCodeSchema,
   lastAndMiddleNames: z
     .string()
     .toUpperCase()
@@ -66,7 +72,7 @@ export const RemovedMemberSchema = z.object({
   // middleName: z.string().toUpperCase(),
 
   // associationName: z.string().toUpperCase(),
-  associationCode: z.string().toUpperCase(),
+  associationCode: associationCodeSchema,
   lastAndMiddleNames: z
     .string()
     .toUpperCase()

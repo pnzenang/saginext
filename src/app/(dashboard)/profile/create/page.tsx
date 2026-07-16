@@ -74,7 +74,15 @@ const CreateProfilePage = async () => {
         <FormContainer action={createProfileAction}>
           <div className='grid w-full min-w-0 grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2'>
             <FormInput type='text' name='associationName' label={copy.labels.associationName} />
-            <FormInput type='text' name='associationCode' label={copy.labels.associationCode} />
+            <FormInput
+              type='text'
+              name='associationCode'
+              label={copy.labels.associationCode}
+              maxLength={4}
+              pattern='[A-Za-z]{4}'
+              title='Enter exactly 4 letters, no numbers'
+              autoComplete='off'
+            />
           </div>
           <div className='mt-4 grid w-full min-w-0 grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-3'>
             <FormInput type='text' name='firstDelegateFullName' label={copy.labels.firstDelegateFullName} />
