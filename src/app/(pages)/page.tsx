@@ -326,7 +326,7 @@ const rotatingHeroImages: RotatingHeroImage[] = [
   }
 ]
 
-const heroImageRotationIntervalDays = 10
+const heroImageRotationIntervalDays = 7
 const millisecondsPerDay = 24 * 60 * 60 * 1000
 
 const getRotatingHeroImage = (date: Date) => {
