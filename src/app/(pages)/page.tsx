@@ -14,7 +14,6 @@ import {
   HeartHandshakeIcon,
   LayoutDashboardIcon,
   LockKeyholeIcon,
-  MessageCircleIcon,
   ShieldCheckIcon,
   UploadCloudIcon,
   UserMinusIcon,
@@ -35,7 +34,6 @@ import { Card, CardContent } from '@/components/ui/card'
 import { languageCookieName, normalizeLanguage } from '@/lib/i18n'
 import db from '@/utils/db'
 import { fetchLatestAssociationContributionAssessment } from '@/utils/sagi-contribution-summary'
-import { getSagiWhatsAppUrl } from '@/utils/sagi-contact'
 
 type HeroStat = {
   value: string
@@ -986,21 +984,6 @@ function HeroSection({
               className='rounded-full border-white/35 bg-white/10 text-white hover:bg-white/20 hover:text-white'
             >
               <Link href={`${language === 'fr' ? '/?lang=fr' : '/'}#how-it-works`}>{copy.hero.secondaryCta}</Link>
-            </Button>
-            <Button
-              asChild
-              size='lg'
-              className='rounded-full bg-[#25D366] text-white hover:bg-[#1ebe5d] hover:text-white'
-            >
-              <a
-                aria-label={copy.contactSection.whatsappAriaLabel}
-                href={getSagiWhatsAppUrl(copy.contactSection.whatsappMessage)}
-                rel='noopener noreferrer'
-                target='_blank'
-              >
-                <MessageCircleIcon className='size-4' />
-                {copy.contactSection.whatsappLabel}
-              </a>
             </Button>
           </div>
         </div>
