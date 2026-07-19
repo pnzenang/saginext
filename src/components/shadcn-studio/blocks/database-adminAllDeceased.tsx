@@ -242,7 +242,7 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
       return (
         <Badge
           className={cn(
-            'max-w-full whitespace-normal rounded-sm border-none text-left text-xs break-words capitalize focus-visible:outline-none',
+            'max-w-full rounded-sm border-none text-left text-xs break-words whitespace-normal capitalize focus-visible:outline-none',
             styles
           )}
         >
@@ -276,6 +276,8 @@ const getColumnLabel = (column: Column<DeceasedMemberType, unknown>) => {
 }
 
 const getDeceasedMemberTableCellLabel = (cell: Cell<DeceasedMemberType, unknown>) => getColumnLabel(cell.column)
+
+const getResponsiveColumnClassName = (columnId: string) => columnId === 'associationName' && 'md:hidden lg:table-cell'
 
 const numberFormatter = new Intl.NumberFormat('en-US')
 const formatNumber = (value: number) => numberFormatter.format(value)
@@ -622,7 +624,10 @@ const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
                       key={header.id}
                       title={headerTitle}
                       style={{ width: `${header.getSize()}px` }}
-                      className='px-1.5 text-xs leading-tight font-extrabold whitespace-normal text-white first:pl-3 last:px-3'
+                      className={cn(
+                        'px-1.5 text-xs leading-tight font-extrabold whitespace-normal text-white first:pl-3 last:px-3',
+                        getResponsiveColumnClassName(header.column.id)
+                      )}
                     >
                       {header.isPlaceholder ? null : header.column.getCanSort() ? (
                         <div
@@ -671,7 +676,10 @@ const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
                       <TableCell
                         key={cell.id}
                         data-label={cellLabel}
-                        className='h-14 px-1.5 whitespace-normal first:pl-3 last:px-3'
+                        className={cn(
+                          'h-14 px-1.5 whitespace-normal first:pl-3 last:px-3',
+                          getResponsiveColumnClassName(cell.column.id)
+                        )}
                       >
                         <span className='sr-only'>{cellLabel}: </span>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
