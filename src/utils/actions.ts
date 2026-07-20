@@ -465,6 +465,12 @@ const syncPendingRegistrationUsage = async ({
   previousMatriculationNumber: string
   previousStatus: string
 }) => {
+  if (previousStatus === memberStatus.Pending && nextStatus !== memberStatus.Pending) {
+    await removeRegistrationUsage(db, previousMatriculationNumber)
+
+    return
+  }
+
   if (nextStatus !== memberStatus.Pending) {
     return
   }

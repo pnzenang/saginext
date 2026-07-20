@@ -164,7 +164,7 @@ const DelegatePaymentsDashboard = ({
               Your Registration Dues: {currencyFormatter.format(currentRegistrationPayment.balanceDues)}
             </p>
             <p className='text-primary/80 mt-1 text-sm font-semibold break-words'>
-              {registrationMembersCount} registered member(s) x{' '}
+              {registrationMembersCount} pending member(s) x{' '}
               {currencyFormatter.format(registrationFeePerEligibleMember)}
             </p>
           </div>
@@ -225,7 +225,7 @@ const DelegatePaymentsDashboard = ({
             <div className='mt-2 grid gap-1.5 text-sm font-semibold'>
               <SummaryRow label='Amount Sent' value={currentRegistrationPayment.amountReceived} />
               <SummaryRow label='Amount Verified SAGI' value={currentRegistrationPayment.amountVerified} />
-              <SummaryRow label='Used for Registration' value={currentRegistrationPayment.balanceDues} />
+              <SummaryRow label='Pending Registration Fees' value={currentRegistrationPayment.balanceDues} />
             </div>
             <BalanceRow balance={currentRegistrationPayment.balance} />
             <p className='text-primary/70 mt-auto pt-4 text-[10px] leading-tight font-medium break-words'>

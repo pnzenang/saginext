@@ -34,27 +34,10 @@ export type AssociationRegistrationSummary = {
 const decimalToNumber = (value: unknown) => Number(value ?? 0)
 
 export const fetchRegistrationUsedMemberCount = async (associationCode: string) => {
-  const registrationUsages = await db.associationRegistrationUsage.findMany({
-    select: {
-      memberMatriculationNumber: true
-    },
-    where: {
-      associationCode
-    }
-  })
-
-  const memberMatriculationNumbers = registrationUsages.map(usage => usage.memberMatriculationNumber)
-
-  if (memberMatriculationNumbers.length === 0) {
-    return 0
-  }
-
   return db.member.count({
     where: {
       associationCode,
-      memberMatriculationNumber: {
-        in: memberMatriculationNumbers
-      }
+      memberStatus: memberStatus.Pending
     }
   })
 }
@@ -67,17 +50,8 @@ export const fetchAssociationRegistrationSummary = async (
     noStore()
   }
 
-  const [payment, registrationUsages, balanceAdjustment, paymentLedgerTotals] = await Promise.all([
+  const [payment, balanceAdjustment, paymentLedgerTotals] = await Promise.all([
     db.associationRegistrationPayment.findUnique({
-      where: {
-        associationCode
-      }
-    }),
-    db.associationRegistrationUsage.findMany({
-      select: {
-        amountUsed: true,
-        memberMatriculationNumber: true
-      },
       where: {
         associationCode
       }
@@ -95,13 +69,7 @@ export const fetchAssociationRegistrationSummary = async (
     })
   ])
 
-  const registrationUsageByMemberNumber = new Map(
-    registrationUsages.map(usage => [usage.memberMatriculationNumber, decimalToNumber(usage.amountUsed)])
-  )
-
-  const memberMatriculationNumbers = Array.from(registrationUsageByMemberNumber.keys())
-
-  const registrationMembers = await db.member.findMany({
+  const pendingRegistrationMembers = await db.member.findMany({
     orderBy: {
       createdAt: 'desc'
     },
@@ -113,26 +81,13 @@ export const fetchAssociationRegistrationSummary = async (
     },
     where: {
       associationCode,
-      OR: [
-        ...(memberMatriculationNumbers.length > 0
-          ? [
-              {
-                memberMatriculationNumber: {
-                  in: memberMatriculationNumbers
-                }
-              }
-            ]
-          : []),
-        {
-          memberStatus: memberStatus.Pending
-        }
-      ]
+      memberStatus: memberStatus.Pending
     }
   })
 
-  const registrationMembersWithAmounts = registrationMembers.map(member => ({
+  const registrationMembersWithAmounts = pendingRegistrationMembers.map(member => ({
     ...member,
-    amountUsed: registrationUsageByMemberNumber.get(member.memberMatriculationNumber) ?? registrationFeePerEligibleMember
+    amountUsed: registrationFeePerEligibleMember
   }))
 
   const balanceDues = Number(

@@ -74,7 +74,7 @@ const DelegatePaymentSummaryCards = ({ contribution, registration }: DelegatePay
       <PaymentSummaryCard title='Registration payment summary' balance={registration.balance}>
         <SummaryRow label='Amount Sent' value={registration.amountReceived} />
         <SummaryRow label='Amount Verified SAGI' value={registration.amountVerified} />
-        <SummaryRow label='Used for Registration' value={registration.balanceDues} />
+        <SummaryRow label='Pending Registration Fees' value={registration.balanceDues} />
       </PaymentSummaryCard>
     </div>
   </section>

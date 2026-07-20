@@ -24,7 +24,6 @@ const AdminRegistrationPayments = async () => {
   const [
     profiles,
     payments,
-    registrationUsages,
     balanceAdjustments,
     memberCounts,
     memberAssociationNames,
@@ -38,11 +37,6 @@ const AdminRegistrationPayments = async () => {
     db.associationRegistrationPayment.findMany({
       orderBy: {
         associationCode: 'asc'
-      }
-    }),
-    db.associationRegistrationUsage.findMany({
-      select: {
-        associationCode: true
       }
     }),
     db.associationBalanceAdjustment.findMany({
@@ -123,7 +117,6 @@ const AdminRegistrationPayments = async () => {
     new Set([
       ...profilesByCode.keys(),
       ...paymentsByCode.keys(),
-      ...registrationUsages.map(usage => usage.associationCode),
       ...balanceAdjustments.map(adjustment => adjustment.associationCode),
       ...statusCountsByCode.keys()
     ])
