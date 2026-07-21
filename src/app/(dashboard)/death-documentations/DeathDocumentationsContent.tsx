@@ -20,6 +20,7 @@ import {
   deceasedMemberDocumentLabels,
   deceasedMemberDocumentStatusLabels,
   getRequiredDeceasedMemberDocumentTypes,
+  hasApprovedRequiredDeceasedMemberDocuments,
   isUnitedStatesDeathCountry,
   type DeceasedMemberDocumentStatus,
   type DeceasedMemberDocumentType
@@ -326,13 +327,21 @@ const DeceasedMemberDocumentationCard = ({
   const requiredDocumentTypes = getRequiredDocumentTypes(deceasedMember)
   const countryOfDeath = deceasedMember.placeOfDeathCountry?.trim()
   const requiresInternationalDocuments = Boolean(countryOfDeath && !isUnitedStatesDeathCountry(countryOfDeath))
+  const showApprovedCaseBackground = isAdminUser && hasApprovedRequiredDeceasedMemberDocuments(deceasedMember)
 
   const documentsByType = new Map(
     deceasedMember.documents.map(uploadedDocument => [uploadedDocument.documentType, uploadedDocument])
   )
 
   return (
-    <Card className='rounded-lg py-0'>
+    <Card
+      className={cn(
+        'rounded-lg py-0',
+        showApprovedCaseBackground
+          ? 'border-green-200 bg-green-50/45 dark:border-green-900 dark:bg-green-950/20'
+          : null
+      )}
+    >
       <CardHeader className='border-b px-4 py-4 sm:px-6'>
         <div className='flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'>
           <div className='min-w-0'>
