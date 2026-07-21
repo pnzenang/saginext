@@ -105,38 +105,42 @@ const hasDocumentationDetails = (deceasedMember: DeathDocumentationCase) =>
     deceasedMember.placeOfDeathCountry?.trim()
   )
 
-const ReviewDocumentControls = ({ uploadedDocument }: { uploadedDocument: DeathDocumentationDocument }) => (
-  <div className='mt-3 grid gap-2 rounded-md border bg-white/60 p-2 dark:bg-black/10'>
-    <div className='flex items-center gap-1.5 text-xs font-semibold'>
-      <ShieldCheck className='size-3.5' />
-      Admin review
+const ReviewDocumentControls = ({ uploadedDocument }: { uploadedDocument: DeathDocumentationDocument }) => {
+  if (uploadedDocument.status === 'approved') return null
+
+  return (
+    <div className='mt-3 grid gap-2 rounded-md border bg-white/60 p-2 dark:bg-black/10'>
+      <div className='flex items-center gap-1.5 text-xs font-semibold'>
+        <ShieldCheck className='size-3.5' />
+        Admin review
+      </div>
+      <div className='grid gap-2 sm:grid-cols-[auto_minmax(0,1fr)]'>
+        <FormContainer action={reviewDeceasedMemberDocumentAction}>
+          <input type='hidden' name='documentId' value={uploadedDocument.id} />
+          <input type='hidden' name='status' value='approved' />
+          <SubmitButton
+            text='Approve'
+            className='h-8 w-full bg-green-700 px-3 text-xs normal-case hover:bg-green-800 sm:w-auto'
+          />
+        </FormContainer>
+        <FormContainer action={reviewDeceasedMemberDocumentAction} className='grid gap-2 sm:grid-cols-[1fr_auto]'>
+          <input type='hidden' name='documentId' value={uploadedDocument.id} />
+          <input type='hidden' name='status' value='rejected' />
+          <Input
+            name='rejectionReason'
+            placeholder='Reason if rejected'
+            defaultValue={uploadedDocument.status === 'rejected' ? (uploadedDocument.rejectionReason ?? '') : ''}
+            className='h-8 text-xs'
+          />
+          <SubmitButton
+            text='Reject'
+            className='h-8 w-full bg-red-700 px-3 text-xs normal-case hover:bg-red-800 sm:w-auto'
+          />
+        </FormContainer>
+      </div>
     </div>
-    <div className='grid gap-2 sm:grid-cols-[auto_minmax(0,1fr)]'>
-      <FormContainer action={reviewDeceasedMemberDocumentAction}>
-        <input type='hidden' name='documentId' value={uploadedDocument.id} />
-        <input type='hidden' name='status' value='approved' />
-        <SubmitButton
-          text='Approve'
-          className='h-8 w-full bg-green-700 px-3 text-xs normal-case hover:bg-green-800 sm:w-auto'
-        />
-      </FormContainer>
-      <FormContainer action={reviewDeceasedMemberDocumentAction} className='grid gap-2 sm:grid-cols-[1fr_auto]'>
-        <input type='hidden' name='documentId' value={uploadedDocument.id} />
-        <input type='hidden' name='status' value='rejected' />
-        <Input
-          name='rejectionReason'
-          placeholder='Reason if rejected'
-          defaultValue={uploadedDocument.status === 'rejected' ? (uploadedDocument.rejectionReason ?? '') : ''}
-          className='h-8 text-xs'
-        />
-        <SubmitButton
-          text='Reject'
-          className='h-8 w-full bg-red-700 px-3 text-xs normal-case hover:bg-red-800 sm:w-auto'
-        />
-      </FormContainer>
-    </div>
-  </div>
-)
+  )
+}
 
 const DocumentationSlot = ({
   currentUserId,
