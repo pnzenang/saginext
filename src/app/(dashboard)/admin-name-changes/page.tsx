@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { fetchAdminNameChangeRequestsAction } from '@/utils/actions'
 
 const AdminNameChangesPage = async () => {
-  const requests = await fetchAdminNameChangeRequestsAction()
+  const { currentUserId, requests } = await fetchAdminNameChangeRequestsAction()
   const pendingReviewCount = requests.filter(request => request.status === 'submitted').length
 
   return (
@@ -51,6 +51,7 @@ const AdminNameChangesPage = async () => {
           <h2 className='text-lg font-extrabold'>All name change requests</h2>
         </div>
         <NameChangeRequestList
+          currentUserId={currentUserId}
           emptyDescription='Delegate requests will appear here.'
           emptyTitle='No name change requests found.'
           isAdminUser

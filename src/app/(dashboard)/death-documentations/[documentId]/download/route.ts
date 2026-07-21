@@ -48,6 +48,7 @@ export const GET = async (_request: Request, { params }: { params: Promise<{ doc
       status: true,
       deceasedMember: {
         select: {
+          clerkId: true,
           memberMatriculationNumber: true
         }
       },
@@ -66,6 +67,7 @@ export const GET = async (_request: Request, { params }: { params: Promise<{ doc
   }
 
   const isDocumentOwner = document.clerkId === userId
+  const isDeathAnnouncementOwner = document.deceasedMember.clerkId === userId
   const isAdminUser = userId === process.env.ADMIN_USER_ID
 
   const isContributionTableDocument =
@@ -97,7 +99,7 @@ export const GET = async (_request: Request, { params }: { params: Promise<{ doc
 
   const isCurrentContributionTableDocument = Boolean(currentPublishedContributionTable?.deaths.length)
 
-  if (!isAdminUser && !isDocumentOwner && !isCurrentContributionTableDocument) {
+  if (!isAdminUser && !isDocumentOwner && !isDeathAnnouncementOwner && !isCurrentContributionTableDocument) {
     return new Response('Forbidden', { status: 403 })
   }
 

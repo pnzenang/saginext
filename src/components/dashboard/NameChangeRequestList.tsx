@@ -41,6 +41,7 @@ const getRequestSearchValue = (request: NameChangeRequestCardData) =>
     .toLowerCase()
 
 const NameChangeRequestList = ({
+  currentUserId,
   emptyDescription,
   emptyTitle,
   isAdminUser,
@@ -48,6 +49,7 @@ const NameChangeRequestList = ({
   searchPlaceholder,
   storageKey
 }: {
+  currentUserId: string
   emptyDescription: string
   emptyTitle: string
   isAdminUser: boolean
@@ -179,7 +181,12 @@ const NameChangeRequestList = ({
       ) : (
         <div className='grid gap-4 xl:grid-cols-2 2xl:grid-cols-3'>
           {paginatedRequests.map(request => (
-            <NameChangeRequestCard key={request.id} request={request} isAdminUser={isAdminUser} />
+            <NameChangeRequestCard
+              key={request.id}
+              currentUserId={currentUserId}
+              request={request}
+              isAdminUser={isAdminUser}
+            />
           ))}
         </div>
       )}

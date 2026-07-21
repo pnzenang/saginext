@@ -302,7 +302,7 @@ export const MemberTransferRequestActions = ({
   const requestInitiatorClerkId = getRequestInitiatorClerkId(request)
 
   const hasCancelAction =
-    currentUserClerkId === requestInitiatorClerkId && canDelegateCancelTransfer(request.status)
+    !isAdminUser && currentUserClerkId === requestInitiatorClerkId && canDelegateCancelTransfer(request.status)
 
   const delegateReviewKind =
     isInitiatingDelegate && request.status === 'receiving_delegate_pending'

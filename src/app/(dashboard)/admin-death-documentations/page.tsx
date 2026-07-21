@@ -6,10 +6,11 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 const AdminDeathDocumentationsPage = async () => {
-  const { deceasedMembers } = await fetchAdminDeathDocumentationCasesAction()
+  const { currentUserId, deceasedMembers } = await fetchAdminDeathDocumentationCasesAction()
 
   return (
     <DeathDocumentationsContent
+      currentUserId={currentUserId}
       deceasedMembers={deceasedMembers}
       description='Review, approve, reject, and manage death documentation cases submitted by all delegate associations.'
       emptyDescription='All delegate death documentation cases will appear here after death announcements are submitted.'

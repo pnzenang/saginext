@@ -2432,13 +2432,13 @@ export const fetchNameChangeDocumentationPageAction = async () => {
       return []
     })
 
-  return { members, requests: await addNameChangeAssociationNames(requests) }
+  return { currentUserId: user.id, members, requests: await addNameChangeAssociationNames(requests) }
 }
 
 export const fetchAdminNameChangeRequestsAction = async () => {
-  await assertAdminUser()
+  const user = await assertAdminUser()
 
-  return db.nameChangeRequest
+  const requests = await db.nameChangeRequest
     .findMany({
       include: {
         member: {
@@ -2459,6 +2459,8 @@ export const fetchAdminNameChangeRequestsAction = async () => {
 
       return []
     })
+
+  return { currentUserId: user.id, requests }
 }
 
 export const submitNameChangeRequestAction = async (
@@ -2778,10 +2780,12 @@ export const deleteNameChangeRequestAction = async (prevState: { requestId: stri
       throw new Error('Name change request not found.')
     }
 
-    const isAdminUser = user.id === process.env.ADMIN_USER_ID
+    if (user.id === process.env.ADMIN_USER_ID) {
+      throw new Error('Only the delegate who initiated this name change request can remove it.')
+    }
 
-    if (!isAdminUser && request.clerkId !== user.id) {
-      throw new Error('You can only remove name change requests from your own account.')
+    if (request.clerkId !== user.id) {
+      throw new Error('Only the delegate who initiated this name change request can remove it.')
     }
 
     await deleteCloudinaryDocument({
@@ -3443,6 +3447,10 @@ export const cancelMemberTransferRequestAction = async (prevState: { requestId: 
     }
 
     const requestInitiatorClerkId = getMemberTransferRequestInitiatorClerkId(request)
+
+    if (user.id === process.env.ADMIN_USER_ID) {
+      throw new Error(copy.initiatingDelegateOnlyCancel)
+    }
 
     if (requestInitiatorClerkId !== user.id) {
       throw new Error(copy.initiatingDelegateOnlyCancel)
@@ -4535,23 +4543,23 @@ export const fetchDelegateDeathDocumentationCasesAction = async () => {
     clerkId: user.id
   })
 
-  return { deceasedMembers }
+  return { currentUserId: user.id, deceasedMembers }
 }
 
 export const fetchAdminDeathDocumentationCasesAction = async () => {
-  await assertAdminUser()
+  const user = await assertAdminUser()
 
   noStore()
 
   const deceasedMembers = await fetchDeathDocumentationCases({})
 
-  return { deceasedMembers }
+  return { currentUserId: user.id, deceasedMembers }
 }
 
 export const fetchDeathDocumentationCasesAction = async () => {
-  const { deceasedMembers } = await fetchDelegateDeathDocumentationCasesAction()
+  const { currentUserId, deceasedMembers } = await fetchDelegateDeathDocumentationCasesAction()
 
-  return { deceasedMembers, isAdminUser: false }
+  return { currentUserId, deceasedMembers, isAdminUser: false }
 }
 
 export const updateDeathDocumentationDetailsAction = async (
@@ -4669,7 +4677,8 @@ export const uploadDeceasedMemberDocumentAction = async (
       select: {
         cloudinaryDeliveryType: true,
         cloudinaryPublicId: true,
-        cloudinaryResourceType: true
+        cloudinaryResourceType: true,
+        clerkId: true
       },
       where: {
         deceasedMemberId_documentType: {
@@ -4678,6 +4687,10 @@ export const uploadDeceasedMemberDocumentAction = async (
         }
       }
     })
+
+    if (existingDocument && existingDocument.clerkId !== user.id) {
+      throw new Error('Only the person who uploaded this document can replace it.')
+    }
 
     const safeFileName = getSafeDocumentFileName(file, documentType)
     const mimeType = file.type || 'application/octet-stream'
@@ -4694,7 +4707,7 @@ export const uploadDeceasedMemberDocumentAction = async (
       await db.deceasedMemberDocument.upsert({
         create: {
           associationCode: deceasedMember.associationCode,
-          clerkId: deceasedMember.clerkId,
+          clerkId: user.id,
           deceasedMemberId,
           documentType,
           fileName: safeFileName,
@@ -4703,7 +4716,7 @@ export const uploadDeceasedMemberDocumentAction = async (
         },
         update: {
           associationCode: deceasedMember.associationCode,
-          clerkId: deceasedMember.clerkId,
+          clerkId: user.id,
           fileName: safeFileName,
           mimeType,
           rejectionReason: null,
@@ -4761,10 +4774,8 @@ export const deleteDeceasedMemberDocumentAction = async (prevState: { documentId
       throw new Error('Document not found.')
     }
 
-    const isAdminUser = user.id === process.env.ADMIN_USER_ID
-
-    if (!isAdminUser && document.clerkId !== user.id) {
-      throw new Error('You can only remove documents from your own account.')
+    if (document.clerkId !== user.id) {
+      throw new Error('Only the person who uploaded this document can remove it.')
     }
 
     await deleteCloudinaryDocument({

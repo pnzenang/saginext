@@ -19,6 +19,7 @@ export type NameChangeRequestCardData = {
   id: string
   associationCode: string
   associationName?: string | null
+  clerkId: string
   createdAt: Date
   currentFirstName: string
   currentLastAndMiddleNames: string
@@ -157,15 +158,18 @@ const NameDetailGroup = ({
 )
 
 const NameChangeRequestCard = ({
+  currentUserId,
   isAdminUser,
   request
 }: {
+  currentUserId: string
   isAdminUser: boolean
   request: NameChangeRequestCardData
 }) => {
-  const deleteRequest = deleteNameChangeRequestAction.bind(null, { requestId: request.id })
   const hasDocument = Boolean(request.fileName && request.fileSize)
   const canUploadDocumentation = !isAdminUser && request.status === 'documentation_requested'
+  const canRemoveRequest = !isAdminUser && request.clerkId === currentUserId && request.status !== 'approved'
+  const deleteRequest = canRemoveRequest ? deleteNameChangeRequestAction.bind(null, { requestId: request.id }) : null
   const isApproved = request.status === 'approved'
 
   return (
@@ -221,7 +225,7 @@ const NameChangeRequestCard = ({
             {request.documentRequired ? 'Documentation requested' : 'No document uploaded'}
           </Badge>
         )}
-        {request.status !== 'approved' ? (
+        {deleteRequest ? (
           <FormContainer action={deleteRequest}>
             <SubmitButton text='Remove' className='h-8 bg-red-700 px-3 text-xs normal-case hover:bg-red-800' />
           </FormContainer>

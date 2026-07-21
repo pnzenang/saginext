@@ -19,8 +19,8 @@ import type { fetchDeathDocumentationCasesAction } from '@/utils/actions'
 import {
   deceasedMemberDocumentLabels,
   deceasedMemberDocumentStatusLabels,
-  deceasedMemberInternationalDocumentTypes,
-  deceasedMemberUnitedStatesDocumentTypes,
+  getRequiredDeceasedMemberDocumentTypes,
+  isUnitedStatesDeathCountry,
   type DeceasedMemberDocumentStatus,
   type DeceasedMemberDocumentType
 } from '@/utils/types'
@@ -31,6 +31,7 @@ type DeathDocumentationCase = Awaited<ReturnType<typeof fetchDeathDocumentationC
 type DeathDocumentationDocument = DeathDocumentationCase['documents'][number]
 
 type DeathDocumentationsContentProps = {
+  currentUserId: string
   deceasedMembers: DeathDocumentationCase[]
   description: string
   emptyDescription: string
@@ -76,23 +77,8 @@ const getDocumentStatusClassName = (status: string) => {
   return 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300'
 }
 
-const unitedStatesCountryValues = new Set(['UNITED STATES', 'UNITED STATES OF AMERICA', 'USA', 'US', 'U.S.', 'U.S.A.'])
-
-const isUnitedStatesCountry = (country?: string | null) => {
-  const normalizedCountry = country?.trim().toUpperCase()
-
-  return normalizedCountry ? unitedStatesCountryValues.has(normalizedCountry) : false
-}
-
-const getRequiredDocumentTypes = (deceasedMember: DeathDocumentationCase): DeceasedMemberDocumentType[] => {
-  const countryOfDeath = deceasedMember.placeOfDeathCountry?.trim()
-
-  if (countryOfDeath && !isUnitedStatesCountry(countryOfDeath)) {
-    return [...deceasedMemberInternationalDocumentTypes]
-  }
-
-  return [...deceasedMemberUnitedStatesDocumentTypes]
-}
+const getRequiredDocumentTypes = (deceasedMember: DeathDocumentationCase): DeceasedMemberDocumentType[] =>
+  getRequiredDeceasedMemberDocumentTypes(deceasedMember)
 
 const getUploadedDocumentCount = (deceasedMember: DeathDocumentationCase) =>
   getRequiredDocumentTypes(deceasedMember).filter(documentType =>
@@ -153,19 +139,22 @@ const ReviewDocumentControls = ({ uploadedDocument }: { uploadedDocument: DeathD
 )
 
 const DocumentationSlot = ({
+  currentUserId,
   deceasedMember,
   documentType,
   isAdminUser,
   uploadedDocument
 }: {
+  currentUserId: string
   deceasedMember: DeathDocumentationCase
   documentType: DeceasedMemberDocumentType
   isAdminUser: boolean
   uploadedDocument?: DeathDocumentationDocument
 }) => {
   const inputId = `${deceasedMember.id}-${documentType}`
+  const canManageUploadedDocument = !uploadedDocument || uploadedDocument.clerkId === currentUserId
 
-  const deleteDocument = uploadedDocument
+  const deleteDocument = uploadedDocument && canManageUploadedDocument
     ? deleteDeceasedMemberDocumentAction.bind(null, { documentId: uploadedDocument.id })
     : null
 
@@ -221,17 +210,23 @@ const DocumentationSlot = ({
         </div>
       ) : null}
 
-      <FormContainer action={uploadDeceasedMemberDocumentAction} className='grid gap-2'>
-        <input type='hidden' name='deceasedMemberId' value={deceasedMember.id} />
-        <input type='hidden' name='documentType' value={documentType} />
-        <Label htmlFor={inputId}>{uploadedDocument ? 'Replace file' : 'Choose file'}</Label>
-        <p className='text-muted-foreground text-xs'>PDF or image, up to 20 MB.</p>
-        <Input id={inputId} name='documentFile' type='file' accept={documentAccept} required />
-        <SubmitButton
-          text={uploadedDocument ? 'Replace document' : 'Upload document'}
-          className='h-9 w-full text-sm normal-case'
-        />
-      </FormContainer>
+      {canManageUploadedDocument ? (
+        <FormContainer action={uploadDeceasedMemberDocumentAction} className='grid gap-2'>
+          <input type='hidden' name='deceasedMemberId' value={deceasedMember.id} />
+          <input type='hidden' name='documentType' value={documentType} />
+          <Label htmlFor={inputId}>{uploadedDocument ? 'Replace file' : 'Choose file'}</Label>
+          <p className='text-muted-foreground text-xs'>PDF or image, up to 20 MB.</p>
+          <Input id={inputId} name='documentFile' type='file' accept={documentAccept} required />
+          <SubmitButton
+            text={uploadedDocument ? 'Replace document' : 'Upload document'}
+            className='h-9 w-full text-sm normal-case'
+          />
+        </FormContainer>
+      ) : (
+        <p className='text-muted-foreground rounded-md border px-3 py-2 text-xs font-semibold'>
+          Only the person who uploaded this document can replace or remove it.
+        </p>
+      )}
 
       {isAdminUser && uploadedDocument ? <ReviewDocumentControls uploadedDocument={uploadedDocument} /> : null}
     </div>
@@ -241,7 +236,7 @@ const DocumentationSlot = ({
 const DeathDocumentationDetailsForm = ({ deceasedMember }: { deceasedMember: DeathDocumentationCase }) => {
   const detailsComplete = hasDocumentationDetails(deceasedMember)
   const countryOfDeath = deceasedMember.placeOfDeathCountry?.trim()
-  const requiresInternationalDocuments = Boolean(countryOfDeath && !isUnitedStatesCountry(countryOfDeath))
+  const requiresInternationalDocuments = Boolean(countryOfDeath && !isUnitedStatesDeathCountry(countryOfDeath))
 
   return (
     <div className='bg-muted/20 grid gap-3 rounded-md border p-4'>
@@ -315,16 +310,18 @@ const DeathDocumentationDetailsForm = ({ deceasedMember }: { deceasedMember: Dea
 }
 
 const DeceasedMemberDocumentationCard = ({
+  currentUserId,
   deceasedMember,
   isAdminUser
 }: {
+  currentUserId: string
   deceasedMember: DeathDocumentationCase
   isAdminUser: boolean
 }) => {
   const uploadedCount = getUploadedDocumentCount(deceasedMember)
   const requiredDocumentTypes = getRequiredDocumentTypes(deceasedMember)
   const countryOfDeath = deceasedMember.placeOfDeathCountry?.trim()
-  const requiresInternationalDocuments = Boolean(countryOfDeath && !isUnitedStatesCountry(countryOfDeath))
+  const requiresInternationalDocuments = Boolean(countryOfDeath && !isUnitedStatesDeathCountry(countryOfDeath))
 
   const documentsByType = new Map(
     deceasedMember.documents.map(uploadedDocument => [uploadedDocument.documentType, uploadedDocument])
@@ -375,6 +372,7 @@ const DeceasedMemberDocumentationCard = ({
               {requiredDocumentTypes.map(documentType => (
                 <DocumentationSlot
                   key={documentType}
+                  currentUserId={currentUserId}
                   deceasedMember={deceasedMember}
                   documentType={documentType}
                   isAdminUser={isAdminUser}
@@ -390,6 +388,7 @@ const DeceasedMemberDocumentationCard = ({
 }
 
 const DeathDocumentationsContent = ({
+  currentUserId,
   deceasedMembers,
   description,
   emptyDescription,
@@ -437,6 +436,7 @@ const DeathDocumentationsContent = ({
           {deceasedMembers.map(deceasedMember => (
             <DeceasedMemberDocumentationCard
               key={deceasedMember.id}
+              currentUserId={currentUserId}
               deceasedMember={deceasedMember}
               isAdminUser={isAdminUser}
             />

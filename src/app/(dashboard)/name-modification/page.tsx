@@ -8,7 +8,7 @@ import { fetchNameChangeDocumentationPageAction } from '@/utils/actions'
 import NameChangeProposalForm from './NameChangeProposalForm'
 
 const NameModification = async () => {
-  const { members, requests } = await fetchNameChangeDocumentationPageAction()
+  const { currentUserId, members, requests } = await fetchNameChangeDocumentationPageAction()
   const requiredActionCount = requests.filter(request => request.status === 'documentation_requested').length
 
   return (
@@ -67,6 +67,7 @@ const NameModification = async () => {
           <h2 className='text-lg font-extrabold'>Your requests</h2>
         </div>
         <NameChangeRequestList
+          currentUserId={currentUserId}
           emptyDescription='Submitted requests will appear here.'
           emptyTitle='No name change requests found.'
           isAdminUser={false}
