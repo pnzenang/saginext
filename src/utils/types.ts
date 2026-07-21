@@ -122,6 +122,7 @@ export type DeceasedMemberType = {
   dateOfDeath: string
   placeOfDeath: string
   placeOfDeathCountry?: string | null
+  hasApprovedDeathDocuments?: boolean
   createdAt: Date
   updatedAt: Date
 }
@@ -203,6 +204,47 @@ export type DeceasedMemberDocument = {
   rejectionReason?: string | null
   createdAt: Date
   updatedAt: Date
+}
+
+const unitedStatesDeathCountryValues = new Set([
+  'UNITED STATES',
+  'UNITED STATES OF AMERICA',
+  'USA',
+  'US',
+  'U.S.',
+  'U.S.A.'
+])
+
+export const isUnitedStatesDeathCountry = (country?: string | null) => {
+  const normalizedCountry = country?.trim().toUpperCase()
+
+  return normalizedCountry ? unitedStatesDeathCountryValues.has(normalizedCountry) : false
+}
+
+export const getRequiredDeceasedMemberDocumentTypes = (
+  deceasedMember: Pick<DeceasedMemberType, 'placeOfDeathCountry'>
+): DeceasedMemberDocumentType[] => {
+  const countryOfDeath = deceasedMember.placeOfDeathCountry?.trim()
+
+  if (countryOfDeath && !isUnitedStatesDeathCountry(countryOfDeath)) {
+    return [...deceasedMemberInternationalDocumentTypes]
+  }
+
+  return [...deceasedMemberUnitedStatesDocumentTypes]
+}
+
+export const hasApprovedRequiredDeceasedMemberDocuments = (
+  deceasedMember: Pick<DeceasedMemberType, 'placeOfDeathCountry'> & {
+    documents?: Pick<DeceasedMemberDocument, 'documentType' | 'status'>[]
+  }
+) => {
+  const documentsByType = new Map(
+    deceasedMember.documents?.map(document => [document.documentType, document.status]) ?? []
+  )
+
+  return getRequiredDeceasedMemberDocumentTypes(deceasedMember).every(
+    documentType => documentsByType.get(documentType) === 'approved'
+  )
 }
 
 export type DeceasedMemberWithDocuments = DeceasedMemberType & {

@@ -18,6 +18,7 @@ import {
   deceasedMemberDocumentLabels,
   deceasedMemberDocumentStatuses,
   deceasedMemberDocumentTypes,
+  hasApprovedRequiredDeceasedMemberDocuments,
   memberStatus,
   memberTransferRequestStatuses,
   nameChangeRequestStatuses,
@@ -3980,13 +3981,27 @@ export const fetchDeceasedMembersAction = async () => {
   const user = await getAuthUser()
 
   const deceasedMember = await db.deceasedMember.findMany({
+    include: {
+      documents: {
+        select: {
+          documentType: true,
+          status: true
+        }
+      }
+    },
     where: {
       clerkId: user.id
     },
     orderBy: { createdAt: 'desc' }
   })
 
-  return deceasedMember
+  return deceasedMember.map(({ documents, ...member }) => ({
+    ...member,
+    hasApprovedDeathDocuments: hasApprovedRequiredDeceasedMemberDocuments({
+      documents,
+      placeOfDeathCountry: member.placeOfDeathCountry
+    })
+  }))
 }
 
 export const createDeceasedMemberActionAdmin = async (
@@ -4055,13 +4070,27 @@ export const fetchDeceasedMembersActionAdmin = async () => {
   await assertAdminUser()
 
   const deceasedMember = await db.deceasedMember.findMany({
+    include: {
+      documents: {
+        select: {
+          documentType: true,
+          status: true
+        }
+      }
+    },
     where: {
       // clerkId: user.id
     },
     orderBy: { createdAt: 'desc' }
   })
 
-  return deceasedMember
+  return deceasedMember.map(({ documents, ...member }) => ({
+    ...member,
+    hasApprovedDeathDocuments: hasApprovedRequiredDeceasedMemberDocuments({
+      documents,
+      placeOfDeathCountry: member.placeOfDeathCountry
+    })
+  }))
 }
 
 export const saveContributionCalculationAdminFeeAction = async (

@@ -653,31 +653,39 @@ const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map(row => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && 'selected'}
-                  className='hover:bg-purple-300/30'
-                >
-                  {row.getVisibleCells().map(cell => {
-                    const cellLabel = getDeceasedMemberTableCellLabel(cell)
+              table.getRowModel().rows.map(row => {
+                const hasApprovedDeathDocuments = row.original.hasApprovedDeathDocuments
 
-                    return (
-                      <TableCell
-                        key={cell.id}
-                        data-label={cellLabel}
-                        className={cn(
-                          'h-14 px-1.5 whitespace-normal first:pl-3 last:w-24 last:px-3',
-                          getResponsiveColumnClassName(cell.column.id)
-                        )}
-                      >
-                        <span className='sr-only'>{cellLabel}: </span>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </TableCell>
-                    )
-                  })}
-                </TableRow>
-              ))
+                return (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && 'selected'}
+                    className={cn(
+                      'hover:bg-purple-300/30',
+                      hasApprovedDeathDocuments &&
+                        'bg-green-600/10 hover:bg-green-600/20 dark:bg-green-400/10 dark:hover:bg-green-400/15'
+                    )}
+                  >
+                    {row.getVisibleCells().map(cell => {
+                      const cellLabel = getDeceasedMemberTableCellLabel(cell)
+
+                      return (
+                        <TableCell
+                          key={cell.id}
+                          data-label={cellLabel}
+                          className={cn(
+                            'h-14 px-1.5 whitespace-normal first:pl-3 last:w-24 last:px-3',
+                            getResponsiveColumnClassName(cell.column.id)
+                          )}
+                        >
+                          <span className='sr-only'>{cellLabel}: </span>
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </TableCell>
+                      )
+                    })}
+                  </TableRow>
+                )
+              })
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length} className='h-24 text-center'>
