@@ -4773,7 +4773,7 @@ export const reviewDeceasedMemberDocumentAction = async (
       throw new Error('Select a valid document review status.')
     }
 
-    await db.deceasedMemberDocument.update({
+    const { count } = await db.deceasedMemberDocument.updateMany({
       data: {
         rejectionReason:
           status === 'rejected' ? rejectionReason || 'Please upload a clearer or corrected document.' : null,
@@ -4783,6 +4783,10 @@ export const reviewDeceasedMemberDocumentAction = async (
         id: documentId
       }
     })
+
+    if (count === 0) {
+      throw new Error('Document not found. It may have been removed or replaced. Please refresh and try again.')
+    }
 
     revalidateDeathDocumentationViews()
 

@@ -19,11 +19,11 @@ const EditCaseStatus = async ({ params }: { params: { id: string } }) => {
     countryOfResidence,
     nameOfBeneficiary,
     memberMatriculationNumber,
+    registrationDate,
 
     placeOfDeath,
     dateOfDeath,
-    associationName,
-    createdAt
+    associationName
   } = deceasedMember
 
   return (
@@ -57,7 +57,7 @@ const EditCaseStatus = async ({ params }: { params: { id: string } }) => {
                 type='text'
                 name='registrationDate'
                 label='registration date'
-                defaultValue={createdAt.toLocaleDateString()}
+                defaultValue={registrationDate}
 
                 // placeholder='MM/DD/YYYY'
               />
