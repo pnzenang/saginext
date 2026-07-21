@@ -4903,52 +4903,45 @@ export const fetchSingleDeceasedMemberDetailsAdmin = async (deceasedMemberId: st
   return deceasedMember
 }
 
+const updateDeceasedMemberDetailsAsAdmin = async (formData: FormData) => {
+  await assertAdminUser()
+
+  const deceasedMemberId = formData.get('id')
+
+  if (typeof deceasedMemberId !== 'string' || !deceasedMemberId) {
+    throw new Error('Missing deceased member ID')
+  }
+
+  const rawData = Object.fromEntries(formData)
+  const validatedFields = validateWithZodSchema(DeceasedMemberSchema, rawData)
+
+  await db.deceasedMember.update({
+    where: {
+      id: deceasedMemberId
+    },
+    data: {
+      ...validatedFields
+    }
+  })
+
+  revalidatePath('/admin-all-deceased')
+  revalidatePath('/deceased-members')
+  revalidatePath(`/admin-all-deceased/${deceasedMemberId}/edit`)
+}
+
 export const updateDeceasedMemberDetailsAction = async (prevState: any, formData: FormData) => {
-  const user = await getAuthUser()
-
   try {
-    const deceasedMemberId = formData.get('id') as string
-    const rawData = Object.fromEntries(formData)
-    const validatedFields = validateWithZodSchema(DeceasedMemberSchema, rawData)
-
-    await db.deceasedMember.update({
-      where: {
-        id: deceasedMemberId,
-        clerkId: user.id
-      },
-      data: {
-        ...validatedFields
-      }
-    })
-    revalidatePath(`/deceased-members/${deceasedMemberId}/edit`)
-
-    // return { message: `case status Updated Successfully` }
+    await updateDeceasedMemberDetailsAsAdmin(formData)
   } catch (error) {
     return renderError(error)
   }
 
-  redirect('/deceased-members')
+  redirect('/admin-all-deceased')
 }
 
 export const updateDeceasedMemberDetailsActionAdmin = async (prevState: any, formData: FormData) => {
-  await assertAdminUser()
-
   try {
-    const deceasedMemberId = formData.get('id') as string
-    const rawData = Object.fromEntries(formData)
-    const validatedFields = validateWithZodSchema(DeceasedMemberSchema, rawData)
-
-    await db.deceasedMember.update({
-      where: {
-        id: deceasedMemberId
-      },
-      data: {
-        ...validatedFields
-      }
-    })
-    revalidatePath(`admin-all-deceased/${deceasedMemberId}/edit`)
-
-    // return { message: `case status Updated Successfully` }
+    await updateDeceasedMemberDetailsAsAdmin(formData)
   } catch (error) {
     return renderError(error)
   }
