@@ -281,6 +281,17 @@ const getRequiredFormValue = (formData: FormData, fieldName: string) => {
   return value.trim()
 }
 
+const getStringFormValues = (formData: FormData, fieldName: string) =>
+  Array.from(
+    new Set(
+      formData
+        .getAll(fieldName)
+        .filter((value): value is string => typeof value === 'string')
+        .map(value => value.trim())
+        .filter(Boolean)
+    )
+  )
+
 const isDeceasedMemberDocumentType = (value: string): value is DeceasedMemberDocumentType =>
   deceasedMemberDocumentTypes.includes(value as DeceasedMemberDocumentType)
 
@@ -2144,6 +2155,79 @@ export const resetAssociationRegistrationPaymentAction = async (formData: FormDa
     revalidatePaymentViews()
   } catch (error) {
     renderError(error)
+  }
+}
+
+export const movePendingMembersToAwaitingPublicationAction = async (
+  _prevState: { message: string },
+  formData: FormData
+): Promise<{ message: string }> => {
+  await assertAdminUser()
+
+  try {
+    const memberIds = getStringFormValues(formData, 'memberIds')
+
+    if (memberIds.length === 0) {
+      throw new Error('Select at least one pending member.')
+    }
+
+    const updatedCount = await db.$transaction(async tx => {
+      const pendingMembers = await tx.member.findMany({
+        select: {
+          id: true,
+          memberMatriculationNumber: true
+        },
+        where: {
+          id: {
+            in: memberIds
+          },
+          memberStatus: memberStatus.Pending
+        }
+      })
+
+      if (pendingMembers.length === 0) {
+        return 0
+      }
+
+      const pendingMemberIds = pendingMembers.map(member => member.id)
+      const pendingMatriculationNumbers = pendingMembers.map(member => member.memberMatriculationNumber)
+
+      const updatedMembers = await tx.member.updateMany({
+        data: {
+          memberStatus: memberStatus.Awaiting
+        },
+        where: {
+          id: {
+            in: pendingMemberIds
+          },
+          memberStatus: memberStatus.Pending
+        }
+      })
+
+      await tx.associationRegistrationUsage.deleteMany({
+        where: {
+          memberMatriculationNumber: {
+            in: pendingMatriculationNumbers
+          }
+        }
+      })
+
+      return updatedMembers.count
+    })
+
+    revalidatePaymentViews()
+
+    if (updatedCount === 0) {
+      return {
+        message: 'No selected pending members were found.'
+      }
+    }
+
+    return {
+      message: `${updatedCount} pending member${updatedCount === 1 ? '' : 's'} moved to Awaiting Publication.`
+    }
+  } catch (error) {
+    return renderError(error)
   }
 }
 

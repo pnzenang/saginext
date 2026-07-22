@@ -13,7 +13,7 @@ type MembersDataTableProps = {
 
 const MembersDataTable = dynamic(() => import('@/components/shadcn-studio/blocks/database-adminAllMembers'), {
   loading: () => (
-    <MemberTableSkeleton columnCount={8} filterCount={4} showExportPage showSummaryCards titleClassName='max-w-xl' />
+    <MemberTableSkeleton columnCount={10} filterCount={4} showExportPage showSummaryCards titleClassName='max-w-xl' />
   ),
   ssr: false
 })

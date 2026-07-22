@@ -4,7 +4,16 @@ import { useActionState, useEffect, useId, useMemo, useState } from 'react'
 
 import { useFormStatus } from 'react-dom'
 
-import type { Cell, Column, ColumnDef, ColumnFiltersState, PaginationState, RowData, Row } from '@tanstack/react-table'
+import type {
+  Cell,
+  Column,
+  ColumnDef,
+  ColumnFiltersState,
+  PaginationState,
+  RowData,
+  Row,
+  RowSelectionState
+} from '@tanstack/react-table'
 import {
   flexRender,
   getCoreRowModel,
@@ -35,6 +44,7 @@ import {
   ShieldCheck,
   Trash2,
   UploadIcon,
+  UserCheck,
   Users,
   XIcon
 } from 'lucide-react'
@@ -59,6 +69,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -88,7 +99,10 @@ import {
   awaitingPublicationVestingLongevityDays,
   getAwaitingPublicationVestingCutoff
 } from '@/utils/sagi-member-longevity'
-import { vestEligibleAwaitingPublicationMembersAction } from '@/utils/actions'
+import {
+  movePendingMembersToAwaitingPublicationAction,
+  vestEligibleAwaitingPublicationMembersAction
+} from '@/utils/actions'
 import { memberStatus, type MemberType } from '@/utils/types'
 
 declare module '@tanstack/react-table' {
@@ -120,6 +134,15 @@ const adminMemberTableCopy = {
       pending: 'Please wait...',
       title: 'Move eligible members to Vested?'
     },
+    bulkAwaiting: {
+      button: (count: number) => `Make Awaiting (${count})`,
+      cancel: 'Cancel',
+      confirm: 'Make Awaiting',
+      description: (count: number) =>
+        `This will move ${count} selected pending member${count === 1 ? '' : 's'} to Awaiting Publication. Their registration fee dues will no longer count as pending.`,
+      pending: 'Please wait...',
+      title: 'Move selected pending members to Awaiting?'
+    },
     columns: {
       actions: 'Actions',
       actionsShort: 'Act.',
@@ -138,6 +161,7 @@ const adminMemberTableCopy = {
       recommendationShort: 'Rec.',
       registrationDues: `Registration Dues (${registrationPaymentDeadlineDays} days)`,
       registrationDuesShort: 'Reg. Dues',
+      select: 'Select',
       status: 'Status'
     },
     export: {
@@ -165,6 +189,10 @@ const adminMemberTableCopy = {
       previousAria: 'Go to previous page'
     },
     pendingMatriculation: 'Pending',
+    selection: {
+      member: (name: string) => `Select ${name}`,
+      page: 'Select all pending members on this page'
+    },
     summary: {
       awaiting: 'Awaiting',
       delinquent: 'Delinquent',
@@ -191,6 +219,15 @@ const adminMemberTableCopy = {
       pending: 'Veuillez patienter...',
       title: 'Passer les membres admissibles à acquis ?'
     },
+    bulkAwaiting: {
+      button: (count: number) => `Mettre en attente (${count})`,
+      cancel: 'Annuler',
+      confirm: 'Mettre en attente',
+      description: (count: number) =>
+        `Cette action déplacera ${count} membre${count === 1 ? '' : 's'} en attente sélectionné${count === 1 ? '' : 's'} vers En attente de publication. Les frais d'inscription ne compteront plus comme dus.`,
+      pending: 'Veuillez patienter...',
+      title: 'Passer les membres sélectionnés à En attente de publication ?'
+    },
     columns: {
       actions: 'Actions',
       actionsShort: 'Act.',
@@ -209,6 +246,7 @@ const adminMemberTableCopy = {
       recommendationShort: 'Reco.',
       registrationDues: `Frais d'inscription (${registrationPaymentDeadlineDays} jours)`,
       registrationDuesShort: 'Frais inscr.',
+      select: 'Sélectionner',
       status: 'Statut'
     },
     export: {
@@ -236,6 +274,10 @@ const adminMemberTableCopy = {
       previousAria: 'Aller à la page précédente'
     },
     pendingMatriculation: 'En attente',
+    selection: {
+      member: (name: string) => `Sélectionner ${name}`,
+      page: 'Sélectionner tous les membres en attente sur cette page'
+    },
     summary: {
       awaiting: 'En attente de publication',
       delinquent: 'Pas en règle',
@@ -327,6 +369,54 @@ const RegistrationPaymentWarningCell = ({ language, member }: { language: AppLan
 }
 
 const getColumns = (copy: AdminMemberTableCopy, language: AppLanguage): ColumnDef<MemberType>[] => [
+  {
+    id: 'select',
+    header: ({ table }) => {
+      const selectablePageRows = table.getRowModel().rows.filter(row => row.getCanSelect())
+      const selectedPageRows = selectablePageRows.filter(row => row.getIsSelected())
+
+      const checked =
+        selectablePageRows.length > 0 && selectedPageRows.length === selectablePageRows.length
+          ? true
+          : selectedPageRows.length > 0
+            ? 'indeterminate'
+            : false
+
+      return (
+        <div className='flex items-center justify-center'>
+          <Checkbox
+            aria-label={copy.selection.page}
+            checked={checked}
+            disabled={selectablePageRows.length === 0}
+            onCheckedChange={value => {
+              selectablePageRows.forEach(row => row.toggleSelected(Boolean(value)))
+            }}
+          />
+        </div>
+      )
+    },
+    cell: ({ row }) => {
+      const memberName = [row.original.firstName, row.original.lastAndMiddleNames].filter(Boolean).join(' ')
+      const labelName = memberName || row.original.memberMatriculationNumber
+
+      return (
+        <div className='flex items-center justify-center'>
+          <Checkbox
+            aria-label={copy.selection.member(labelName)}
+            checked={row.getIsSelected()}
+            disabled={!row.getCanSelect()}
+            onCheckedChange={value => row.toggleSelected(Boolean(value))}
+          />
+        </div>
+      )
+    },
+    enableHiding: false,
+    enableSorting: false,
+    meta: {
+      label: copy.columns.select
+    },
+    size: 42
+  },
   {
     header: copy.columns.code,
     accessorKey: 'associationCode',
@@ -542,10 +632,18 @@ const getMemberTableCellLabel = (cell: Cell<MemberType, unknown>) => getColumnLa
 const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; language?: AppLanguage }) => {
   const copy = adminMemberTableCopy[language]
   const [columnFilters, setColumnFilters] = usePersistentColumnFilters('sagi:admin-all-members:columnFilters')
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
 
   const [autoVestState, autoVestFormAction] = useActionState(vestEligibleAwaitingPublicationMembersAction, {
     message: ''
   })
+
+  const [moveToAwaitingState, moveToAwaitingFormAction] = useActionState(
+    movePendingMembersToAwaitingPublicationAction,
+    {
+      message: ''
+    }
+  )
 
   const pageSize = 200
 
@@ -574,9 +672,11 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
     },
     state: {
       columnFilters,
-      pagination
+      pagination,
+      rowSelection
     },
     onColumnFiltersChange: setColumnFilters,
+    enableRowSelection: row => row.original.memberStatus === memberStatus.Pending,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -584,9 +684,25 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
     getFacetedUniqueValues: getFacetedUniqueValues(),
     getFacetedMinMaxValues: getFacetedMinMaxValues(),
     enableSortingRemoval: false,
+    getRowId: row => row.id,
     getPaginationRowModel: getPaginationRowModel(),
+    onRowSelectionChange: setRowSelection,
     onPaginationChange: setPagination
   })
+
+  useEffect(() => {
+    if (!moveToAwaitingState.message) return
+
+    toast(moveToAwaitingState.message)
+    setRowSelection({})
+  }, [moveToAwaitingState.message])
+
+  const selectedPendingMembers = table
+    .getSelectedRowModel()
+    .rows.map(row => row.original)
+    .filter(member => member.memberStatus === memberStatus.Pending)
+
+  const selectedPendingCount = selectedPendingMembers.length
 
   const hasMatriculationColumn = Boolean(table.getColumn('memberMatriculationNumber'))
 
@@ -882,6 +998,34 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button
+                      className='w-full bg-blue-700 text-white hover:bg-blue-800 focus-visible:ring-blue-700/30 sm:w-auto'
+                      disabled={selectedPendingCount === 0}
+                    >
+                      <UserCheck />
+                      {copy.bulkAwaiting.button(selectedPendingCount)}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>{copy.bulkAwaiting.title}</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {copy.bulkAwaiting.description(selectedPendingCount)}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <form action={moveToAwaitingFormAction}>
+                      {selectedPendingMembers.map(member => (
+                        <input key={member.id} type='hidden' name='memberIds' value={member.id} />
+                      ))}
+                      <AlertDialogFooter>
+                        <AlertDialogCancel type='button'>{copy.bulkAwaiting.cancel}</AlertDialogCancel>
+                        <BulkAwaitingSubmitButton copy={copy.bulkAwaiting} disabled={selectedPendingCount === 0} />
+                      </AlertDialogFooter>
+                    </form>
+                  </AlertDialogContent>
+                </AlertDialog>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
                       className='w-full bg-emerald-700 text-white hover:bg-emerald-800 focus-visible:ring-emerald-700/30 sm:w-auto'
                       disabled={eligibleAutoVestCount === 0}
                     >
@@ -942,6 +1086,11 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
               </div>
             </div>
           </div>
+          {moveToAwaitingState.message ? (
+            <p className='text-primary text-sm font-semibold' aria-live='polite'>
+              {moveToAwaitingState.message}
+            </p>
+          ) : null}
           {autoVestState.message ? (
             <p className='text-primary text-sm font-semibold' aria-live='polite'>
               {autoVestState.message}
@@ -1096,6 +1245,33 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
 }
 
 export default MembersDataTable
+
+function BulkAwaitingSubmitButton({
+  copy,
+  disabled
+}: {
+  copy: AdminMemberTableCopy['bulkAwaiting']
+  disabled: boolean
+}) {
+  const { pending } = useFormStatus()
+
+  return (
+    <Button
+      type='submit'
+      disabled={disabled || pending}
+      className='bg-blue-700 text-white hover:bg-blue-800 focus-visible:ring-blue-700/30'
+    >
+      {pending ? (
+        <>
+          <Loader className='animate-spin' />
+          {copy.pending}
+        </>
+      ) : (
+        copy.confirm
+      )}
+    </Button>
+  )
+}
 
 function AutoVestSubmitButton({
   copy,
