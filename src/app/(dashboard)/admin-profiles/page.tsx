@@ -29,7 +29,7 @@ const AdminProfilesPage = async () => {
   if (userId !== process.env.ADMIN_USER_ID) redirect('/all-members')
 
   const profiles = await db.profile.findMany({
-    orderBy: [{ associationName: 'asc' }, { createdAt: 'desc' }],
+    orderBy: [{ createdAt: 'desc' }, { associationName: 'asc' }],
     select: {
       associationCode: true,
       associationName: true,
