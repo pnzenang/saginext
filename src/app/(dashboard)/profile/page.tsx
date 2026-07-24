@@ -59,6 +59,8 @@ const Profile = async () => {
               name='associationName'
               label={copy.labels.associationName}
               defaultValue={profile.associationName}
+              readOnly
+              title='Association name can only be changed by SAGI admin'
             />
             <FormInput
               type='text'
@@ -67,7 +69,8 @@ const Profile = async () => {
               defaultValue={profile.associationCode}
               maxLength={4}
               pattern='[A-Za-z]{4}'
-              title='Enter exactly 4 letters, no numbers'
+              readOnly
+              title='Association code can only be changed by SAGI admin'
               autoComplete='off'
             />
           </div>

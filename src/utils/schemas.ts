@@ -42,6 +42,11 @@ export const profileSchema = z.object({
   thirdDelegateEmail: z.email('Please enter a valid email address')
 })
 
+export const profileUpdateSchema = profileSchema.omit({
+  associationCode: true,
+  associationName: true
+})
+
 export const memberSchema = z.object({
   firstName: z.string().toUpperCase(),
 

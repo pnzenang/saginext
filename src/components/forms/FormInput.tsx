@@ -48,7 +48,7 @@ const FormInput = (props: FormInputProps) => {
         title={title}
         autoComplete={autoComplete}
         inputMode={inputMode}
-        className='border-primary border uppercase'
+        className='border-primary read-only:bg-muted read-only:text-muted-foreground read-only:cursor-not-allowed border uppercase'
       />
     </div>
   )

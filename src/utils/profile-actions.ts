@@ -8,7 +8,7 @@ import { redirect } from 'next/navigation'
 import { Prisma } from '@/generated/prisma/client'
 
 import db from './db'
-import { profileSchema, validateWithZodSchema } from './schemas'
+import { profileSchema, profileUpdateSchema, validateWithZodSchema } from './schemas'
 
 const getRequiredUserId = async () => {
   const { userId } = await auth()
@@ -104,7 +104,7 @@ export const updateProfileAction = async (prevState: any, formData: FormData): P
 
   try {
     const rawData = Object.fromEntries(formData)
-    const validatedFields = validateWithZodSchema(profileSchema, rawData)
+    const validatedFields = validateWithZodSchema(profileUpdateSchema, rawData)
 
     await db.profile.update({
       where: {
