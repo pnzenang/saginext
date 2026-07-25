@@ -200,6 +200,7 @@ export const memberTransferRequestStatusLabelsByLanguage: Record<
 > = {
   en: memberTransferRequestStatusLabels,
   fr: {
+    admin_initiated: "Initié par l'admin - libération en attente",
     admin_approved: 'Approuvé par l’admin',
     admin_rejected: 'Rejeté par l’admin',
     cancelled: 'Annulé',

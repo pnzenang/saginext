@@ -7,9 +7,11 @@ import { Card, CardContent } from '@/components/ui/card'
 import { getDashboardLanguage } from '@/lib/get-dashboard-language'
 import { fetchAdminMemberTransferPageAction } from '@/utils/actions'
 
+import MemberTransferRequestForm from '../member-transfer/MemberTransferRequestForm'
+
 const adminMemberTransfersPageCopy = {
   en: {
-    description: 'Complete member transfers after both delegate associations approve the transfer.',
+    description: 'Initiate member transfer requests and complete them after both delegate associations approve.',
     emptyDescription: 'Transfers approved by both delegates will appear here.',
     emptyTitle: 'No member transfer requests found.',
     listTitle: 'All member transfer requests',
@@ -22,7 +24,7 @@ const adminMemberTransfersPageCopy = {
     title: 'Admin Member Transfers'
   },
   fr: {
-    description: 'Terminez les transferts de membres après approbation des deux associations déléguées.',
+    description: 'Initiez les demandes de transfert et terminez-les après approbation des deux associations déléguées.',
     emptyDescription: 'Les transferts approuvés par les deux délégués apparaîtront ici.',
     emptyTitle: 'Aucune demande de transfert trouvée.',
     listTitle: 'Toutes les demandes de transfert',
@@ -42,7 +44,7 @@ const AdminMemberTransfersPage = async () => {
     fetchAdminMemberTransferPageAction()
   ])
 
-  const { nextCancelledTransferRefreshAt, requests } = adminTransferData
+  const { members, nextCancelledTransferRefreshAt, receivingAssociations, requests } = adminTransferData
 
   const copy = adminMemberTransfersPageCopy[language]
 
@@ -83,6 +85,13 @@ const AdminMemberTransfersPage = async () => {
           </CardContent>
         </Card>
       ) : null}
+
+      <MemberTransferRequestForm
+        language={language}
+        members={members}
+        mode='admin'
+        receivingAssociationOptions={receivingAssociations}
+      />
 
       <div className='grid gap-3'>
         <div className='flex items-center gap-2'>

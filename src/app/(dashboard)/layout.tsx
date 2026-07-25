@@ -112,7 +112,9 @@ const getDashboardSidebarActionCounts = async (userId?: string | null): Promise<
         OR: [
           {
             initiatingClerkId: userId,
-            status: 'receiving_delegate_pending'
+            status: {
+              in: ['admin_initiated', 'receiving_delegate_pending']
+            }
           },
           {
             receivingClerkId: userId,

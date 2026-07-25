@@ -57,7 +57,8 @@ const MemberTransferPage = async () => {
 
   const delegateActionCount = requests.filter(
     request =>
-      (request.initiatingClerkId === profile.clerkId && request.status === 'receiving_delegate_pending') ||
+      (request.initiatingClerkId === profile.clerkId &&
+        ['admin_initiated', 'receiving_delegate_pending'].includes(request.status)) ||
       (request.receivingClerkId === profile.clerkId && request.status === 'initiating_delegate_approved')
   ).length
 

@@ -12,7 +12,11 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { formatMemberStatus, type AppLanguage } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
-import { submitMemberTransferRequestAction, submitOutgoingMemberTransferRequestAction } from '@/utils/actions'
+import {
+  submitAdminMemberTransferRequestAction,
+  submitMemberTransferRequestAction,
+  submitOutgoingMemberTransferRequestAction
+} from '@/utils/actions'
 
 type MemberTransferMemberOption = {
   associationCode: string
@@ -57,7 +61,7 @@ const memberMatchesSearch = (member: MemberTransferMemberOption, searchTokens: s
 const formatAssociationLabel = (associationCode: string, associationName?: string | null) =>
   associationName ? `${associationCode} - ${associationName}` : associationCode
 
-type TransferMode = 'incoming' | 'outgoing'
+type TransferMode = 'admin' | 'incoming' | 'outgoing'
 
 const transferFormCopy = {
   en: {
@@ -69,6 +73,19 @@ const transferFormCopy = {
       receivingAssociationCode: 'Receiving association code',
       selectAssociation: 'Select association',
       selectedMember: 'Selected member'
+    },
+    admin: {
+      action: submitAdminMemberTransferRequestAction,
+      associationHelp:
+        'Select any member and choose the association receiving the member. Delegates will approve the request before admin completion.',
+      memberAssociationLabel: 'Current association',
+      noMatches: 'No members match your search.',
+      receivingAssociationLabel: 'Receiving association',
+      searchLabel: 'Search all members',
+      searchPlaceholder: 'Search name, matriculation, association code, association name, or status',
+      selectLabel: 'Select member to transfer',
+      submitText: 'Initiate transfer',
+      title: 'Initiate transfer as admin'
     },
     incoming: {
       action: submitMemberTransferRequestAction,
@@ -109,6 +126,19 @@ const transferFormCopy = {
       receivingAssociationCode: "Code de l'association destinataire",
       selectAssociation: 'Sélectionner une association',
       selectedMember: 'Membre sélectionné'
+    },
+    admin: {
+      action: submitAdminMemberTransferRequestAction,
+      associationHelp:
+        "Sélectionnez un membre et choisissez l'association destinataire. Les délégués approuveront la demande avant la finalisation admin.",
+      memberAssociationLabel: 'Association actuelle',
+      noMatches: 'Aucun membre ne correspond à votre recherche.',
+      receivingAssociationLabel: 'Association destinataire',
+      searchLabel: 'Rechercher tous les membres',
+      searchPlaceholder: "Rechercher par nom, matricule, code d'association, nom d'association ou statut",
+      selectLabel: 'Sélectionner le membre à transférer',
+      submitText: 'Initier le transfert',
+      title: 'Initier un transfert comme admin'
     },
     incoming: {
       action: submitMemberTransferRequestAction,
@@ -152,8 +182,8 @@ const MemberTransferRequestForm = ({
   receivingAssociationOptions = [],
   receivingAssociationCode
 }: {
-  currentAssociationCode: string
-  currentAssociationName: string
+  currentAssociationCode?: string
+  currentAssociationName?: string
   language: AppLanguage
   mode: TransferMode
   members: MemberTransferMemberOption[]
@@ -182,17 +212,27 @@ const MemberTransferRequestForm = ({
   const displayedMembers = filteredMembers.slice(0, maxVisibleMembers)
   const hiddenMatchCount = filteredMembers.length - displayedMembers.length
 
-  const selectedReceivingAssociation = receivingAssociationOptions.find(
+  const availableReceivingAssociationOptions = useMemo(() => {
+    if (mode !== 'admin' || !selectedMember) return receivingAssociationOptions
+
+    const selectedMemberAssociationCode = selectedMember.associationCode.toUpperCase()
+
+    return receivingAssociationOptions.filter(
+      association => association.associationCode.toUpperCase() !== selectedMemberAssociationCode
+    )
+  }, [mode, receivingAssociationOptions, selectedMember])
+
+  const selectedReceivingAssociation = availableReceivingAssociationOptions.find(
     association => association.associationCode === targetAssociationCode
   )
 
   const displayReceivingAssociationCode =
-    mode === 'outgoing'
+    mode === 'outgoing' || mode === 'admin'
       ? targetAssociationCode.trim().toUpperCase()
-      : (receivingAssociationCode ?? currentAssociationCode)
+      : (receivingAssociationCode ?? currentAssociationCode ?? '')
 
   const displayReceivingAssociationName =
-    mode === 'outgoing' ? selectedReceivingAssociation?.associationName : currentAssociationName
+    mode === 'outgoing' || mode === 'admin' ? selectedReceivingAssociation?.associationName : currentAssociationName
 
   const handleSearchChange = (nextSearchQuery: string) => {
     setSearchQuery(nextSearchQuery)
@@ -202,8 +242,31 @@ const MemberTransferRequestForm = ({
 
     if (!selectedMemberStillMatches) {
       setSelectedMemberId('')
+
+      if (mode === 'admin') {
+        setTargetAssociationCode('')
+      }
     }
   }
+
+  const handleMemberSelect = (member: MemberTransferMemberOption) => {
+    setSelectedMemberId(member.id)
+
+    if (mode === 'admin' && targetAssociationCode.toUpperCase() === member.associationCode.toUpperCase()) {
+      setTargetAssociationCode('')
+    }
+  }
+
+  const needsReceivingAssociationSelection = mode === 'outgoing' || mode === 'admin'
+
+  const isReceivingAssociationSelectDisabled =
+    (mode === 'admin' && !selectedMember) || availableReceivingAssociationOptions.length === 0
+
+  const hasSelectedReceivingAssociation =
+    !needsReceivingAssociationSelection ||
+    availableReceivingAssociationOptions.some(association => association.associationCode === targetAssociationCode)
+
+  const isSubmitDisabled = !selectedMemberId || !hasSelectedReceivingAssociation
 
   return (
     <Card className='rounded-lg py-0'>
@@ -234,11 +297,11 @@ const MemberTransferRequestForm = ({
             </div>
           </div>
 
-          {mode === 'outgoing' ? (
+          {needsReceivingAssociationSelection ? (
             <div className='grid gap-1.5'>
               <Label htmlFor='member-transfer-receiving-association-code'>{copy.fields.receivingAssociationCode}</Label>
               <Select
-                disabled={receivingAssociationOptions.length === 0}
+                disabled={isReceivingAssociationSelectDisabled}
                 name='receivingAssociationCode'
                 onValueChange={setTargetAssociationCode}
                 required
@@ -251,14 +314,14 @@ const MemberTransferRequestForm = ({
                   <SelectValue placeholder={copy.selectReceivingAssociation} />
                 </SelectTrigger>
                 <SelectContent>
-                  {receivingAssociationOptions.map(association => (
+                  {availableReceivingAssociationOptions.map(association => (
                     <SelectItem key={association.associationCode} value={association.associationCode}>
                       {association.associationCode} - {association.associationName}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {receivingAssociationOptions.length === 0 ? (
+              {availableReceivingAssociationOptions.length === 0 ? (
                 <p className='text-muted-foreground text-xs'>{copy.noOtherAssociations}</p>
               ) : null}
             </div>
@@ -281,7 +344,7 @@ const MemberTransferRequestForm = ({
                       key={member.id}
                       type='button'
                       aria-pressed={isSelected}
-                      onClick={() => setSelectedMemberId(member.id)}
+                      onClick={() => handleMemberSelect(member)}
                       className={cn(
                         'bg-background/70 hover:border-primary/60 hover:bg-muted/40 grid min-w-0 gap-1 rounded-md border p-3 text-left text-sm transition-colors',
                         isSelected && 'border-primary bg-primary/10'
@@ -341,7 +404,11 @@ const MemberTransferRequestForm = ({
             </div>
           </div>
 
-          <SubmitButton text={modeCopy.submitText} className='h-9 w-full text-sm normal-case sm:w-fit' />
+          <SubmitButton
+            disabled={isSubmitDisabled}
+            text={modeCopy.submitText}
+            className='h-9 w-full text-sm normal-case sm:w-fit'
+          />
         </FormContainer>
       </CardContent>
     </Card>

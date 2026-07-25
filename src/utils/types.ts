@@ -272,6 +272,7 @@ export const nameChangeRequestStatusLabels: Record<NameChangeRequestStatus, stri
 }
 
 export const memberTransferRequestStatuses = [
+  'admin_initiated',
   'receiving_delegate_pending',
   'initiating_delegate_approved',
   'receiving_delegate_approved',
@@ -284,6 +285,7 @@ export const memberTransferRequestStatuses = [
 export type MemberTransferRequestStatus = (typeof memberTransferRequestStatuses)[number]
 
 export const memberTransferRequestStatusLabels: Record<MemberTransferRequestStatus, string> = {
+  admin_initiated: 'Admin initiated - delegate release pending',
   admin_approved: 'Admin approved',
   admin_rejected: 'Admin rejected',
   cancelled: 'Cancelled',

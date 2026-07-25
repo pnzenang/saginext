@@ -16,9 +16,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 const transferSteps = [
   {
     icon: ArrowRightLeft,
-    title: 'A delegate submits a transfer request',
+    title: 'A delegate or admin submits a transfer request',
     description:
-      'Open Member Transfer, select the member, confirm the receiving association, and submit the request.'
+      'Open Member Transfer or Admin Member Transfers, select the member, confirm the receiving association, and submit the request.'
   },
   {
     icon: ClipboardCheck,
@@ -49,6 +49,7 @@ const receivingGroupTasks = [
 ]
 
 const adminReviewItems = [
+  'The admin can initiate a transfer request from Admin Member Transfers.',
   'The admin confirms both delegates approved the same transfer request.',
   'The admin verifies the member still belongs to the releasing association.',
   'The admin moves the existing member record to the receiving association.',
@@ -60,7 +61,7 @@ const transferRules = [
   'Do not register the same member again in Add Member unless the member is coming from another SAGI database, such as SAGICAM or SAGINIGERIA.',
   'Do not change the delegate recommendation to process a transfer between associations already in this database.',
   'Use the matching transfer-from delegate recommendation only when the member is coming from a different SAGI database.',
-  'Use the Member Transfer page so both delegates and admin can review the same request.'
+  'Use the Member Transfer or Admin Member Transfers page so both delegates and admin can review the same request.'
 ]
 
 const MemberTransfer = () => {
@@ -77,12 +78,13 @@ const MemberTransfer = () => {
             </h1>
             <div className='text-muted-foreground mt-4 max-w-4xl space-y-3 text-base leading-7'>
               <p>
-                A member transfer happens when a member moves from one group to another. The transfer is started by the
-                delegate who needs the change, then reviewed by the other delegate involved.
+                A member transfer happens when a member moves from one group to another. The transfer can be started by
+                the delegate who needs the change or by admin, then reviewed by both delegates involved.
               </p>
               <p>
-                Delegates should use the Member Transfer page for this process. The member should not be registered
-                again, and the delegate recommendation should not be changed to complete a transfer.
+                Delegates should use the Member Transfer page, while admin can use Admin Member Transfers to start or
+                complete this process. The member should not be registered again, and the delegate recommendation should
+                not be changed to complete a transfer.
               </p>
               <p>
                 The exception is when the member is coming from a different SAGI database, such as SAGICAM or

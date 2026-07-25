@@ -2893,6 +2893,7 @@ export const deleteNameChangeRequestAction = async (prevState: { requestId: stri
 }
 
 const openMemberTransferRequestStatuses: MemberTransferRequestStatus[] = [
+  'admin_initiated',
   'receiving_delegate_pending',
   'initiating_delegate_approved',
   'receiving_delegate_approved'
@@ -2907,6 +2908,8 @@ const getMemberTransferRequestInitiatorClerkId = (request: {
   receivingReviewedBy?: string | null
   status: string
 }) => {
+  if (request.status === 'admin_initiated') return null
+
   if (request.status === 'receiving_delegate_pending') return request.receivingClerkId
 
   if (request.status === 'initiating_delegate_approved') return request.initiatingClerkId
@@ -2971,6 +2974,7 @@ const memberTransferActionCopy: Record<
   AppLanguage,
   {
     adminApproved: string
+    adminInitiated: string
     adminRejected: string
     adminRejectedReason: string
     alreadyCancelled: string
@@ -2995,6 +2999,7 @@ const memberTransferActionCopy: Record<
     receivingMustDiffer: string
     receivingProfileUnavailable: string
     releaseApproved: string
+    releaseApprovedForReceivingReview: string
     releaseRejected: string
     receivingApprovalApproved: string
     receivingApprovalRequested: string
@@ -3008,6 +3013,7 @@ const memberTransferActionCopy: Record<
 > = {
   en: {
     adminApproved: 'Member transfer approved and completed.',
+    adminInitiated: 'Admin transfer request sent to the current delegate for release approval.',
     adminRejected: 'Member transfer rejected by admin.',
     adminRejectedReason: 'SAGI admin rejected this transfer request.',
     alreadyCancelled: 'This member transfer request has already been cancelled.',
@@ -3032,6 +3038,7 @@ const memberTransferActionCopy: Record<
     receivingMustDiffer: 'The receiving association must be different from your current association.',
     receivingProfileUnavailable: 'Receiving delegate association profile is no longer available.',
     releaseApproved: 'Member release approved and sent to SAGI admin.',
+    releaseApprovedForReceivingReview: 'Member release approved and sent to the receiving delegate.',
     releaseRejected: 'Member transfer release rejected.',
     receivingApprovalApproved: 'Receiving delegate approved the transfer and sent it to SAGI admin.',
     receivingApprovalRequested: 'Member transfer request sent to the receiving delegate for approval.',
@@ -3044,6 +3051,7 @@ const memberTransferActionCopy: Record<
   },
   fr: {
     adminApproved: 'Transfert de membre approuvé et terminé.',
+    adminInitiated: 'Demande de transfert admin envoyée au délégué actuel pour approbation de libération.',
     adminRejected: "Transfert de membre rejeté par l'admin.",
     adminRejectedReason: "L'admin SAGI a rejeté cette demande de transfert.",
     alreadyCancelled: 'Cette demande de transfert de membre a déjà été annulée.',
@@ -3069,6 +3077,7 @@ const memberTransferActionCopy: Record<
     receivingMustDiffer: "L'association destinataire doit être différente de votre association actuelle.",
     receivingProfileUnavailable: "Le profil de l'association déléguée destinataire n'est plus disponible.",
     releaseApproved: "Libération du membre approuvée et envoyée à l'admin SAGI.",
+    releaseApprovedForReceivingReview: 'Libération du membre approuvée et envoyée au délégué destinataire.',
     releaseRejected: 'Libération du membre rejetée.',
     receivingApprovalApproved: "Le délégué destinataire a approuvé le transfert et l'a envoyé à l'admin SAGI.",
     receivingApprovalRequested: 'Demande de transfert envoyée au délégué destinataire pour approbation.',
@@ -3212,26 +3221,158 @@ export const fetchAdminMemberTransferPageAction = async () => {
   noStore()
   await assertAdminUser()
 
-  const requests = await db.memberTransferRequest.findMany({
-    include: {
-      member: {
-        select: {
-          associationCode: true,
-          associationName: true,
-          clerkId: true,
-          firstName: true,
-          lastAndMiddleNames: true,
-          memberMatriculationNumber: true
-        }
+  const [members, receivingAssociations, requests] = await Promise.all([
+    db.member.findMany({
+      orderBy: [{ lastAndMiddleNames: 'asc' }, { firstName: 'asc' }],
+      select: {
+        associationCode: true,
+        associationName: true,
+        firstName: true,
+        id: true,
+        lastAndMiddleNames: true,
+        memberMatriculationNumber: true,
+        memberStatus: true
       }
-    },
-    orderBy: { createdAt: 'desc' },
-    where: getVisibleMemberTransferRequestWhere()
-  })
+    }),
+    db.profile.findMany({
+      orderBy: {
+        associationCode: 'asc'
+      },
+      select: {
+        associationCode: true,
+        associationName: true
+      }
+    }),
+    db.memberTransferRequest.findMany({
+      include: {
+        member: {
+          select: {
+            associationCode: true,
+            associationName: true,
+            clerkId: true,
+            firstName: true,
+            lastAndMiddleNames: true,
+            memberMatriculationNumber: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      where: getVisibleMemberTransferRequestWhere()
+    })
+  ])
 
   return {
+    members,
     nextCancelledTransferRefreshAt: getNextCancelledMemberTransferRefreshAt(requests),
+    receivingAssociations,
     requests: await addMemberTransferAssociationNames(requests)
+  }
+}
+
+export const submitAdminMemberTransferRequestAction = async (
+  prevState: any,
+  formData: FormData
+): Promise<{ message: string }> => {
+  const copy = memberTransferActionCopy[await getServerActionLanguage()]
+
+  try {
+    await assertAdminUser()
+
+    const memberId = getRequiredFormValue(formData, 'memberId')
+
+    const receivingAssociationCode = normalizeAssociationCode(
+      getRequiredFormValue(formData, 'receivingAssociationCode')
+    )
+
+    const [member, receivingAssociation] = await Promise.all([
+      db.member.findUnique({
+        select: {
+          associationCode: true,
+          clerkId: true,
+          firstName: true,
+          id: true,
+          lastAndMiddleNames: true,
+          memberMatriculationNumber: true,
+          memberStatus: true
+        },
+        where: {
+          id: memberId
+        }
+      }),
+      db.profile.findUnique({
+        select: {
+          associationCode: true,
+          clerkId: true
+        },
+        where: {
+          associationCode: receivingAssociationCode
+        }
+      })
+    ])
+
+    if (!member) {
+      throw new Error(copy.memberNotFound)
+    }
+
+    const initiatingAssociationCode = normalizeAssociationCode(member.associationCode)
+
+    if (receivingAssociationCode === initiatingAssociationCode) {
+      throw new Error(copy.receivingMustDiffer)
+    }
+
+    const initiatingAssociation = await db.profile.findUnique({
+      select: {
+        associationCode: true,
+        clerkId: true
+      },
+      where: {
+        associationCode: initiatingAssociationCode
+      }
+    })
+
+    if (!initiatingAssociation) {
+      throw new Error(copy.currentDelegateAssociationProfileNotFound)
+    }
+
+    if (!receivingAssociation) {
+      throw new Error(copy.receivingDelegateAssociationNotFound)
+    }
+
+    const openRequest = await db.memberTransferRequest.findFirst({
+      select: {
+        id: true
+      },
+      where: {
+        memberId: member.id,
+        status: {
+          in: openMemberTransferRequestStatuses
+        }
+      }
+    })
+
+    if (openRequest) {
+      throw new Error(copy.openRequest)
+    }
+
+    await db.memberTransferRequest.create({
+      data: {
+        currentFirstName: member.firstName,
+        currentLastAndMiddleNames: member.lastAndMiddleNames,
+        initiatingAssociationCode: initiatingAssociation.associationCode,
+        initiatingClerkId: initiatingAssociation.clerkId,
+        memberId: member.id,
+        memberMatriculationNumber: member.memberMatriculationNumber,
+        receivingAssociationCode: receivingAssociation.associationCode,
+        receivingClerkId: receivingAssociation.clerkId,
+        status: 'admin_initiated'
+      }
+    })
+
+    revalidateMemberTransferViews()
+
+    return { message: copy.adminInitiated }
+  } catch (error) {
+    return renderError(error)
   }
 }
 
@@ -3436,7 +3577,7 @@ export const reviewIncomingMemberTransferRequestAction = async (
 
     if (
       !isMemberTransferRequestStatus(status) ||
-      !['receiving_delegate_approved', 'receiving_delegate_rejected'].includes(status)
+      !['initiating_delegate_approved', 'receiving_delegate_approved', 'receiving_delegate_rejected'].includes(status)
     ) {
       throw new Error(copy.invalidTransferDecision)
     }
@@ -3452,12 +3593,13 @@ export const reviewIncomingMemberTransferRequestAction = async (
     }
 
     const isCurrentDelegateReleaseReview =
-      request.status === 'receiving_delegate_pending' && request.initiatingClerkId === user.id
+      ['admin_initiated', 'receiving_delegate_pending'].includes(request.status) &&
+      request.initiatingClerkId === user.id
 
     const isReceivingDelegateAcceptanceReview =
       request.status === 'initiating_delegate_approved' && request.receivingClerkId === user.id
 
-    if (request.status === 'receiving_delegate_pending' && request.initiatingClerkId !== user.id) {
+    if (['admin_initiated', 'receiving_delegate_pending'].includes(request.status) && request.initiatingClerkId !== user.id) {
       throw new Error(copy.currentDelegateOnlyRelease)
     }
 
@@ -3465,7 +3607,7 @@ export const reviewIncomingMemberTransferRequestAction = async (
       throw new Error(copy.receivingDelegateOnlyApprove)
     }
 
-    if (!['receiving_delegate_pending', 'initiating_delegate_approved'].includes(request.status)) {
+    if (!['admin_initiated', 'receiving_delegate_pending', 'initiating_delegate_approved'].includes(request.status)) {
       throw new Error(copy.delegateReviewAlreadyCompleted)
     }
 
@@ -3475,6 +3617,16 @@ export const reviewIncomingMemberTransferRequestAction = async (
 
     if (status === 'receiving_delegate_rejected' && !rejectionReason) {
       throw new Error(isCurrentDelegateReleaseReview ? copy.rejectReleaseReason : copy.rejectTransferReason)
+    }
+
+    const approvedStatus: MemberTransferRequestStatus = isCurrentDelegateReleaseReview
+      ? request.status === 'admin_initiated'
+        ? 'initiating_delegate_approved'
+        : 'receiving_delegate_approved'
+      : 'receiving_delegate_approved'
+
+    if (status !== 'receiving_delegate_rejected' && status !== approvedStatus) {
+      throw new Error(copy.invalidTransferDecision)
     }
 
     await db.memberTransferRequest.update({
@@ -3498,7 +3650,9 @@ export const reviewIncomingMemberTransferRequestAction = async (
             ? copy.releaseRejected
             : copy.transferRejected
           : isCurrentDelegateReleaseReview
-            ? copy.releaseApproved
+            ? request.status === 'admin_initiated'
+              ? copy.releaseApprovedForReceivingReview
+              : copy.releaseApproved
             : copy.receivingApprovalApproved
     }
   } catch (error) {

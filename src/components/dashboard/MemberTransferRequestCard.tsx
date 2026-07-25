@@ -123,6 +123,7 @@ export const RequestStatusBadge = ({ language, status }: { language: AppLanguage
       <XCircle />
     ) : null}
     {status === 'receiving_delegate_pending' ||
+    status === 'admin_initiated' ||
     status === 'initiating_delegate_approved' ||
     status === 'receiving_delegate_approved' ? (
       <Clock3 />
@@ -142,11 +143,16 @@ const ReleasingDelegateControls = ({
   reviewKind: 'release' | 'receiving'
   request: MemberTransferRequestCardData
 }) => {
-  if (!['receiving_delegate_pending', 'initiating_delegate_approved'].includes(request.status)) return null
+  if (!['admin_initiated', 'receiving_delegate_pending', 'initiating_delegate_approved'].includes(request.status)) {
+    return null
+  }
 
   const copy = memberTransferRequestCardCopy[language]
   const rejectionReasonId = `release-rejection-reason-${request.id}`
   const isReleaseReview = reviewKind === 'release'
+
+  const approvedStatus =
+    request.status === 'admin_initiated' ? 'initiating_delegate_approved' : 'receiving_delegate_approved'
 
   return (
     <div className={cn('grid gap-2 rounded-md border bg-white/60 dark:bg-black/10', compact ? 'p-2' : 'p-3')}>
@@ -157,7 +163,7 @@ const ReleasingDelegateControls = ({
       <div className={cn('grid gap-2', compact ? '' : 'sm:grid-cols-2')}>
         <FormContainer action={reviewIncomingMemberTransferRequestAction}>
           <input type='hidden' name='requestId' value={request.id} />
-          <input type='hidden' name='status' value='receiving_delegate_approved' />
+          <input type='hidden' name='status' value={approvedStatus} />
           <SubmitButton
             text={isReleaseReview ? copy.approveRelease : copy.approveTransfer}
             className='h-8 w-full bg-green-700 px-3 text-xs normal-case hover:bg-green-800'
@@ -258,6 +264,7 @@ const DelegateCancelTransferControl = ({
 }
 
 const cancellableTransferStatuses = [
+  'admin_initiated',
   'receiving_delegate_pending',
   'initiating_delegate_approved',
   'receiving_delegate_approved'
@@ -267,6 +274,8 @@ const canDelegateCancelTransfer = (status: string) =>
   cancellableTransferStatuses.includes(status as (typeof cancellableTransferStatuses)[number])
 
 const getRequestInitiatorClerkId = (request: MemberTransferRequestCardData) => {
+  if (request.status === 'admin_initiated') return null
+
   if (request.status === 'receiving_delegate_pending') return request.receivingClerkId
 
   if (request.status === 'initiating_delegate_approved') return request.initiatingClerkId
@@ -305,7 +314,7 @@ export const MemberTransferRequestActions = ({
     !isAdminUser && currentUserClerkId === requestInitiatorClerkId && canDelegateCancelTransfer(request.status)
 
   const delegateReviewKind =
-    isInitiatingDelegate && request.status === 'receiving_delegate_pending'
+    isInitiatingDelegate && ['admin_initiated', 'receiving_delegate_pending'].includes(request.status)
       ? 'release'
       : isReceivingDelegate && request.status === 'initiating_delegate_approved'
         ? 'receiving'
