@@ -415,6 +415,53 @@ const getRequiredDateFromForm = (formData: FormData, fieldName: string) => {
 
 const formatRegistrationDate = (date: Date) => registrationDateFormatter.format(date)
 
+const parseUsDateOnlyTimestamp = (value: string, fieldLabel: string) => {
+  const match = value.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
+
+  if (!match) {
+    throw new Error(`Enter ${fieldLabel} in MM/DD/YYYY format.`)
+  }
+
+  const month = Number(match[1])
+  const day = Number(match[2])
+  const year = Number(match[3])
+  const timestamp = Date.UTC(year, month - 1, day)
+  const date = new Date(timestamp)
+
+  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) {
+    throw new Error(`Enter a valid ${fieldLabel}.`)
+  }
+
+  return timestamp
+}
+
+const getDateOnlyTimestamp = (date: Date) => Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
+
+const getDeathAnnouncementDateBoundary = (date: Date | string) =>
+  date instanceof Date ? getDateOnlyTimestamp(date) : parseUsDateOnlyTimestamp(date, 'registration date')
+
+const assertValidDeathAnnouncementDate = ({
+  announcementDate,
+  dateOfDeath,
+  registrationDate
+}: {
+  announcementDate: Date
+  dateOfDeath: string
+  registrationDate: Date | string
+}) => {
+  const deathDate = parseUsDateOnlyTimestamp(dateOfDeath, 'date of death')
+  const registrationDateBoundary = getDeathAnnouncementDateBoundary(registrationDate)
+  const announcementDateBoundary = getDateOnlyTimestamp(announcementDate)
+
+  if (deathDate <= registrationDateBoundary) {
+    throw new Error('Date of death must be after the registration date.')
+  }
+
+  if (deathDate > announcementDateBoundary) {
+    throw new Error('Date of death cannot be after the announcement date.')
+  }
+}
+
 type RegistrationUsageClient = Pick<typeof db, 'associationRegistrationUsage'>
 
 const createRegistrationUsage = async (
@@ -4186,6 +4233,12 @@ export const createDeceasedMemberAction = async (provState: any, formData: FormD
       throw new Error('Only vested members can be moved to deceased members.')
     }
 
+    assertValidDeathAnnouncementDate({
+      announcementDate: new Date(),
+      dateOfDeath: validatedFields.dateOfDeath,
+      registrationDate: member.createdAt
+    })
+
     await db.$transaction([
       db.deceasedMember.create({
         data: {
@@ -4274,6 +4327,12 @@ export const createDeceasedMemberActionAdmin = async (
     if (member.memberStatus !== memberStatus.Vested) {
       throw new Error('Only vested members can be moved to deceased members.')
     }
+
+    assertValidDeathAnnouncementDate({
+      announcementDate: new Date(),
+      dateOfDeath: validatedFields.dateOfDeath,
+      registrationDate: member.createdAt
+    })
 
     await db.$transaction([
       db.deceasedMember.create({
@@ -5152,6 +5211,25 @@ const updateDeceasedMemberDetailsAsAdmin = async (formData: FormData) => {
 
   const rawData = Object.fromEntries(formData)
   const validatedFields = validateWithZodSchema(DeceasedMemberSchema, rawData)
+
+  const deceasedMember = await db.deceasedMember.findUnique({
+    select: {
+      createdAt: true
+    },
+    where: {
+      id: deceasedMemberId
+    }
+  })
+
+  if (!deceasedMember) {
+    throw new Error('Deceased member not found')
+  }
+
+  assertValidDeathAnnouncementDate({
+    announcementDate: deceasedMember.createdAt,
+    dateOfDeath: validatedFields.dateOfDeath,
+    registrationDate: validatedFields.registrationDate
+  })
 
   await db.deceasedMember.update({
     where: {
