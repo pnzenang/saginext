@@ -14,6 +14,7 @@ import {
   WalletCards,
   CreditCard,
   Calculator,
+  CalendarDays,
   History,
   List,
   Megaphone,
@@ -84,6 +85,11 @@ export const getPagesItems = (date: Date = new Date()): MenuItem[] => [
     icon: CreditCard,
     label: 'Payment Instructions',
     href: '/payment-instructions'
+  },
+  {
+    icon: CalendarDays,
+    label: 'Meeting',
+    href: '/meeting'
   },
   {
     icon: MessageSquareText,
