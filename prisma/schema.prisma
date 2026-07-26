@@ -390,15 +390,24 @@ model DelegateIssueNote {
 }
 
 model DelegateIssueNoteMessage {
-  id            String            @id @default(uuid())
-  noteId        String
-  authorClerkId String
-  authorRole    String
-  body          String
-  createdAt     DateTime          @default(now())
-  note          DelegateIssueNote @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  id                     String            @id @default(uuid())
+  noteId                 String
+  authorClerkId          String
+  authorRole             String
+  body                   String
+  documentFileName       String?
+  documentMimeType       String?
+  documentFileSize       Int?
+  cloudinaryPublicId     String?
+  cloudinarySecureUrl    String?
+  cloudinaryResourceType String?
+  cloudinaryDeliveryType String?
+  cloudinaryFormat       String?
+  createdAt              DateTime          @default(now())
+  note                   DelegateIssueNote @relation(fields: [noteId], references: [id], onDelete: Cascade)
 
   @@index([noteId])
   @@index([authorClerkId])
+  @@index([cloudinaryPublicId])
   @@index([createdAt])
 }

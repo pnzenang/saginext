@@ -7,8 +7,10 @@ import {
   Building2,
   CheckCircle2,
   Clock3,
+  Download,
   Inbox,
   MessageSquareText,
+  Paperclip,
   Search,
   ShieldCheck,
   X
@@ -70,6 +72,8 @@ const issueNotesCopy = {
     allNotes: 'All notes',
     associationAll: 'All associations',
     association: 'Association',
+    attachmentHelp: 'Optional PDF or image, up to 20 MB.',
+    attachmentLabel: 'Attach document',
     body: 'Message',
     clear: 'Clear',
     clearBadge: 'Unread',
@@ -79,6 +83,7 @@ const issueNotesCopy = {
     delegateEmptyDescription: 'Messages from admin and issues you raise will appear here.',
     delegateEmptyTitle: 'No notes yet.',
     delegateTitle: 'Notes',
+    downloadDocument: 'Download document',
     entriesPerPage: 'Entries per page',
     filterAssociation: 'Association',
     filterPriority: 'Priority',
@@ -116,6 +121,8 @@ const issueNotesCopy = {
     allNotes: 'Toutes les notes',
     associationAll: 'Toutes les associations',
     association: 'Association',
+    attachmentHelp: "PDF ou image facultatif, jusqu'à 20 Mo.",
+    attachmentLabel: 'Joindre un document',
     body: 'Message',
     clear: 'Effacer',
     clearBadge: 'Non lu',
@@ -126,6 +133,7 @@ const issueNotesCopy = {
     delegateEmptyDescription: "Les messages de l'admin et les problèmes que vous signalez s'afficheront ici.",
     delegateEmptyTitle: 'Aucune note pour le moment.',
     delegateTitle: 'Notes',
+    downloadDocument: 'Télécharger le document',
     entriesPerPage: 'Entrées par page',
     filterAssociation: 'Association',
     filterPriority: 'Priorité',
@@ -203,6 +211,22 @@ const getStatusBadgeClassName = (status: string) =>
 
 const pageSizeOptions = [6, 12, 24, 48]
 const allFilterValue = 'all'
+const documentAccept = '.pdf,.jpg,.jpeg,.png,.webp,.heic,.heif,application/pdf,image/*'
+
+const formatIssueNoteFileSize = (fileSize?: number | null) => {
+  if (!fileSize || fileSize <= 0) return ''
+
+  const units = ['B', 'KB', 'MB', 'GB']
+  let value = fileSize
+  let unitIndex = 0
+
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024
+    unitIndex += 1
+  }
+
+  return `${value >= 10 || unitIndex === 0 ? Math.round(value) : value.toFixed(1)} ${units[unitIndex]}`
+}
 
 const getIssueNoteSearchValue = (note: IssueNote, language: AppLanguage) =>
   [
@@ -216,6 +240,7 @@ const getIssueNoteSearchValue = (note: IssueNote, language: AppLanguage) =>
     ...note.messages.flatMap(message => [
       message.body,
       message.authorRole,
+      message.documentFileName,
       roleLabels[language][message.authorRole as DelegateIssueNoteRole]
     ])
   ]
@@ -235,6 +260,7 @@ const CreateIssueNoteForm = ({
   const copy = issueNotesCopy[language]
   const hasAssociations = associations.length > 0
   const formAction = isAdminUser ? createAdminIssueNoteAction : createDelegateIssueNoteAction
+  const documentInputId = isAdminUser ? 'admin-issue-note-document' : 'delegate-issue-note-document'
 
   return (
     <Card className='rounded-lg py-0'>
@@ -297,6 +323,21 @@ const CreateIssueNoteForm = ({
           <div className='grid gap-1.5'>
             <Label htmlFor='body'>{copy.body}</Label>
             <Textarea id='body' name='body' maxLength={4000} required className='bg-background min-h-28' />
+          </div>
+
+          <div className='grid gap-1.5'>
+            <Label htmlFor={documentInputId} className='inline-flex items-center gap-2'>
+              <Paperclip className='text-primary size-4' />
+              {copy.attachmentLabel}
+            </Label>
+            <p className='text-muted-foreground text-xs'>{copy.attachmentHelp}</p>
+            <Input
+              id={documentInputId}
+              name='documentFile'
+              type='file'
+              accept={documentAccept}
+              className='bg-background'
+            />
           </div>
 
           <SubmitButton text={copy.send} disabled={isAdminUser && !hasAssociations} className='h-10 w-full sm:w-fit' />
@@ -389,6 +430,22 @@ const IssueNoteCard = ({
                   </span>
                 </div>
                 <p className='text-sm leading-6 whitespace-pre-wrap'>{message.body}</p>
+                {message.documentFileName && message.documentFileSize ? (
+                  <div className='mt-1 flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-center'>
+                    <Button asChild variant='outline' size='sm' className='h-8 w-fit text-xs'>
+                      <a href={`/notes/${message.id}/download`}>
+                        <Download className='size-3.5' />
+                        {copy.downloadDocument}
+                      </a>
+                    </Button>
+                    <span className='text-muted-foreground text-xs font-semibold break-words'>
+                      {message.documentFileName}
+                      {formatIssueNoteFileSize(message.documentFileSize)
+                        ? ` (${formatIssueNoteFileSize(message.documentFileSize)})`
+                        : ''}
+                    </span>
+                  </div>
+                ) : null}
               </div>
             ))}
           </div>
@@ -425,6 +482,20 @@ const IssueNoteCard = ({
               placeholder={copy.replyPlaceholder}
               className='bg-background min-h-20'
             />
+            <div className='grid gap-1.5'>
+              <Label htmlFor={`reply-document-${note.id}`} className='inline-flex items-center gap-2 text-sm'>
+                <Paperclip className='text-primary size-4' />
+                {copy.attachmentLabel}
+              </Label>
+              <p className='text-muted-foreground text-xs'>{copy.attachmentHelp}</p>
+              <Input
+                id={`reply-document-${note.id}`}
+                name='documentFile'
+                type='file'
+                accept={documentAccept}
+                className='bg-background'
+              />
+            </div>
             <SubmitButton text={copy.send} className='h-9 w-full px-3 text-xs normal-case sm:w-fit' />
           </FormContainer>
         ) : null}

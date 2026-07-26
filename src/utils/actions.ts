@@ -345,6 +345,9 @@ const getDeathDocumentCloudinaryFolder = (deceasedMemberId: string, documentType
 const getNameChangeDocumentCloudinaryFolder = (requestId: string) =>
   `mysagi/name-change-documentations/${getSafeCloudinaryPathSegment(requestId)}`
 
+const getIssueNoteDocumentCloudinaryFolder = (noteId: string, messageId: string) =>
+  `mysagi/issue-notes/${getSafeCloudinaryPathSegment(noteId)}/${getSafeCloudinaryPathSegment(messageId)}`
+
 const getCloudinaryDocumentData = (document: StoredCloudinaryDocument) => ({
   cloudinaryDeliveryType: document.deliveryType,
   cloudinaryFormat: document.format,
@@ -375,6 +378,57 @@ const deleteCloudinaryDocumentWithoutBlocking = async (document: {
 
 const hasUploadedDocument = (document: { cloudinaryPublicId?: string | null; fileData?: unknown }) =>
   Boolean(document.cloudinaryPublicId || document.fileData)
+
+const getOptionalIssueNoteDocumentFile = (formData: FormData) => {
+  const file = formData.get('documentFile')
+
+  if (!(file instanceof File) || file.size <= 0) return null
+
+  if (file.size > maxDocumentationFileSize) {
+    throw new Error('The file is too large. Please upload a file that is 20 MB or smaller.')
+  }
+
+  if (!isAllowedDeceasedMemberDocumentFile(file)) {
+    throw new Error('Please upload a PDF, JPG, PNG, WEBP, HEIC, or HEIF file.')
+  }
+
+  return file
+}
+
+const uploadIssueNoteDocument = async ({
+  file,
+  messageId,
+  noteId
+}: {
+  file: File
+  messageId: string
+  noteId: string
+}) => {
+  const safeFileName = getSafeUploadedFileName(file, 'Issue note document')
+  const mimeType = file.type || 'application/octet-stream'
+  const fileBuffer = Buffer.from(await file.arrayBuffer())
+
+  const cloudinaryDocument = await uploadDocumentToCloudinary({
+    fileBuffer,
+    fileName: safeFileName,
+    folder: getIssueNoteDocumentCloudinaryFolder(noteId, messageId),
+    mimeType
+  })
+
+  return {
+    cloudinaryDocument,
+    messageData: {
+      cloudinaryDeliveryType: cloudinaryDocument.deliveryType,
+      cloudinaryFormat: cloudinaryDocument.format,
+      cloudinaryPublicId: cloudinaryDocument.publicId,
+      cloudinaryResourceType: cloudinaryDocument.resourceType,
+      cloudinarySecureUrl: cloudinaryDocument.secureUrl,
+      documentFileName: safeFileName,
+      documentFileSize: cloudinaryDocument.bytes,
+      documentMimeType: mimeType
+    }
+  }
+}
 
 const getUppercaseFormName = (formData: FormData, fieldName: string) => {
   const value = getRequiredFormValue(formData, fieldName).toUpperCase()
@@ -973,32 +1027,56 @@ export const createDelegateIssueNoteAction = async (
     const subject = getIssueNoteTextField(formData, 'subject', issueNoteSubjectMaxLength)
     const body = getIssueNoteTextField(formData, 'body', issueNoteBodyMaxLength)
     const priority = getIssueNotePriority(formData)
+    const documentFile = getOptionalIssueNoteDocumentFile(formData)
+    const noteId = randomUUID()
+    const messageId = randomUUID()
 
-    await db.delegateIssueNote.create({
-      data: {
-        adminUnread: true,
-        associationCode: actor.profile.associationCode,
-        associationName: actor.profile.associationName,
-        createdByClerkId: actor.id,
-        createdByRole: actor.role,
-        delegateLastReadAt: now,
-        delegateUnread: false,
-        id: randomUUID(),
-        lastMessageAt: now,
-        lastMessageByRole: actor.role,
-        messages: {
-          create: {
-            authorClerkId: actor.id,
-            authorRole: actor.role,
-            body,
-            id: randomUUID()
-          }
-        },
-        priority,
-        status: 'open',
-        subject
+    const uploadedDocument = documentFile
+      ? await uploadIssueNoteDocument({
+          file: documentFile,
+          messageId,
+          noteId
+        })
+      : null
+
+    try {
+      await db.delegateIssueNote.create({
+        data: {
+          adminUnread: true,
+          associationCode: actor.profile.associationCode,
+          associationName: actor.profile.associationName,
+          createdByClerkId: actor.id,
+          createdByRole: actor.role,
+          delegateLastReadAt: now,
+          delegateUnread: false,
+          id: noteId,
+          lastMessageAt: now,
+          lastMessageByRole: actor.role,
+          messages: {
+            create: {
+              authorClerkId: actor.id,
+              authorRole: actor.role,
+              body,
+              id: messageId,
+              ...(uploadedDocument?.messageData ?? {})
+            }
+          },
+          priority,
+          status: 'open',
+          subject
+        }
+      })
+    } catch (error) {
+      if (uploadedDocument) {
+        await deleteCloudinaryDocumentWithoutBlocking({
+          cloudinaryDeliveryType: uploadedDocument.cloudinaryDocument.deliveryType,
+          cloudinaryPublicId: uploadedDocument.cloudinaryDocument.publicId,
+          cloudinaryResourceType: uploadedDocument.cloudinaryDocument.resourceType
+        })
       }
-    })
+
+      throw error
+    }
 
     revalidateIssueNoteViews()
 
@@ -1017,6 +1095,7 @@ export const createAdminIssueNoteAction = async (prevState: any, formData: FormD
     const subject = getIssueNoteTextField(formData, 'subject', issueNoteSubjectMaxLength)
     const body = getIssueNoteTextField(formData, 'body', issueNoteBodyMaxLength)
     const priority = getIssueNotePriority(formData)
+    const documentFile = getOptionalIssueNoteDocumentFile(formData)
 
     const profile = await db.profile.findUnique({
       select: {
@@ -1032,31 +1111,55 @@ export const createAdminIssueNoteAction = async (prevState: any, formData: FormD
       throw new Error('Select a valid delegate association.')
     }
 
-    await db.delegateIssueNote.create({
-      data: {
-        adminLastReadAt: now,
-        adminUnread: false,
-        associationCode: profile.associationCode,
-        associationName: profile.associationName,
-        createdByClerkId: user.id,
-        createdByRole: 'admin',
-        delegateUnread: true,
-        id: randomUUID(),
-        lastMessageAt: now,
-        lastMessageByRole: 'admin',
-        messages: {
-          create: {
-            authorClerkId: user.id,
-            authorRole: 'admin',
-            body,
-            id: randomUUID()
-          }
-        },
-        priority,
-        status: 'open',
-        subject
+    const noteId = randomUUID()
+    const messageId = randomUUID()
+
+    const uploadedDocument = documentFile
+      ? await uploadIssueNoteDocument({
+          file: documentFile,
+          messageId,
+          noteId
+        })
+      : null
+
+    try {
+      await db.delegateIssueNote.create({
+        data: {
+          adminLastReadAt: now,
+          adminUnread: false,
+          associationCode: profile.associationCode,
+          associationName: profile.associationName,
+          createdByClerkId: user.id,
+          createdByRole: 'admin',
+          delegateUnread: true,
+          id: noteId,
+          lastMessageAt: now,
+          lastMessageByRole: 'admin',
+          messages: {
+            create: {
+              authorClerkId: user.id,
+              authorRole: 'admin',
+              body,
+              id: messageId,
+              ...(uploadedDocument?.messageData ?? {})
+            }
+          },
+          priority,
+          status: 'open',
+          subject
+        }
+      })
+    } catch (error) {
+      if (uploadedDocument) {
+        await deleteCloudinaryDocumentWithoutBlocking({
+          cloudinaryDeliveryType: uploadedDocument.cloudinaryDocument.deliveryType,
+          cloudinaryPublicId: uploadedDocument.cloudinaryDocument.publicId,
+          cloudinaryResourceType: uploadedDocument.cloudinaryDocument.resourceType
+        })
       }
-    })
+
+      throw error
+    }
 
     revalidateIssueNoteViews()
 
@@ -1073,6 +1176,7 @@ export const replyToIssueNoteAction = async (prevState: any, formData: FormData)
     const noteId = getRequiredFormValue(formData, 'noteId')
     const body = getIssueNoteTextField(formData, 'body', issueNoteBodyMaxLength)
     const note = await assertIssueNoteAccess(noteId, actor)
+    const documentFile = getOptionalIssueNoteDocumentFile(formData)
 
     if (note.status !== 'open') {
       throw new Error('Resolved notes cannot receive replies.')
@@ -1080,31 +1184,53 @@ export const replyToIssueNoteAction = async (prevState: any, formData: FormData)
 
     const now = new Date()
     const isAdminReply = actor.role === 'admin'
+    const messageId = randomUUID()
 
-    await db.$transaction([
-      db.delegateIssueNoteMessage.create({
-        data: {
-          authorClerkId: actor.id,
-          authorRole: actor.role,
-          body,
-          id: randomUUID(),
+    const uploadedDocument = documentFile
+      ? await uploadIssueNoteDocument({
+          file: documentFile,
+          messageId,
           noteId: note.id
-        }
-      }),
-      db.delegateIssueNote.update({
-        data: {
-          adminLastReadAt: isAdminReply ? now : undefined,
-          adminUnread: !isAdminReply,
-          delegateLastReadAt: isAdminReply ? undefined : now,
-          delegateUnread: isAdminReply,
-          lastMessageAt: now,
-          lastMessageByRole: actor.role
-        },
-        where: {
-          id: note.id
-        }
-      })
-    ])
+        })
+      : null
+
+    try {
+      await db.$transaction([
+        db.delegateIssueNoteMessage.create({
+          data: {
+            authorClerkId: actor.id,
+            authorRole: actor.role,
+            body,
+            id: messageId,
+            noteId: note.id,
+            ...(uploadedDocument?.messageData ?? {})
+          }
+        }),
+        db.delegateIssueNote.update({
+          data: {
+            adminLastReadAt: isAdminReply ? now : undefined,
+            adminUnread: !isAdminReply,
+            delegateLastReadAt: isAdminReply ? undefined : now,
+            delegateUnread: isAdminReply,
+            lastMessageAt: now,
+            lastMessageByRole: actor.role
+          },
+          where: {
+            id: note.id
+          }
+        })
+      ])
+    } catch (error) {
+      if (uploadedDocument) {
+        await deleteCloudinaryDocumentWithoutBlocking({
+          cloudinaryDeliveryType: uploadedDocument.cloudinaryDocument.deliveryType,
+          cloudinaryPublicId: uploadedDocument.cloudinaryDocument.publicId,
+          cloudinaryResourceType: uploadedDocument.cloudinaryDocument.resourceType
+        })
+      }
+
+      throw error
+    }
 
     revalidateIssueNoteViews()
 

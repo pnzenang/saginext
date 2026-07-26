@@ -24,6 +24,7 @@ const hasCurrentPrismaDelegates = (client?: PrismaClient) =>
       'nameChangeRequest' in (client as unknown as Record<string, unknown>) &&
       hasCachedModelField(client, 'DelegateIssueNote', 'delegateUnread') &&
       hasCachedModelField(client, 'DelegateIssueNoteMessage', 'authorRole') &&
+      hasCachedModelField(client, 'DelegateIssueNoteMessage', 'cloudinaryPublicId') &&
       hasCachedModelField(client, 'DeceasedMember', 'associationCode') &&
       hasCachedModelField(client, 'DeceasedMemberDocument', 'cloudinaryPublicId') &&
       hasCachedModelField(client, 'NameChangeRequest', 'cloudinaryPublicId') &&
