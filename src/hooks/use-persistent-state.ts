@@ -2,6 +2,13 @@
 
 import { type Dispatch, type SetStateAction, useEffect, useRef, useState } from 'react'
 
+const isCompatiblePersistedValue = <T,>(value: unknown, initialValue: T): value is T => {
+  if (Array.isArray(initialValue)) return Array.isArray(value)
+  if (initialValue === null) return value === null
+
+  return typeof value === typeof initialValue
+}
+
 export function usePersistentState<T>(key: string, initialValue: T): [T, Dispatch<SetStateAction<T>>] {
   const initialValueRef = useRef(initialValue)
   const [state, setState] = useState<T>(initialValue)
@@ -12,9 +19,17 @@ export function usePersistentState<T>(key: string, initialValue: T): [T, Dispatc
       const rawValue = window.localStorage.getItem(key)
 
       if (rawValue !== null) {
-        setState(JSON.parse(rawValue) as T)
+        const parsedValue = JSON.parse(rawValue) as unknown
+
+        if (isCompatiblePersistedValue(parsedValue, initialValueRef.current)) {
+          setState(parsedValue)
+        } else {
+          window.localStorage.removeItem(key)
+          setState(initialValueRef.current)
+        }
       }
     } catch {
+      window.localStorage.removeItem(key)
       setState(initialValueRef.current)
     } finally {
       setHasLoadedPersistedState(true)
