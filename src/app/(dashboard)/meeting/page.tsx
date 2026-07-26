@@ -5,6 +5,7 @@ import {
   ArrowRight,
   CalendarDays,
   CalendarRange,
+  Clock,
   ExternalLink,
   Info,
   Video
@@ -46,11 +47,12 @@ const meetingPageCopy = {
     nextYear: 'Next year',
     recurringRule: 'Recurring rule',
     recurringRuleValue: 'Every last Sunday of the month',
+    timeLabel: 'Time',
+    meetingTime: '6:00 PM - 7:00 PM Eastern Time',
     nextMeeting: 'Next meeting',
     today: 'Today',
     timeNoteTitle: 'Meeting time',
-    timeNoteDescription:
-      'The exact meeting time should be confirmed through SAGI announcements or messages before each session.'
+    timeNoteDescription: 'Delegate meetings are scheduled from 6:00 PM to 7:00 PM Eastern Time.'
   },
   fr: {
     badge: 'Réunion des délégués',
@@ -67,11 +69,12 @@ const meetingPageCopy = {
     nextYear: 'Année suivante',
     recurringRule: 'Règle récurrente',
     recurringRuleValue: 'Chaque dernier dimanche du mois',
+    timeLabel: 'Heure',
+    meetingTime: "18 h 00 - 19 h 00, heure de l'Est",
     nextMeeting: 'Prochaine réunion',
     today: "Aujourd'hui",
     timeNoteTitle: 'Heure de la réunion',
-    timeNoteDescription:
-      'L’heure exacte doit être confirmée par les annonces ou messages SAGI avant chaque session.'
+    timeNoteDescription: "Les réunions des délégués sont prévues de 18 h 00 à 19 h 00, heure de l'Est."
   }
 } as const
 
@@ -192,6 +195,10 @@ const MeetingPage = async ({ searchParams }: MeetingPageProps) => {
               <p className='mt-1 text-xl font-black'>{dateFormatters[language].format(upcomingMeeting.date)}</p>
             </div>
             <div className='bg-background rounded-md border px-4 py-3'>
+              <p className='text-muted-foreground text-xs font-semibold uppercase'>{copy.timeLabel}</p>
+              <p className='mt-1 text-sm font-bold'>{copy.meetingTime}</p>
+            </div>
+            <div className='bg-background rounded-md border px-4 py-3'>
               <p className='text-muted-foreground text-xs font-semibold uppercase'>{copy.recurringRule}</p>
               <p className='mt-1 text-sm font-bold'>{copy.recurringRuleValue}</p>
             </div>
@@ -241,6 +248,10 @@ const MeetingPage = async ({ searchParams }: MeetingPageProps) => {
                       {monthFormatters[language].format(meeting.date)}
                     </p>
                     <p className='mt-1 font-extrabold'>{dateFormatters[language].format(meeting.date)}</p>
+                    <p className='text-muted-foreground mt-2 flex items-center gap-1.5 text-sm font-medium'>
+                      <Clock className='size-4' />
+                      {copy.meetingTime}
+                    </p>
                   </div>
                   {isToday ? (
                     <Badge>{copy.today}</Badge>
