@@ -93,6 +93,35 @@ const getRegistrationPaymentAlertCount = async () => {
   })
 }
 
+const getDelegateIssueNoteAlertCount = async (userId: string) => {
+  const profile = await db.profile.findUnique({
+    select: {
+      associationCode: true
+    },
+    where: {
+      clerkId: userId
+    }
+  })
+
+  if (!profile) return 0
+
+  return db.delegateIssueNote.count({
+    where: {
+      associationCode: profile.associationCode,
+      delegateUnread: true,
+      status: 'open'
+    }
+  })
+}
+
+const getAdminIssueNoteAlertCount = () =>
+  db.delegateIssueNote.count({
+    where: {
+      adminUnread: true,
+      status: 'open'
+    }
+  })
+
 type DashboardSidebarActionCounts = Record<string, number>
 
 const getDashboardSidebarActionCounts = async (userId?: string | null): Promise<DashboardSidebarActionCounts> => {
@@ -100,7 +129,7 @@ const getDashboardSidebarActionCounts = async (userId?: string | null): Promise<
 
   const isAdminUser = userId === process.env.ADMIN_USER_ID
 
-  const [nameChangeDocumentationCount, memberTransferCount, adminCounts] = await Promise.all([
+  const [nameChangeDocumentationCount, memberTransferCount, delegateIssueNoteCount, adminCounts] = await Promise.all([
     db.nameChangeRequest.count({
       where: {
         clerkId: userId,
@@ -123,6 +152,7 @@ const getDashboardSidebarActionCounts = async (userId?: string | null): Promise<
         ]
       }
     }),
+    isAdminUser ? Promise.resolve(0) : getDelegateIssueNoteAlertCount(userId),
     isAdminUser
       ? Promise.all([
           db.nameChangeRequest.count({
@@ -136,21 +166,29 @@ const getDashboardSidebarActionCounts = async (userId?: string | null): Promise<
             }
           }),
           getContributionPaymentAlertCount(),
+          getAdminIssueNoteAlertCount(),
           getRegistrationPaymentAlertCount()
         ])
-      : Promise.resolve<[number, number, number, number]>([0, 0, 0, 0])
+      : Promise.resolve<[number, number, number, number, number]>([0, 0, 0, 0, 0])
   ])
 
-  const [adminNameChangeCount, adminMemberTransferCount, adminContributionPaymentCount, adminRegistrationPaymentCount] =
-    adminCounts
+  const [
+    adminNameChangeCount,
+    adminMemberTransferCount,
+    adminContributionPaymentCount,
+    adminIssueNoteCount,
+    adminRegistrationPaymentCount
+  ] = adminCounts
 
   return {
     '/admin-contribution-payments': adminContributionPaymentCount,
     '/admin-member-transfers': adminMemberTransferCount,
     '/admin-name-changes': adminNameChangeCount,
+    '/admin-notes': adminIssueNoteCount,
     '/admin-registration-payments': adminRegistrationPaymentCount,
     '/member-transfer': memberTransferCount,
-    '/name-modification': nameChangeDocumentationCount
+    '/name-modification': nameChangeDocumentationCount,
+    '/notes': delegateIssueNoteCount
   } satisfies DashboardSidebarActionCounts
 }
 

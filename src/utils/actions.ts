@@ -12,9 +12,16 @@ import { after } from 'next/server'
 import { customAlphabet } from 'nanoid'
 
 import db from './db'
-import { createMemberSchema, DeceasedMemberSchema, memberSchema, RemovedMemberSchema, validateWithZodSchema } from './schemas'
+import {
+  createMemberSchema,
+  DeceasedMemberSchema,
+  memberSchema,
+  RemovedMemberSchema,
+  validateWithZodSchema
+} from './schemas'
 import { Prisma } from '@/generated/prisma/client'
 import {
+  delegateIssueNotePriorities,
   deceasedMemberDocumentLabels,
   deceasedMemberDocumentStatuses,
   deceasedMemberDocumentTypes,
@@ -23,6 +30,8 @@ import {
   memberTransferRequestStatuses,
   nameChangeRequestStatuses,
   reasonForLeaving,
+  type DelegateIssueNotePriority,
+  type DelegateIssueNoteRole,
   type DeceasedMemberDocumentStatus,
   type DeceasedMemberDocumentType,
   type MemberTransferRequestStatus,
@@ -795,6 +804,391 @@ const revalidateNameChangeDocumentationViews = () => {
 const revalidateMemberTransferViews = () => {
   revalidatePath('/admin-member-transfers')
   revalidatePath('/member-transfer')
+}
+
+const issueNoteSubjectMaxLength = 140
+const issueNoteBodyMaxLength = 4000
+
+const revalidateIssueNoteViews = () => {
+  revalidatePath('/notes')
+  revalidatePath('/admin-notes')
+}
+
+const getIssueNoteTextField = (formData: FormData, fieldName: string, maxLength: number) => {
+  const value = getRequiredFormValue(formData, fieldName)
+
+  if (value.length > maxLength) {
+    throw new Error(`${fieldName} must be ${maxLength} characters or fewer`)
+  }
+
+  return value
+}
+
+const getIssueNotePriority = (formData: FormData): DelegateIssueNotePriority => {
+  const priority = String(formData.get('priority') ?? 'normal')
+    .trim()
+    .toLowerCase()
+
+  return delegateIssueNotePriorities.includes(priority as DelegateIssueNotePriority)
+    ? (priority as DelegateIssueNotePriority)
+    : 'normal'
+}
+
+const getIssueNoteActor = async (): Promise<{
+  id: string
+  role: DelegateIssueNoteRole
+  profile: { associationCode: string; associationName: string } | null
+}> => {
+  const { userId } = await auth()
+
+  if (!userId) {
+    throw new Error('You must be logged in to access this route')
+  }
+
+  if (userId === process.env.ADMIN_USER_ID) {
+    return {
+      id: userId,
+      profile: null,
+      role: 'admin'
+    }
+  }
+
+  const profile = await db.profile.findUnique({
+    select: {
+      associationCode: true,
+      associationName: true,
+      internalRulesAcceptedAt: true
+    },
+    where: {
+      clerkId: userId
+    }
+  })
+
+  if (!profile) redirect('/profile/create')
+  if (!profile.internalRulesAcceptedAt) redirect('/internal-rules')
+
+  return {
+    id: userId,
+    profile: {
+      associationCode: profile.associationCode,
+      associationName: profile.associationName
+    },
+    role: 'delegate'
+  }
+}
+
+const assertIssueNoteAccess = async (noteId: string, actor: Awaited<ReturnType<typeof getIssueNoteActor>>) => {
+  const note = await db.delegateIssueNote.findUnique({
+    select: {
+      associationCode: true,
+      id: true,
+      status: true
+    },
+    where: {
+      id: noteId
+    }
+  })
+
+  if (!note) {
+    throw new Error('Note not found.')
+  }
+
+  if (actor.role === 'delegate' && note.associationCode !== actor.profile?.associationCode) {
+    throw new Error('You can only access notes for your association.')
+  }
+
+  return note
+}
+
+export const fetchDelegateIssueNotesPageAction = async () => {
+  const user = await getAuthUser()
+
+  const profile = await db.profile.findUnique({
+    select: {
+      associationCode: true,
+      associationName: true
+    },
+    where: {
+      clerkId: user.id
+    }
+  })
+
+  if (!profile) redirect('/profile/create')
+
+  const notes = await db.delegateIssueNote.findMany({
+    include: {
+      messages: {
+        orderBy: {
+          createdAt: 'asc'
+        }
+      }
+    },
+    orderBy: [{ status: 'asc' }, { lastMessageAt: 'desc' }],
+    where: {
+      associationCode: profile.associationCode
+    }
+  })
+
+  return { association: profile, currentUserId: user.id, notes }
+}
+
+export const fetchAdminIssueNotesPageAction = async () => {
+  const user = await assertAdminUser()
+
+  const [associations, notes] = await Promise.all([
+    db.profile.findMany({
+      orderBy: [{ associationCode: 'asc' }],
+      select: {
+        associationCode: true,
+        associationName: true
+      }
+    }),
+    db.delegateIssueNote.findMany({
+      include: {
+        messages: {
+          orderBy: {
+            createdAt: 'asc'
+          }
+        }
+      },
+      orderBy: [{ status: 'asc' }, { lastMessageAt: 'desc' }]
+    })
+  ])
+
+  return { associations, currentUserId: user.id, notes }
+}
+
+export const createDelegateIssueNoteAction = async (
+  prevState: any,
+  formData: FormData
+): Promise<{ message: string }> => {
+  const actor = await getIssueNoteActor()
+
+  try {
+    if (actor.role !== 'delegate' || !actor.profile) {
+      throw new Error('Use the admin notes page to contact a delegate.')
+    }
+
+    const now = new Date()
+    const subject = getIssueNoteTextField(formData, 'subject', issueNoteSubjectMaxLength)
+    const body = getIssueNoteTextField(formData, 'body', issueNoteBodyMaxLength)
+    const priority = getIssueNotePriority(formData)
+
+    await db.delegateIssueNote.create({
+      data: {
+        adminUnread: true,
+        associationCode: actor.profile.associationCode,
+        associationName: actor.profile.associationName,
+        createdByClerkId: actor.id,
+        createdByRole: actor.role,
+        delegateLastReadAt: now,
+        delegateUnread: false,
+        id: randomUUID(),
+        lastMessageAt: now,
+        lastMessageByRole: actor.role,
+        messages: {
+          create: {
+            authorClerkId: actor.id,
+            authorRole: actor.role,
+            body,
+            id: randomUUID()
+          }
+        },
+        priority,
+        status: 'open',
+        subject
+      }
+    })
+
+    revalidateIssueNoteViews()
+
+    return { message: 'Note sent to admin.' }
+  } catch (error) {
+    return renderError(error)
+  }
+}
+
+export const createAdminIssueNoteAction = async (prevState: any, formData: FormData): Promise<{ message: string }> => {
+  const user = await assertAdminUser()
+
+  try {
+    const now = new Date()
+    const associationCode = getRequiredFormValue(formData, 'associationCode').toUpperCase()
+    const subject = getIssueNoteTextField(formData, 'subject', issueNoteSubjectMaxLength)
+    const body = getIssueNoteTextField(formData, 'body', issueNoteBodyMaxLength)
+    const priority = getIssueNotePriority(formData)
+
+    const profile = await db.profile.findUnique({
+      select: {
+        associationCode: true,
+        associationName: true
+      },
+      where: {
+        associationCode
+      }
+    })
+
+    if (!profile) {
+      throw new Error('Select a valid delegate association.')
+    }
+
+    await db.delegateIssueNote.create({
+      data: {
+        adminLastReadAt: now,
+        adminUnread: false,
+        associationCode: profile.associationCode,
+        associationName: profile.associationName,
+        createdByClerkId: user.id,
+        createdByRole: 'admin',
+        delegateUnread: true,
+        id: randomUUID(),
+        lastMessageAt: now,
+        lastMessageByRole: 'admin',
+        messages: {
+          create: {
+            authorClerkId: user.id,
+            authorRole: 'admin',
+            body,
+            id: randomUUID()
+          }
+        },
+        priority,
+        status: 'open',
+        subject
+      }
+    })
+
+    revalidateIssueNoteViews()
+
+    return { message: 'Note sent to delegate.' }
+  } catch (error) {
+    return renderError(error)
+  }
+}
+
+export const replyToIssueNoteAction = async (prevState: any, formData: FormData): Promise<{ message: string }> => {
+  const actor = await getIssueNoteActor()
+
+  try {
+    const noteId = getRequiredFormValue(formData, 'noteId')
+    const body = getIssueNoteTextField(formData, 'body', issueNoteBodyMaxLength)
+    const note = await assertIssueNoteAccess(noteId, actor)
+
+    if (note.status !== 'open') {
+      throw new Error('Resolved notes cannot receive replies.')
+    }
+
+    const now = new Date()
+    const isAdminReply = actor.role === 'admin'
+
+    await db.$transaction([
+      db.delegateIssueNoteMessage.create({
+        data: {
+          authorClerkId: actor.id,
+          authorRole: actor.role,
+          body,
+          id: randomUUID(),
+          noteId: note.id
+        }
+      }),
+      db.delegateIssueNote.update({
+        data: {
+          adminLastReadAt: isAdminReply ? now : undefined,
+          adminUnread: !isAdminReply,
+          delegateLastReadAt: isAdminReply ? undefined : now,
+          delegateUnread: isAdminReply,
+          lastMessageAt: now,
+          lastMessageByRole: actor.role
+        },
+        where: {
+          id: note.id
+        }
+      })
+    ])
+
+    revalidateIssueNoteViews()
+
+    return { message: 'Reply added.' }
+  } catch (error) {
+    return renderError(error)
+  }
+}
+
+export const markIssueNoteReadAction = async (prevState: any, formData: FormData): Promise<{ message: string }> => {
+  const actor = await getIssueNoteActor()
+
+  try {
+    const noteId = getRequiredFormValue(formData, 'noteId')
+    const note = await assertIssueNoteAccess(noteId, actor)
+    const now = new Date()
+
+    await db.delegateIssueNote.update({
+      data:
+        actor.role === 'admin'
+          ? {
+              adminLastReadAt: now,
+              adminUnread: false
+            }
+          : {
+              delegateLastReadAt: now,
+              delegateUnread: false
+            },
+      where: {
+        id: note.id
+      }
+    })
+
+    revalidateIssueNoteViews()
+
+    return { message: 'Note marked as read.' }
+  } catch (error) {
+    return renderError(error)
+  }
+}
+
+export const resolveIssueNoteAction = async (prevState: any, formData: FormData): Promise<{ message: string }> => {
+  const user = await assertAdminUser()
+
+  try {
+    const noteId = getRequiredFormValue(formData, 'noteId')
+
+    const note = await db.delegateIssueNote.findUnique({
+      select: {
+        id: true,
+        status: true
+      },
+      where: {
+        id: noteId
+      }
+    })
+
+    if (!note) {
+      throw new Error('Note not found.')
+    }
+
+    if (note.status === 'resolved') {
+      return { message: 'Note is already resolved.' }
+    }
+
+    await db.delegateIssueNote.update({
+      data: {
+        adminUnread: false,
+        delegateUnread: false,
+        resolvedAt: new Date(),
+        resolvedByClerkId: user.id,
+        status: 'resolved'
+      },
+      where: {
+        id: note.id
+      }
+    })
+
+    revalidateIssueNoteViews()
+
+    return { message: 'Note resolved.' }
+  } catch (error) {
+    return renderError(error)
+  }
 }
 
 const assertMemberCanBeWithdrawn = async (memberId: string) => {

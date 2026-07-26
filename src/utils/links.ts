@@ -17,6 +17,7 @@ import {
   History,
   List,
   Megaphone,
+  MessageSquareText,
   Table,
   FileCheck,
   ArrowLeftRight,
@@ -83,6 +84,11 @@ export const getPagesItems = (date: Date = new Date()): MenuItem[] => [
     icon: CreditCard,
     label: 'Payment Instructions',
     href: '/payment-instructions'
+  },
+  {
+    icon: MessageSquareText,
+    label: 'Notes',
+    href: '/notes'
   },
   {
     icon: List,
@@ -175,6 +181,11 @@ export const getPagesItems = (date: Date = new Date()): MenuItem[] => [
     icon: BellDot,
     label: 'Payment Update',
     href: '/admin-payment-update'
+  },
+  {
+    icon: MessageSquareText,
+    label: 'Admin Notes',
+    href: '/admin-notes'
   },
   {
     icon: WalletCards,

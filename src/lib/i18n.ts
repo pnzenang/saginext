@@ -100,6 +100,7 @@ const dashboardMenuLabelTranslations: Record<string, string> = {
   'Death Announcement': 'Annonce de décès',
   'All Deceased Members': 'Tous les membres décédés',
   'Payment Instructions': 'Instructions de paiement',
+  Notes: 'Notes',
   'Monthly Additions': 'Ajouts mensuels',
   'Death Documentations': 'Documents de décès',
   'Name Change & Documentations': 'Changement de nom et documents',
@@ -117,6 +118,7 @@ const dashboardMenuLabelTranslations: Record<string, string> = {
   'Admin Count ': 'Décompte admin',
   'Contribution Calculation': 'Calcul des cotisations',
   'Payment Update': 'Mise à jour des paiements',
+  'Admin Notes': 'Notes admin',
   'Admin Contribution Payments': 'Paiements des cotisations',
   'Admin Registration Payments': "Paiements d'inscription",
   'Admin Transaction History': 'Historique des transactions'

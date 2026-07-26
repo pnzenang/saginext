@@ -294,3 +294,25 @@ export const memberTransferRequestStatusLabels: Record<MemberTransferRequestStat
   receiving_delegate_pending: 'Delegate release pending',
   receiving_delegate_rejected: 'Delegate rejected'
 }
+
+export const delegateIssueNoteStatuses = ['open', 'resolved'] as const
+
+export type DelegateIssueNoteStatus = (typeof delegateIssueNoteStatuses)[number]
+
+export const delegateIssueNoteStatusLabels: Record<DelegateIssueNoteStatus, string> = {
+  open: 'Open',
+  resolved: 'Resolved'
+}
+
+export const delegateIssueNotePriorities = ['normal', 'urgent'] as const
+
+export type DelegateIssueNotePriority = (typeof delegateIssueNotePriorities)[number]
+
+export const delegateIssueNotePriorityLabels: Record<DelegateIssueNotePriority, string> = {
+  normal: 'Normal',
+  urgent: 'Urgent'
+}
+
+export const delegateIssueNoteRoles = ['admin', 'delegate'] as const
+
+export type DelegateIssueNoteRole = (typeof delegateIssueNoteRoles)[number]
