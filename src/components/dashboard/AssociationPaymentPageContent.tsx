@@ -5,7 +5,7 @@ import { useActionState, useEffect, useId } from 'react'
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { DollarSign } from 'lucide-react'
+import { AlertTriangle, DollarSign } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { SubmitButton } from '@/components/forms/Buttons'
@@ -95,6 +95,8 @@ const associationPaymentCopy = {
     registrationTitle: 'Registration Payment',
     usedForRegistration: 'Pending Registration Fees',
     verifiedOn: 'Verified on',
+    verificationWarning:
+      'Record a payment only after sending the money. Submitted amounts are not counted as paid until SAGI verifies the real Zelle payment, and unmatched records will be reversed.',
     zelleReminder:
       'Send the Zelle first, then enter the exact amount here. Include your 4-letter association code in the Zelle memo.',
     balance: {
@@ -143,6 +145,8 @@ const associationPaymentCopy = {
     registrationTitle: "Paiement d'inscription",
     usedForRegistration: "Frais d'inscription en attente",
     verifiedOn: 'Vérifié le',
+    verificationWarning:
+      "Enregistrez un paiement seulement après avoir envoyé l'argent. Les montants soumis ne sont pas comptés comme payés tant que SAGI n'a pas vérifié le vrai paiement Zelle, et les enregistrements non correspondants seront annulés.",
     zelleReminder:
       "Envoyez d'abord le Zelle, puis saisissez ici le montant exact. Incluez le code d'association à 4 lettres dans le mémo Zelle.",
     balance: {
@@ -182,6 +186,7 @@ type PaymentFormProps = {
   fieldLabel: string
   reminder: string
   submitText: string
+  warning: string
 }
 
 type ContributionPaymentPageProps = {
@@ -202,7 +207,7 @@ type RegistrationPaymentPageProps = {
 
 type AssociationPaymentPageContentProps = ContributionPaymentPageProps | RegistrationPaymentPageProps
 
-const PaymentForm = ({ action, fieldLabel, reminder, submitText }: PaymentFormProps) => {
+const PaymentForm = ({ action, fieldLabel, reminder, submitText, warning }: PaymentFormProps) => {
   const [state, formAction] = useActionState(action, initialState)
   const amountInputId = useId()
 
@@ -237,6 +242,10 @@ const PaymentForm = ({ action, fieldLabel, reminder, submitText }: PaymentFormPr
         </div>
 
         <p className='text-muted-foreground text-xs leading-snug font-semibold'>{reminder}</p>
+        <div className='border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200 flex gap-2 rounded-md border px-3 py-2 text-xs leading-snug font-semibold'>
+          <AlertTriangle className='mt-0.5 size-4 shrink-0' aria-hidden='true' />
+          <p className='min-w-0 break-words'>{warning}</p>
+        </div>
         <SubmitButton text={submitText} className='w-full whitespace-normal' />
         {state.message ? <p className='text-sm font-semibold break-words'>{state.message}</p> : null}
       </div>
@@ -692,6 +701,7 @@ const AssociationPaymentPageContent = (props: AssociationPaymentPageContentProps
             fieldLabel={isContributionPayment ? copy.contributionAmountSent : copy.registrationAmountSent}
             reminder={copy.zelleReminder}
             submitText={isContributionPayment ? copy.contributionSubmit : copy.registrationSubmit}
+            warning={copy.verificationWarning}
           />
 
           {isContributionPayment ? (
