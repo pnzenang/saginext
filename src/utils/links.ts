@@ -87,7 +87,7 @@ export const getPagesItems = (date: Date = new Date()): MenuItem[] => [
   },
   {
     icon: MessageSquareText,
-    label: 'Notes',
+    label: 'Messages',
     href: '/notes'
   },
   {
@@ -184,7 +184,7 @@ export const getPagesItems = (date: Date = new Date()): MenuItem[] => [
   },
   {
     icon: MessageSquareText,
-    label: 'Admin Notes',
+    label: 'Admin Messages',
     href: '/admin-notes'
   },
   {
