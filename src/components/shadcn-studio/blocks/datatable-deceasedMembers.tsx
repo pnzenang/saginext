@@ -141,8 +141,8 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
     accessorKey: 'associationName',
     cell: ({ row }) => (
       <div className='flex min-w-0 items-center gap-2'>
-        <div className='flex flex-col'>
-          <span className='line-clamp-2 font-medium break-words'>{row.getValue('associationName')}</span>
+        <div className='flex min-w-0 flex-col'>
+          <span className='truncate font-medium'>{row.getValue('associationName')}</span>
         </div>
       </div>
     ),
@@ -156,8 +156,8 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
     accessorKey: 'placeOfDeath',
     cell: ({ row }) => (
       <div className='flex min-w-0 items-center gap-2'>
-        <div className='flex flex-col'>
-          <span className='line-clamp-2 font-medium break-words'>{row.getValue('placeOfDeath')}</span>
+        <div className='flex min-w-0 flex-col'>
+          <span className='truncate font-medium'>{row.getValue('placeOfDeath')}</span>
         </div>
       </div>
     ),
@@ -234,7 +234,7 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
       return (
         <Badge
           className={cn(
-            'max-w-full rounded-sm border-none text-left text-xs break-words whitespace-normal capitalize focus-visible:outline-none',
+            'w-full max-w-full justify-start truncate rounded-sm border-none text-left text-xs capitalize focus-visible:outline-none',
             styles
           )}
         >
