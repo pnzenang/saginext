@@ -4888,7 +4888,7 @@ export const createDeceasedMemberActionAdmin = async (
     return renderError(error)
   }
 
-  redirect('/deceased-members')
+  redirect('/admin-all-deceased')
 }
 
 export const fetchDeceasedMembersActionAdmin = async () => {
