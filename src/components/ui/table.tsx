@@ -13,9 +13,23 @@ const getTooltipTitle = (title: React.HTMLAttributes<HTMLElement>['title']) =>
   typeof title === 'string' && title.trim() ? title : undefined
 
 const truncatedTextSelector = '.truncate, .line-clamp-1, .line-clamp-2, .line-clamp-3'
+const truncationClassNames = ['truncate', 'line-clamp-1', 'line-clamp-2', 'line-clamp-3']
 
 const hasTruncationClass = (element: HTMLElement) =>
-  ['truncate', 'line-clamp-1', 'line-clamp-2', 'line-clamp-3'].some(className => element.classList.contains(className))
+  truncationClassNames.some(className => element.classList.contains(className))
+
+const getTruncatedTextCandidates = (element: HTMLElement) => {
+  const candidates = new Set<HTMLElement>()
+
+  if (hasTruncationClass(element)) candidates.add(element)
+
+  element.querySelectorAll<HTMLElement>(truncatedTextSelector).forEach(candidate => candidates.add(candidate))
+
+  return Array.from(candidates)
+}
+
+const hasVisibleOverflow = (element: HTMLElement) =>
+  element.scrollWidth > element.clientWidth + 1 || element.scrollHeight > element.clientHeight + 1
 
 const useTruncatedTooltip = <TElement extends HTMLElement>(tooltipTitle?: string) => {
   const elementRef = React.useRef<TElement>(null)
@@ -33,27 +47,31 @@ const useTruncatedTooltip = <TElement extends HTMLElement>(tooltipTitle?: string
     if (!element) return
 
     const checkTruncation = () => {
-      const candidates = [
-        ...(hasTruncationClass(element) ? [element] : []),
-        ...Array.from(element.querySelectorAll<HTMLElement>(truncatedTextSelector))
-      ]
-
-      setIsTruncated(
-        candidates.some(
-          candidate =>
-            candidate.scrollWidth > candidate.clientWidth + 1 || candidate.scrollHeight > candidate.clientHeight + 1
-        )
-      )
+      setIsTruncated(getTruncatedTextCandidates(element).some(hasVisibleOverflow))
     }
 
-    checkTruncation()
+    let frameId = window.requestAnimationFrame(checkTruncation)
 
-    const resizeObserver = new ResizeObserver(checkTruncation)
+    if (typeof ResizeObserver === 'undefined') {
+      checkTruncation()
+
+      return () => window.cancelAnimationFrame(frameId)
+    }
+
+    const scheduleCheck = () => {
+      window.cancelAnimationFrame(frameId)
+      frameId = window.requestAnimationFrame(checkTruncation)
+    }
+
+    const resizeObserver = new ResizeObserver(scheduleCheck)
 
     resizeObserver.observe(element)
-    element.querySelectorAll<HTMLElement>(truncatedTextSelector).forEach(candidate => resizeObserver.observe(candidate))
+    getTruncatedTextCandidates(element).forEach(candidate => resizeObserver.observe(candidate))
 
-    return () => resizeObserver.disconnect()
+    return () => {
+      window.cancelAnimationFrame(frameId)
+      resizeObserver.disconnect()
+    }
   }, [tooltipTitle])
 
   return { elementRef, isTruncated }
@@ -126,14 +144,16 @@ function TableHead({ className, title, children, 'aria-label': ariaLabel, ...pro
     </th>
   )
 
-  if (!tooltipTitle || !isTruncated) return tableHead
+  if (!tooltipTitle) return tableHead
 
   return (
     <Tooltip>
       <TooltipTrigger asChild>{tableHead}</TooltipTrigger>
-      <TooltipContent side='top' sideOffset={4}>
-        {tooltipTitle}
-      </TooltipContent>
+      {isTruncated ? (
+        <TooltipContent side='top' sideOffset={4}>
+          {tooltipTitle}
+        </TooltipContent>
+      ) : null}
     </Tooltip>
   )
 }
@@ -157,14 +177,16 @@ function TableCell({ className, title, children, 'aria-label': ariaLabel, ...pro
     </td>
   )
 
-  if (!tooltipTitle || !isTruncated) return tableCell
+  if (!tooltipTitle) return tableCell
 
   return (
     <Tooltip>
       <TooltipTrigger asChild>{tableCell}</TooltipTrigger>
-      <TooltipContent side='top' sideOffset={4}>
-        {tooltipTitle}
-      </TooltipContent>
+      {isTruncated ? (
+        <TooltipContent side='top' sideOffset={4}>
+          {tooltipTitle}
+        </TooltipContent>
+      ) : null}
     </Tooltip>
   )
 }
