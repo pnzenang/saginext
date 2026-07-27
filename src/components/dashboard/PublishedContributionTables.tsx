@@ -453,17 +453,23 @@ const PublishedContributionTables = ({
                     <TableRow key={death.id} className='odd:bg-muted/30 even:bg-background'>
                       <TableCell
                         data-label='Matriculation'
-                        className='px-1.5 font-mono font-semibold break-all whitespace-normal md:px-2 md:text-sm md:whitespace-nowrap'
+                        title={death.memberMatriculationNumber}
+                        className='truncate px-1.5 font-mono font-semibold whitespace-nowrap md:px-2 md:text-sm'
                       >
                         {death.memberMatriculationNumber}
                       </TableCell>
                       <TableCell
                         data-label='First Name'
-                        className='px-1.5 font-semibold break-words whitespace-normal md:px-2'
+                        title={death.firstName}
+                        className='truncate px-1.5 font-semibold whitespace-nowrap md:px-2'
                       >
                         {death.firstName}
                       </TableCell>
-                      <TableCell data-label='Last Name' className='font-semibold'>
+                      <TableCell
+                        data-label='Last Name'
+                        title={death.lastAndMiddleNames}
+                        className='truncate font-semibold whitespace-nowrap'
+                      >
                         {death.lastAndMiddleNames}
                       </TableCell>
                       <TableCell data-label='Registration Date' className='hidden whitespace-nowrap lg:table-cell'>
@@ -471,7 +477,8 @@ const PublishedContributionTables = ({
                       </TableCell>
                       <TableCell
                         data-label='Date of Death'
-                        className='px-1.5 break-words whitespace-normal md:min-w-40 md:px-2 md:whitespace-nowrap'
+                        title={formatDate(death.dateOfDeath)}
+                        className='truncate px-1.5 whitespace-nowrap md:min-w-40 md:px-2'
                       >
                         {formatDate(death.dateOfDeath)}
                       </TableCell>
@@ -487,8 +494,12 @@ const PublishedContributionTables = ({
                       >
                         {currencyFormatter.format(death.amountToContribute)}
                       </TableCell>
-                      <TableCell data-label='Association' className='hidden min-w-72 md:table-cell'>
-                        <span className='block font-semibold'>{death.associationName}</span>
+                      <TableCell
+                        data-label='Association'
+                        title={death.associationName}
+                        className='hidden min-w-72 truncate whitespace-nowrap md:table-cell'
+                      >
+                        <span className='block truncate font-semibold'>{death.associationName}</span>
                       </TableCell>
                     </TableRow>
                   ))
@@ -590,7 +601,11 @@ const PublishedContributionTables = ({
                     <TableCell data-label='No.' className='px-1.5 text-right font-semibold md:px-2'>
                       {index + 1}
                     </TableCell>
-                    <TableCell data-label='Association' className='hidden font-semibold md:table-cell'>
+                    <TableCell
+                      data-label='Association'
+                      title={group.associationName}
+                      className='hidden truncate font-semibold whitespace-nowrap md:table-cell'
+                    >
                       {group.associationName}
                     </TableCell>
                     <TableCell data-label='Code' className='px-1.5 font-mono text-sm font-semibold md:min-w-28 md:px-2'>

@@ -163,18 +163,28 @@ const ContributionCalculationPage = async () => {
                 ) : (
                   calculationDeaths.map(death => (
                     <TableRow key={death.id} className='odd:bg-muted/30 even:bg-background'>
-                      <TableCell className='w-28 font-mono text-sm font-semibold'>
+                      <TableCell
+                        title={death.memberMatriculationNumber}
+                        className='w-28 truncate font-mono text-sm font-semibold whitespace-nowrap'
+                      >
                         {death.memberMatriculationNumber}
                       </TableCell>
-                      <TableCell className='w-28 font-semibold'>{death.firstName}</TableCell>
-                      <TableCell className='w-40 font-semibold'>{death.lastAndMiddleNames}</TableCell>
+                      <TableCell title={death.firstName} className='w-28 truncate font-semibold whitespace-nowrap'>
+                        {death.firstName}
+                      </TableCell>
+                      <TableCell
+                        title={death.lastAndMiddleNames}
+                        className='w-40 truncate font-semibold whitespace-nowrap'
+                      >
+                        {death.lastAndMiddleNames}
+                      </TableCell>
                       <TableCell className='whitespace-nowrap'>{formatDate(death.registrationDate)}</TableCell>
                       <TableCell className='whitespace-nowrap'>{formatDate(death.dateOfDeath)}</TableCell>
                       <TableCell className='font-semibold whitespace-nowrap'>
                         {currencyFormatter.format(death.amountToContribute)}
                       </TableCell>
-                      <TableCell>
-                        <span className='block min-w-52 font-semibold'>{death.associationName}</span>
+                      <TableCell title={death.associationName}>
+                        <span className='block min-w-52 truncate font-semibold'>{death.associationName}</span>
                       </TableCell>
                       <TableCell>
                         <form action={deleteContributionCalculationDeathAction}>

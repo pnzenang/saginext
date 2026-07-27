@@ -56,6 +56,7 @@ import { usePersistentColumnFilters } from '@/hooks/use-persistent-column-filter
 import { usePagination } from '@/hooks/use-pagination'
 
 import { cn } from '@/lib/utils'
+import { getTableCellTitle } from '@/utils/table'
 import { getSelectFilterValues } from '@/utils/table-filter-values'
 import type { RemovedMemberType } from '@/utils/types'
 import { deleteRemovedMemberAction } from '@/utils/actions'
@@ -76,9 +77,9 @@ const columns: ColumnDef<RemovedMemberType>[] = [
     header: 'Last/Middle',
     accessorKey: 'lastAndMiddleNames',
     cell: ({ row }) => (
-      <div className='flex items-center gap-2'>
-        <div className='flex flex-col'>
-          <span className='font-medium'>{row.getValue('lastAndMiddleNames')}</span>
+      <div className='flex min-w-0 items-center gap-2'>
+        <div className='flex min-w-0 flex-col'>
+          <span className='truncate font-medium'>{row.getValue('lastAndMiddleNames')}</span>
         </div>
       </div>
     ),
@@ -104,9 +105,9 @@ const columns: ColumnDef<RemovedMemberType>[] = [
     header: 'First',
     accessorKey: 'firstName',
     cell: ({ row }) => (
-      <div className='flex items-center gap-2'>
-        <div className='flex flex-col'>
-          <span className='font-medium'>{row.getValue('firstName')}</span>
+      <div className='flex min-w-0 items-center gap-2'>
+        <div className='flex min-w-0 flex-col'>
+          <span className='truncate font-medium'>{row.getValue('firstName')}</span>
         </div>
       </div>
     ),
@@ -120,9 +121,9 @@ const columns: ColumnDef<RemovedMemberType>[] = [
     header: 'Matric.',
     accessorKey: 'memberMatriculationNumber',
     cell: ({ row }) => (
-      <div className='flex items-center gap-2'>
-        <div className='flex flex-col'>
-          <span className='font-medium'>{row.getValue('memberMatriculationNumber')}</span>
+      <div className='flex min-w-0 items-center gap-2'>
+        <div className='flex min-w-0 flex-col'>
+          <span className='truncate font-medium'>{row.getValue('memberMatriculationNumber')}</span>
         </div>
       </div>
     ),
@@ -135,9 +136,9 @@ const columns: ColumnDef<RemovedMemberType>[] = [
     header: 'Code',
     accessorKey: 'associationCode',
     cell: ({ row }) => (
-      <div className='flex items-center gap-2'>
-        <div className='flex flex-col'>
-          <span className='font-medium'>{row.getValue('associationCode')}</span>
+      <div className='flex min-w-0 items-center gap-2'>
+        <div className='flex min-w-0 flex-col'>
+          <span className='truncate font-medium'>{row.getValue('associationCode')}</span>
         </div>
       </div>
     ),
@@ -163,9 +164,9 @@ const columns: ColumnDef<RemovedMemberType>[] = [
     header: 'Reason',
     accessorKey: 'reasonForLeaving',
     cell: ({ row }) => (
-      <div className='flex items-center gap-2'>
-        <div className='flex flex-col'>
-          <span className='font-medium'>{row.getValue('reasonForLeaving')}</span>
+      <div className='flex min-w-0 items-center gap-2'>
+        <div className='flex min-w-0 flex-col'>
+          <span className='truncate font-medium'>{row.getValue('reasonForLeaving')}</span>
         </div>
       </div>
     ),
@@ -531,6 +532,7 @@ const RemovedMembersDataTable = ({ data }: { data: RemovedMemberType[] }) => {
                       <TableCell
                         key={cell.id}
                         data-label={cellLabel}
+                        title={getTableCellTitle(cell)}
                         className='h-14 px-1.5 whitespace-normal first:pl-3 last:w-32 last:px-3'
                       >
                         <span className='sr-only'>{cellLabel}: </span>

@@ -206,7 +206,7 @@ const MonthlyAdditionsTable = ({ monthKey, rows }: { monthKey: string; rows: Mon
         <div className='hidden overflow-x-auto md:block'>
           <Table
             data-monthly-additions-table
-            className='[[&_td]:wrap-break-word table-fixed [&_td]:py-3 [&_td]:leading-relaxed [&_td]:whitespace-normal [&_th]:wrap-break-word [&_th]:whitespace-normal'
+            className='table-fixed [&_td]:py-3 [&_td]:leading-relaxed [&_td]:whitespace-nowrap [&_th]:whitespace-normal'
           >
             <colgroup>
               {columns.map(column => (
@@ -254,10 +254,18 @@ const MonthlyAdditionsTable = ({ monthKey, rows }: { monthKey: string; rows: Mon
                         {row.associationCode}
                       </Badge>
                     </TableCell>
-                    <TableCell className='font-semibold'>{row.associationName}</TableCell>
-                    <TableCell className='font-mono text-sm'>{row.memberMatriculationNumber}</TableCell>
-                    <TableCell className='font-semibold'>{row.firstName}</TableCell>
-                    <TableCell className='font-semibold'>{row.lastAndMiddleNames}</TableCell>
+                    <TableCell title={row.associationName} className='truncate font-semibold'>
+                      {row.associationName}
+                    </TableCell>
+                    <TableCell title={row.memberMatriculationNumber} className='truncate font-mono text-sm'>
+                      {row.memberMatriculationNumber}
+                    </TableCell>
+                    <TableCell title={row.firstName} className='truncate font-semibold'>
+                      {row.firstName}
+                    </TableCell>
+                    <TableCell title={row.lastAndMiddleNames} className='truncate font-semibold'>
+                      {row.lastAndMiddleNames}
+                    </TableCell>
                     <TableCell className='font-semibold whitespace-nowrap'>{formatDate(row.vestedAt)}</TableCell>
                   </TableRow>
                 ))

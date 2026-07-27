@@ -62,6 +62,7 @@ import { usePersistentColumnFilters } from '@/hooks/use-persistent-column-filter
 import { usePagination } from '@/hooks/use-pagination'
 
 import { cn } from '@/lib/utils'
+import { getTableCellTitle } from '@/utils/table'
 import { getSelectFilterValues } from '@/utils/table-filter-values'
 
 import PaginationControls from '@/components/global/PaginationControls'
@@ -673,6 +674,7 @@ const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
                         <TableCell
                           key={cell.id}
                           data-label={cellLabel}
+                          title={getTableCellTitle(cell)}
                           className={cn(
                             'h-14 px-2 whitespace-normal first:pl-3 last:w-24 last:px-3',
                             getResponsiveColumnClassName(cell.column.id)

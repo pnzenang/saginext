@@ -272,7 +272,7 @@ const AdminCountBreakdown = ({ counts, totals }: AdminCountBreakdownProps) => {
                 {paginatedCounts.map(item => (
                   <div key={item.associationCode} className='odd:bg-muted/35 even:bg-background space-y-4 p-5'>
                     <div className='min-w-0'>
-                      <p className='line-clamp-2 text-sm font-semibold' title={item.associationName}>
+                      <p className='truncate text-sm font-semibold' title={item.associationName}>
                         {item.associationName}
                       </p>
                       <div className='mt-1 flex flex-wrap items-center gap-2'>

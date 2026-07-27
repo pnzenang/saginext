@@ -73,6 +73,7 @@ import {
 import type { AssociationContributionSummary } from '@/utils/sagi-contribution-summary'
 import type { AssociationRegistrationSummary } from '@/utils/sagi-registration-summary'
 import { getSelectFilterValues } from '@/utils/table-filter-values'
+import { getTableCellTitle } from '@/utils/table'
 import { formatLongevity } from '@/utils/formatLongevity'
 import { memberStatus, type MemberType } from '@/utils/types'
 
@@ -248,11 +249,7 @@ const getMonthFormatter = (language: AppLanguage) =>
     month: 'long'
   })
 
-const getVisibleMatriculationNumber = (
-  status: unknown,
-  matriculationNumber: unknown,
-  pendingLabel = 'Pending'
-) => {
+const getVisibleMatriculationNumber = (status: unknown, matriculationNumber: unknown, pendingLabel = 'Pending') => {
   if (status === memberStatus.Pending || status === memberStatus.Awaiting) return pendingLabel
 
   return String(matriculationNumber ?? '')
@@ -317,7 +314,7 @@ const RegistrationPaymentWarningCell = ({ language, member }: { language: AppLan
   return (
     <Badge
       variant='outline'
-      className='border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive/40 dark:bg-destructive/15 max-w-full shrink rounded-sm text-left break-words whitespace-normal'
+      className='border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive/40 dark:bg-destructive/15 w-full max-w-full justify-start truncate rounded-sm text-left'
     >
       <AlertTriangle aria-hidden='true' />
       {warning}
@@ -330,9 +327,9 @@ const getColumns = (copy: MemberTableCopy, language: AppLanguage): ColumnDef<Mem
     header: copy.columns.code,
     accessorKey: 'associationCode',
     cell: ({ row }) => (
-      <div className='flex items-center gap-2'>
-        <div className='flex flex-col'>
-          <span className='font-medium'>{row.getValue('associationCode')}</span>
+      <div className='flex min-w-0 items-center gap-2'>
+        <div className='flex min-w-0 flex-col'>
+          <span className='truncate font-medium'>{row.getValue('associationCode')}</span>
         </div>
       </div>
     ),
@@ -349,9 +346,9 @@ const getColumns = (copy: MemberTableCopy, language: AppLanguage): ColumnDef<Mem
       const matriculationNumber = row.getValue('memberMatriculationNumber')
 
       return (
-        <div className='flex items-center gap-2'>
-          <div className='flex flex-col'>
-            <span className='font-medium'>
+        <div className='flex min-w-0 items-center gap-2'>
+          <div className='flex min-w-0 flex-col'>
+            <span className='truncate font-medium'>
               {getVisibleMatriculationNumber(status, matriculationNumber, copy.pendingMatriculation)}
             </span>
           </div>
@@ -367,9 +364,9 @@ const getColumns = (copy: MemberTableCopy, language: AppLanguage): ColumnDef<Mem
     header: copy.columns.lastAndMiddleShort,
     accessorKey: 'lastAndMiddleNames',
     cell: ({ row }) => (
-      <div className='flex items-center gap-2'>
-        <div className='flex flex-col'>
-          <span className='font-medium'>{row.getValue('lastAndMiddleNames')}</span>
+      <div className='flex min-w-0 items-center gap-2'>
+        <div className='flex min-w-0 flex-col'>
+          <span className='truncate font-medium'>{row.getValue('lastAndMiddleNames')}</span>
         </div>
       </div>
     ),
@@ -382,9 +379,9 @@ const getColumns = (copy: MemberTableCopy, language: AppLanguage): ColumnDef<Mem
     header: copy.columns.firstShort,
     accessorKey: 'firstName',
     cell: ({ row }) => (
-      <div className='flex items-center gap-2'>
-        <div className='flex flex-col'>
-          <span className='font-medium'>{row.getValue('firstName')}</span>
+      <div className='flex min-w-0 items-center gap-2'>
+        <div className='flex min-w-0 flex-col'>
+          <span className='truncate font-medium'>{row.getValue('firstName')}</span>
         </div>
       </div>
     ),
@@ -443,7 +440,7 @@ const getColumns = (copy: MemberTableCopy, language: AppLanguage): ColumnDef<Mem
       return (
         <Badge
           className={cn(
-            'max-w-full shrink rounded-sm border text-left break-words whitespace-normal capitalize focus-visible:outline-none',
+            'w-full max-w-full justify-start truncate rounded-sm border text-left capitalize focus-visible:outline-none',
             styles
           )}
         >
@@ -476,7 +473,12 @@ const getColumns = (copy: MemberTableCopy, language: AppLanguage): ColumnDef<Mem
       }[status]
 
       return (
-        <Badge className={cn('rounded-sm border-none capitalize focus-visible:outline-none', styles)}>
+        <Badge
+          className={cn(
+            'w-full max-w-full justify-start truncate rounded-sm border-none capitalize focus-visible:outline-none',
+            styles
+          )}
+        >
           {formatMemberStatus(status, language)}
         </Badge>
       )
@@ -637,14 +639,11 @@ const MembersDataTable = ({
 }: MembersDataTableProps) => {
   const copy = memberTableCopy[language]
 
-  const tableColumns = useMemo(
-    () => {
-      const nextColumns = getColumns(copy, language)
+  const tableColumns = useMemo(() => {
+    const nextColumns = getColumns(copy, language)
 
-      return readOnly ? nextColumns.filter(column => column.id !== 'actions') : nextColumns
-    },
-    [copy, language, readOnly]
-  )
+    return readOnly ? nextColumns.filter(column => column.id !== 'actions') : nextColumns
+  }, [copy, language, readOnly])
 
   const [columnFilters, setColumnFilters] = usePersistentColumnFilters('sagi:all-members:columnFilters')
 
@@ -1102,6 +1101,7 @@ const MembersDataTable = ({
                       <TableCell
                         key={cell.id}
                         data-label={cellLabel}
+                        title={getTableCellTitle(cell)}
                         className={cn(
                           'h-14 px-1.5 whitespace-normal first:w-12.5 first:pl-3 last:w-20 last:px-3',
                           getResponsiveColumnClassName(cell.column.id)

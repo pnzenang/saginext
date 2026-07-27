@@ -87,6 +87,7 @@ import { usePersistentColumnFilters } from '@/hooks/use-persistent-column-filter
 import { usePagination } from '@/hooks/use-pagination'
 import { formatMemberStatus, type AppLanguage } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
+import { getTableCellTitle } from '@/utils/table'
 import { getSelectFilterValues } from '@/utils/table-filter-values'
 import { formatLongevity } from '@/utils/formatLongevity'
 import {
@@ -291,11 +292,7 @@ const adminMemberTableCopy = {
 
 type AdminMemberTableCopy = (typeof adminMemberTableCopy)[AppLanguage]
 
-const getVisibleMatriculationNumber = (
-  status: unknown,
-  matriculationNumber: unknown,
-  pendingLabel = 'Pending'
-) => {
+const getVisibleMatriculationNumber = (status: unknown, matriculationNumber: unknown, pendingLabel = 'Pending') => {
   if (status === memberStatus.Pending || status === memberStatus.Awaiting) return pendingLabel
 
   return String(matriculationNumber ?? '')
@@ -360,7 +357,7 @@ const RegistrationPaymentWarningCell = ({ language, member }: { language: AppLan
   return (
     <Badge
       variant='outline'
-      className='border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive/40 dark:bg-destructive/15 max-w-full shrink whitespace-normal rounded-sm text-left break-words'
+      className='border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive/40 dark:bg-destructive/15 w-full max-w-full justify-start truncate rounded-sm text-left'
     >
       <AlertTriangle aria-hidden='true' />
       {warning}
@@ -421,9 +418,9 @@ const getColumns = (copy: AdminMemberTableCopy, language: AppLanguage): ColumnDe
     header: copy.columns.code,
     accessorKey: 'associationCode',
     cell: ({ row }) => (
-      <div className='flex items-center gap-2'>
-        <div className='flex flex-col'>
-          <span className='font-medium'>{row.getValue('associationCode')}</span>
+      <div className='flex min-w-0 items-center gap-2'>
+        <div className='flex min-w-0 flex-col'>
+          <span className='truncate font-medium'>{row.getValue('associationCode')}</span>
         </div>
       </div>
     ),
@@ -441,9 +438,9 @@ const getColumns = (copy: AdminMemberTableCopy, language: AppLanguage): ColumnDe
       const matriculationNumber = row.getValue('memberMatriculationNumber')
 
       return (
-        <div className='flex items-center gap-2'>
-          <div className='flex flex-col'>
-            <span className='font-medium'>
+        <div className='flex min-w-0 items-center gap-2'>
+          <div className='flex min-w-0 flex-col'>
+            <span className='truncate font-medium'>
               {getVisibleMatriculationNumber(status, matriculationNumber, copy.pendingMatriculation)}
             </span>
           </div>
@@ -459,9 +456,9 @@ const getColumns = (copy: AdminMemberTableCopy, language: AppLanguage): ColumnDe
     header: copy.columns.lastAndMiddleShort,
     accessorKey: 'lastAndMiddleNames',
     cell: ({ row }) => (
-      <div className='flex items-center gap-2'>
-        <div className='flex flex-col'>
-          <span className='font-medium'>{row.getValue('lastAndMiddleNames')}</span>
+      <div className='flex min-w-0 items-center gap-2'>
+        <div className='flex min-w-0 flex-col'>
+          <span className='truncate font-medium'>{row.getValue('lastAndMiddleNames')}</span>
         </div>
       </div>
     ),
@@ -487,9 +484,9 @@ const getColumns = (copy: AdminMemberTableCopy, language: AppLanguage): ColumnDe
     header: copy.columns.firstShort,
     accessorKey: 'firstName',
     cell: ({ row }) => (
-      <div className='flex items-center gap-2'>
-        <div className='flex flex-col'>
-          <span className='font-medium'>{row.getValue('firstName')}</span>
+      <div className='flex min-w-0 items-center gap-2'>
+        <div className='flex min-w-0 flex-col'>
+          <span className='truncate font-medium'>{row.getValue('firstName')}</span>
         </div>
       </div>
     ),
@@ -548,7 +545,7 @@ const getColumns = (copy: AdminMemberTableCopy, language: AppLanguage): ColumnDe
       return (
         <Badge
           className={cn(
-            'max-w-full shrink whitespace-normal rounded-sm border text-left break-words capitalize focus-visible:outline-none',
+            'w-full max-w-full justify-start truncate rounded-sm border text-left capitalize focus-visible:outline-none',
             styles
           )}
         >
@@ -581,7 +578,12 @@ const getColumns = (copy: AdminMemberTableCopy, language: AppLanguage): ColumnDe
       }[status]
 
       return (
-        <Badge className={cn('rounded-sm border-none capitalize focus-visible:outline-none', styles)}>
+        <Badge
+          className={cn(
+            'w-full max-w-full justify-start truncate rounded-sm border-none capitalize focus-visible:outline-none',
+            styles
+          )}
+        >
           {formatMemberStatus(status, language)}
         </Badge>
       )
@@ -1036,7 +1038,9 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
                   <AlertDialogContent>
                     <AlertDialogHeader>
                       <AlertDialogTitle>{copy.autoVest.title}</AlertDialogTitle>
-                      <AlertDialogDescription>{copy.autoVest.description(eligibleAutoVestCount)}</AlertDialogDescription>
+                      <AlertDialogDescription>
+                        {copy.autoVest.description(eligibleAutoVestCount)}
+                      </AlertDialogDescription>
                     </AlertDialogHeader>
                     <form action={autoVestFormAction}>
                       <AlertDialogFooter>
@@ -1193,6 +1197,7 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
                       <TableCell
                         key={cell.id}
                         data-label={cellLabel}
+                        title={getTableCellTitle(cell)}
                         className={cn(
                           'h-14 px-1.5 whitespace-normal first:w-12.5 first:pl-3 last:w-20 last:px-3',
                           getResponsiveColumnClassName(cell.column.id)
@@ -1273,13 +1278,7 @@ function BulkAwaitingSubmitButton({
   )
 }
 
-function AutoVestSubmitButton({
-  copy,
-  disabled
-}: {
-  copy: AdminMemberTableCopy['autoVest']
-  disabled: boolean
-}) {
+function AutoVestSubmitButton({ copy, disabled }: { copy: AdminMemberTableCopy['autoVest']; disabled: boolean }) {
   const { pending } = useFormStatus()
 
   return (

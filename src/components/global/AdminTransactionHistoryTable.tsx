@@ -410,7 +410,7 @@ const AdminTransactionHistoryTable = ({
 
       <div className='border-border max-w-full min-w-0 overflow-hidden rounded-lg border'>
         <div className='hidden overflow-x-auto xl:block'>
-          <Table className='[[&_td]:wrap-break-word table-fixed [&_td]:whitespace-normal [&_th]:wrap-break-word [&_th]:whitespace-normal'>
+          <Table className='table-fixed [&_td]:whitespace-nowrap [&_th]:whitespace-normal'>
             <colgroup>
               {columns.map(column => (
                 <col key={column.key} style={getColumnStyle(column.key)} />
@@ -454,28 +454,49 @@ const AdminTransactionHistoryTable = ({
               ) : (
                 paginatedRows.map(row => (
                   <TableRow key={row.id} className='odd:bg-muted/30 even:bg-background'>
-                    <TableCell className='text-xs font-semibold' style={getColumnStyle('createdAt')}>
+                    <TableCell
+                      title={row.createdAtLabel}
+                      className='truncate text-xs font-semibold'
+                      style={getColumnStyle('createdAt')}
+                    >
                       {row.createdAtLabel}
                     </TableCell>
-                    <TableCell className='font-extrabold' style={getColumnStyle('associationCode')}>
+                    <TableCell
+                      title={row.associationCode}
+                      className='truncate font-extrabold'
+                      style={getColumnStyle('associationCode')}
+                    >
                       {row.associationCode}
                     </TableCell>
-                    <TableCell className='text-sm font-semibold' style={getColumnStyle('paymentType')}>
+                    <TableCell
+                      title={row.paymentType}
+                      className='truncate text-sm font-semibold'
+                      style={getColumnStyle('paymentType')}
+                    >
                       <Badge
                         variant='outline'
-                        className={cn('rounded-md capitalize', getPaymentBadgeClassName(row.paymentTypeKey))}
+                        className={cn(
+                          'w-full max-w-full justify-start truncate rounded-md capitalize',
+                          getPaymentBadgeClassName(row.paymentTypeKey)
+                        )}
                       >
                         {row.paymentType}
                       </Badge>
                     </TableCell>
-                    <TableCell className='text-sm font-semibold' style={getColumnStyle('eventType')}>
+                    <TableCell
+                      title={`${row.eventType}${row.source ? ` - ${row.source}` : ''}`}
+                      className='truncate text-sm font-semibold'
+                      style={getColumnStyle('eventType')}
+                    >
                       <Badge
                         variant='outline'
-                        className={cn('rounded-md capitalize', getEventBadgeClassName(row.eventTypeKey))}
+                        className={cn(
+                          'w-full max-w-full justify-start truncate rounded-md capitalize',
+                          getEventBadgeClassName(row.eventTypeKey)
+                        )}
                       >
                         {row.eventType}
                       </Badge>
-                      <div className='text-muted-foreground mt-1 text-xs'>{row.source}</div>
                     </TableCell>
                     <TableCell className='text-right' style={getColumnStyle('amountSubmitted')}>
                       <span className={getAmountClassName(row.amountSubmitted)}>
@@ -491,7 +512,11 @@ const AdminTransactionHistoryTable = ({
                     <TableCell className='text-right' style={getColumnStyle('amountReset')}>
                       <span className={getAmountClassName(row.amountReset)}>{formatAmount(row.amountReset)}</span>
                     </TableCell>
-                    <TableCell className='text-muted-foreground text-xs' style={getColumnStyle('note')}>
+                    <TableCell
+                      title={row.note || '-'}
+                      className='text-muted-foreground truncate text-xs'
+                      style={getColumnStyle('note')}
+                    >
                       {row.note || '-'}
                     </TableCell>
                   </TableRow>

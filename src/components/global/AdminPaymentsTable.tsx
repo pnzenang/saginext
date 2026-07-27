@@ -647,8 +647,9 @@ const AdminPaymentsTable = ({
                       ) : null}
                       <TableCell
                         key={column.key}
+                        title={formatValue(row, column)}
                         className={cn(
-                          'min-w-0 px-1.5 py-4 font-semibold break-words',
+                          'min-w-0 truncate px-1.5 py-4 font-semibold whitespace-nowrap',
                           getColumnSizeClassName(column),
                           column.key === 'associationName' && 'text-foreground text-sm font-bold',
                           column.align === 'right' && 'text-right text-xs tabular-nums xl:text-sm',
@@ -687,8 +688,20 @@ const AdminPaymentsTable = ({
                     ) : null}
                     <TableCell
                       key={column.key}
+                      title={
+                        column.key === 'associationCode'
+                          ? 'Total'
+                          : column.key in displayedTotals &&
+                              typeof displayedTotals[column.key as keyof AdminPaymentTotals] === 'number'
+                            ? column.format === 'currency'
+                              ? currencyFormatter.format(
+                                  Number(displayedTotals[column.key as keyof AdminPaymentTotals])
+                                )
+                              : Number(displayedTotals[column.key as keyof AdminPaymentTotals]).toLocaleString('en-US')
+                            : undefined
+                      }
                       className={cn(
-                        'min-w-0 px-1.5 py-4 break-words',
+                        'min-w-0 truncate px-1.5 py-4 whitespace-nowrap',
                         getColumnSizeClassName(column),
                         column.align === 'right' && 'text-right text-sm tabular-nums xl:text-base'
                       )}

@@ -60,7 +60,7 @@ import { usePersistentColumnFilters } from '@/hooks/use-persistent-column-filter
 import { usePagination } from '@/hooks/use-pagination'
 
 import { cn } from '@/lib/utils'
-import { getTableCellLabel } from '@/utils/table'
+import { getTableCellLabel, getTableCellTitle } from '@/utils/table'
 import { getSelectFilterValues } from '@/utils/table-filter-values'
 import { formatLongevity } from '@/utils/formatLongevity'
 import { type MemberType } from '@/utils/types'
@@ -77,9 +77,9 @@ const columns: ColumnDef<MemberType>[] = [
     header: 'Code',
     accessorKey: 'associationCode',
     cell: ({ row }) => (
-      <div className='flex items-center gap-2'>
-        <div className='flex flex-col'>
-          <span className='font-medium'>{row.getValue('associationCode')}</span>
+      <div className='flex min-w-0 items-center gap-2'>
+        <div className='flex min-w-0 flex-col'>
+          <span className='truncate font-medium'>{row.getValue('associationCode')}</span>
         </div>
       </div>
     ),
@@ -89,9 +89,9 @@ const columns: ColumnDef<MemberType>[] = [
     header: 'Matriculation',
     accessorKey: 'memberMatriculationNumber',
     cell: ({ row }) => (
-      <div className='flex items-center gap-2'>
-        <div className='flex flex-col'>
-          <span className='font-medium'>{row.getValue('memberMatriculationNumber')}</span>
+      <div className='flex min-w-0 items-center gap-2'>
+        <div className='flex min-w-0 flex-col'>
+          <span className='truncate font-medium'>{row.getValue('memberMatriculationNumber')}</span>
         </div>
       </div>
     ),
@@ -101,9 +101,9 @@ const columns: ColumnDef<MemberType>[] = [
     header: 'Last and Middle Names',
     accessorKey: 'lastAndMiddleNames',
     cell: ({ row }) => (
-      <div className='flex items-center gap-2'>
-        <div className='flex flex-col'>
-          <span className='font-medium'>{row.getValue('lastAndMiddleNames')}</span>
+      <div className='flex min-w-0 items-center gap-2'>
+        <div className='flex min-w-0 flex-col'>
+          <span className='truncate font-medium'>{row.getValue('lastAndMiddleNames')}</span>
         </div>
       </div>
     ),
@@ -113,9 +113,9 @@ const columns: ColumnDef<MemberType>[] = [
     header: 'First Name',
     accessorKey: 'firstName',
     cell: ({ row }) => (
-      <div className='flex items-center gap-2'>
-        <div className='flex flex-col'>
-          <span className='font-medium'>{row.getValue('firstName')}</span>
+      <div className='flex min-w-0 items-center gap-2'>
+        <div className='flex min-w-0 flex-col'>
+          <span className='truncate font-medium'>{row.getValue('firstName')}</span>
         </div>
       </div>
     ),
@@ -160,7 +160,12 @@ const columns: ColumnDef<MemberType>[] = [
       }[recommendation]
 
       return (
-        <Badge className={cn('rounded-sm border capitalize focus-visible:outline-none', styles)}>
+        <Badge
+          className={cn(
+            'w-full max-w-full justify-start truncate rounded-sm border capitalize focus-visible:outline-none',
+            styles
+          )}
+        >
           {row.getValue('delegateRecommendation')}
         </Badge>
       )
@@ -187,7 +192,12 @@ const columns: ColumnDef<MemberType>[] = [
       }[status]
 
       return (
-        <Badge className={cn('rounded-sm border-none capitalize focus-visible:outline-none', styles)}>
+        <Badge
+          className={cn(
+            'w-full max-w-full justify-start truncate rounded-sm border-none capitalize focus-visible:outline-none',
+            styles
+          )}
+        >
           {row.getValue('memberStatus')}
         </Badge>
       )
@@ -504,6 +514,7 @@ const MembersDataTable = ({ data }: { data: MemberType[] }) => {
                       <TableCell
                         key={cell.id}
                         data-label={cellLabel}
+                        title={getTableCellTitle(cell)}
                         className='h-14 first:w-12.5 first:pl-4 last:w-29 last:px-4'
                       >
                         <span className='sr-only'>{cellLabel}: </span>
