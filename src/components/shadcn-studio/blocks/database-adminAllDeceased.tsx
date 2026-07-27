@@ -90,7 +90,7 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
     accessorKey: 'lastAndMiddleNames',
     cell: ({ row }) => (
       <div className='flex min-w-0 items-center gap-2'>
-        <div className='flex flex-col'>
+        <div className='flex min-w-0 flex-col'>
           <span className='truncate font-medium'>{row.getValue('lastAndMiddleNames')}</span>
         </div>
       </div>
@@ -98,7 +98,7 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
     meta: {
       label: 'Last and Middle Names'
     },
-    size: 92
+    size: 116
   },
 
   // {
@@ -118,7 +118,7 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
     accessorKey: 'firstName',
     cell: ({ row }) => (
       <div className='flex min-w-0 items-center gap-2'>
-        <div className='flex flex-col'>
+        <div className='flex min-w-0 flex-col'>
           <span className='truncate font-medium'>{row.getValue('firstName')}</span>
         </div>
       </div>
@@ -126,7 +126,7 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
     meta: {
       label: 'First Name'
     },
-    size: 72
+    size: 96
   },
 
   {
@@ -134,7 +134,7 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
     accessorKey: 'memberMatriculationNumber',
     cell: ({ row }) => (
       <div className='flex min-w-0 items-center gap-2'>
-        <div className='flex flex-col'>
+        <div className='flex min-w-0 flex-col'>
           <span className='truncate font-medium'>{row.getValue('memberMatriculationNumber')}</span>
         </div>
       </div>
@@ -623,7 +623,7 @@ const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
                       title={headerTitle}
                       style={{ width: `${header.getSize()}px` }}
                       className={cn(
-                        'px-1.5 text-xs leading-tight font-extrabold whitespace-normal text-white first:pl-3 last:px-3',
+                        'px-2 text-xs leading-tight font-extrabold whitespace-normal text-white first:pl-3 last:px-3',
                         getResponsiveColumnClassName(header.column.id)
                       )}
                     >
@@ -682,7 +682,7 @@ const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
                           key={cell.id}
                           data-label={cellLabel}
                           className={cn(
-                            'h-14 px-1.5 whitespace-normal first:pl-3 last:px-3',
+                            'h-14 px-2 whitespace-normal first:pl-3 last:px-3',
                             getResponsiveColumnClassName(cell.column.id)
                           )}
                         >
