@@ -49,11 +49,11 @@ const DeathAnnouncement = async ({ params }: { params: { id: string } }) => {
           <div>
             <input type='hidden' name='id' value={id} />
             <div className='mt-4 grid gap-4 md:grid-cols-3'>
-              <FormInput type='text' name='firstName' label='Loved one first names' defaultValue={firstName} />
+              <FormInput type='text' name='firstName' label='Member first names' defaultValue={firstName} />
               <FormInput
                 type='text'
                 name='lastAndMiddleNames'
-                label='loved one last and middle names(last name first)'
+                label='member last and middle names(last name first)'
                 defaultValue={lastAndMiddleNames}
               />
               <FormInput
@@ -100,9 +100,9 @@ const DeathAnnouncement = async ({ params }: { params: { id: string } }) => {
                 defaultValue={associationCode}
                 readOnly
               />
-              <FormInput type='text' name='placeOfDeath' label='loved one place of death' />
+              <FormInput type='text' name='placeOfDeath' label='member place of death' />
 
-              <MaskDateInput type='text' name='dateOfDeath' label='loved one date of death' placeholder='MM/DD/YYYY' />
+              <MaskDateInput type='text' name='dateOfDeath' label='member date of death' placeholder='MM/DD/YYYY' />
               <FormSelect
                 name='contributionStatus'
                 label='Contribution Status'
@@ -110,7 +110,7 @@ const DeathAnnouncement = async ({ params }: { params: { id: string } }) => {
                 defaultValue={contributionStatus.review}
               />
               {member.memberStatus === memberStatus.Vested && (
-                <SubmitButton text="post loved one's death" className='mt-4 w-full bg-purple-800 hover:bg-purple-900' />
+                <SubmitButton text="post member's death" className='mt-4 w-full bg-purple-800 hover:bg-purple-900' />
               )}
             </div>
             {member.memberStatus !== memberStatus.Vested && (

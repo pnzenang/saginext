@@ -9,7 +9,7 @@ export const internalRulesDownloadFileName = 'Internal Rules.pdf'
 export const internalRulesAtGlance: InternalRulesAtGlanceSection[] = [
   {
     title: 'Purpose and Objectives',
-    summary: 'SAGI is organized to reduce the burden families face after losing a loved one.',
+    summary: 'SAGI is organized to reduce the burden families face after losing a member.',
     bullets: [
       'Maintain an electronic database of associations organized in the United States.',
       'Share death information with presidents and delegates of member associations.',

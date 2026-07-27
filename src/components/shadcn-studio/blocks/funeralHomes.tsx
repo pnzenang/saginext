@@ -21,7 +21,7 @@ const nextSteps = [
     icon: PhoneCallIcon,
     title: 'Make the first call',
     description:
-      'If the death was unexpected or there is an emergency, call 911 first. If your loved one was under hospice, hospital, or facility care, contact that care team so the death can be officially pronounced.'
+      'If the death was unexpected or there is an emergency, call 911 first. If your member was under hospice, hospital, or facility care, contact that care team so the death can be officially pronounced.'
   },
   {
     icon: HeartHandshakeIcon,
@@ -145,7 +145,7 @@ const frenchInternationalDocumentChecklist = [
 const funeralHomesContent = {
   en: {
     badge: 'Funeral support process',
-    title: 'What to do after a loved one passes',
+    title: 'What to do after a member passes',
     description:
       'SAGI does not run funeral homes, but families should not have to figure out the next step alone. This guide keeps the first calls, documents, and SAGI review process clear during a difficult moment.',
     nextSteps,
