@@ -357,7 +357,7 @@ const DeceasedMemberDocumentationCard = ({
             </div>
           </div>
           <div className='flex shrink-0 flex-wrap items-center gap-2'>
-            <RestoreDeceasedMemberButton deceasedMember={deceasedMember} />
+            <RestoreDeceasedMemberButton allowExpiredRestore={isAdminUser} deceasedMember={deceasedMember} />
             <Badge variant={uploadedCount === requiredDocumentTypes.length ? 'default' : 'secondary'}>
               {uploadedCount} / {requiredDocumentTypes.length} uploaded
             </Badge>

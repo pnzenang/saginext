@@ -5212,7 +5212,7 @@ export const restoreDeceasedMemberAction = async (prevState: { deceasedMemberId:
       }
     })
 
-    if (!isWithinMemberRemovalRestoreWindow(deceasedMember.createdAt)) {
+    if (!isAdminUser && !isWithinMemberRemovalRestoreWindow(deceasedMember.createdAt)) {
       throw new Error(
         'This death announcement can no longer be restored because the 48-hour reversal window has expired'
       )

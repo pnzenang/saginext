@@ -454,9 +454,7 @@ const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
               <span className='text-4xl leading-none font-light sm:text-5xl'>(</span>
               <span className='flex min-w-0 flex-col'>
                 <span className='whitespace-nowrap'>If a death announcement was made by mistake,</span>
-                <span className='whitespace-nowrap'>
-                  click the Restore button on the member row within 48h to restore the member.
-                </span>
+                <span className='whitespace-nowrap'>admins can click Restore on the member row at any time.</span>
               </span>
               <span className='text-4xl leading-none font-light sm:text-5xl'>)</span>
             </span>
@@ -819,7 +817,7 @@ function RowActions({ deceasedMember }: { deceasedMember: DeceasedMemberType }) 
       <DropdownMenuContent align='start' className='rounded border border-purple-500'>
         <DropdownMenuGroup>
           <DropdownMenuItem>
-            <RestoreDeceasedMemberButton deceasedMember={deceasedMember} compact />
+            <RestoreDeceasedMemberButton allowExpiredRestore deceasedMember={deceasedMember} compact />
           </DropdownMenuItem>
           <DropdownMenuItem>
             <Link href={`/admin-all-deceased/${deceasedMemberId}/edit`}>
