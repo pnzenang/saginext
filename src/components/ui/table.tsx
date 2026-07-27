@@ -12,6 +12,53 @@ type TableProps = React.ComponentProps<'table'> & {
 const getTooltipTitle = (title: React.HTMLAttributes<HTMLElement>['title']) =>
   typeof title === 'string' && title.trim() ? title : undefined
 
+const truncatedTextSelector = '.truncate, .line-clamp-1, .line-clamp-2, .line-clamp-3'
+
+const hasTruncationClass = (element: HTMLElement) =>
+  ['truncate', 'line-clamp-1', 'line-clamp-2', 'line-clamp-3'].some(className => element.classList.contains(className))
+
+const useTruncatedTooltip = <TElement extends HTMLElement>(tooltipTitle?: string) => {
+  const elementRef = React.useRef<TElement>(null)
+  const [isTruncated, setIsTruncated] = React.useState(false)
+
+  React.useEffect(() => {
+    if (!tooltipTitle) {
+      setIsTruncated(false)
+
+      return
+    }
+
+    const element = elementRef.current
+
+    if (!element) return
+
+    const checkTruncation = () => {
+      const candidates = [
+        ...(hasTruncationClass(element) ? [element] : []),
+        ...Array.from(element.querySelectorAll<HTMLElement>(truncatedTextSelector))
+      ]
+
+      setIsTruncated(
+        candidates.some(
+          candidate =>
+            candidate.scrollWidth > candidate.clientWidth + 1 || candidate.scrollHeight > candidate.clientHeight + 1
+        )
+      )
+    }
+
+    checkTruncation()
+
+    const resizeObserver = new ResizeObserver(checkTruncation)
+
+    resizeObserver.observe(element)
+    element.querySelectorAll<HTMLElement>(truncatedTextSelector).forEach(candidate => resizeObserver.observe(candidate))
+
+    return () => resizeObserver.disconnect()
+  }, [tooltipTitle])
+
+  return { elementRef, isTruncated }
+}
+
 function Table({ className, mobileCards = false, ...props }: TableProps) {
   return (
     <div
@@ -61,9 +108,11 @@ function TableRow({ className, ...props }: React.ComponentProps<'tr'>) {
 
 function TableHead({ className, title, children, 'aria-label': ariaLabel, ...props }: React.ComponentProps<'th'>) {
   const tooltipTitle = getTooltipTitle(title)
+  const { elementRef, isTruncated } = useTruncatedTooltip<HTMLTableCellElement>(tooltipTitle)
 
   const tableHead = (
     <th
+      ref={elementRef}
       data-slot='table-head'
       scope='col'
       className={cn(
@@ -77,7 +126,7 @@ function TableHead({ className, title, children, 'aria-label': ariaLabel, ...pro
     </th>
   )
 
-  if (!tooltipTitle) return tableHead
+  if (!tooltipTitle || !isTruncated) return tableHead
 
   return (
     <Tooltip>
@@ -91,9 +140,11 @@ function TableHead({ className, title, children, 'aria-label': ariaLabel, ...pro
 
 function TableCell({ className, title, children, 'aria-label': ariaLabel, ...props }: React.ComponentProps<'td'>) {
   const tooltipTitle = getTooltipTitle(title)
+  const { elementRef, isTruncated } = useTruncatedTooltip<HTMLTableCellElement>(tooltipTitle)
 
   const tableCell = (
     <td
+      ref={elementRef}
       data-slot='table-cell'
       className={cn(
         'p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
@@ -106,7 +157,7 @@ function TableCell({ className, title, children, 'aria-label': ariaLabel, ...pro
     </td>
   )
 
-  if (!tooltipTitle) return tableCell
+  if (!tooltipTitle || !isTruncated) return tableCell
 
   return (
     <Tooltip>
