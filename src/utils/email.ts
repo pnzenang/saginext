@@ -184,7 +184,7 @@ export const sendDeathAnnouncementAcknowledgmentEmail = async ({
           On behalf of the entire SAGI family, please accept our sincere condolences.
         </p>
         <p>
-          Please log back in to your dashboard and click on the Death Documentations link
+          Please log back in to your dashboard and click on the Death Documentation link
           to upload the necessary documents when they are ready.
         </p>
         <p>Thank you,<br />SAGI</p>
@@ -198,7 +198,7 @@ export const sendDeathAnnouncementAcknowledgmentEmail = async ({
       '',
       'On behalf of the entire SAGI family, please accept our sincere condolences.',
       '',
-      'Please log back in to your dashboard and click on the Death Documentations link to upload the necessary documents when they are ready.',
+      'Please log back in to your dashboard and click on the Death Documentation link to upload the necessary documents when they are ready.',
       '',
       'Thank you,',
       'SAGI'

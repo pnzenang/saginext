@@ -52,12 +52,12 @@ export const getPagesItems = (date: Date = new Date()): MenuItem[] => [
   },
   {
     icon: WalletCards,
-    label: 'Registrations Payments',
+    label: 'Registration Payments',
     href: '/registrationsPayments'
   },
   {
     icon: Wallet,
-    label: 'Contributions Payments',
+    label: 'Contribution Payments',
     href: '/contributions'
   },
   {
@@ -115,12 +115,12 @@ export const getPagesItems = (date: Date = new Date()): MenuItem[] => [
 
   {
     icon: FileStack,
-    label: 'Death Documentations',
+    label: 'Death Documentation',
     href: '/death-documentations'
   },
   {
     icon: FileCheck,
-    label: 'Name Change & Documentations',
+    label: 'Name Change & Documentation',
     href: '/name-modification'
   },
   {
@@ -165,7 +165,7 @@ export const getPagesItems = (date: Date = new Date()): MenuItem[] => [
   },
   {
     icon: FileStack,
-    label: 'Admin Death Documentations',
+    label: 'Admin Death Documentation',
     href: '/admin-death-documentations'
   },
   {

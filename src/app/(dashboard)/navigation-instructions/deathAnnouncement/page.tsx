@@ -71,7 +71,7 @@ const afterSubmissionItems = [
   'The app redirects to Deceased Members after the announcement is submitted.',
   'The deceased-member table shows name, matriculation, group, place of death, date of death, date announced, and contribution status.',
   'The contribution status begins as Case_In_Review while the case is being handled.',
-  'Documents are handled separately through Death Documentations when documentation becomes available.'
+  'Documents are handled separately through Death Documentation when documentation becomes available.'
 ]
 
 const beforeSubmittingItems = [
@@ -154,7 +154,7 @@ const DeathAnnouncement = () => {
             records the death and moves the member into the deceased-member list.
           </p>
           <p>
-            When documents become available, use Death Documentations to upload them through the appropriate
+            When documents become available, use Death Documentation to upload them through the appropriate
             documentation process.
           </p>
         </CardContent>

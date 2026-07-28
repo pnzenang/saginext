@@ -64,8 +64,8 @@ const noteDateTimeFormatters: Record<AppLanguage, Intl.DateTimeFormat> = {
 const issueNotesCopy = {
   en: {
     adminCreateDescription: 'Send a message to a delegate association and keep the conversation in one thread.',
-    adminCreateTitle: 'Send message to delegate',
-    adminDescription: 'Track issues raised by delegates and messages sent by admin.',
+    adminCreateTitle: 'Send a message to a delegate',
+    adminDescription: 'Track issues raised by delegates and messages sent by the admin team.',
     adminEmptyDescription: 'Delegate issues and admin messages will appear here.',
     adminEmptyTitle: 'No messages found.',
     adminTitle: 'Admin Messages',
@@ -78,9 +78,9 @@ const issueNotesCopy = {
     clear: 'Clear',
     clearBadge: 'Unread',
     createDescription: 'Raise an issue for admin review or ask a question about payments, members, or documents.',
-    createTitle: 'Create message',
-    delegateDescription: 'Communicate with SAGI admin about payment, member, and documentation issues.',
-    delegateEmptyDescription: 'Messages from admin and issues you raise will appear here.',
+    createTitle: 'Create a message',
+    delegateDescription: 'Communicate with the SAGI admin team about payment, member, and documentation issues.',
+    delegateEmptyDescription: 'Messages from the admin team and issues you raise will appear here.',
     delegateEmptyTitle: 'No messages yet.',
     delegateTitle: 'Messages',
     downloadDocument: 'Download document',
@@ -89,33 +89,34 @@ const issueNotesCopy = {
     filterPriority: 'Priority',
     filterStatus: 'Status',
     lastUpdated: 'Last updated',
-    markRead: 'Mark read',
+    markRead: 'Mark as read',
     messages: 'Messages',
     noAssociations: 'No delegate associations are available.',
-    noMatchesDescription: 'Try another subject, message, association, status, or priority.',
+    noMatchesDescription: 'Try another subject, message text, association, status, or priority.',
     noMatchesTitle: 'No messages match your filters.',
     priorityAll: 'All priorities',
-    openNotes: (count: number) => `${count} open`,
+    openNotes: (count: number) => `${count} open message${count === 1 ? '' : 's'}`,
     priority: 'Priority',
     reply: 'Reply',
     replyPlaceholder: 'Write a reply',
     resolve: 'Resolve',
     searchLabel: 'Search messages',
-    searchPlaceholder: 'Search subject, message, association, status, or priority',
+    searchPlaceholder: 'Search by subject, message, association, status, or priority',
     send: 'Send',
     showing: (start: number, end: number, filteredCount: number) =>
-      `Showing ${start}-${end} of ${filteredCount} matching message${filteredCount === 1 ? '' : 's'}`,
-    showingNone: (totalCount: number) => `No matching messages out of ${totalCount}`,
+      `Showing ${start} to ${end} of ${filteredCount} matching message${filteredCount === 1 ? '' : 's'}.`,
+    showingNone: (totalCount: number) => `No matching messages out of ${totalCount} total.`,
     statusAll: 'All statuses',
     subject: 'Subject',
-    unreadAlert: (count: number) => `${count} unread message${count === 1 ? '' : 's'} need attention.`,
-    unreadBadge: (count: number) => `${count} unread`
+    unreadAlert: (count: number) =>
+      count === 1 ? '1 unread message needs attention.' : `${count} unread messages need attention.`,
+    unreadBadge: (count: number) => `${count} unread message${count === 1 ? '' : 's'}`
   },
   fr: {
     adminCreateDescription: 'Envoyez un message à une association déléguée et gardez la conversation dans un fil.',
-    adminCreateTitle: 'Envoyer un message au délégué',
-    adminDescription: "Suivez les problèmes signalés par les délégués et les messages envoyés par l'admin.",
-    adminEmptyDescription: "Les problèmes des délégués et les messages admin s'afficheront ici.",
+    adminCreateTitle: 'Envoyer un message à un délégué',
+    adminDescription: "Suivez les problèmes signalés par les délégués et les messages envoyés par l'équipe admin.",
+    adminEmptyDescription: "Les problèmes des délégués et les messages de l'équipe admin s'afficheront ici.",
     adminEmptyTitle: 'Aucun message trouvé.',
     adminTitle: 'Messages admin',
     allNotes: 'Tous les messages',
@@ -127,10 +128,10 @@ const issueNotesCopy = {
     clear: 'Effacer',
     clearBadge: 'Non lu',
     createDescription:
-      "Signalez un problème à l'admin ou posez une question sur les paiements, les membres ou les documents.",
+      "Signalez un problème à l'équipe admin ou posez une question sur les paiements, les membres ou les documents.",
     createTitle: 'Créer un message',
-    delegateDescription: "Communiquez avec l'admin SAGI au sujet des paiements, des membres et des documents.",
-    delegateEmptyDescription: "Les messages de l'admin et les problèmes que vous signalez s'afficheront ici.",
+    delegateDescription: "Communiquez avec l'équipe admin de SAGI au sujet des paiements, des membres et des documents.",
+    delegateEmptyDescription: "Les messages de l'équipe admin et les problèmes que vous signalez s'afficheront ici.",
     delegateEmptyTitle: 'Aucun message pour le moment.',
     delegateTitle: 'Messages',
     downloadDocument: 'Télécharger le document',
@@ -142,9 +143,9 @@ const issueNotesCopy = {
     markRead: 'Marquer comme lu',
     messages: 'Messages',
     noAssociations: 'Aucune association déléguée disponible.',
-    noMatchesDescription: 'Essayez un autre sujet, message, association, statut ou priorité.',
+    noMatchesDescription: 'Essayez un autre sujet, texte de message, association, statut ou priorité.',
     noMatchesTitle: 'Aucun message ne correspond à vos filtres.',
-    openNotes: (count: number) => `${count} ouvert${count === 1 ? '' : 's'}`,
+    openNotes: (count: number) => `${count} message${count === 1 ? '' : 's'} ouvert${count === 1 ? '' : 's'}`,
     priorityAll: 'Toutes les priorités',
     priority: 'Priorité',
     reply: 'Répondre',
@@ -154,15 +155,15 @@ const issueNotesCopy = {
     searchPlaceholder: 'Rechercher par sujet, message, association, statut ou priorité',
     send: 'Envoyer',
     showing: (start: number, end: number, filteredCount: number) =>
-      `Affichage de ${start}-${end} sur ${filteredCount} message${filteredCount === 1 ? '' : 's'} correspondant${
+      `Affichage de ${start} à ${end} sur ${filteredCount} message${filteredCount === 1 ? '' : 's'} correspondant${
         filteredCount === 1 ? '' : 's'
-      }`,
-    showingNone: (totalCount: number) => `Aucun message correspondant sur ${totalCount}`,
+      }.`,
+    showingNone: (totalCount: number) => `Aucun message correspondant sur ${totalCount} au total.`,
     statusAll: 'Tous les statuts',
     subject: 'Sujet',
     unreadAlert: (count: number) =>
-      `${count} message${count === 1 ? '' : 's'} non lu${count === 1 ? '' : 's'} à traiter.`,
-    unreadBadge: (count: number) => `${count} non lue${count === 1 ? '' : 's'}`
+      count === 1 ? '1 message non lu à traiter.' : `${count} messages non lus à traiter.`,
+    unreadBadge: (count: number) => `${count} message${count === 1 ? '' : 's'} non lu${count === 1 ? '' : 's'}`
   }
 } as const
 
@@ -213,6 +214,14 @@ const pageSizeOptions = [6, 12, 24, 48]
 const allFilterValue = 'all'
 const documentAccept = '.pdf,.jpg,.jpeg,.png,.webp,.heic,.heif,application/pdf,image/*'
 
+const getWritingAssistProps = (language: AppLanguage) =>
+  ({
+    autoCapitalize: 'sentences',
+    autoCorrect: 'on',
+    lang: language,
+    spellCheck: true
+  }) as const
+
 const formatIssueNoteFileSize = (fileSize?: number | null) => {
   if (!fileSize || fileSize <= 0) return ''
 
@@ -261,6 +270,7 @@ const CreateIssueNoteForm = ({
   const hasAssociations = associations.length > 0
   const formAction = isAdminUser ? createAdminIssueNoteAction : createDelegateIssueNoteAction
   const documentInputId = isAdminUser ? 'admin-issue-note-document' : 'delegate-issue-note-document'
+  const writingAssistProps = getWritingAssistProps(language)
 
   return (
     <Card className='rounded-lg py-0'>
@@ -304,7 +314,14 @@ const CreateIssueNoteForm = ({
 
           <div className='grid gap-1.5'>
             <Label htmlFor='subject'>{copy.subject}</Label>
-            <Input id='subject' name='subject' maxLength={140} required className='bg-background' />
+            <Input
+              id='subject'
+              name='subject'
+              maxLength={140}
+              required
+              className='bg-background'
+              {...writingAssistProps}
+            />
           </div>
 
           <div className='grid gap-1.5'>
@@ -322,7 +339,14 @@ const CreateIssueNoteForm = ({
 
           <div className='grid gap-1.5'>
             <Label htmlFor='body'>{copy.body}</Label>
-            <Textarea id='body' name='body' maxLength={4000} required className='bg-background min-h-28' />
+            <Textarea
+              id='body'
+              name='body'
+              maxLength={4000}
+              required
+              className='bg-background min-h-28'
+              {...writingAssistProps}
+            />
           </div>
 
           <div className='grid gap-1.5'>
@@ -359,6 +383,7 @@ const IssueNoteCard = ({
   const copy = issueNotesCopy[language]
   const isUnread = isAdminUser ? note.adminUnread : note.delegateUnread
   const isOpen = note.status === 'open'
+  const writingAssistProps = getWritingAssistProps(language)
 
   return (
     <Card
@@ -481,6 +506,7 @@ const IssueNoteCard = ({
               required
               placeholder={copy.replyPlaceholder}
               className='bg-background min-h-20'
+              {...writingAssistProps}
             />
             <div className='grid gap-1.5'>
               <Label htmlFor={`reply-document-${note.id}`} className='inline-flex items-center gap-2 text-sm'>

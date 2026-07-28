@@ -53,8 +53,8 @@ const uploadChecklist = [
   'Picture with a clear and visible face for a presentable contribution chart.',
   "Picture ID, such as ID, driver's license, or passport.",
   'Funeral home invoice.',
-  'Confirmation that the association is in good standing with no outstanding invoices',
-  'Funeral Program.'
+  'Confirmation that the association is in good standing with no outstanding invoices.',
+  'Funeral program.'
 ]
 
 const outOfUsChecklist = [
@@ -68,10 +68,10 @@ const outOfUsChecklist = [
 const importantNotes = [
   'Death documentation is uploaded after the death has been announced.',
   'The initial death announcement does not require documents.',
-  'All death-related documents should stay together in Death Documentations.',
+  'All death-related documents should stay together in Death Documentation.',
   'Upload clear images or PDF files so the admin can review the information without delay.',
   'Do not send death documents through unrelated forms such as registration or contribution payment forms.',
-  'If more documents become available later, return to Death Documentations and upload them there.'
+  'If more documents become available later, return to Death Documentation and upload them there.'
 ]
 
 const DeathDocumentations = () => {
@@ -84,32 +84,32 @@ const DeathDocumentations = () => {
         <div className='grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center'>
           <div>
             <h1 className='text-foreground max-w-4xl text-3xl font-semibold tracking-normal sm:text-4xl'>
-              Upload death-related documents through Death Documentations
+              Upload death-related documents through Death Documentation
             </h1>
             <div className='text-muted-foreground mt-4 max-w-4xl space-y-3 text-base leading-7'>
               <p>
                 After a member&apos;s death has been announced, all death-related documents should be uploaded through
-                the dashboard link named Death Documentations. This keeps the deceased member&apos;s documents in the
+                the dashboard link named Death Documentation. This keeps the deceased member&apos;s documents in the
                 correct place for admin review.
               </p>
               <p>
-                Use Death Documentations for the family contact, association details, deceased member details, death
+                Use Death Documentation for the family contact, association details, deceased member details, death
                 certificate, SAGI membership ID when available, clear picture, picture ID, funeral home invoice, and any
                 other document related to the death or funeral arrangements.
               </p>
               <p>
                 It is better to gather all required documents first and upload them at once when possible. This helps
-                keep the case complete and makes the admin review easier and avoid confusion and delays.
+                keep the case complete, makes admin review easier, and helps avoid confusion and delays.
               </p>
               <p>
                 Please do not upload these files through registration, contribution, or other unrelated forms. Returning
-                to Death Documentations whenever new documents are ready helps the admin team review the case clearly.
+                to Death Documentation whenever new documents are ready helps the admin team review the case clearly.
               </p>
             </div>
             <div className='mt-6 flex flex-col gap-3 sm:flex-row'>
               <Button asChild>
                 <Link href='/death-documentations'>
-                  Open Death Documentations
+                  Open Death Documentation
                   <ArrowRight className='size-4' />
                 </Link>
               </Button>
@@ -129,12 +129,12 @@ const DeathDocumentations = () => {
             </CardHeader>
             <CardContent className='text-muted-foreground space-y-3 text-sm leading-6'>
               <p>
-                The correct upload location is the dashboard link named Death Documentations. That page is where the
+                The correct upload location is the dashboard link named Death Documentation. That page is where the
                 death certificate, family contact, funeral papers, identification, pictures, and other supporting files
                 should be submitted.
               </p>
               <p>
-                The death announcement records that the member has passed away. Death Documentations stores the proof
+                The death announcement records that the member has passed away. Death Documentation stores the proof
                 and supporting documents after they are ready.
               </p>
             </CardContent>
@@ -187,7 +187,7 @@ const DeathDocumentations = () => {
           <CardHeader>
             <CardTitle className='flex items-center gap-2'>
               <Plane className='text-primary size-5' />
-              If Death Occurred Out of the US
+              If the Death Occurred Outside the US
             </CardTitle>
             <CardDescription>Upload these additional documents when the death occurred outside the US.</CardDescription>
           </CardHeader>

@@ -16,7 +16,7 @@ const AdminDeathDocumentationsPage = async () => {
       emptyDescription='All delegate death documentation cases will appear here after death announcements are submitted.'
       emptyTitle='No death documentation cases found.'
       isAdminUser
-      title='Admin Death Documentations'
+      title='Admin Death Documentation'
     />
   )
 }

@@ -119,7 +119,7 @@ const ContributionTable = () => {
               </p>
               <p>
                 After reviewing the table, delegates should send the correct contribution and then record the payment on
-                the Contributions Payments page.
+                the Contribution Payments page.
               </p>
             </CardContent>
           </Card>

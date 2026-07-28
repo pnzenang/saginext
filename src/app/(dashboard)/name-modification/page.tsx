@@ -15,7 +15,7 @@ const NameModification = async () => {
     <section className='grid w-full max-w-full min-w-0 shrink-0 gap-5 overflow-visible px-0 py-4 sm:px-6 sm:py-8 lg:px-8'>
       <div className='flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between'>
         <div>
-          <h1 className='text-2xl font-extrabold tracking-normal sm:text-3xl'>Name Change & Documentations</h1>
+          <h1 className='text-2xl font-extrabold tracking-normal sm:text-3xl'>Name Change & Documentation</h1>
           <p className='text-muted-foreground mt-1 text-sm'>
             Submit proposed member name corrections and upload documentation when SAGI requests it.
           </p>

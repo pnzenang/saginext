@@ -51,7 +51,7 @@ const RemoveMember = async ({ params }: { params: { id: string } }) => {
               <FormInput type='text' name='dateOfBirth' label='member date of birth' defaultValue={dateOfBirth} />
               <FormSelect
                 name='countryOfResidence'
-                label='Country Of Residence'
+                label='Country of Residence'
                 items={countryOfResidenceOptions}
                 defaultValue={getCountryOfResidenceDefault(countryOfResidence)}
               />

@@ -22,9 +22,9 @@ const zellePaymentLink =
 const paymentInstructionsCopy = {
   en: {
     badge: 'Payment Instructions',
-    title: 'How to make and record a SAGI payment',
+    title: 'How to Make and Record a SAGI Payment',
     intro:
-      'Send your payment first, then record it in the correct SAGI payment page so the admin team can match the money to your group without delays.',
+      'Send your payment first, then record it on the correct SAGI payment page so the admin team can match the money to your group without delays.',
     memoReminder: (memoCode: string) =>
       `Add ${memoCode} in the Zelle memo so the payment can be matched to your association.`,
     pendingMemberWarning: {
@@ -32,27 +32,27 @@ const paymentInstructionsCopy = {
       description:
         'Pending members have sixty (60) days to send the registration fee. If the fee is not received within sixty (60) days, the pending member may be deleted.'
     },
-    contributionsCta: 'Contributions Payments',
+    contributionsCta: 'Contribution Payments',
     registrationsCta: 'Registration Payments',
     memoCodePlaceholder: 'SAGI-USA-{association 4-letter code}',
     zelle: {
       title: 'Zelle Payment',
-      descriptionStart: 'Send Zelle payment using:',
-      nameLabel: 'SAGI name:',
-      emailLabel: 'and email:',
-      descriptionEnd: 'or click the QR code to search your bank and connect the Zelle payment.',
+      descriptionStart: 'Send the Zelle payment using:',
+      nameLabel: 'SAGI account name:',
+      emailLabel: 'Email:',
+      descriptionEnd: 'or click the QR code to find your bank and complete the Zelle payment.',
       ariaLabel: 'Open SAGI Zelle payment information',
       imageAlt: 'SAGI Zelle payment QR code',
       after:
-        'After sending, come back to SAGI and submit the payment record in Registration Payments or Contributions Payments.'
+        'After sending the payment, return to SAGI and submit the payment record in Registration Payments or Contribution Payments.'
     },
     stepLabel: 'Step',
     paymentSteps: [
       {
         icon: WalletCards,
-        title: 'Open the right payment page',
+        title: 'Open the correct payment page',
         description:
-          'Use Registration Payments for new member fees and Contributions Payments for monthly contributions.'
+          'Use Registration Payments for new member fees and Contribution Payments for monthly contributions.'
       },
       {
         icon: CreditCard,
@@ -78,9 +78,9 @@ const paymentInstructionsCopy = {
       description: 'Use these checks to prevent a payment from being delayed or hard to identify.'
     },
     reminders: [
-      'Confirm the amount before sending payment.',
+      'Confirm the amount before sending the payment.',
       (memoCode: string) => `Add ${memoCode} in the Zelle memo when making a payment.`,
-      'Use the same association 4-letter code that appears in your SAGI dashboard.',
+      'Use the same 4-letter association code that appears in your SAGI dashboard.',
       'Keep your Zelle confirmation until the payment is reflected in SAGI.',
       'Do not combine registration and contribution payments without writing a clear note.'
     ]
@@ -89,7 +89,7 @@ const paymentInstructionsCopy = {
     badge: 'Instructions de paiement',
     title: 'Comment effectuer et enregistrer un paiement SAGI',
     intro:
-      "Envoyez d'abord votre paiement, puis enregistrez-le sur la bonne page de paiement SAGI afin que l'équipe administrative puisse associer l'argent à votre groupe sans délai.",
+      "Envoyez d'abord votre paiement, puis enregistrez-le sur la page de paiement SAGI appropriée afin que l'équipe administrative puisse associer l'argent à votre groupe sans délai.",
     memoReminder: (memoCode: string) =>
       `Ajoutez ${memoCode} dans le mémo Zelle afin que le paiement soit associé à votre association.`,
     pendingMemberWarning: {
@@ -103,13 +103,13 @@ const paymentInstructionsCopy = {
     zelle: {
       title: 'Paiement Zelle',
       descriptionStart: 'Envoyez le paiement Zelle avec :',
-      nameLabel: 'Nom SAGI :',
-      emailLabel: "et l'e-mail :",
-      descriptionEnd: 'ou cliquez sur le code QR pour chercher votre banque et connecter le paiement Zelle.',
+      nameLabel: 'Nom du compte SAGI :',
+      emailLabel: 'E-mail :',
+      descriptionEnd: 'ou cliquez sur le code QR pour trouver votre banque et effectuer le paiement Zelle.',
       ariaLabel: 'Ouvrir les informations de paiement Zelle de SAGI',
       imageAlt: 'Code QR du paiement Zelle de SAGI',
       after:
-        "Après l'envoi, revenez dans SAGI et soumettez l'enregistrement du paiement dans Paiements d'inscription ou Paiements des cotisations."
+        "Après avoir envoyé le paiement, revenez dans SAGI et soumettez l'enregistrement du paiement dans Paiements d'inscription ou Paiements des cotisations."
     },
     stepLabel: 'Étape',
     paymentSteps: [
@@ -117,7 +117,7 @@ const paymentInstructionsCopy = {
         icon: WalletCards,
         title: 'Ouvrir la bonne page de paiement',
         description:
-          "Utilisez Paiements d'inscription pour les frais des nouveaux membres et Paiements des cotisations pour les cotisations mensuelles."
+          "Utilisez Paiements d'inscription pour les frais d'inscription des nouveaux membres et Paiements des cotisations pour les cotisations mensuelles."
       },
       {
         icon: CreditCard,

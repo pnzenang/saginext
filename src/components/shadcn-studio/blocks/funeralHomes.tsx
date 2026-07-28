@@ -151,7 +151,7 @@ const funeralHomesContent = {
     nextSteps,
     documentationTitle: 'Documentation needed',
     documentationDescription:
-      'After the death announcement is recorded, keep these documents together for the Death Documentations upload and SAGI review.',
+      'After the death announcement is recorded, keep these documents together for the Death Documentation upload and SAGI review.',
     documentChecklist,
     internationalTitle: 'If the death occurred outside the United States',
     internationalDocumentChecklist,

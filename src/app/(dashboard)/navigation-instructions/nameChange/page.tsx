@@ -21,7 +21,7 @@ const requestTypes = [
 ]
 
 const reportChecklist = [
-  'Open the sidebar link named Name Change & Documentations.',
+  'Open the sidebar link named Name Change & Documentation.',
   'Report every name correction or name change through that page.',
   'Choose error correction when the issue is only a typo or data-entry mistake.',
   'Choose name change when the member is officially changing from one name to another.',
@@ -45,18 +45,18 @@ const NameChange = () => {
         <div className='grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center'>
           <div>
             <h1 className='text-foreground max-w-4xl text-3xl font-semibold tracking-normal sm:text-4xl'>
-              Report name changes through Name Change & Documentations
+              Report name changes through Name Change & Documentation
             </h1>
             <div className='text-muted-foreground mt-4 max-w-4xl space-y-3 text-base leading-7'>
               <p>
                 All name changes and name corrections should be reported through the sidebar link named Name Change &
-                Documentations. This keeps every request in one place so the admin team can review and update the member
+                Documentation. This keeps every request in one place so the admin team can review and update the member
                 record correctly.
               </p>
               <p>
                 If the request is only an error correction, such as a typo, misspelling, missing letter, or other small
                 data-entry mistake, documentation is not required. The request should still be reported through Name
-                Change & Documentations.
+                Change & Documentation.
               </p>
               <p>
                 If the member is changing from one name to another, that is a name change. A name change requires
@@ -66,7 +66,7 @@ const NameChange = () => {
             <div className='mt-6 flex flex-col gap-3 sm:flex-row'>
               <Button asChild>
                 <Link href='/name-modification'>
-                  Open Name Change & Documentations
+                  Open Name Change & Documentation
                   <ArrowRight className='size-4' />
                 </Link>
               </Button>

@@ -45,7 +45,7 @@ const featuresList = [
     icon: UserPlus,
     title: 'Adding Members',
     description:
-      'You add new member to your family or group by clicking on Add Member Link in the sidebar and follow the process, read the instruction to avoid delaying the process.',
+      'Add a new member to your family or group by clicking Add Member in the sidebar. Follow the steps carefully to avoid delays.',
     cardBorderColor: 'border-primary/40 hover:border-primary',
     avatarTextColor: 'text-primary',
     avatarBgColor: 'bg-primary/10',
@@ -55,7 +55,7 @@ const featuresList = [
     icon: Users,
     title: 'Seeing All Your Members',
     description:
-      'After adding member, you can see him or her in your dashboard when you click on the link All Members, but the member will be pending until their registration is sent.',
+      'After adding a member, you can see them in your dashboard by clicking All Members. The member will remain pending until the registration payment is sent and reviewed.',
     cardBorderColor: 'border-primary/40 hover:border-primary',
     avatarTextColor: 'text-primary',
     avatarBgColor: 'bg-primary/10',
@@ -65,7 +65,7 @@ const featuresList = [
     icon: Trash2,
     title: 'Removing & Removed Members',
     description:
-      'You can remove member from the 16th of the month to the 5th of the next month, any removal during the contribution does not affect the contribution.',
+      'You can remove a member from the 16th of the month through the 5th of the next month. Removals during this window do not affect the current contribution.',
     cardBorderColor: 'border-primary/40 hover:border-primary',
     avatarTextColor: 'text-primary',
     avatarBgColor: 'bg-primary/10',
@@ -75,7 +75,7 @@ const featuresList = [
     icon: Cross,
     title: 'Death of a Member',
     description:
-      'To announce a death, click the 3 dots at the end of the member row and select Death Announcement. The member must be vested. No document is needed.',
+      'To announce a death, click the three dots at the end of the member row and select Death Announcement. The member must be vested. No document is needed.',
     cardBorderColor: 'border-primary/40 hover:border-primary',
     avatarTextColor: 'text-primary',
     avatarBgColor: 'bg-primary/10',
@@ -85,7 +85,7 @@ const featuresList = [
     icon: WalletCards,
     title: 'Registration Payment',
     description:
-      'After you submit your registration, you need to send the registration fee and fill out form seen after clicking the Registration Payments Link, please follow the instruction.',
+      'After you submit a registration, send the registration fee and complete the form under Registration Payments. Please follow the instructions carefully.',
     cardBorderColor: 'border-primary/40 hover:border-primary',
     avatarTextColor: 'text-primary',
     avatarBgColor: 'bg-primary/10',
@@ -95,7 +95,7 @@ const featuresList = [
     icon: Table,
     title: 'Monthly Contribution',
     description:
-      'Here, you will see the names of the new members joining the organization this month or the next month, this not the contribution table, it is just for informational purpose.',
+      'Here, you will see the names of new members joining the organization this month or next month. This is not the contribution table; it is for information only.',
     cardBorderColor: 'border-primary/40 hover:border-primary',
     avatarTextColor: 'text-primary',
     avatarBgColor: 'bg-primary/10',
@@ -103,9 +103,9 @@ const featuresList = [
   },
   {
     icon: Wallet,
-    title: 'Contribution Payment ',
+    title: 'Contribution Payment',
     description:
-      'Here we encourage the delegate to record their contribution after they send it, they should also upload their registration as it reduce confusion.',
+      'Delegates should record each contribution after sending it. They should also upload the payment confirmation to reduce confusion.',
     cardBorderColor: 'border-primary/40 hover:border-primary',
     avatarTextColor: 'text-primary',
     avatarBgColor: 'bg-primary/10',
@@ -113,9 +113,9 @@ const featuresList = [
   },
   {
     icon: WalletMinimal,
-    title: 'Financial Positions ',
+    title: 'Financial Positions',
     description:
-      'This spreadsheet allow the delegate to see the financial positions of his or her group, if they send more money they will see the difference in from of their group name.',
+      'This spreadsheet allows delegates to see the financial position of their group. If they send more money than required, the difference appears next to their group name.',
     cardBorderColor: 'border-primary/40 hover:border-primary',
     avatarTextColor: 'text-primary',
     avatarBgColor: 'bg-primary/10',
@@ -123,9 +123,9 @@ const featuresList = [
   },
   {
     icon: FileStack,
-    title: 'Death Documentations ',
+    title: 'Death Documentation',
     description:
-      'To announce the death, you do not need any documentation, when the document are ready, you should upload them by clicking on the link: Death Documentations.',
+      'You do not need documentation to announce a death. When the documents are ready, upload them by clicking Death Documentation.',
     cardBorderColor: 'border-primary/40 hover:border-primary',
     avatarTextColor: 'text-primary',
     avatarBgColor: 'bg-primary/10',
@@ -133,9 +133,9 @@ const featuresList = [
   },
   {
     icon: Pencil,
-    title: 'Name Change ',
+    title: 'Name Change',
     description:
-      'Click the link to initiate the name modification. The error correction does not need any documents but name change requires name change documentations.',
+      'Click the link to request a name correction or change. Error corrections do not require documents, but name changes require supporting documentation.',
     cardBorderColor: 'border-primary/40 hover:border-primary',
     avatarTextColor: 'text-primary',
     avatarBgColor: 'bg-primary/10',
@@ -143,9 +143,9 @@ const featuresList = [
   },
   {
     icon: CreditCard,
-    title: 'Payment Instructions ',
+    title: 'Payment Instructions',
     description:
-      'Here, we give you the payment information to allow you yo send contribution to SAGI, but the zelle QR-code already exists in the payment pages.',
+      'Use this page to get the payment information needed to send contributions to SAGI. The Zelle QR code is also available on the payment pages.',
     cardBorderColor: 'border-primary/40 hover:border-primary',
     avatarTextColor: 'text-primary',
     avatarBgColor: 'bg-primary/10',
@@ -153,7 +153,7 @@ const featuresList = [
   },
   {
     icon: ArrowRightLeft,
-    title: 'Transfer ',
+    title: 'Transfer',
     description:
       'Use Member Transfer for members already in this database. Use Add Member with a transfer-from recommendation only when the member comes from another SAGI database, such as SAGICAM or SAGINIGERIA.',
     cardBorderColor: 'border-primary/40 hover:border-primary',

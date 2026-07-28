@@ -15,20 +15,20 @@ import {
 
 const addMemberCopy = {
   en: {
-    title: 'add new member',
+    title: 'Add New Member',
     introLabel: 'Please read first: ',
-    intro: 'Adding members is the first step toward their registration. The waiting period is at least 60 days, and',
+    intro: 'Adding a member is the first step toward registration. The waiting period is at least 60 days, and',
     introBold:
-      'their $20 registration fees should be received by the admin within sixty (60) days. Pending members should not start participating in the program before the fee is received. If the registration fees are not received within sixty (60) days, the pending members will be deleted from our database.',
-    introAfter: 'When you are ready to pay for their registration fee and their anticipated contribution, go to',
+      "each member's $20 registration fee must be received by the admin within sixty (60) days. Pending members should not start participating in the program before the fee is received. If the registration fee is not received within sixty (60) days, the pending member will be deleted from our database.",
+    introAfter: 'When you are ready to pay the registration fee and anticipated contribution, go to',
     registrationPayments: 'Registration Payments',
-    introAfterLink: 'in the sidebar to send and record the registration payments of the members you are registering.',
+    introAfterLink: 'in the sidebar to send and record the registration payments for the members you are registering.',
     warning: 'Not following these steps may delay your registration.',
     labels: {
       lastAndMiddleNames: 'last & middle names (Last Name First & No Abbreviation)',
       firstName: 'member first names',
       dateOfBirth: 'member date of birth',
-      countryOfResidence: 'Country Of Residence',
+      countryOfResidence: 'Country of Residence',
       nameOfBeneficiary: 'Name of the Beneficiary',
       associationName: 'member association name',
       associationCode: 'member association code',

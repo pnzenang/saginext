@@ -944,11 +944,11 @@ const assertIssueNoteAccess = async (noteId: string, actor: Awaited<ReturnType<t
   })
 
   if (!note) {
-    throw new Error('Note not found.')
+    throw new Error('Message not found.')
   }
 
   if (actor.role === 'delegate' && note.associationCode !== actor.profile?.associationCode) {
-    throw new Error('You can only access notes for your association.')
+    throw new Error('You can only access messages for your association.')
   }
 
   return note
@@ -1020,7 +1020,7 @@ export const createDelegateIssueNoteAction = async (
 
   try {
     if (actor.role !== 'delegate' || !actor.profile) {
-      throw new Error('Use the admin notes page to contact a delegate.')
+      throw new Error('Use the Admin Messages page to contact a delegate.')
     }
 
     const now = new Date()
@@ -1080,7 +1080,7 @@ export const createDelegateIssueNoteAction = async (
 
     revalidateIssueNoteViews()
 
-    return { message: 'Note sent to admin.' }
+    return { message: 'Message sent to the admin team.' }
   } catch (error) {
     return renderError(error)
   }
@@ -1163,7 +1163,7 @@ export const createAdminIssueNoteAction = async (prevState: any, formData: FormD
 
     revalidateIssueNoteViews()
 
-    return { message: 'Note sent to delegate.' }
+    return { message: 'Message sent to the delegate.' }
   } catch (error) {
     return renderError(error)
   }
@@ -1179,7 +1179,7 @@ export const replyToIssueNoteAction = async (prevState: any, formData: FormData)
     const documentFile = getOptionalIssueNoteDocumentFile(formData)
 
     if (note.status !== 'open') {
-      throw new Error('Resolved notes cannot receive replies.')
+      throw new Error('Resolved messages cannot receive replies.')
     }
 
     const now = new Date()
@@ -1266,7 +1266,7 @@ export const markIssueNoteReadAction = async (prevState: any, formData: FormData
 
     revalidateIssueNoteViews()
 
-    return { message: 'Note marked as read.' }
+    return { message: 'Message marked as read.' }
   } catch (error) {
     return renderError(error)
   }
@@ -1289,11 +1289,11 @@ export const resolveIssueNoteAction = async (prevState: any, formData: FormData)
     })
 
     if (!note) {
-      throw new Error('Note not found.')
+      throw new Error('Message not found.')
     }
 
     if (note.status === 'resolved') {
-      return { message: 'Note is already resolved.' }
+      return { message: 'This message is already resolved.' }
     }
 
     await db.delegateIssueNote.update({
@@ -1311,7 +1311,7 @@ export const resolveIssueNoteAction = async (prevState: any, formData: FormData)
 
     revalidateIssueNoteViews()
 
-    return { message: 'Note resolved.' }
+    return { message: 'Message resolved.' }
   } catch (error) {
     return renderError(error)
   }

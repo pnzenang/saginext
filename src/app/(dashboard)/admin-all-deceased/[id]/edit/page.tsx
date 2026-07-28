@@ -64,7 +64,7 @@ const EditCaseStatus = async ({ params }: { params: { id: string } }) => {
 
               <FormSelect
                 name='countryOfResidence'
-                label='Country Of Residence'
+                label='Country of Residence'
                 items={countryOfResidenceOptions}
                 defaultValue={getCountryOfResidenceDefault(countryOfResidence)}
               />
