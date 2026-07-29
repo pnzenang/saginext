@@ -85,6 +85,7 @@ const associationPaymentCopy = {
     memberAdded: (date: string) => `Member(s) added ${date}`,
     paymentFound: 'Payment found',
     paymentNotFound: (amount: string, date: string) => `Your ${amount} was not found by SAGI on ${date}`,
+    paymentNotFoundSummary: (amount: string) => `Your ${amount} was not found`,
     paymentQrAlt: 'SAGI payment QR code',
     paymentSubmitted: 'Payment submitted',
     registrationAmountDetail: (count: number, amount: string) => `${count} pending member(s) x ${amount}`,
@@ -136,6 +137,7 @@ const associationPaymentCopy = {
     memberAdded: (date: string) => `Membre(s) ajouté(s) le ${date}`,
     paymentFound: 'Paiement retrouvé',
     paymentNotFound: (amount: string, date: string) => `Votre paiement de ${amount} n’a pas été retrouvé par SAGI le ${date}`,
+    paymentNotFoundSummary: (amount: string) => `Votre paiement de ${amount} n’a pas été retrouvé`,
     paymentQrAlt: 'Code QR de paiement SAGI',
     paymentSubmitted: 'Paiement soumis',
     registrationAmountDetail: (count: number, amount: string) => `${count} membre(s) en attente x ${amount}`,
@@ -171,6 +173,12 @@ const getSubmittedPaymentMeta = (
 
 const getVerifiedPaymentMeta = (date: string, formatter: (date: string) => string, copy: AssociationPaymentCopy) =>
   `${copy.verifiedOn}: ${formatter(date)}`
+
+const getLedgerEntryTime = (entry: Pick<AssociationPaymentLedgerEntry, 'createdAt'>) =>
+  new Date(entry.createdAt).getTime()
+
+const getLatestLedgerEntry = (entries: AssociationPaymentLedgerEntry[]) =>
+  [...entries].sort((firstEntry, secondEntry) => getLedgerEntryTime(secondEntry) - getLedgerEntryTime(firstEntry))[0]
 
 const sagiPaymentUrl =
   'https://enroll.zellepay.com/qr-codes?data=eyJuYW1lIjoiUEFUUklDRSIsImFjdGlvbiI6InBheW1lbnQiLCJ0b2tlbiI6IjQ0MzUzMTU4NTIifQ=='
@@ -260,6 +268,10 @@ const SummaryRow = ({ label, value }: { label: string; value: number }) => (
     <span className='min-w-0 break-words'>{label}</span>
     <span className='shrink-0 text-right tabular-nums'>{currencyFormatter.format(value)}</span>
   </div>
+)
+
+const SummaryNoticeRow = ({ message }: { message: string }) => (
+  <div className='text-amber-700 dark:text-amber-300 font-extrabold break-words'>{message}</div>
 )
 
 const BalanceRow = ({ balance, copy }: { balance: number; copy: AssociationPaymentCopy['balance'] }) => {
@@ -525,6 +537,16 @@ const AssociationPaymentPageContent = (props: AssociationPaymentPageContentProps
 
   const submittedPaymentLedgerEntries = props.ledgerEntries.filter(entry => entry.eventType === 'submitted')
   const notFoundPaymentLedgerEntries = props.ledgerEntries.filter(entry => entry.eventType === 'not_found')
+  const latestNotFoundPayment = getLatestLedgerEntry(notFoundPaymentLedgerEntries)
+
+  const hasSubmittedPaymentAfterLatestNotFound = latestNotFoundPayment
+    ? submittedPaymentLedgerEntries.some(entry => getLedgerEntryTime(entry) > getLedgerEntryTime(latestNotFoundPayment))
+    : false
+
+  const activeNotFoundPayment =
+    isContributionPayment && latestNotFoundPayment && !hasSubmittedPaymentAfterLatestNotFound
+      ? latestNotFoundPayment
+      : null
 
   const submittedPaymentEntries = submittedPaymentLedgerEntries.map(entry => ({
     amount: entry.amount,
@@ -733,7 +755,13 @@ const AssociationPaymentPageContent = (props: AssociationPaymentPageContentProps
               disclaimer={copy.disclaimer}
             >
               <SummaryRow label={copy.amountSent} value={props.contribution.amountReceived} />
-              <SummaryRow label={copy.amountVerifiedSagi} value={props.contribution.amountVerified} />
+              {activeNotFoundPayment ? (
+                <SummaryNoticeRow
+                  message={copy.paymentNotFoundSummary(currencyFormatter.format(activeNotFoundPayment.amount))}
+                />
+              ) : (
+                <SummaryRow label={copy.amountVerifiedSagi} value={props.contribution.amountVerified} />
+              )}
               <SummaryRow label={copy.contributionDues} value={props.contribution.amountOwed} />
             </SummaryCard>
           ) : (
