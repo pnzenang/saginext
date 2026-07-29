@@ -9,8 +9,8 @@ import {
   addAssociationContributionBalanceAdjustmentAction,
   addAssociationContributionSentAdjustmentAction,
   fetchContributionCalculationSummaryAction,
+  markAssociationContributionPaymentNotFoundAction,
   resetContributionPaymentAlertAction,
-  resetAssociationContributionPaymentAction,
   verifyAssociationContributionPaymentAction
 } from '@/utils/actions'
 import {
@@ -312,7 +312,7 @@ const AdminContributionPayments = async () => {
             adjustAction={addAssociationContributionBalanceAdjustmentAction}
             sentAdjustmentAction={addAssociationContributionSentAdjustmentAction}
             verifyAction={verifyAssociationContributionPaymentAction}
-            resetAction={resetAssociationContributionPaymentAction}
+            secondaryAction={markAssociationContributionPaymentNotFoundAction}
           />
         </CardContent>
       </Card>

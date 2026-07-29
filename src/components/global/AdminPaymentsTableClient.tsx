@@ -12,9 +12,9 @@ type AdminPaymentsTableProps = {
   kind: PaymentKind
   rows: AdminPaymentRow[]
   sentAdjustmentAction?: (formData: FormData) => Promise<void>
+  secondaryAction: (formData: FormData) => Promise<void>
   totals: AdminPaymentTotals
   verifyAction: (formData: FormData) => Promise<void>
-  resetAction: (formData: FormData) => Promise<void>
 }
 
 const AdminPaymentsTable = dynamic(() => import('@/components/global/AdminPaymentsTable'), {

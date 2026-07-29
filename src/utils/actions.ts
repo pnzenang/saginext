@@ -2456,7 +2456,7 @@ export const addAssociationContributionSentAdjustmentAction = async (formData: F
   }
 }
 
-export const resetAssociationContributionPaymentAction = async (formData: FormData): Promise<void> => {
+export const markAssociationContributionPaymentNotFoundAction = async (formData: FormData): Promise<void> => {
   const user = await assertAdminUser()
 
   try {
@@ -2468,12 +2468,17 @@ export const resetAssociationContributionPaymentAction = async (formData: FormDa
       }
     })
 
-    const amountNotFound = roundCurrencyAmount(
-      Math.max(decimalToNumber(currentPayment?.amountSent) - decimalToNumber(currentPayment?.amountVerified), 0)
-    )
+    if (!currentPayment) {
+      throw new Error('No contribution payment found for this association code.')
+    }
 
-    const currentSummary = await fetchAssociationContributionSummary(associationCode)
-    const balanceAdjustmentAmount = roundCurrencyAmount(currentSummary.balance + currentSummary.amountOwed)
+    const amountSent = decimalToNumber(currentPayment.amountSent)
+    const amountVerified = decimalToNumber(currentPayment.amountVerified)
+    const amountNotFound = roundCurrencyAmount(amountSent - amountVerified)
+
+    if (amountNotFound <= 0) {
+      throw new Error('No new contribution amount sent to mark as not found.')
+    }
 
     await db.$transaction(async tx => {
       await createMissingPaymentHistoryLedgerEntries({
@@ -2483,74 +2488,26 @@ export const resetAssociationContributionPaymentAction = async (formData: FormDa
         tx
       })
 
-      await tx.associationContributionPayment.upsert({
-        create: {
-          amountSent: 0,
-          amountVerified: 0,
-          associationCode,
-          lastSubmittedAt: null,
-          verifiedAt: null
-        },
-        update: {
-          amountSent: 0,
-          amountVerified: 0,
-          lastSubmittedAt: null,
-          verifiedAt: null
+      await tx.associationContributionPayment.update({
+        data: {
+          amountSent: amountVerified,
+          lastSubmittedAt: null
         },
         where: {
           associationCode
         }
       })
 
-      if (balanceAdjustmentAmount === 0) {
-        await tx.associationBalanceAdjustment.deleteMany({
-          where: {
-            associationCode,
-            balanceType: contributionBalanceAdjustmentType
-          }
-        })
-      } else {
-        await tx.associationBalanceAdjustment.upsert({
-          create: {
-            amount: balanceAdjustmentAmount,
-            associationCode,
-            balanceType: contributionBalanceAdjustmentType
-          },
-          update: {
-            amount: balanceAdjustmentAmount
-          },
-          where: {
-            associationCode_balanceType: {
-              associationCode,
-              balanceType: contributionBalanceAdjustmentType
-            }
-          }
-        })
-      }
-
       await tx.associationPaymentLedgerEntry.create({
         data: {
-          amount: currentSummary.balance,
+          amount: amountNotFound,
           associationCode,
           createdBy: user.id,
-          eventType: associationPaymentLedgerEventTypes.reset,
-          note: 'Contribution payment reset by SAGI. Contribution balance carried forward.',
+          eventType: associationPaymentLedgerEventTypes.notFound,
+          note: 'Contribution payment was not found by SAGI.',
           paymentType: associationPaymentTypes.contribution
         }
       })
-
-      if (amountNotFound > 0) {
-        await tx.associationPaymentLedgerEntry.create({
-          data: {
-            amount: amountNotFound,
-            associationCode,
-            createdBy: user.id,
-            eventType: associationPaymentLedgerEventTypes.notFound,
-            note: 'Contribution payment was not found by SAGI.',
-            paymentType: associationPaymentTypes.contribution
-          }
-        })
-      }
     })
 
     revalidatePaymentViews()

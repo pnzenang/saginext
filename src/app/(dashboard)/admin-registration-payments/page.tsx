@@ -234,7 +234,7 @@ const AdminRegistrationPayments = async () => {
             adjustAction={addAssociationRegistrationBalanceAdjustmentAction}
             sentAdjustmentAction={addAssociationRegistrationSentAdjustmentAction}
             verifyAction={verifyAssociationRegistrationPaymentAction}
-            resetAction={resetAssociationRegistrationPaymentAction}
+            secondaryAction={resetAssociationRegistrationPaymentAction}
           />
         </CardContent>
       </Card>

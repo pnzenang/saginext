@@ -68,9 +68,9 @@ type AdminPaymentsTableProps = {
   kind: PaymentKind
   rows: AdminPaymentRow[]
   sentAdjustmentAction?: (formData: FormData) => Promise<void>
+  secondaryAction: (formData: FormData) => Promise<void>
   totals: AdminPaymentTotals
   verifyAction: (formData: FormData) => Promise<void>
-  resetAction: (formData: FormData) => Promise<void>
 }
 
 const contributionColumns: AdminPaymentColumn[] = [
@@ -288,19 +288,23 @@ const PaymentSentAdjustmentForm = ({
 
 const PaymentControls = ({
   adjustAction,
-  resetAction,
+  kind,
   row,
+  secondaryAction,
   showAdjustment,
   verifyAction
 }: {
   adjustAction: (formData: FormData) => Promise<void>
-  resetAction: (formData: FormData) => Promise<void>
+  kind: PaymentKind
   row: AdminPaymentRow
+  secondaryAction: (formData: FormData) => Promise<void>
   showAdjustment: boolean
   verifyAction: (formData: FormData) => Promise<void>
 }) => {
   const balanceAmountInputId = useId()
   const hasSubmittedPayment = row.amountSent > 0
+  const SecondaryActionIcon = kind === 'contribution' ? XIcon : RotateCcw
+  const secondaryActionLabel = kind === 'contribution' ? 'Not Found' : 'Reset'
 
   return (
     <div
@@ -323,7 +327,7 @@ const PaymentControls = ({
             Verify
           </Button>
         </form>
-        <form action={resetAction}>
+        <form action={secondaryAction}>
           <input type='hidden' name='associationCode' value={row.associationCode} />
           <Button
             type='submit'
@@ -332,8 +336,8 @@ const PaymentControls = ({
             disabled={!hasSubmittedPayment}
             className='h-7 w-full gap-1 px-1 text-[11px]'
           >
-            <RotateCcw className='size-3' />
-            Reset
+            <SecondaryActionIcon className='size-3' />
+            {secondaryActionLabel}
           </Button>
         </form>
       </div>
@@ -366,8 +370,8 @@ const PaymentControls = ({
 const AdminPaymentsTable = ({
   adjustAction,
   kind,
-  resetAction,
   rows,
+  secondaryAction,
   sentAdjustmentAction,
   totals,
   verifyAction
@@ -663,9 +667,10 @@ const AdminPaymentsTable = ({
                   <TableCell className='min-w-0 px-1.5 py-3'>
                     <PaymentControls
                       adjustAction={adjustAction}
+                      kind={kind}
                       row={row}
+                      secondaryAction={secondaryAction}
                       verifyAction={verifyAction}
-                      resetAction={resetAction}
                       showAdjustment={showAdjustment}
                     />
                   </TableCell>
@@ -750,9 +755,10 @@ const AdminPaymentsTable = ({
                 </div>
                 <PaymentControls
                   adjustAction={adjustAction}
+                  kind={kind}
                   row={row}
+                  secondaryAction={secondaryAction}
                   verifyAction={verifyAction}
-                  resetAction={resetAction}
                   showAdjustment={showAdjustment}
                 />
               </div>
