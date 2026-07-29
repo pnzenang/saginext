@@ -2480,6 +2480,20 @@ export const markAssociationContributionPaymentNotFoundAction = async (formData:
       throw new Error('No new contribution amount sent to mark as not found.')
     }
 
+    const profile = await db.profile.findUnique({
+      select: {
+        associationName: true
+      },
+      where: {
+        associationCode
+      }
+    })
+
+    const now = new Date()
+    const noteId = randomUUID()
+    const messageId = randomUUID()
+    const formattedAmountNotFound = currencyFormatter.format(amountNotFound)
+
     await db.$transaction(async tx => {
       await createMissingPaymentHistoryLedgerEntries({
         createdBy: user.id,
@@ -2508,9 +2522,36 @@ export const markAssociationContributionPaymentNotFoundAction = async (formData:
           paymentType: associationPaymentTypes.contribution
         }
       })
+
+      await tx.delegateIssueNote.create({
+        data: {
+          adminLastReadAt: now,
+          adminUnread: false,
+          associationCode,
+          associationName: profile?.associationName,
+          createdByClerkId: user.id,
+          createdByRole: 'admin',
+          delegateUnread: true,
+          id: noteId,
+          lastMessageAt: now,
+          lastMessageByRole: 'admin',
+          messages: {
+            create: {
+              authorClerkId: user.id,
+              authorRole: 'admin',
+              body: `SAGI could not find your contribution payment of ${formattedAmountNotFound}. Please reply to this message and upload proof of payment, such as the Zelle confirmation, receipt, or transaction screenshot, so the admin team can review it.`,
+              id: messageId
+            }
+          },
+          priority: 'urgent',
+          status: 'open',
+          subject: `Proof requested for ${formattedAmountNotFound} contribution payment`
+        }
+      })
     })
 
     revalidatePaymentViews()
+    revalidateIssueNoteViews()
   } catch (error) {
     renderError(error)
   }

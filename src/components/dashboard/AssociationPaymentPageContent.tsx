@@ -85,7 +85,7 @@ const associationPaymentCopy = {
     memberAdded: (date: string) => `Member(s) added ${date}`,
     paymentFound: 'Payment found',
     paymentNotFound: (amount: string, date: string) => `Your ${amount} was not found by SAGI on ${date}`,
-    paymentNotFoundSummary: (amount: string) => `Your ${amount} was not found`,
+    paymentNotFoundSummary: (amount: string) => `Your ${amount} was not found. Please upload proof of payment in Messages.`,
     paymentQrAlt: 'SAGI payment QR code',
     paymentSubmitted: 'Payment submitted',
     registrationAmountDetail: (count: number, amount: string) => `${count} pending member(s) x ${amount}`,
@@ -135,7 +135,8 @@ const associationPaymentCopy = {
     memberAdded: (date: string) => `Membre(s) ajouté(s) le ${date}`,
     paymentFound: 'Paiement retrouvé',
     paymentNotFound: (amount: string, date: string) => `Votre paiement de ${amount} n’a pas été retrouvé par SAGI le ${date}`,
-    paymentNotFoundSummary: (amount: string) => `Votre paiement de ${amount} n’a pas été retrouvé`,
+    paymentNotFoundSummary: (amount: string) =>
+      `Votre paiement de ${amount} n’a pas été retrouvé. Veuillez téléverser une preuve de paiement dans Messages.`,
     paymentQrAlt: 'Code QR de paiement SAGI',
     paymentSubmitted: 'Paiement soumis',
     registrationAmountDetail: (count: number, amount: string) => `${count} membre(s) en attente x ${amount}`,
