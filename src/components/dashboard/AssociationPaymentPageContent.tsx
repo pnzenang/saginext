@@ -85,7 +85,9 @@ const associationPaymentCopy = {
     memberAdded: (date: string) => `Member(s) added ${date}`,
     paymentFound: 'Payment found',
     paymentNotFound: (amount: string, date: string) => `Your ${amount} was not found by SAGI on ${date}`,
-    paymentNotFoundSummary: (amount: string) => `Your ${amount} was not found. Please upload proof of payment in Messages.`,
+    paymentNotFoundSummary: (amount: string) => `Your ${amount} was not found. Please upload proof of payment in the amount form.`,
+    paymentProofHelp: 'Upload the Zelle confirmation, receipt, or transaction screenshot requested by SAGI.',
+    paymentProofLabel: 'Proof of payment',
     paymentQrAlt: 'SAGI payment QR code',
     paymentSubmitted: 'Payment submitted',
     registrationAmountDetail: (count: number, amount: string) => `${count} pending member(s) x ${amount}`,
@@ -136,7 +138,9 @@ const associationPaymentCopy = {
     paymentFound: 'Paiement retrouvé',
     paymentNotFound: (amount: string, date: string) => `Votre paiement de ${amount} n’a pas été retrouvé par SAGI le ${date}`,
     paymentNotFoundSummary: (amount: string) =>
-      `Votre paiement de ${amount} n’a pas été retrouvé. Veuillez téléverser une preuve de paiement dans Messages.`,
+      `Votre paiement de ${amount} n’a pas été retrouvé. Veuillez téléverser une preuve de paiement dans le formulaire du montant.`,
+    paymentProofHelp: 'Téléversez la confirmation Zelle, le reçu ou la capture de transaction demandée par SAGI.',
+    paymentProofLabel: 'Preuve de paiement',
     paymentQrAlt: 'Code QR de paiement SAGI',
     paymentSubmitted: 'Paiement soumis',
     registrationAmountDetail: (count: number, amount: string) => `${count} membre(s) en attente x ${amount}`,
@@ -181,6 +185,7 @@ const sagiPaymentUrl =
   'https://enroll.zellepay.com/qr-codes?data=eyJuYW1lIjoiUEFUUklDRSIsImFjdGlvbiI6InBheW1lbnQiLCJ0b2tlbiI6IjQ0MzUzMTU4NTIifQ=='
 
 const sagiQrCodeUrl = 'https://res.cloudinary.com/dp8tkb7hq/image/upload/v1778042720/sagiQrCode_jmwsbf.svg'
+const paymentProofAccept = '.pdf,.jpg,.jpeg,.png,.webp,.heic,.heif,application/pdf,image/*'
 
 const initialState = {
   message: ''
@@ -191,6 +196,9 @@ type PaymentAction = typeof saveAssociationContributionPaymentAction
 type PaymentFormProps = {
   action: PaymentAction
   fieldLabel: string
+  proofHelp?: string
+  proofLabel?: string
+  proofUploadRequired?: boolean
   submitText: string
   warning: string
 }
@@ -213,9 +221,18 @@ type RegistrationPaymentPageProps = {
 
 type AssociationPaymentPageContentProps = ContributionPaymentPageProps | RegistrationPaymentPageProps
 
-const PaymentForm = ({ action, fieldLabel, submitText, warning }: PaymentFormProps) => {
+const PaymentForm = ({
+  action,
+  fieldLabel,
+  proofHelp,
+  proofLabel,
+  proofUploadRequired = false,
+  submitText,
+  warning
+}: PaymentFormProps) => {
   const [state, formAction] = useActionState(action, initialState)
   const amountInputId = useId()
+  const proofInputId = useId()
 
   useEffect(() => {
     if (state.message) toast(state.message)
@@ -224,6 +241,7 @@ const PaymentForm = ({ action, fieldLabel, submitText, warning }: PaymentFormPro
   return (
     <form
       action={formAction}
+      encType='multipart/form-data'
       className='border-secondary bg-secondary text-secondary-foreground h-full min-h-56 min-w-0 rounded-md border px-3 py-3 sm:px-4'
     >
       <div className='grid gap-3'>
@@ -246,6 +264,23 @@ const PaymentForm = ({ action, fieldLabel, submitText, warning }: PaymentFormPro
             />
           </div>
         </div>
+
+        {proofUploadRequired && proofLabel && proofHelp ? (
+          <div className='grid gap-2'>
+            <Label htmlFor={proofInputId} className='text-sm font-extrabold break-words'>
+              {proofLabel}
+            </Label>
+            <Input
+              id={proofInputId}
+              name='documentFile'
+              type='file'
+              accept={paymentProofAccept}
+              className='bg-background text-foreground'
+              required
+            />
+            <p className='text-muted-foreground text-xs leading-snug font-semibold'>{proofHelp}</p>
+          </div>
+        ) : null}
 
         <div className='border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200 flex gap-2 rounded-md border px-3 py-2 text-xs leading-snug font-semibold'>
           <AlertTriangle className='mt-0.5 size-4 shrink-0' aria-hidden='true' />
@@ -737,6 +772,9 @@ const AssociationPaymentPageContent = (props: AssociationPaymentPageContentProps
                 : saveAssociationRegistrationPaymentAction
             }
             fieldLabel={isContributionPayment ? copy.contributionAmountSent : copy.registrationAmountSent}
+            proofHelp={copy.paymentProofHelp}
+            proofLabel={copy.paymentProofLabel}
+            proofUploadRequired={Boolean(activeNotFoundPayment)}
             submitText={isContributionPayment ? copy.contributionSubmit : copy.registrationSubmit}
             warning={copy.verificationWarning}
           />

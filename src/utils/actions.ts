@@ -2165,6 +2165,44 @@ export const zeroAllAssociationContributionBalancesAction = async (): Promise<{ 
   }
 }
 
+const getContributionProofRequestSubject = (formattedAmount: string) =>
+  `Proof requested for ${formattedAmount} contribution payment`
+
+const fetchLatestContributionPaymentStateLedgerEntry = async (associationCode: string) => {
+  const latestReset = await db.associationPaymentLedgerEntry.findFirst({
+    orderBy: {
+      createdAt: 'desc'
+    },
+    select: {
+      createdAt: true
+    },
+    where: {
+      associationCode,
+      eventType: associationPaymentLedgerEventTypes.reset,
+      paymentType: associationPaymentTypes.contribution
+    }
+  })
+
+  return db.associationPaymentLedgerEntry.findFirst({
+    orderBy: {
+      createdAt: 'desc'
+    },
+    select: {
+      amount: true,
+      createdAt: true,
+      eventType: true
+    },
+    where: {
+      associationCode,
+      eventType: {
+        in: [associationPaymentLedgerEventTypes.notFound, associationPaymentLedgerEventTypes.submitted]
+      },
+      paymentType: associationPaymentTypes.contribution,
+      ...(latestReset ? { createdAt: { gt: latestReset.createdAt } } : {})
+    }
+  })
+}
+
 export const saveAssociationContributionPaymentAction = async (
   prevState: any,
   formData: FormData
@@ -2175,43 +2213,166 @@ export const saveAssociationContributionPaymentAction = async (
     const associationCode = await getCurrentAssociationCode(user.id)
     const amountSent = getPositiveDollarAmountFromForm(formData, 'amountSent')
     const submittedAt = new Date()
+    const documentFile = getOptionalIssueNoteDocumentFile(formData)
+    const latestContributionPaymentStateEntry = await fetchLatestContributionPaymentStateLedgerEntry(associationCode)
 
-    const payment = await db.$transaction(async tx => {
-      const payment = await tx.associationContributionPayment.upsert({
-        create: {
-          amountSent,
-          associationCode,
-          lastSubmittedAt: submittedAt
-        },
-        update: {
-          amountSent: {
-            increment: amountSent
+    const proofUploadRequired =
+      latestContributionPaymentStateEntry?.eventType === associationPaymentLedgerEventTypes.notFound
+
+    if (proofUploadRequired && !documentFile) {
+      throw new Error('Upload proof of payment before recording another contribution amount.')
+    }
+
+    const amountNotFound = proofUploadRequired ? decimalToNumber(latestContributionPaymentStateEntry?.amount) : 0
+    const formattedAmountNotFound = currencyFormatter.format(amountNotFound)
+
+    const proofRequestNote = proofUploadRequired
+      ? await db.delegateIssueNote.findFirst({
+          orderBy: {
+            createdAt: 'desc'
           },
-          lastSubmittedAt: submittedAt
-        },
-        where: {
-          associationCode
+          select: {
+            id: true
+          },
+          where: {
+            associationCode,
+            status: 'open',
+            subject: getContributionProofRequestSubject(formattedAmountNotFound)
+          }
+        })
+      : null
+
+    const proofNoteId = proofUploadRequired ? (proofRequestNote?.id ?? randomUUID()) : null
+
+    const proofMessageId = proofUploadRequired ? randomUUID() : null
+
+    const uploadedProofDocument =
+      proofUploadRequired && documentFile && proofNoteId && proofMessageId
+        ? await uploadIssueNoteDocument({
+            file: documentFile,
+            messageId: proofMessageId,
+            noteId: proofNoteId
+          })
+        : null
+
+    try {
+      const payment = await db.$transaction(async tx => {
+        const payment = await tx.associationContributionPayment.upsert({
+          create: {
+            amountSent,
+            associationCode,
+            lastSubmittedAt: submittedAt
+          },
+          update: {
+            amountSent: {
+              increment: amountSent
+            },
+            lastSubmittedAt: submittedAt
+          },
+          where: {
+            associationCode
+          }
+        })
+
+        await tx.associationPaymentLedgerEntry.create({
+          data: {
+            amount: amountSent,
+            associationCode,
+            createdBy: user.id,
+            eventType: associationPaymentLedgerEventTypes.submitted,
+            note: 'Contribution payment submitted by association.',
+            paymentType: associationPaymentTypes.contribution
+          }
+        })
+
+        if (uploadedProofDocument && proofMessageId && proofNoteId) {
+          const messageBody = `Proof of payment uploaded for the contribution payment SAGI marked not found (${formattedAmountNotFound}). The delegate recorded a new contribution amount of ${currencyFormatter.format(amountSent)}.`
+
+          if (proofRequestNote) {
+            await tx.delegateIssueNoteMessage.create({
+              data: {
+                authorClerkId: user.id,
+                authorRole: 'delegate',
+                body: messageBody,
+                id: proofMessageId,
+                noteId: proofRequestNote.id,
+                ...uploadedProofDocument.messageData
+              }
+            })
+
+            await tx.delegateIssueNote.update({
+              data: {
+                adminUnread: true,
+                delegateLastReadAt: submittedAt,
+                delegateUnread: false,
+                lastMessageAt: submittedAt,
+                lastMessageByRole: 'delegate'
+              },
+              where: {
+                id: proofRequestNote.id
+              }
+            })
+          } else {
+            const profile = await tx.profile.findUnique({
+              select: {
+                associationName: true
+              },
+              where: {
+                associationCode
+              }
+            })
+
+            await tx.delegateIssueNote.create({
+              data: {
+                adminUnread: true,
+                associationCode,
+                associationName: profile?.associationName,
+                createdByClerkId: user.id,
+                createdByRole: 'delegate',
+                delegateLastReadAt: submittedAt,
+                delegateUnread: false,
+                id: proofNoteId,
+                lastMessageAt: submittedAt,
+                lastMessageByRole: 'delegate',
+                messages: {
+                  create: {
+                    authorClerkId: user.id,
+                    authorRole: 'delegate',
+                    body: messageBody,
+                    id: proofMessageId,
+                    ...uploadedProofDocument.messageData
+                  }
+                },
+                priority: 'urgent',
+                status: 'open',
+                subject: getContributionProofRequestSubject(formattedAmountNotFound)
+              }
+            })
+          }
         }
+
+        return payment
       })
 
-      await tx.associationPaymentLedgerEntry.create({
-        data: {
-          amount: amountSent,
-          associationCode,
-          createdBy: user.id,
-          eventType: associationPaymentLedgerEventTypes.submitted,
-          note: 'Contribution payment submitted by association.',
-          paymentType: associationPaymentTypes.contribution
-        }
-      })
+      revalidatePaymentViews()
 
-      return payment
-    })
+      if (uploadedProofDocument) {
+        revalidateIssueNoteViews()
+      }
 
-    revalidatePaymentViews()
+      return {
+        message: `Added contribution payment: ${currencyFormatter.format(amountSent)}. Total sent: ${currencyFormatter.format(decimalToNumber(payment.amountSent))}.${uploadedProofDocument ? ' Proof of payment uploaded.' : ''}`
+      }
+    } catch (error) {
+      if (uploadedProofDocument) {
+        await deleteCloudinaryDocumentWithoutBlocking({
+          cloudinaryDeliveryType: uploadedProofDocument.cloudinaryDocument.deliveryType,
+          cloudinaryPublicId: uploadedProofDocument.cloudinaryDocument.publicId,
+          cloudinaryResourceType: uploadedProofDocument.cloudinaryDocument.resourceType
+        })
+      }
 
-    return {
-      message: `Added contribution payment: ${currencyFormatter.format(amountSent)}. Total sent: ${currencyFormatter.format(decimalToNumber(payment.amountSent))}.`
+      throw error
     }
   } catch (error) {
     return renderError(error)
@@ -2539,13 +2700,13 @@ export const markAssociationContributionPaymentNotFoundAction = async (formData:
             create: {
               authorClerkId: user.id,
               authorRole: 'admin',
-              body: `SAGI could not find your contribution payment of ${formattedAmountNotFound}. Please reply to this message and upload proof of payment, such as the Zelle confirmation, receipt, or transaction screenshot, so the admin team can review it.`,
+              body: `SAGI could not find your contribution payment of ${formattedAmountNotFound}. Please upload proof of payment under the contribution amount field the next time you record an amount, such as the Zelle confirmation, receipt, or transaction screenshot, so the admin team can review it.`,
               id: messageId
             }
           },
           priority: 'urgent',
           status: 'open',
-          subject: `Proof requested for ${formattedAmountNotFound} contribution payment`
+          subject: getContributionProofRequestSubject(formattedAmountNotFound)
         }
       })
     })
