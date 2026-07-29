@@ -99,8 +99,6 @@ const associationPaymentCopy = {
     verifiedOn: 'Verified on',
     verificationWarning:
       'Record a payment only after sending the money. Submitted amounts are not counted as paid until SAGI verifies the real Zelle payment, and unmatched records will be reversed.',
-    zelleReminder:
-      'Send the Zelle first, then enter the exact amount here. Include your 4-letter association code in the Zelle memo.',
     balance: {
       deficit: 'Deficit',
       deficitNote: '(Not In Good Standing)',
@@ -151,8 +149,6 @@ const associationPaymentCopy = {
     verifiedOn: 'Vérifié le',
     verificationWarning:
       "Enregistrez un paiement seulement après avoir envoyé l'argent. Les montants soumis ne sont pas comptés comme payés tant que SAGI n'a pas vérifié le vrai paiement Zelle, et les enregistrements non correspondants seront annulés.",
-    zelleReminder:
-      "Envoyez d'abord le Zelle, puis saisissez ici le montant exact. Incluez le code d'association à 4 lettres dans le mémo Zelle.",
     balance: {
       deficit: 'Déficit',
       deficitNote: '(Pas en règle)',
@@ -194,7 +190,6 @@ type PaymentAction = typeof saveAssociationContributionPaymentAction
 type PaymentFormProps = {
   action: PaymentAction
   fieldLabel: string
-  reminder: string
   submitText: string
   warning: string
 }
@@ -217,7 +212,7 @@ type RegistrationPaymentPageProps = {
 
 type AssociationPaymentPageContentProps = ContributionPaymentPageProps | RegistrationPaymentPageProps
 
-const PaymentForm = ({ action, fieldLabel, reminder, submitText, warning }: PaymentFormProps) => {
+const PaymentForm = ({ action, fieldLabel, submitText, warning }: PaymentFormProps) => {
   const [state, formAction] = useActionState(action, initialState)
   const amountInputId = useId()
 
@@ -251,7 +246,6 @@ const PaymentForm = ({ action, fieldLabel, reminder, submitText, warning }: Paym
           </div>
         </div>
 
-        <p className='text-muted-foreground text-xs leading-snug font-semibold'>{reminder}</p>
         <div className='border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200 flex gap-2 rounded-md border px-3 py-2 text-xs leading-snug font-semibold'>
           <AlertTriangle className='mt-0.5 size-4 shrink-0' aria-hidden='true' />
           <p className='min-w-0 break-words'>{warning}</p>
@@ -742,7 +736,6 @@ const AssociationPaymentPageContent = (props: AssociationPaymentPageContentProps
                 : saveAssociationRegistrationPaymentAction
             }
             fieldLabel={isContributionPayment ? copy.contributionAmountSent : copy.registrationAmountSent}
-            reminder={copy.zelleReminder}
             submitText={isContributionPayment ? copy.contributionSubmit : copy.registrationSubmit}
             warning={copy.verificationWarning}
           />

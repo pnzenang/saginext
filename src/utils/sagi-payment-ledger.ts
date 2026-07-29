@@ -200,6 +200,20 @@ export const fetchAssociationPaymentLedgerEntries = async (
     noStore()
   }
 
+  const latestReset = await db.associationPaymentLedgerEntry.findFirst({
+    orderBy: {
+      createdAt: 'desc'
+    },
+    select: {
+      createdAt: true
+    },
+    where: {
+      associationCode,
+      eventType: associationPaymentLedgerEventTypes.reset,
+      ...(paymentType ? { paymentType } : {})
+    }
+  })
+
   const entries = await db.associationPaymentLedgerEntry.findMany({
     orderBy: {
       createdAt: 'desc'
@@ -210,6 +224,7 @@ export const fetchAssociationPaymentLedgerEntries = async (
       eventType: {
         in: eventTypes
       },
+      ...(latestReset ? { createdAt: { gt: latestReset.createdAt } } : {}),
       ...(paymentType ? { paymentType } : {})
     }
   })

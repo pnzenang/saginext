@@ -59,9 +59,6 @@ const initialState = {
   message: ''
 }
 
-const zelleReminder =
-  'Send the Zelle first, then enter the exact amount here. Include your 4-letter association code in the Zelle memo.'
-
 const PaymentForm = ({ action, fieldLabel, submitText }: PaymentFormProps) => {
   const [state, formAction] = useActionState(action, initialState)
   const amountInputId = useId()
@@ -96,7 +93,6 @@ const PaymentForm = ({ action, fieldLabel, submitText }: PaymentFormProps) => {
           </div>
         </div>
 
-        <p className='text-muted-foreground text-xs leading-snug font-semibold'>{zelleReminder}</p>
         <SubmitButton text={submitText} className='w-full whitespace-normal' />
         {state.message ? <p className='text-sm font-semibold break-words'>{state.message}</p> : null}
       </div>
