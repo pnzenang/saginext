@@ -84,6 +84,7 @@ const associationPaymentCopy = {
     introSuffix: 'in the memo so the payment can be matched to your association, then record the amount sent.',
     memberAdded: (date: string) => `Member(s) added ${date}`,
     paymentFound: 'Payment found',
+    paymentNotFound: (amount: string, date: string) => `Your ${amount} was not found by SAGI on ${date}`,
     paymentQrAlt: 'SAGI payment QR code',
     paymentSubmitted: 'Payment submitted',
     registrationAmountDetail: (count: number, amount: string) => `${count} pending member(s) x ${amount}`,
@@ -134,6 +135,7 @@ const associationPaymentCopy = {
       'dans le mémo afin que le paiement soit associé à votre association, puis enregistrez le montant envoyé.',
     memberAdded: (date: string) => `Membre(s) ajouté(s) le ${date}`,
     paymentFound: 'Paiement retrouvé',
+    paymentNotFound: (amount: string, date: string) => `Votre paiement de ${amount} n’a pas été retrouvé par SAGI le ${date}`,
     paymentQrAlt: 'Code QR de paiement SAGI',
     paymentSubmitted: 'Paiement soumis',
     registrationAmountDetail: (count: number, amount: string) => `${count} membre(s) en attente x ${amount}`,
@@ -311,6 +313,7 @@ type PaymentDateGroup = {
   amount: number
   connector?: string
   id: string
+  message?: string
   meta: string
   names?: string[]
 }
@@ -350,13 +353,17 @@ const PaymentSummaryCard = ({ connectorFallback, row }: { connectorFallback: str
             <div className='mt-2 grid gap-2 text-xs leading-snug'>
               {row.dateGroups.map(group => (
                 <div key={group.id} className='min-w-0'>
-                  <p className='text-primary/80 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 font-semibold'>
-                    <span className='shrink-0 text-xs font-semibold tabular-nums'>
-                      {currencyFormatter.format(group.amount)}
-                    </span>
-                    <span className='text-xs'>{group.connector ?? connectorFallback}</span>
-                    <span className='min-w-0 text-xs break-words'>{group.meta}</span>
-                  </p>
+                  {group.message ? (
+                    <p className='text-primary/80 text-xs leading-snug font-semibold break-words'>{group.message}</p>
+                  ) : (
+                    <p className='text-primary/80 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 font-semibold'>
+                      <span className='shrink-0 text-xs font-semibold tabular-nums'>
+                        {currencyFormatter.format(group.amount)}
+                      </span>
+                      <span className='text-xs'>{group.connector ?? connectorFallback}</span>
+                      <span className='min-w-0 text-xs break-words'>{group.meta}</span>
+                    </p>
+                  )}
                   {group.names && group.names.length > 0 ? (
                     <div className='mt-0.5 grid gap-0.5 font-extrabold'>
                       {group.names.map((name, index) => (
@@ -517,6 +524,7 @@ const AssociationPaymentPageContent = (props: AssociationPaymentPageContentProps
     : props.registration.amountVerified
 
   const submittedPaymentLedgerEntries = props.ledgerEntries.filter(entry => entry.eventType === 'submitted')
+  const notFoundPaymentLedgerEntries = props.ledgerEntries.filter(entry => entry.eventType === 'not_found')
 
   const submittedPaymentEntries = submittedPaymentLedgerEntries.map(entry => ({
     amount: entry.amount,
@@ -575,9 +583,22 @@ const AssociationPaymentPageContent = (props: AssociationPaymentPageContentProps
         }
       : null
 
+  const amountNotFoundDateGroups = notFoundPaymentLedgerEntries.map(entry => ({
+    amount: entry.amount,
+    id: `amount-not-found-${entry.id}`,
+    message: copy.paymentNotFound(currencyFormatter.format(entry.amount), formatDateTime(entry.createdAt)),
+    meta: ''
+  }))
+
+  const groupedAmountVerifiedDateGroups = [
+    ...verifiedPaymentDateGroups,
+    ...(legacyVerifiedDateGroup ? [legacyVerifiedDateGroup] : []),
+    ...amountNotFoundDateGroups
+  ]
+
   const amountVerifiedDateGroups =
-    verifiedPaymentDateGroups.length > 0 || legacyVerifiedDateGroup
-      ? [...verifiedPaymentDateGroups, ...(legacyVerifiedDateGroup ? [legacyVerifiedDateGroup] : [])]
+    groupedAmountVerifiedDateGroups.length > 0
+      ? groupedAmountVerifiedDateGroups
       : amountVerifiedValue > 0 && amountVerifiedDate
         ? [
             {

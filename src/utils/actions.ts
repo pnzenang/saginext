@@ -767,6 +767,7 @@ const revalidatePaymentViews = () => {
 
 const resettableTransactionHistoryEventTypes = [
   associationPaymentLedgerEventTypes.manualAdjustment,
+  associationPaymentLedgerEventTypes.notFound,
   associationPaymentLedgerEventTypes.reset,
   associationPaymentLedgerEventTypes.submitted,
   associationPaymentLedgerEventTypes.verified
@@ -2467,6 +2468,10 @@ export const resetAssociationContributionPaymentAction = async (formData: FormDa
       }
     })
 
+    const amountNotFound = roundCurrencyAmount(
+      Math.max(decimalToNumber(currentPayment?.amountSent) - decimalToNumber(currentPayment?.amountVerified), 0)
+    )
+
     const currentSummary = await fetchAssociationContributionSummary(associationCode)
     const balanceAdjustmentAmount = roundCurrencyAmount(currentSummary.balance + currentSummary.amountOwed)
 
@@ -2533,6 +2538,19 @@ export const resetAssociationContributionPaymentAction = async (formData: FormDa
           paymentType: associationPaymentTypes.contribution
         }
       })
+
+      if (amountNotFound > 0) {
+        await tx.associationPaymentLedgerEntry.create({
+          data: {
+            amount: amountNotFound,
+            associationCode,
+            createdBy: user.id,
+            eventType: associationPaymentLedgerEventTypes.notFound,
+            note: 'Contribution payment was not found by SAGI.',
+            paymentType: associationPaymentTypes.contribution
+          }
+        })
+      }
     })
 
     revalidatePaymentViews()

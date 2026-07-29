@@ -10,6 +10,7 @@ export const associationPaymentTypes = {
 export const associationPaymentLedgerEventTypes = {
   dueOffset: 'due_offset',
   manualAdjustment: 'manual_adjustment',
+  notFound: 'not_found',
   reset: 'reset',
   submitted: 'submitted',
   verified: 'verified'
@@ -56,6 +57,7 @@ const decimalToNumber = (value: unknown) => Number(value ?? 0)
 const roundCurrencyAmount = (amount: number) => Number(amount.toFixed(2))
 
 const paymentHistoryEventTypes = [
+  associationPaymentLedgerEventTypes.notFound,
   associationPaymentLedgerEventTypes.submitted,
   associationPaymentLedgerEventTypes.verified
 ]
