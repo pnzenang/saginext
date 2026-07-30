@@ -3310,6 +3310,90 @@ export const makeMembersDelinquentAction = async (
   }
 }
 
+export const makeMembersVestedAction = async (
+  _prevState: { message: string },
+  formData: FormData
+): Promise<{ message: string }> => {
+  await assertAdminUser()
+
+  try {
+    const memberIds = getStringFormValues(formData, 'memberIds')
+
+    if (memberIds.length === 0) {
+      throw new Error('Select at least one delinquent member.')
+    }
+
+    const updatedCount = await db.$transaction(async tx => {
+      const delinquentMembers = await tx.member.findMany({
+        select: {
+          associationCode: true,
+          id: true,
+          memberMatriculationNumber: true
+        },
+        where: {
+          id: {
+            in: memberIds
+          },
+          memberStatus: memberStatus.Delinquent
+        }
+      })
+
+      if (delinquentMembers.length === 0) {
+        return 0
+      }
+
+      const delinquentMemberIds = delinquentMembers.map(member => member.id)
+
+      const updatedMembers = await tx.member.updateMany({
+        data: {
+          memberStatus: memberStatus.Vested
+        },
+        where: {
+          id: {
+            in: delinquentMemberIds
+          },
+          memberStatus: memberStatus.Delinquent
+        }
+      })
+
+      await Promise.all(
+        delinquentMembers.map(member =>
+          tx.associationContributionCredit.upsert({
+            create: {
+              amountCredited: contributionCreditPerVestedMember,
+              associationCode: member.associationCode,
+              memberMatriculationNumber: member.memberMatriculationNumber
+            },
+            update: {
+              amountCredited: contributionCreditPerVestedMember,
+              associationCode: member.associationCode
+            },
+            where: {
+              memberMatriculationNumber: member.memberMatriculationNumber
+            }
+          })
+        )
+      )
+
+      return updatedMembers.count
+    })
+
+    revalidatePaymentViews()
+
+    if (updatedCount === 0) {
+      return {
+        message: 'No selected delinquent members were found.'
+      }
+    }
+
+    return {
+      message: `${updatedCount} delinquent member${updatedCount === 1 ? '' : 's'} moved to Vested.`
+    }
+  } catch (error) {
+    return renderError(error)
+  }
+}
+
 const resetPaymentAlert = async (alertType: string): Promise<void> => {
   await assertAdminUser()
 

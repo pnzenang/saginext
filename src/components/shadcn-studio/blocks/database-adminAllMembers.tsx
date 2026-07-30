@@ -102,6 +102,7 @@ import {
 } from '@/utils/sagi-member-longevity'
 import {
   makeMembersDelinquentAction,
+  makeMembersVestedAction,
   movePendingMembersToAwaitingPublicationAction,
   vestEligibleAwaitingPublicationMembersAction
 } from '@/utils/actions'
@@ -154,6 +155,15 @@ const adminMemberTableCopy = {
       pending: 'Please wait...',
       title: 'Move selected vested members to Delinquent?'
     },
+    bulkVested: {
+      button: (count: number) => `Make Vested (${count} delinquent)`,
+      cancel: 'Cancel',
+      confirm: 'Make Vested',
+      description: (count: number) =>
+        `This will move ${count} selected delinquent member${count === 1 ? '' : 's'} back to Vested.`,
+      pending: 'Please wait...',
+      title: 'Move selected delinquent members to Vested?'
+    },
     columns: {
       actions: 'Actions',
       actionsShort: 'Act.',
@@ -202,7 +212,7 @@ const adminMemberTableCopy = {
     pendingMatriculation: 'Pending',
     selection: {
       member: (name: string) => `Select ${name}`,
-      page: 'Select all pending or vested members on this page'
+      page: 'Select all pending, vested, or delinquent members on this page'
     },
     summary: {
       awaiting: 'Awaiting',
@@ -247,6 +257,15 @@ const adminMemberTableCopy = {
         `Cette action déplacera ${count} membre${count === 1 ? '' : 's'} acquis sélectionné${count === 1 ? '' : 's'} vers Pas en règle.`,
       pending: 'Veuillez patienter...',
       title: 'Passer les membres acquis sélectionnés à Pas en règle ?'
+    },
+    bulkVested: {
+      button: (count: number) => `Marquer acquis (${count} pas en règle)`,
+      cancel: 'Annuler',
+      confirm: 'Marquer acquis',
+      description: (count: number) =>
+        `Cette action replacera ${count} membre${count === 1 ? '' : 's'} pas en règle sélectionné${count === 1 ? '' : 's'} au statut Acquis.`,
+      pending: 'Veuillez patienter...',
+      title: 'Passer les membres pas en règle sélectionnés à Acquis ?'
     },
     columns: {
       actions: 'Actions',
@@ -296,7 +315,7 @@ const adminMemberTableCopy = {
     pendingMatriculation: 'En attente',
     selection: {
       member: (name: string) => `Sélectionner ${name}`,
-      page: 'Sélectionner tous les membres en attente ou acquis sur cette page'
+      page: 'Sélectionner tous les membres en attente, acquis ou pas en règle sur cette page'
     },
     summary: {
       awaiting: 'En attente de publication',
@@ -670,6 +689,10 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
     message: ''
   })
 
+  const [makeVestedState, makeVestedFormAction] = useActionState(makeMembersVestedAction, {
+    message: ''
+  })
+
   const pageSize = 200
 
   const [pagination, setPagination] = useState<PaginationState>({
@@ -702,7 +725,9 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
     },
     onColumnFiltersChange: setColumnFilters,
     enableRowSelection: row =>
-      row.original.memberStatus === memberStatus.Pending || row.original.memberStatus === memberStatus.Vested,
+      row.original.memberStatus === memberStatus.Pending ||
+      row.original.memberStatus === memberStatus.Vested ||
+      row.original.memberStatus === memberStatus.Delinquent,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -730,6 +755,13 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
     setRowSelection({})
   }, [makeDelinquentState.message])
 
+  useEffect(() => {
+    if (!makeVestedState.message) return
+
+    toast(makeVestedState.message)
+    setRowSelection({})
+  }, [makeVestedState.message])
+
   const selectedMembers = table.getSelectedRowModel().rows.map(row => row.original)
   const selectedPendingMembers = selectedMembers.filter(member => member.memberStatus === memberStatus.Pending)
 
@@ -738,6 +770,9 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
   const selectedVestedMembers = selectedMembers.filter(member => member.memberStatus === memberStatus.Vested)
 
   const selectedVestedCount = selectedVestedMembers.length
+  const selectedDelinquentMembers = selectedMembers.filter(member => member.memberStatus === memberStatus.Delinquent)
+
+  const selectedDelinquentCount = selectedDelinquentMembers.length
 
   const hasMatriculationColumn = Boolean(table.getColumn('memberMatriculationNumber'))
 
@@ -1031,7 +1066,7 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
               </Pagination>
             </div>
 
-            <div className='grid w-full grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4 [&_button]:w-full'>
+            <div className='grid w-full grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-5 [&_button]:w-full'>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
@@ -1056,6 +1091,34 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
                     <AlertDialogFooter>
                       <AlertDialogCancel type='button'>{copy.bulkAwaiting.cancel}</AlertDialogCancel>
                       <BulkAwaitingSubmitButton copy={copy.bulkAwaiting} disabled={selectedPendingCount === 0} />
+                    </AlertDialogFooter>
+                  </form>
+                </AlertDialogContent>
+              </AlertDialog>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    className='min-h-10 whitespace-normal bg-green-700 text-white hover:bg-green-800 focus-visible:ring-green-700/30'
+                    disabled={selectedDelinquentCount === 0}
+                  >
+                    <ShieldCheck />
+                    {copy.bulkVested.button(selectedDelinquentCount)}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>{copy.bulkVested.title}</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {copy.bulkVested.description(selectedDelinquentCount)}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <form action={makeVestedFormAction}>
+                    {selectedDelinquentMembers.map(member => (
+                      <input key={member.id} type='hidden' name='memberIds' value={member.id} />
+                    ))}
+                    <AlertDialogFooter>
+                      <AlertDialogCancel type='button'>{copy.bulkVested.cancel}</AlertDialogCancel>
+                      <BulkVestedSubmitButton copy={copy.bulkVested} disabled={selectedDelinquentCount === 0} />
                     </AlertDialogFooter>
                   </form>
                 </AlertDialogContent>
@@ -1163,6 +1226,11 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
           {makeDelinquentState.message ? (
             <p className='text-primary text-sm font-semibold' aria-live='polite'>
               {makeDelinquentState.message}
+            </p>
+          ) : null}
+          {makeVestedState.message ? (
+            <p className='text-primary text-sm font-semibold' aria-live='polite'>
+              {makeVestedState.message}
             </p>
           ) : null}
           {autoVestState.message ? (
@@ -1362,6 +1430,33 @@ function BulkDelinquentSubmitButton({
       type='submit'
       disabled={disabled || pending}
       className='bg-red-700 text-white hover:bg-red-800 focus-visible:ring-red-700/30'
+    >
+      {pending ? (
+        <>
+          <Loader className='animate-spin' />
+          {copy.pending}
+        </>
+      ) : (
+        copy.confirm
+      )}
+    </Button>
+  )
+}
+
+function BulkVestedSubmitButton({
+  copy,
+  disabled
+}: {
+  copy: AdminMemberTableCopy['bulkVested']
+  disabled: boolean
+}) {
+  const { pending } = useFormStatus()
+
+  return (
+    <Button
+      type='submit'
+      disabled={disabled || pending}
+      className='bg-green-700 text-white hover:bg-green-800 focus-visible:ring-green-700/30'
     >
       {pending ? (
         <>
