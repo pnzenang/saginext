@@ -101,6 +101,7 @@ import {
   getAwaitingPublicationVestingCutoff
 } from '@/utils/sagi-member-longevity'
 import {
+  makeMembersDelinquentAction,
   movePendingMembersToAwaitingPublicationAction,
   vestEligibleAwaitingPublicationMembersAction
 } from '@/utils/actions'
@@ -143,6 +144,15 @@ const adminMemberTableCopy = {
         `This will move ${count} selected pending member${count === 1 ? '' : 's'} to Awaiting Publication. Their registration fee dues will no longer count as pending.`,
       pending: 'Please wait...',
       title: 'Move selected pending members to Awaiting?'
+    },
+    bulkDelinquent: {
+      button: (count: number) => `Make Delinquent (${count})`,
+      cancel: 'Cancel',
+      confirm: 'Make Delinquent',
+      description: (count: number) =>
+        `This will move ${count} selected member${count === 1 ? '' : 's'} to Not in Good Standing.`,
+      pending: 'Please wait...',
+      title: 'Move selected members to Delinquent?'
     },
     columns: {
       actions: 'Actions',
@@ -192,7 +202,7 @@ const adminMemberTableCopy = {
     pendingMatriculation: 'Pending',
     selection: {
       member: (name: string) => `Select ${name}`,
-      page: 'Select all pending members on this page'
+      page: 'Select all eligible members on this page'
     },
     summary: {
       awaiting: 'Awaiting',
@@ -228,6 +238,15 @@ const adminMemberTableCopy = {
         `Cette action déplacera ${count} membre${count === 1 ? '' : 's'} en attente sélectionné${count === 1 ? '' : 's'} vers En attente de publication. Les frais d'inscription ne compteront plus comme dus.`,
       pending: 'Veuillez patienter...',
       title: 'Passer les membres sélectionnés à En attente de publication ?'
+    },
+    bulkDelinquent: {
+      button: (count: number) => `Marquer pas en règle (${count})`,
+      cancel: 'Annuler',
+      confirm: 'Marquer pas en règle',
+      description: (count: number) =>
+        `Cette action déplacera ${count} membre${count === 1 ? '' : 's'} sélectionné${count === 1 ? '' : 's'} vers Pas en règle.`,
+      pending: 'Veuillez patienter...',
+      title: 'Passer les membres sélectionnés à Pas en règle ?'
     },
     columns: {
       actions: 'Actions',
@@ -277,7 +296,7 @@ const adminMemberTableCopy = {
     pendingMatriculation: 'En attente',
     selection: {
       member: (name: string) => `Sélectionner ${name}`,
-      page: 'Sélectionner tous les membres en attente sur cette page'
+      page: 'Sélectionner tous les membres admissibles sur cette page'
     },
     summary: {
       awaiting: 'En attente de publication',
@@ -647,6 +666,10 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
     }
   )
 
+  const [makeDelinquentState, makeDelinquentFormAction] = useActionState(makeMembersDelinquentAction, {
+    message: ''
+  })
+
   const pageSize = 200
 
   const [pagination, setPagination] = useState<PaginationState>({
@@ -678,7 +701,7 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
       rowSelection
     },
     onColumnFiltersChange: setColumnFilters,
-    enableRowSelection: row => row.original.memberStatus === memberStatus.Pending,
+    enableRowSelection: row => row.original.memberStatus !== memberStatus.Delinquent,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -699,12 +722,26 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
     setRowSelection({})
   }, [moveToAwaitingState.message])
 
+  useEffect(() => {
+    if (!makeDelinquentState.message) return
+
+    toast(makeDelinquentState.message)
+    setRowSelection({})
+  }, [makeDelinquentState.message])
+
   const selectedPendingMembers = table
     .getSelectedRowModel()
     .rows.map(row => row.original)
     .filter(member => member.memberStatus === memberStatus.Pending)
 
   const selectedPendingCount = selectedPendingMembers.length
+
+  const selectedMembersToMakeDelinquent = table
+    .getSelectedRowModel()
+    .rows.map(row => row.original)
+    .filter(member => member.memberStatus !== memberStatus.Delinquent)
+
+  const selectedDelinquentCount = selectedMembersToMakeDelinquent.length
 
   const hasMatriculationColumn = Boolean(table.getColumn('memberMatriculationNumber'))
 
@@ -1028,6 +1065,37 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button
+                      className='w-full bg-red-700 text-white hover:bg-red-800 focus-visible:ring-red-700/30 sm:w-auto'
+                      disabled={selectedDelinquentCount === 0}
+                    >
+                      <AlertTriangle />
+                      {copy.bulkDelinquent.button(selectedDelinquentCount)}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>{copy.bulkDelinquent.title}</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {copy.bulkDelinquent.description(selectedDelinquentCount)}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <form action={makeDelinquentFormAction}>
+                      {selectedMembersToMakeDelinquent.map(member => (
+                        <input key={member.id} type='hidden' name='memberIds' value={member.id} />
+                      ))}
+                      <AlertDialogFooter>
+                        <AlertDialogCancel type='button'>{copy.bulkDelinquent.cancel}</AlertDialogCancel>
+                        <BulkDelinquentSubmitButton
+                          copy={copy.bulkDelinquent}
+                          disabled={selectedDelinquentCount === 0}
+                        />
+                      </AlertDialogFooter>
+                    </form>
+                  </AlertDialogContent>
+                </AlertDialog>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
                       className='w-full bg-emerald-700 text-white hover:bg-emerald-800 focus-visible:ring-emerald-700/30 sm:w-auto'
                       disabled={eligibleAutoVestCount === 0}
                     >
@@ -1093,6 +1161,11 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
           {moveToAwaitingState.message ? (
             <p className='text-primary text-sm font-semibold' aria-live='polite'>
               {moveToAwaitingState.message}
+            </p>
+          ) : null}
+          {makeDelinquentState.message ? (
+            <p className='text-primary text-sm font-semibold' aria-live='polite'>
+              {makeDelinquentState.message}
             </p>
           ) : null}
           {autoVestState.message ? (
@@ -1265,6 +1338,33 @@ function BulkAwaitingSubmitButton({
       type='submit'
       disabled={disabled || pending}
       className='bg-blue-700 text-white hover:bg-blue-800 focus-visible:ring-blue-700/30'
+    >
+      {pending ? (
+        <>
+          <Loader className='animate-spin' />
+          {copy.pending}
+        </>
+      ) : (
+        copy.confirm
+      )}
+    </Button>
+  )
+}
+
+function BulkDelinquentSubmitButton({
+  copy,
+  disabled
+}: {
+  copy: AdminMemberTableCopy['bulkDelinquent']
+  disabled: boolean
+}) {
+  const { pending } = useFormStatus()
+
+  return (
+    <Button
+      type='submit'
+      disabled={disabled || pending}
+      className='bg-red-700 text-white hover:bg-red-800 focus-visible:ring-red-700/30'
     >
       {pending ? (
         <>

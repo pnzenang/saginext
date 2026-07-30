@@ -3235,6 +3235,103 @@ export const movePendingMembersToAwaitingPublicationAction = async (
   }
 }
 
+export const makeMembersDelinquentAction = async (
+  _prevState: { message: string },
+  formData: FormData
+): Promise<{ message: string }> => {
+  await assertAdminUser()
+
+  try {
+    const memberIds = getStringFormValues(formData, 'memberIds')
+
+    if (memberIds.length === 0) {
+      throw new Error('Select at least one member.')
+    }
+
+    const updatedCount = await db.$transaction(async tx => {
+      const eligibleMembers = await tx.member.findMany({
+        select: {
+          id: true,
+          memberMatriculationNumber: true,
+          memberStatus: true
+        },
+        where: {
+          id: {
+            in: memberIds
+          },
+          memberStatus: {
+            not: memberStatus.Delinquent
+          }
+        }
+      })
+
+      if (eligibleMembers.length === 0) {
+        return 0
+      }
+
+      const eligibleMemberIds = eligibleMembers.map(member => member.id)
+
+      const pendingMatriculationNumbers = eligibleMembers
+        .filter(member => member.memberStatus === memberStatus.Pending)
+        .map(member => member.memberMatriculationNumber)
+
+      const vestedMatriculationNumbers = eligibleMembers
+        .filter(member => member.memberStatus === memberStatus.Vested)
+        .map(member => member.memberMatriculationNumber)
+
+      const updatedMembers = await tx.member.updateMany({
+        data: {
+          memberStatus: memberStatus.Delinquent
+        },
+        where: {
+          id: {
+            in: eligibleMemberIds
+          },
+          memberStatus: {
+            not: memberStatus.Delinquent
+          }
+        }
+      })
+
+      if (pendingMatriculationNumbers.length > 0) {
+        await tx.associationRegistrationUsage.deleteMany({
+          where: {
+            memberMatriculationNumber: {
+              in: pendingMatriculationNumbers
+            }
+          }
+        })
+      }
+
+      if (vestedMatriculationNumbers.length > 0) {
+        await tx.associationContributionCredit.deleteMany({
+          where: {
+            memberMatriculationNumber: {
+              in: vestedMatriculationNumbers
+            }
+          }
+        })
+      }
+
+      return updatedMembers.count
+    })
+
+    revalidatePaymentViews()
+
+    if (updatedCount === 0) {
+      return {
+        message: 'No selected eligible members were found.'
+      }
+    }
+
+    return {
+      message: `${updatedCount} member${updatedCount === 1 ? '' : 's'} moved to Not in Good Standing.`
+    }
+  } catch (error) {
+    return renderError(error)
+  }
+}
+
 const resetPaymentAlert = async (alertType: string): Promise<void> => {
   await assertAdminUser()
 
