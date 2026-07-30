@@ -574,9 +574,7 @@ const AssociationPaymentPageContent = (props: AssociationPaymentPageContentProps
     : false
 
   const activeNotFoundPayment =
-    isContributionPayment && latestNotFoundPayment && !hasSubmittedPaymentAfterLatestNotFound
-      ? latestNotFoundPayment
-      : null
+    latestNotFoundPayment && !hasSubmittedPaymentAfterLatestNotFound ? latestNotFoundPayment : null
 
   const submittedPaymentEntries = submittedPaymentLedgerEntries.map(entry => ({
     amount: entry.amount,
@@ -804,7 +802,13 @@ const AssociationPaymentPageContent = (props: AssociationPaymentPageContentProps
               disclaimer={copy.disclaimer}
             >
               <SummaryRow label={copy.amountSent} value={props.registration.amountReceived} />
-              <SummaryRow label={copy.amountVerifiedSagi} value={props.registration.amountVerified} />
+              {activeNotFoundPayment ? (
+                <SummaryNoticeRow
+                  message={copy.paymentNotFoundSummary(currencyFormatter.format(activeNotFoundPayment.amount))}
+                />
+              ) : (
+                <SummaryRow label={copy.amountVerifiedSagi} value={props.registration.amountVerified} />
+              )}
               <SummaryRow label={copy.usedForRegistration} value={props.registration.balanceDues} />
             </SummaryCard>
           )}

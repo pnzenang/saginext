@@ -2168,6 +2168,9 @@ export const zeroAllAssociationContributionBalancesAction = async (): Promise<{ 
 const getContributionProofRequestSubject = (formattedAmount: string) =>
   `Proof requested for ${formattedAmount} contribution payment`
 
+const getRegistrationProofRequestSubject = (formattedAmount: string) =>
+  `Proof requested for ${formattedAmount} registration payment`
+
 const fetchLatestContributionPaymentStateLedgerEntry = async (associationCode: string) => {
   const latestReset = await db.associationPaymentLedgerEntry.findFirst({
     orderBy: {
@@ -2198,6 +2201,41 @@ const fetchLatestContributionPaymentStateLedgerEntry = async (associationCode: s
         in: [associationPaymentLedgerEventTypes.notFound, associationPaymentLedgerEventTypes.submitted]
       },
       paymentType: associationPaymentTypes.contribution,
+      ...(latestReset ? { createdAt: { gt: latestReset.createdAt } } : {})
+    }
+  })
+}
+
+const fetchLatestRegistrationPaymentStateLedgerEntry = async (associationCode: string) => {
+  const latestReset = await db.associationPaymentLedgerEntry.findFirst({
+    orderBy: {
+      createdAt: 'desc'
+    },
+    select: {
+      createdAt: true
+    },
+    where: {
+      associationCode,
+      eventType: associationPaymentLedgerEventTypes.reset,
+      paymentType: associationPaymentTypes.registration
+    }
+  })
+
+  return db.associationPaymentLedgerEntry.findFirst({
+    orderBy: {
+      createdAt: 'desc'
+    },
+    select: {
+      amount: true,
+      createdAt: true,
+      eventType: true
+    },
+    where: {
+      associationCode,
+      eventType: {
+        in: [associationPaymentLedgerEventTypes.notFound, associationPaymentLedgerEventTypes.submitted]
+      },
+      paymentType: associationPaymentTypes.registration,
       ...(latestReset ? { createdAt: { gt: latestReset.createdAt } } : {})
     }
   })
@@ -2389,43 +2427,166 @@ export const saveAssociationRegistrationPaymentAction = async (
     const associationCode = await getCurrentAssociationCode(user.id)
     const amountSent = getPositiveDollarAmountFromForm(formData, 'amountSent')
     const submittedAt = new Date()
+    const documentFile = getOptionalIssueNoteDocumentFile(formData)
+    const latestRegistrationPaymentStateEntry = await fetchLatestRegistrationPaymentStateLedgerEntry(associationCode)
 
-    const payment = await db.$transaction(async tx => {
-      const payment = await tx.associationRegistrationPayment.upsert({
-        create: {
-          amountSent,
-          associationCode,
-          lastSubmittedAt: submittedAt
-        },
-        update: {
-          amountSent: {
-            increment: amountSent
+    const proofUploadRequired =
+      latestRegistrationPaymentStateEntry?.eventType === associationPaymentLedgerEventTypes.notFound
+
+    if (proofUploadRequired && !documentFile) {
+      throw new Error('Upload proof of payment before recording another registration amount.')
+    }
+
+    const amountNotFound = proofUploadRequired ? decimalToNumber(latestRegistrationPaymentStateEntry?.amount) : 0
+    const formattedAmountNotFound = currencyFormatter.format(amountNotFound)
+
+    const proofRequestNote = proofUploadRequired
+      ? await db.delegateIssueNote.findFirst({
+          orderBy: {
+            createdAt: 'desc'
           },
-          lastSubmittedAt: submittedAt
-        },
-        where: {
-          associationCode
+          select: {
+            id: true
+          },
+          where: {
+            associationCode,
+            status: 'open',
+            subject: getRegistrationProofRequestSubject(formattedAmountNotFound)
+          }
+        })
+      : null
+
+    const proofNoteId = proofUploadRequired ? (proofRequestNote?.id ?? randomUUID()) : null
+
+    const proofMessageId = proofUploadRequired ? randomUUID() : null
+
+    const uploadedProofDocument =
+      proofUploadRequired && documentFile && proofNoteId && proofMessageId
+        ? await uploadIssueNoteDocument({
+            file: documentFile,
+            messageId: proofMessageId,
+            noteId: proofNoteId
+          })
+        : null
+
+    try {
+      const payment = await db.$transaction(async tx => {
+        const payment = await tx.associationRegistrationPayment.upsert({
+          create: {
+            amountSent,
+            associationCode,
+            lastSubmittedAt: submittedAt
+          },
+          update: {
+            amountSent: {
+              increment: amountSent
+            },
+            lastSubmittedAt: submittedAt
+          },
+          where: {
+            associationCode
+          }
+        })
+
+        await tx.associationPaymentLedgerEntry.create({
+          data: {
+            amount: amountSent,
+            associationCode,
+            createdBy: user.id,
+            eventType: associationPaymentLedgerEventTypes.submitted,
+            note: 'Registration payment submitted by association.',
+            paymentType: associationPaymentTypes.registration
+          }
+        })
+
+        if (uploadedProofDocument && proofMessageId && proofNoteId) {
+          const messageBody = `Proof of payment uploaded for the registration payment SAGI marked not found (${formattedAmountNotFound}). The delegate recorded a new registration amount of ${currencyFormatter.format(amountSent)}.`
+
+          if (proofRequestNote) {
+            await tx.delegateIssueNoteMessage.create({
+              data: {
+                authorClerkId: user.id,
+                authorRole: 'delegate',
+                body: messageBody,
+                id: proofMessageId,
+                noteId: proofRequestNote.id,
+                ...uploadedProofDocument.messageData
+              }
+            })
+
+            await tx.delegateIssueNote.update({
+              data: {
+                adminUnread: true,
+                delegateLastReadAt: submittedAt,
+                delegateUnread: false,
+                lastMessageAt: submittedAt,
+                lastMessageByRole: 'delegate'
+              },
+              where: {
+                id: proofRequestNote.id
+              }
+            })
+          } else {
+            const profile = await tx.profile.findUnique({
+              select: {
+                associationName: true
+              },
+              where: {
+                associationCode
+              }
+            })
+
+            await tx.delegateIssueNote.create({
+              data: {
+                adminUnread: true,
+                associationCode,
+                associationName: profile?.associationName,
+                createdByClerkId: user.id,
+                createdByRole: 'delegate',
+                delegateLastReadAt: submittedAt,
+                delegateUnread: false,
+                id: proofNoteId,
+                lastMessageAt: submittedAt,
+                lastMessageByRole: 'delegate',
+                messages: {
+                  create: {
+                    authorClerkId: user.id,
+                    authorRole: 'delegate',
+                    body: messageBody,
+                    id: proofMessageId,
+                    ...uploadedProofDocument.messageData
+                  }
+                },
+                priority: 'urgent',
+                status: 'open',
+                subject: getRegistrationProofRequestSubject(formattedAmountNotFound)
+              }
+            })
+          }
         }
+
+        return payment
       })
 
-      await tx.associationPaymentLedgerEntry.create({
-        data: {
-          amount: amountSent,
-          associationCode,
-          createdBy: user.id,
-          eventType: associationPaymentLedgerEventTypes.submitted,
-          note: 'Registration payment submitted by association.',
-          paymentType: associationPaymentTypes.registration
-        }
-      })
+      revalidatePaymentViews()
 
-      return payment
-    })
+      if (uploadedProofDocument) {
+        revalidateIssueNoteViews()
+      }
 
-    revalidatePaymentViews()
+      return {
+        message: `Added registration payment: ${currencyFormatter.format(amountSent)}. Total awaiting verification: ${currencyFormatter.format(decimalToNumber(payment.amountSent))}.${uploadedProofDocument ? ' Proof of payment uploaded.' : ''}`
+      }
+    } catch (error) {
+      if (uploadedProofDocument) {
+        await deleteCloudinaryDocumentWithoutBlocking({
+          cloudinaryDeliveryType: uploadedProofDocument.cloudinaryDocument.deliveryType,
+          cloudinaryPublicId: uploadedProofDocument.cloudinaryDocument.publicId,
+          cloudinaryResourceType: uploadedProofDocument.cloudinaryDocument.resourceType
+        })
+      }
 
-    return {
-      message: `Added registration payment: ${currencyFormatter.format(amountSent)}. Total awaiting verification: ${currencyFormatter.format(decimalToNumber(payment.amountSent))}.`
+      throw error
     }
   } catch (error) {
     return renderError(error)
@@ -2851,6 +3012,105 @@ export const verifyAssociationRegistrationPaymentAction = async (formData: FormD
     })
 
     revalidatePaymentViews()
+  } catch (error) {
+    renderError(error)
+  }
+}
+
+export const markAssociationRegistrationPaymentNotFoundAction = async (formData: FormData): Promise<void> => {
+  const user = await assertAdminUser()
+
+  try {
+    const associationCode = getRequiredFormValue(formData, 'associationCode')
+
+    const currentPayment = await db.associationRegistrationPayment.findUnique({
+      where: {
+        associationCode
+      }
+    })
+
+    if (!currentPayment) {
+      throw new Error('No registration payment found for this association code.')
+    }
+
+    const amountNotFound = roundCurrencyAmount(decimalToNumber(currentPayment.amountSent))
+
+    if (amountNotFound <= 0) {
+      throw new Error('No registration amount sent to mark as not found.')
+    }
+
+    const profile = await db.profile.findUnique({
+      select: {
+        associationName: true
+      },
+      where: {
+        associationCode
+      }
+    })
+
+    const now = new Date()
+    const noteId = randomUUID()
+    const messageId = randomUUID()
+    const formattedAmountNotFound = currencyFormatter.format(amountNotFound)
+
+    await db.$transaction(async tx => {
+      await createMissingPaymentHistoryLedgerEntries({
+        createdBy: user.id,
+        payment: currentPayment,
+        paymentType: associationPaymentTypes.registration,
+        tx
+      })
+
+      await tx.associationRegistrationPayment.update({
+        data: {
+          amountSent: 0,
+          lastSubmittedAt: null
+        },
+        where: {
+          associationCode
+        }
+      })
+
+      await tx.associationPaymentLedgerEntry.create({
+        data: {
+          amount: amountNotFound,
+          associationCode,
+          createdBy: user.id,
+          eventType: associationPaymentLedgerEventTypes.notFound,
+          note: 'Registration payment was not found by SAGI.',
+          paymentType: associationPaymentTypes.registration
+        }
+      })
+
+      await tx.delegateIssueNote.create({
+        data: {
+          adminLastReadAt: now,
+          adminUnread: false,
+          associationCode,
+          associationName: profile?.associationName,
+          createdByClerkId: user.id,
+          createdByRole: 'admin',
+          delegateUnread: true,
+          id: noteId,
+          lastMessageAt: now,
+          lastMessageByRole: 'admin',
+          messages: {
+            create: {
+              authorClerkId: user.id,
+              authorRole: 'admin',
+              body: `SAGI could not find your registration payment of ${formattedAmountNotFound}. Please upload proof of payment under the registration amount field the next time you record an amount, such as the Zelle confirmation, receipt, or transaction screenshot, so the admin team can review it.`,
+              id: messageId
+            }
+          },
+          priority: 'urgent',
+          status: 'open',
+          subject: getRegistrationProofRequestSubject(formattedAmountNotFound)
+        }
+      })
+    })
+
+    revalidatePaymentViews()
+    revalidateIssueNoteViews()
   } catch (error) {
     renderError(error)
   }

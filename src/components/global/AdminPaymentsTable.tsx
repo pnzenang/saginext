@@ -11,7 +11,6 @@ import {
   ChevronRightIcon,
   FileSpreadsheetIcon,
   Plus,
-  RotateCcw,
   SearchIcon,
   XIcon
 } from 'lucide-react'
@@ -288,14 +287,12 @@ const PaymentSentAdjustmentForm = ({
 
 const PaymentControls = ({
   adjustAction,
-  kind,
   row,
   secondaryAction,
   showAdjustment,
   verifyAction
 }: {
   adjustAction: (formData: FormData) => Promise<void>
-  kind: PaymentKind
   row: AdminPaymentRow
   secondaryAction: (formData: FormData) => Promise<void>
   showAdjustment: boolean
@@ -303,8 +300,6 @@ const PaymentControls = ({
 }) => {
   const balanceAmountInputId = useId()
   const hasSubmittedPayment = row.amountSent > 0
-  const SecondaryActionIcon = kind === 'contribution' ? XIcon : RotateCcw
-  const secondaryActionLabel = kind === 'contribution' ? 'Not Found' : 'Reset'
 
   return (
     <div
@@ -336,8 +331,8 @@ const PaymentControls = ({
             disabled={!hasSubmittedPayment}
             className='h-7 w-full gap-1 px-1 text-[11px]'
           >
-            <SecondaryActionIcon className='size-3' />
-            {secondaryActionLabel}
+            <XIcon className='size-3' />
+            Not Found
           </Button>
         </form>
       </div>
@@ -667,7 +662,6 @@ const AdminPaymentsTable = ({
                   <TableCell className='min-w-0 px-1.5 py-3'>
                     <PaymentControls
                       adjustAction={adjustAction}
-                      kind={kind}
                       row={row}
                       secondaryAction={secondaryAction}
                       verifyAction={verifyAction}
@@ -755,7 +749,6 @@ const AdminPaymentsTable = ({
                 </div>
                 <PaymentControls
                   adjustAction={adjustAction}
-                  kind={kind}
                   row={row}
                   secondaryAction={secondaryAction}
                   verifyAction={verifyAction}

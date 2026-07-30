@@ -6,8 +6,8 @@ import db from '@/utils/db'
 import {
   addAssociationRegistrationBalanceAdjustmentAction,
   addAssociationRegistrationSentAdjustmentAction,
+  markAssociationRegistrationPaymentNotFoundAction,
   resetRegistrationPaymentAlertAction,
-  resetAssociationRegistrationPaymentAction,
   verifyAssociationRegistrationPaymentAction
 } from '@/utils/actions'
 import {
@@ -234,7 +234,7 @@ const AdminRegistrationPayments = async () => {
             adjustAction={addAssociationRegistrationBalanceAdjustmentAction}
             sentAdjustmentAction={addAssociationRegistrationSentAdjustmentAction}
             verifyAction={verifyAssociationRegistrationPaymentAction}
-            secondaryAction={resetAssociationRegistrationPaymentAction}
+            secondaryAction={markAssociationRegistrationPaymentNotFoundAction}
           />
         </CardContent>
       </Card>
