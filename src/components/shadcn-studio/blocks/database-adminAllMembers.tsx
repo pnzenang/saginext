@@ -137,7 +137,7 @@ const adminMemberTableCopy = {
       title: 'Move eligible members to Vested?'
     },
     bulkAwaiting: {
-      button: (count: number) => `Make Awaiting (${count})`,
+      button: (count: number) => `Make Awaiting (${count} pending)`,
       cancel: 'Cancel',
       confirm: 'Make Awaiting',
       description: (count: number) =>
@@ -146,13 +146,13 @@ const adminMemberTableCopy = {
       title: 'Move selected pending members to Awaiting?'
     },
     bulkDelinquent: {
-      button: (count: number) => `Make Delinquent (${count})`,
+      button: (count: number) => `Make Delinquent (${count} vested)`,
       cancel: 'Cancel',
       confirm: 'Make Delinquent',
       description: (count: number) =>
-        `This will move ${count} selected member${count === 1 ? '' : 's'} to Not in Good Standing.`,
+        `This will move ${count} selected vested member${count === 1 ? '' : 's'} to Not in Good Standing.`,
       pending: 'Please wait...',
-      title: 'Move selected members to Delinquent?'
+      title: 'Move selected vested members to Delinquent?'
     },
     columns: {
       actions: 'Actions',
@@ -202,7 +202,7 @@ const adminMemberTableCopy = {
     pendingMatriculation: 'Pending',
     selection: {
       member: (name: string) => `Select ${name}`,
-      page: 'Select all eligible members on this page'
+      page: 'Select all pending or vested members on this page'
     },
     summary: {
       awaiting: 'Awaiting',
@@ -231,7 +231,7 @@ const adminMemberTableCopy = {
       title: 'Passer les membres admissibles à acquis ?'
     },
     bulkAwaiting: {
-      button: (count: number) => `Mettre en attente (${count})`,
+      button: (count: number) => `Mettre en attente (${count} en attente)`,
       cancel: 'Annuler',
       confirm: 'Mettre en attente',
       description: (count: number) =>
@@ -240,13 +240,13 @@ const adminMemberTableCopy = {
       title: 'Passer les membres sélectionnés à En attente de publication ?'
     },
     bulkDelinquent: {
-      button: (count: number) => `Marquer pas en règle (${count})`,
+      button: (count: number) => `Marquer pas en règle (${count} acquis)`,
       cancel: 'Annuler',
       confirm: 'Marquer pas en règle',
       description: (count: number) =>
-        `Cette action déplacera ${count} membre${count === 1 ? '' : 's'} sélectionné${count === 1 ? '' : 's'} vers Pas en règle.`,
+        `Cette action déplacera ${count} membre${count === 1 ? '' : 's'} acquis sélectionné${count === 1 ? '' : 's'} vers Pas en règle.`,
       pending: 'Veuillez patienter...',
-      title: 'Passer les membres sélectionnés à Pas en règle ?'
+      title: 'Passer les membres acquis sélectionnés à Pas en règle ?'
     },
     columns: {
       actions: 'Actions',
@@ -296,7 +296,7 @@ const adminMemberTableCopy = {
     pendingMatriculation: 'En attente',
     selection: {
       member: (name: string) => `Sélectionner ${name}`,
-      page: 'Sélectionner tous les membres admissibles sur cette page'
+      page: 'Sélectionner tous les membres en attente ou acquis sur cette page'
     },
     summary: {
       awaiting: 'En attente de publication',
@@ -701,7 +701,8 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
       rowSelection
     },
     onColumnFiltersChange: setColumnFilters,
-    enableRowSelection: row => row.original.memberStatus !== memberStatus.Delinquent,
+    enableRowSelection: row =>
+      row.original.memberStatus === memberStatus.Pending || row.original.memberStatus === memberStatus.Vested,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -729,19 +730,14 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
     setRowSelection({})
   }, [makeDelinquentState.message])
 
-  const selectedPendingMembers = table
-    .getSelectedRowModel()
-    .rows.map(row => row.original)
-    .filter(member => member.memberStatus === memberStatus.Pending)
+  const selectedMembers = table.getSelectedRowModel().rows.map(row => row.original)
+  const selectedPendingMembers = selectedMembers.filter(member => member.memberStatus === memberStatus.Pending)
 
   const selectedPendingCount = selectedPendingMembers.length
 
-  const selectedMembersToMakeDelinquent = table
-    .getSelectedRowModel()
-    .rows.map(row => row.original)
-    .filter(member => member.memberStatus !== memberStatus.Delinquent)
+  const selectedVestedMembers = selectedMembers.filter(member => member.memberStatus === memberStatus.Vested)
 
-  const selectedDelinquentCount = selectedMembersToMakeDelinquent.length
+  const selectedVestedCount = selectedVestedMembers.length
 
   const hasMatriculationColumn = Boolean(table.getColumn('memberMatriculationNumber'))
 
@@ -969,14 +965,14 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
               )
             })}
           </div>
-          <div className='flex items-center justify-between gap-3 py-2 max-sm:flex-col max-sm:items-stretch sm:px-6 sm:py-4'>
-            <p className='text-primary text-sm font-extrabold sm:whitespace-nowrap' aria-live='polite'>
-              <span>{copy.found(formatNumber(table.getRowCount()))}</span>
-            </p>
+          <div className='flex flex-col gap-3 py-2 sm:px-6 sm:py-4'>
+            <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+              <p className='text-primary text-sm font-extrabold sm:whitespace-nowrap' aria-live='polite'>
+                <span>{copy.found(formatNumber(table.getRowCount()))}</span>
+              </p>
 
-            <div className='flex w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:items-center'>
-              <Pagination>
-                <PaginationContent>
+              <Pagination className='mx-0 justify-start sm:w-auto sm:justify-end'>
+                <PaginationContent className='flex-wrap justify-start sm:justify-end'>
                   <PaginationItem>
                     <Button
                       className='disabled:pointer-events-none disabled:opacity-50'
@@ -1033,129 +1029,130 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
                   </PaginationItem>
                 </PaginationContent>
               </Pagination>
-              <div className='grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:items-center'>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      className='w-full bg-blue-700 text-white hover:bg-blue-800 focus-visible:ring-blue-700/30 sm:w-auto'
-                      disabled={selectedPendingCount === 0}
-                    >
-                      <UserCheck />
-                      {copy.bulkAwaiting.button(selectedPendingCount)}
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>{copy.bulkAwaiting.title}</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        {copy.bulkAwaiting.description(selectedPendingCount)}
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <form action={moveToAwaitingFormAction}>
-                      {selectedPendingMembers.map(member => (
-                        <input key={member.id} type='hidden' name='memberIds' value={member.id} />
-                      ))}
-                      <AlertDialogFooter>
-                        <AlertDialogCancel type='button'>{copy.bulkAwaiting.cancel}</AlertDialogCancel>
-                        <BulkAwaitingSubmitButton copy={copy.bulkAwaiting} disabled={selectedPendingCount === 0} />
-                      </AlertDialogFooter>
-                    </form>
-                  </AlertDialogContent>
-                </AlertDialog>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      className='w-full bg-red-700 text-white hover:bg-red-800 focus-visible:ring-red-700/30 sm:w-auto'
-                      disabled={selectedDelinquentCount === 0}
-                    >
-                      <AlertTriangle />
-                      {copy.bulkDelinquent.button(selectedDelinquentCount)}
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>{copy.bulkDelinquent.title}</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        {copy.bulkDelinquent.description(selectedDelinquentCount)}
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <form action={makeDelinquentFormAction}>
-                      {selectedMembersToMakeDelinquent.map(member => (
-                        <input key={member.id} type='hidden' name='memberIds' value={member.id} />
-                      ))}
-                      <AlertDialogFooter>
-                        <AlertDialogCancel type='button'>{copy.bulkDelinquent.cancel}</AlertDialogCancel>
-                        <BulkDelinquentSubmitButton
-                          copy={copy.bulkDelinquent}
-                          disabled={selectedDelinquentCount === 0}
-                        />
-                      </AlertDialogFooter>
-                    </form>
-                  </AlertDialogContent>
-                </AlertDialog>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      className='w-full bg-emerald-700 text-white hover:bg-emerald-800 focus-visible:ring-emerald-700/30 sm:w-auto'
-                      disabled={eligibleAutoVestCount === 0}
-                    >
-                      <ShieldCheck />
-                      {copy.autoVest.button(awaitingPublicationVestingLongevityDays, eligibleAutoVestCount)}
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>{copy.autoVest.title}</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        {copy.autoVest.description(eligibleAutoVestCount)}
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <form action={autoVestFormAction}>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel type='button'>{copy.autoVest.cancel}</AlertDialogCancel>
-                        <AutoVestSubmitButton copy={copy.autoVest} disabled={eligibleAutoVestCount === 0} />
-                      </AlertDialogFooter>
-                    </form>
-                  </AlertDialogContent>
-                </AlertDialog>
-                <RemoveOverduePendingMembersButton language={language} overdueCount={overduePendingMembersCount} />
-                <PrintButton
-                  label={copy.export.printPdf}
-                  className='bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40 w-full sm:w-auto'
-                />
-                <Button
-                  type='button'
-                  onClick={exportVisibleColumnsToExcel}
-                  disabled={table.getFilteredRowModel().rows.length === 0}
-                  className='bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40 w-full sm:w-auto'
-                >
-                  <FileSpreadsheetIcon />
-                  {copy.export.page}
-                </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button className='bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40 w-full sm:w-auto'>
-                      <UploadIcon />
-                      {copy.export.all}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align='end'>
-                    <DropdownMenuItem onClick={exportToCSV}>
-                      <FileTextIcon className='mr-2 size-4' />
-                      {copy.export.asCsv}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={exportToExcel}>
-                      <FileSpreadsheetIcon className='mr-2 size-4' />
-                      {copy.export.asExcel}
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={exportToJSON}>
-                      <FileTextIcon className='mr-2 size-4' />
-                      {copy.export.asJson}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+            </div>
+
+            <div className='grid w-full grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4 [&_button]:w-full'>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    className='min-h-10 whitespace-normal bg-blue-700 text-white hover:bg-blue-800 focus-visible:ring-blue-700/30'
+                    disabled={selectedPendingCount === 0}
+                  >
+                    <UserCheck />
+                    {copy.bulkAwaiting.button(selectedPendingCount)}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>{copy.bulkAwaiting.title}</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {copy.bulkAwaiting.description(selectedPendingCount)}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <form action={moveToAwaitingFormAction}>
+                    {selectedPendingMembers.map(member => (
+                      <input key={member.id} type='hidden' name='memberIds' value={member.id} />
+                    ))}
+                    <AlertDialogFooter>
+                      <AlertDialogCancel type='button'>{copy.bulkAwaiting.cancel}</AlertDialogCancel>
+                      <BulkAwaitingSubmitButton copy={copy.bulkAwaiting} disabled={selectedPendingCount === 0} />
+                    </AlertDialogFooter>
+                  </form>
+                </AlertDialogContent>
+              </AlertDialog>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    className='min-h-10 whitespace-normal bg-red-700 text-white hover:bg-red-800 focus-visible:ring-red-700/30'
+                    disabled={selectedVestedCount === 0}
+                  >
+                    <AlertTriangle />
+                    {copy.bulkDelinquent.button(selectedVestedCount)}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>{copy.bulkDelinquent.title}</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {copy.bulkDelinquent.description(selectedVestedCount)}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <form action={makeDelinquentFormAction}>
+                    {selectedVestedMembers.map(member => (
+                      <input key={member.id} type='hidden' name='memberIds' value={member.id} />
+                    ))}
+                    <AlertDialogFooter>
+                      <AlertDialogCancel type='button'>{copy.bulkDelinquent.cancel}</AlertDialogCancel>
+                      <BulkDelinquentSubmitButton copy={copy.bulkDelinquent} disabled={selectedVestedCount === 0} />
+                    </AlertDialogFooter>
+                  </form>
+                </AlertDialogContent>
+              </AlertDialog>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    className='min-h-10 whitespace-normal bg-emerald-700 text-white hover:bg-emerald-800 focus-visible:ring-emerald-700/30'
+                    disabled={eligibleAutoVestCount === 0}
+                  >
+                    <ShieldCheck />
+                    {copy.autoVest.button(awaitingPublicationVestingLongevityDays, eligibleAutoVestCount)}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>{copy.autoVest.title}</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {copy.autoVest.description(eligibleAutoVestCount)}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <form action={autoVestFormAction}>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel type='button'>{copy.autoVest.cancel}</AlertDialogCancel>
+                      <AutoVestSubmitButton copy={copy.autoVest} disabled={eligibleAutoVestCount === 0} />
+                    </AlertDialogFooter>
+                  </form>
+                </AlertDialogContent>
+              </AlertDialog>
+              <RemoveOverduePendingMembersButton language={language} overdueCount={overduePendingMembersCount} />
+            </div>
+
+            <div className='grid w-full grid-cols-1 gap-2 sm:grid-cols-3 xl:flex xl:justify-end [&_button]:w-full xl:[&_button]:w-auto'>
+              <PrintButton
+                label={copy.export.printPdf}
+                className='bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40'
+              />
+              <Button
+                type='button'
+                onClick={exportVisibleColumnsToExcel}
+                disabled={table.getFilteredRowModel().rows.length === 0}
+                className='bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40'
+              >
+                <FileSpreadsheetIcon />
+                {copy.export.page}
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button className='bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40'>
+                    <UploadIcon />
+                    {copy.export.all}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align='end'>
+                  <DropdownMenuItem onClick={exportToCSV}>
+                    <FileTextIcon className='mr-2 size-4' />
+                    {copy.export.asCsv}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={exportToExcel}>
+                    <FileSpreadsheetIcon className='mr-2 size-4' />
+                    {copy.export.asExcel}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={exportToJSON}>
+                    <FileTextIcon className='mr-2 size-4' />
+                    {copy.export.asJson}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
           {moveToAwaitingState.message ? (

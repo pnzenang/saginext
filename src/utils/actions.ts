@@ -3245,39 +3245,29 @@ export const makeMembersDelinquentAction = async (
     const memberIds = getStringFormValues(formData, 'memberIds')
 
     if (memberIds.length === 0) {
-      throw new Error('Select at least one member.')
+      throw new Error('Select at least one vested member.')
     }
 
     const updatedCount = await db.$transaction(async tx => {
-      const eligibleMembers = await tx.member.findMany({
+      const vestedMembers = await tx.member.findMany({
         select: {
           id: true,
-          memberMatriculationNumber: true,
-          memberStatus: true
+          memberMatriculationNumber: true
         },
         where: {
           id: {
             in: memberIds
           },
-          memberStatus: {
-            not: memberStatus.Delinquent
-          }
+          memberStatus: memberStatus.Vested
         }
       })
 
-      if (eligibleMembers.length === 0) {
+      if (vestedMembers.length === 0) {
         return 0
       }
 
-      const eligibleMemberIds = eligibleMembers.map(member => member.id)
-
-      const pendingMatriculationNumbers = eligibleMembers
-        .filter(member => member.memberStatus === memberStatus.Pending)
-        .map(member => member.memberMatriculationNumber)
-
-      const vestedMatriculationNumbers = eligibleMembers
-        .filter(member => member.memberStatus === memberStatus.Vested)
-        .map(member => member.memberMatriculationNumber)
+      const vestedMemberIds = vestedMembers.map(member => member.id)
+      const vestedMatriculationNumbers = vestedMembers.map(member => member.memberMatriculationNumber)
 
       const updatedMembers = await tx.member.updateMany({
         data: {
@@ -3285,23 +3275,11 @@ export const makeMembersDelinquentAction = async (
         },
         where: {
           id: {
-            in: eligibleMemberIds
+            in: vestedMemberIds
           },
-          memberStatus: {
-            not: memberStatus.Delinquent
-          }
+          memberStatus: memberStatus.Vested
         }
       })
-
-      if (pendingMatriculationNumbers.length > 0) {
-        await tx.associationRegistrationUsage.deleteMany({
-          where: {
-            memberMatriculationNumber: {
-              in: pendingMatriculationNumbers
-            }
-          }
-        })
-      }
 
       if (vestedMatriculationNumbers.length > 0) {
         await tx.associationContributionCredit.deleteMany({
@@ -3320,12 +3298,12 @@ export const makeMembersDelinquentAction = async (
 
     if (updatedCount === 0) {
       return {
-        message: 'No selected eligible members were found.'
+        message: 'No selected vested members were found.'
       }
     }
 
     return {
-      message: `${updatedCount} member${updatedCount === 1 ? '' : 's'} moved to Not in Good Standing.`
+      message: `${updatedCount} vested member${updatedCount === 1 ? '' : 's'} moved to Not in Good Standing.`
     }
   } catch (error) {
     return renderError(error)
