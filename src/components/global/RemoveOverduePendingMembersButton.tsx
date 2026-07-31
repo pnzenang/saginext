@@ -33,6 +33,8 @@ type RemoveOverduePendingMembersButtonProps = {
 const removeOverdueCopy = {
   en: {
     button: (count: number) => `Remove Overdue(${count} overdue(s))`,
+    buttonPrefix: (count: number) => `Remove Overdue(${count} `,
+    buttonTruncatedText: (count: number) => (count === 1 ? 'overdue(s)' : 'overdue(s)'),
     cancel: 'Cancel',
     description: (count: number) =>
       `This will move ${count} selected overdue pending member${count === 1 ? '' : 's'} past the ${registrationPaymentDeadlineDays}-day registration fee deadline to Removed Members and delete the active member record. If this is a mistake, the member can be restored from Removed Members within 48 hours.`,
@@ -42,6 +44,8 @@ const removeOverdueCopy = {
   },
   fr: {
     button: (count: number) => `Retirer inscriptions en retard (${count} sélectionné${count === 1 ? '' : 's'})`,
+    buttonPrefix: (count: number) => `Retirer inscriptions en retard (${count} `,
+    buttonTruncatedText: (count: number) => `sélectionné${count === 1 ? '' : 's'}`,
     cancel: 'Annuler',
     description: (count: number) =>
       `Cette action déplacera ${count} membre${count === 1 ? '' : 's'} en attente sélectionné${count === 1 ? '' : 's'} ayant dépassé le délai de ${registrationPaymentDeadlineDays} jours pour les frais d'inscription vers les membres retirés et supprimera son dossier actif. En cas d'erreur, le membre peut être restauré depuis les membres retirés dans les 48 heures.`,
@@ -75,9 +79,18 @@ const RemoveOverduePendingMembersButton = ({
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button variant='destructive' className='w-full sm:w-auto' disabled={overdueCount === 0}>
-          <Trash2 />
-          {copy.button(overdueCount)}
+        <Button
+          variant='destructive'
+          className='w-full min-w-0 sm:w-auto'
+          disabled={overdueCount === 0}
+          aria-label={copy.button(overdueCount)}
+        >
+          <Trash2 className='shrink-0' />
+          <span className='flex min-w-0 max-w-full items-center'>
+            <span className='shrink-0'>{copy.buttonPrefix(overdueCount)}</span>
+            <span className='min-w-0 truncate'>{copy.buttonTruncatedText(overdueCount)}</span>
+            <span className='shrink-0'>)</span>
+          </span>
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
