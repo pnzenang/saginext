@@ -33,7 +33,7 @@ type RemoveOverduePendingMembersButtonProps = {
 const removeOverdueCopy = {
   en: {
     button: (count: number) => `Remove Overdue(${count} overdue(s))`,
-    buttonPrefix: (count: number) => `Remove Overdue(${count} `,
+    buttonPrefix: (count: number) => `Remove Overdue(${count}`,
     buttonTruncatedText: (count: number) => (count === 1 ? 'overdue(s)' : 'overdue(s)'),
     cancel: 'Cancel',
     description: (count: number) =>
@@ -44,7 +44,7 @@ const removeOverdueCopy = {
   },
   fr: {
     button: (count: number) => `Retirer inscriptions en retard (${count} sélectionné${count === 1 ? '' : 's'})`,
-    buttonPrefix: (count: number) => `Retirer inscriptions en retard (${count} `,
+    buttonPrefix: (count: number) => `Retirer inscriptions en retard (${count}`,
     buttonTruncatedText: (count: number) => `sélectionné${count === 1 ? '' : 's'}`,
     cancel: 'Annuler',
     description: (count: number) =>
@@ -87,7 +87,7 @@ const RemoveOverduePendingMembersButton = ({
         >
           <Trash2 className='shrink-0' />
           <span className='flex min-w-0 max-w-full items-center'>
-            <span className='shrink-0'>{copy.buttonPrefix(overdueCount)}</span>
+            <span className='mr-1 shrink-0'>{copy.buttonPrefix(overdueCount)}</span>
             <span className='min-w-0 truncate'>{copy.buttonTruncatedText(overdueCount)}</span>
             <span className='shrink-0'>)</span>
           </span>
