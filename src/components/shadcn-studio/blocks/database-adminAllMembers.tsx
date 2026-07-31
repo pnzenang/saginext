@@ -2,7 +2,7 @@
 
 import { useActionState, useCallback, useEffect, useId, useMemo, useState } from 'react'
 
-import { useFormStatus } from 'react-dom'
+import { flushSync, useFormStatus } from 'react-dom'
 
 import type {
   Cell,
@@ -188,6 +188,7 @@ const adminMemberTableCopy = {
       asJson: 'Export as JSON',
       page: 'Export Page',
       printPdf: 'Print PDF',
+      printSelection: (count: number) => `Print Selection (${count})`,
       selection: (count: number) => `Export Selection (${count})`
     },
     filters: {
@@ -292,6 +293,7 @@ const adminMemberTableCopy = {
       asJson: 'Exporter en JSON',
       page: 'Exporter la page',
       printPdf: 'Imprimer PDF',
+      printSelection: (count: number) => `Imprimer sélection (${count})`,
       selection: (count: number) => `Exporter sélection (${count})`
     },
     filters: {
@@ -670,6 +672,7 @@ const getMemberTableCellLabel = (cell: Cell<MemberType, unknown>) => getColumnLa
 const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; language?: AppLanguage }) => {
   const copy = adminMemberTableCopy[language]
   const [columnFilters, setColumnFilters] = usePersistentColumnFilters('sagi:admin-all-members:columnFilters')
+  const [printSelectedOnly, setPrintSelectedOnly] = useState(false)
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
   const clearRowSelection = useCallback(() => setRowSelection({}), [])
 
@@ -957,6 +960,16 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
     writeVisibleColumnsToExcel(selectedRows, 'selected-members-visible-columns', 'Selected Members')
   }
 
+  const printSelectedRowsToPdf = () => {
+    if (selectedMembers.length === 0) return
+
+    const stopPrintingSelection = () => setPrintSelectedOnly(false)
+
+    window.addEventListener('afterprint', stopPrintingSelection, { once: true })
+    flushSync(() => setPrintSelectedOnly(true))
+    window.print()
+  }
+
   const exportToJSON = () => {
     const selectedRows = table.getSelectedRowModel().rows
 
@@ -1199,9 +1212,18 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
               />
             </div>
 
-            <div className='grid w-full grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4 xl:flex xl:justify-end [&_button]:w-full xl:[&_button]:w-auto'>
+            <div className='grid w-full grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5 xl:flex xl:justify-end [&_button]:w-full xl:[&_button]:w-auto'>
               <PrintButton
                 label={copy.export.printPdf}
+                className='bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40'
+              />
+              <PrintButton
+                label={copy.export.printSelection(selectedMembers.length)}
+                onClick={event => {
+                  event.preventDefault()
+                  printSelectedRowsToPdf()
+                }}
+                disabled={selectedMembers.length === 0}
                 className='bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40'
               />
               <Button
@@ -1356,7 +1378,11 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map(row => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'} className='hover:bg-primary/30'>
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && 'selected'}
+                  className={cn('hover:bg-primary/30', printSelectedOnly && !row.getIsSelected() && 'print:hidden')}
+                >
                   {row.getVisibleCells().map(cell => {
                     const cellLabel = getMemberTableCellLabel(cell)
 
