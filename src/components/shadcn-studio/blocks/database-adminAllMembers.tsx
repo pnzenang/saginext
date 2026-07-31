@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useEffect, useId, useMemo, useState } from 'react'
+import { useActionState, useCallback, useEffect, useId, useMemo, useState } from 'react'
 
 import { useFormStatus } from 'react-dom'
 
@@ -669,6 +669,7 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
   const copy = adminMemberTableCopy[language]
   const [columnFilters, setColumnFilters] = usePersistentColumnFilters('sagi:admin-all-members:columnFilters')
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
+  const clearRowSelection = useCallback(() => setRowSelection({}), [])
 
   const [makeAwaitingVestedState, makeAwaitingVestedFormAction] = useActionState(makeAwaitingMembersVestedAction, {
     message: ''
@@ -738,34 +739,44 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
     if (!moveToAwaitingState.message) return
 
     toast(moveToAwaitingState.message)
-    setRowSelection({})
-  }, [moveToAwaitingState.message])
+    clearRowSelection()
+  }, [clearRowSelection, moveToAwaitingState.message])
 
   useEffect(() => {
     if (!makeDelinquentState.message) return
 
     toast(makeDelinquentState.message)
-    setRowSelection({})
-  }, [makeDelinquentState.message])
+    clearRowSelection()
+  }, [clearRowSelection, makeDelinquentState.message])
 
   useEffect(() => {
     if (!makeVestedState.message) return
 
     toast(makeVestedState.message)
-    setRowSelection({})
-  }, [makeVestedState.message])
+    clearRowSelection()
+  }, [clearRowSelection, makeVestedState.message])
 
   useEffect(() => {
     if (!makeAwaitingVestedState.message) return
 
     toast(makeAwaitingVestedState.message)
-    setRowSelection({})
-  }, [makeAwaitingVestedState.message])
+    clearRowSelection()
+  }, [clearRowSelection, makeAwaitingVestedState.message])
 
   const selectedMembers = table.getSelectedRowModel().rows.map(row => row.original)
   const selectedPendingMembers = selectedMembers.filter(member => member.memberStatus === memberStatus.Pending)
 
   const selectedPendingCount = selectedPendingMembers.length
+  const overdueRegistrationCutoffTime = getOverdueRegistrationPaymentCreatedAtCutoff().getTime()
+
+  const selectedOverduePendingMembers = selectedPendingMembers.filter(member => {
+    const createdAt = new Date(member.createdAt).getTime()
+
+    return Number.isFinite(createdAt) && createdAt < overdueRegistrationCutoffTime
+  })
+
+  const selectedOverduePendingMemberIds = selectedOverduePendingMembers.map(member => member.id)
+  const selectedOverduePendingCount = selectedOverduePendingMembers.length
   const selectedAwaitingMembers = selectedMembers.filter(member => member.memberStatus === memberStatus.Awaiting)
 
   const selectedAwaitingCount = selectedAwaitingMembers.length
@@ -844,14 +855,6 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
       cardClassName: 'border-foreground/10 bg-muted/70'
     }
   ]
-
-  const overduePendingMembersCount = useMemo(() => {
-    const overdueCutoffTime = getOverdueRegistrationPaymentCreatedAtCutoff().getTime()
-
-    return data.filter(
-      member => member.memberStatus === memberStatus.Pending && new Date(member.createdAt).getTime() < overdueCutoffTime
-    ).length
-  }, [data])
 
   const exportToCSV = () => {
     const selectedRows = table.getSelectedRowModel().rows
@@ -1172,7 +1175,12 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
                   </form>
                 </AlertDialogContent>
               </AlertDialog>
-              <RemoveOverduePendingMembersButton language={language} overdueCount={overduePendingMembersCount} />
+              <RemoveOverduePendingMembersButton
+                language={language}
+                memberIds={selectedOverduePendingMemberIds}
+                onRemoved={clearRowSelection}
+                overdueCount={selectedOverduePendingCount}
+              />
             </div>
 
             <div className='grid w-full grid-cols-1 gap-2 sm:grid-cols-3 xl:flex xl:justify-end [&_button]:w-full xl:[&_button]:w-auto'>

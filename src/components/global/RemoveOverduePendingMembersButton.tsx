@@ -25,32 +25,36 @@ import { registrationPaymentDeadlineDays } from '@/utils/registration-payment-de
 
 type RemoveOverduePendingMembersButtonProps = {
   language?: AppLanguage
+  memberIds: string[]
+  onRemoved?: () => void
   overdueCount: number
 }
 
 const removeOverdueCopy = {
   en: {
-    button: (count: number) => `Overdue Registration (${count})`,
+    button: (count: number) => `Remove Overdue Registration (${count} selected)`,
     cancel: 'Cancel',
     description: (count: number) =>
-      `This will move ${count} pending member${count === 1 ? '' : 's'} past the ${registrationPaymentDeadlineDays}-day registration fee deadline to Removed Members and delete the active member record. If this is a mistake, the member can be restored from Removed Members within 48 hours.`,
+      `This will move ${count} selected overdue pending member${count === 1 ? '' : 's'} past the ${registrationPaymentDeadlineDays}-day registration fee deadline to Removed Members and delete the active member record. If this is a mistake, the member can be restored from Removed Members within 48 hours.`,
     pending: 'Removing...',
     submit: 'Remove',
-    title: 'Remove overdue pending members?'
+    title: 'Remove selected overdue registration members?'
   },
   fr: {
-    button: (count: number) => `Inscriptions en retard (${count})`,
+    button: (count: number) => `Retirer inscriptions en retard (${count} sélectionné${count === 1 ? '' : 's'})`,
     cancel: 'Annuler',
     description: (count: number) =>
-      `Cette action déplacera ${count} membre${count === 1 ? '' : 's'} en attente ayant dépassé le délai de ${registrationPaymentDeadlineDays} jours pour les frais d'inscription vers les membres retirés et supprimera son dossier actif. En cas d'erreur, le membre peut être restauré depuis les membres retirés dans les 48 heures.`,
+      `Cette action déplacera ${count} membre${count === 1 ? '' : 's'} en attente sélectionné${count === 1 ? '' : 's'} ayant dépassé le délai de ${registrationPaymentDeadlineDays} jours pour les frais d'inscription vers les membres retirés et supprimera son dossier actif. En cas d'erreur, le membre peut être restauré depuis les membres retirés dans les 48 heures.`,
     pending: 'Suppression...',
     submit: 'Retirer',
-    title: 'Retirer les membres en attente en retard ?'
+    title: 'Retirer les inscriptions en retard sélectionnées ?'
   }
 } as const
 
 const RemoveOverduePendingMembersButton = ({
   language = 'en',
+  memberIds,
+  onRemoved,
   overdueCount
 }: RemoveOverduePendingMembersButtonProps) => {
   const router = useRouter()
@@ -64,8 +68,9 @@ const RemoveOverduePendingMembersButton = ({
     if (!state.message) return
 
     toast(state.message)
+    onRemoved?.()
     router.refresh()
-  }, [router, state.message])
+  }, [onRemoved, router, state.message])
 
   return (
     <AlertDialog>
@@ -84,6 +89,9 @@ const RemoveOverduePendingMembersButton = ({
           <AlertDialogDescription>{copy.description(overdueCount)}</AlertDialogDescription>
         </AlertDialogHeader>
         <form action={formAction}>
+          {memberIds.map(memberId => (
+            <input key={memberId} type='hidden' name='memberIds' value={memberId} />
+          ))}
           <AlertDialogFooter>
             <AlertDialogCancel type='button'>{copy.cancel}</AlertDialogCancel>
             <RemoveOverduePendingSubmitButton copy={copy} disabled={overdueCount === 0} />

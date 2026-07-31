@@ -5163,7 +5163,10 @@ export const createRemovedMemberActionAdmin = async (
   redirect('/admin-all-members')
 }
 
-export const removeOverduePendingMembersAction = async (): Promise<{ message: string }> => {
+export const removeOverduePendingMembersAction = async (
+  _prevState: { message: string },
+  formData: FormData
+): Promise<{ message: string }> => {
   const { userId } = await auth()
 
   if (!userId) {
@@ -5173,6 +5176,11 @@ export const removeOverduePendingMembersAction = async (): Promise<{ message: st
   try {
     const isAdminUser = userId === process.env.ADMIN_USER_ID
     const overdueCutoff = getOverdueRegistrationPaymentCreatedAtCutoff()
+    const memberIds = getStringFormValues(formData, 'memberIds')
+
+    if (memberIds.length === 0) {
+      throw new Error('Select at least one overdue pending member.')
+    }
 
     const overdueMembers = await db.member.findMany({
       where: {
@@ -5180,12 +5188,15 @@ export const removeOverduePendingMembersAction = async (): Promise<{ message: st
         createdAt: {
           lt: overdueCutoff
         },
+        id: {
+          in: memberIds
+        },
         memberStatus: memberStatus.Pending
       }
     })
 
     if (overdueMembers.length === 0) {
-      return { message: 'No overdue pending members were found.' }
+      return { message: 'No selected overdue pending members were found.' }
     }
 
     const overdueMemberIds = overdueMembers.map(member => member.id)
