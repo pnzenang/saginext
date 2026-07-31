@@ -3,7 +3,18 @@
 import type { ReactNode } from 'react'
 import { useEffect, useId, useMemo, useState } from 'react'
 
-import type { Cell, Column, ColumnDef, ColumnFiltersState, PaginationState, RowData, Row } from '@tanstack/react-table'
+import { flushSync } from 'react-dom'
+
+import type {
+  Cell,
+  Column,
+  ColumnDef,
+  ColumnFiltersState,
+  PaginationState,
+  Row,
+  RowData,
+  RowSelectionState
+} from '@tanstack/react-table'
 import {
   flexRender,
   getCoreRowModel,
@@ -47,6 +58,7 @@ import PrintButton from '@/components/global/PrintButton'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -122,6 +134,7 @@ const memberTableCopy = {
       recommendationShort: 'Rec.',
       registrationDues: `Registration Dues (${registrationPaymentDeadlineDays} days)`,
       registrationDuesShort: 'Reg. Dues',
+      select: 'Select',
       status: 'Status'
     },
     export: {
@@ -130,7 +143,9 @@ const memberTableCopy = {
       asExcel: 'Export as Excel',
       asJson: 'Export as JSON',
       page: 'Export Page',
-      printPdf: 'Print PDF'
+      printPdf: 'Print PDF',
+      printSelection: (count: number) => `Print Selection (${count})`,
+      selection: (count: number) => `Export Selection (${count})`
     },
     filters: {
       clear: (label: string) => `Clear ${label} search`,
@@ -159,6 +174,10 @@ const memberTableCopy = {
       verified: 'Verified'
     },
     pendingMatriculation: 'Pending',
+    selection: {
+      member: (name: string) => `Select ${name}`,
+      page: 'Select all members on this page'
+    },
     summary: {
       awaiting: 'Awaiting',
       delinquent: 'Delinquent',
@@ -194,6 +213,7 @@ const memberTableCopy = {
       recommendationShort: 'Reco.',
       registrationDues: `Frais d'inscription (${registrationPaymentDeadlineDays} jours)`,
       registrationDuesShort: 'Frais inscr.',
+      select: 'Sélectionner',
       status: 'Statut'
     },
     export: {
@@ -202,7 +222,9 @@ const memberTableCopy = {
       asExcel: 'Exporter en Excel',
       asJson: 'Exporter en JSON',
       page: 'Exporter la page',
-      printPdf: 'Imprimer PDF'
+      printPdf: 'Imprimer PDF',
+      printSelection: (count: number) => `Imprimer sélection (${count})`,
+      selection: (count: number) => `Exporter sélection (${count})`
     },
     filters: {
       clear: (label: string) => `Effacer la recherche ${label}`,
@@ -231,6 +253,10 @@ const memberTableCopy = {
       verified: 'Vérifié'
     },
     pendingMatriculation: 'En attente',
+    selection: {
+      member: (name: string) => `Sélectionner ${name}`,
+      page: 'Sélectionner tous les membres sur cette page'
+    },
     summary: {
       awaiting: 'En attente de publication',
       delinquent: 'Pas en règle',
@@ -323,6 +349,54 @@ const RegistrationPaymentWarningCell = ({ language, member }: { language: AppLan
 }
 
 const getColumns = (copy: MemberTableCopy, language: AppLanguage): ColumnDef<MemberType>[] => [
+  {
+    id: 'select',
+    header: ({ table }) => {
+      const selectablePageRows = table.getRowModel().rows.filter(row => row.getCanSelect())
+      const selectedPageRows = selectablePageRows.filter(row => row.getIsSelected())
+
+      const checked =
+        selectablePageRows.length > 0 && selectedPageRows.length === selectablePageRows.length
+          ? true
+          : selectedPageRows.length > 0
+            ? 'indeterminate'
+            : false
+
+      return (
+        <div className='flex items-center justify-center'>
+          <Checkbox
+            aria-label={copy.selection.page}
+            checked={checked}
+            disabled={selectablePageRows.length === 0}
+            onCheckedChange={value => {
+              selectablePageRows.forEach(row => row.toggleSelected(Boolean(value)))
+            }}
+          />
+        </div>
+      )
+    },
+    cell: ({ row }) => {
+      const memberName = [row.original.firstName, row.original.lastAndMiddleNames].filter(Boolean).join(' ')
+      const labelName = memberName || row.original.memberMatriculationNumber
+
+      return (
+        <div className='flex items-center justify-center'>
+          <Checkbox
+            aria-label={copy.selection.member(labelName)}
+            checked={row.getIsSelected()}
+            disabled={!row.getCanSelect()}
+            onCheckedChange={value => row.toggleSelected(Boolean(value))}
+          />
+        </div>
+      )
+    },
+    enableHiding: false,
+    enableSorting: false,
+    meta: {
+      label: copy.columns.select
+    },
+    size: 42
+  },
   {
     header: copy.columns.code,
     accessorKey: 'associationCode',
@@ -646,6 +720,8 @@ const MembersDataTable = ({
   }, [copy, language, readOnly])
 
   const [columnFilters, setColumnFilters] = usePersistentColumnFilters('sagi:all-members:columnFilters')
+  const [printSelectedOnly, setPrintSelectedOnly] = useState(false)
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
 
   const pageSize = 200
 
@@ -668,9 +744,11 @@ const MembersDataTable = ({
     },
     state: {
       columnFilters,
-      pagination
+      pagination,
+      rowSelection
     },
     onColumnFiltersChange: setColumnFilters,
+    enableRowSelection: true,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -678,7 +756,9 @@ const MembersDataTable = ({
     getFacetedUniqueValues: getFacetedUniqueValues(),
     getFacetedMinMaxValues: getFacetedMinMaxValues(),
     enableSortingRemoval: false,
+    getRowId: row => row.id,
     getPaginationRowModel: getPaginationRowModel(),
+    onRowSelectionChange: setRowSelection,
     onPaginationChange: setPagination
   })
 
@@ -689,6 +769,8 @@ const MembersDataTable = ({
       hasMatriculationColumn && columnId === 'associationCode' && 'md:hidden lg:table-cell',
       hasMatriculationColumn && columnId === 'memberMatriculationNumber' && 'md:pl-4 lg:pl-2'
     )
+
+  const selectedMembers = table.getSelectedRowModel().rows.map(row => row.original)
 
   const summaryTotals = table.getCoreRowModel().rows.reduce(
     (acc, row) => {
@@ -794,8 +876,8 @@ const MembersDataTable = ({
     XLSX.writeFile(workbook, `payments-export-${new Date().toISOString().split('T')[0]}.xlsx`)
   }
 
-  const exportVisibleColumnsToExcel = () => {
-    const dataToExport = table.getFilteredRowModel().rows.map(row => {
+  const getVisibleColumnExportRows = (rows: Row<MemberType>[]) =>
+    rows.map(row => {
       const createdAt = row.getValue('createdAt') as Date
 
       return {
@@ -814,10 +896,12 @@ const MembersDataTable = ({
       }
     })
 
+  const writeVisibleColumnsToExcel = (rows: Row<MemberType>[], fileNamePrefix: string, sheetName: string) => {
+    const dataToExport = getVisibleColumnExportRows(rows)
     const worksheet = XLSX.utils.json_to_sheet(dataToExport)
     const workbook = XLSX.utils.book_new()
 
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'All Members')
+    XLSX.utils.book_append_sheet(workbook, worksheet, sheetName)
 
     const cols = [
       { wch: 12 },
@@ -832,7 +916,29 @@ const MembersDataTable = ({
 
     worksheet['!cols'] = cols
 
-    XLSX.writeFile(workbook, `all-members-visible-columns-${new Date().toISOString().split('T')[0]}.xlsx`)
+    XLSX.writeFile(workbook, `${fileNamePrefix}-${new Date().toISOString().split('T')[0]}.xlsx`)
+  }
+
+  const exportVisibleColumnsToExcel = () => {
+    writeVisibleColumnsToExcel(table.getFilteredRowModel().rows, 'all-members-visible-columns', 'All Members')
+  }
+
+  const exportSelectedVisibleColumnsToExcel = () => {
+    const selectedRows = table.getSelectedRowModel().rows
+
+    if (selectedRows.length === 0) return
+
+    writeVisibleColumnsToExcel(selectedRows, 'selected-members-visible-columns', 'Selected Members')
+  }
+
+  const printSelectedRowsToPdf = () => {
+    if (selectedMembers.length === 0) return
+
+    const stopPrintingSelection = () => setPrintSelectedOnly(false)
+
+    window.addEventListener('afterprint', stopPrintingSelection, { once: true })
+    flushSync(() => setPrintSelectedOnly(true))
+    window.print()
   }
 
   const exportToJSON = () => {
@@ -964,23 +1070,41 @@ const MembersDataTable = ({
                   </PaginationItem>
                 </PaginationContent>
               </Pagination>
-              <div className='grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:items-center'>
+              <div className='grid w-full grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5 xl:flex xl:w-auto xl:items-center [&_button]:w-full xl:[&_button]:w-auto'>
                 <PrintButton
                   label={copy.export.printPdf}
-                  className='bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40 w-full sm:w-auto'
+                  className='bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40'
                 />
+                <PrintButton
+                  label={copy.export.printSelection(selectedMembers.length)}
+                  onClick={event => {
+                    event.preventDefault()
+                    printSelectedRowsToPdf()
+                  }}
+                  disabled={selectedMembers.length === 0}
+                  className='bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40'
+                />
+                <Button
+                  type='button'
+                  onClick={exportSelectedVisibleColumnsToExcel}
+                  disabled={selectedMembers.length === 0}
+                  className='bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40'
+                >
+                  <FileSpreadsheetIcon />
+                  {copy.export.selection(selectedMembers.length)}
+                </Button>
                 <Button
                   type='button'
                   onClick={exportVisibleColumnsToExcel}
                   disabled={table.getFilteredRowModel().rows.length === 0}
-                  className='bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40 w-full sm:w-auto'
+                  className='bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40'
                 >
                   <FileSpreadsheetIcon />
                   {copy.export.page}
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button className='bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40 w-full sm:w-auto'>
+                    <Button className='bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40'>
                       <UploadIcon />
                       {copy.export.all}
                     </Button>
@@ -1093,7 +1217,11 @@ const MembersDataTable = ({
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map(row => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'} className='hover:bg-primary/30'>
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && 'selected'}
+                  className={cn('hover:bg-primary/30', printSelectedOnly && !row.getIsSelected() && 'print:hidden')}
+                >
                   {row.getVisibleCells().map(cell => {
                     const cellLabel = getMemberTableCellLabel(cell)
 
