@@ -97,14 +97,10 @@ import {
   registrationPaymentDeadlineDays
 } from '@/utils/registration-payment-deadline'
 import {
-  awaitingPublicationVestingLongevityDays,
-  getAwaitingPublicationVestingCutoff
-} from '@/utils/sagi-member-longevity'
-import {
+  makeAwaitingMembersVestedAction,
   makeMembersDelinquentAction,
   makeMembersVestedAction,
-  movePendingMembersToAwaitingPublicationAction,
-  vestEligibleAwaitingPublicationMembersAction
+  movePendingMembersToAwaitingPublicationAction
 } from '@/utils/actions'
 import { memberStatus, type MemberType } from '@/utils/types'
 
@@ -129,13 +125,13 @@ const adminMemberTableCopy = {
     },
     all: 'All',
     autoVest: {
-      button: (days: number, count: number) => `Vest ${days}+ Days (${count})`,
+      button: (count: number) => `Make Vested (${count} awaiting)`,
       cancel: 'Cancel',
-      confirm: 'Move to Vested',
+      confirm: 'Make Vested',
       description: (count: number) =>
-        `This will move ${count} member${count === 1 ? '' : 's'} from Awaiting Publication to Vested. No contribution credit will be created.`,
+        `This will move ${count} selected awaiting member${count === 1 ? '' : 's'} to Vested. No contribution credit will be created.`,
       pending: 'Please wait...',
-      title: 'Move eligible members to Vested?'
+      title: 'Move selected awaiting members to Vested?'
     },
     bulkAwaiting: {
       button: (count: number) => `Make Awaiting (${count} pending)`,
@@ -212,7 +208,7 @@ const adminMemberTableCopy = {
     pendingMatriculation: 'Pending',
     selection: {
       member: (name: string) => `Select ${name}`,
-      page: 'Select all pending, vested, or delinquent members on this page'
+      page: 'Select all pending, awaiting, vested, or delinquent members on this page'
     },
     summary: {
       awaiting: 'Awaiting',
@@ -232,13 +228,13 @@ const adminMemberTableCopy = {
     },
     all: 'Tous',
     autoVest: {
-      button: (days: number, count: number) => `Acquérir ${days}+ jours (${count})`,
+      button: (count: number) => `Marquer acquis (${count} en attente)`,
       cancel: 'Annuler',
-      confirm: 'Passer à acquis',
+      confirm: 'Marquer acquis',
       description: (count: number) =>
-        `Cette action déplacera ${count} membre${count === 1 ? '' : 's'} de En attente de publication vers Acquis. Aucun crédit de cotisation ne sera créé.`,
+        `Cette action déplacera ${count} membre${count === 1 ? '' : 's'} en attente de publication sélectionné${count === 1 ? '' : 's'} vers Acquis. Aucun crédit de cotisation ne sera créé.`,
       pending: 'Veuillez patienter...',
-      title: 'Passer les membres admissibles à acquis ?'
+      title: 'Passer les membres en attente sélectionnés à Acquis ?'
     },
     bulkAwaiting: {
       button: (count: number) => `Mettre en attente (${count} en attente)`,
@@ -315,7 +311,7 @@ const adminMemberTableCopy = {
     pendingMatriculation: 'En attente',
     selection: {
       member: (name: string) => `Sélectionner ${name}`,
-      page: 'Sélectionner tous les membres en attente, acquis ou pas en règle sur cette page'
+      page: 'Sélectionner tous les membres en attente, en attente de publication, acquis ou pas en règle sur cette page'
     },
     summary: {
       awaiting: 'En attente de publication',
@@ -674,7 +670,7 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
   const [columnFilters, setColumnFilters] = usePersistentColumnFilters('sagi:admin-all-members:columnFilters')
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
 
-  const [autoVestState, autoVestFormAction] = useActionState(vestEligibleAwaitingPublicationMembersAction, {
+  const [makeAwaitingVestedState, makeAwaitingVestedFormAction] = useActionState(makeAwaitingMembersVestedAction, {
     message: ''
   })
 
@@ -704,10 +700,6 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
     setColumnFilters(currentFilters => mergeNameColumnFilters(currentFilters))
   }, [columnFilters, setColumnFilters])
 
-  useEffect(() => {
-    if (autoVestState.message) toast(autoVestState.message)
-  }, [autoVestState.message])
-
   const tableColumns = useMemo(() => getColumns(copy, language), [copy, language])
 
   const table = useReactTable({
@@ -726,6 +718,7 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
     onColumnFiltersChange: setColumnFilters,
     enableRowSelection: row =>
       row.original.memberStatus === memberStatus.Pending ||
+      row.original.memberStatus === memberStatus.Awaiting ||
       row.original.memberStatus === memberStatus.Vested ||
       row.original.memberStatus === memberStatus.Delinquent,
     getCoreRowModel: getCoreRowModel(),
@@ -762,10 +755,20 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
     setRowSelection({})
   }, [makeVestedState.message])
 
+  useEffect(() => {
+    if (!makeAwaitingVestedState.message) return
+
+    toast(makeAwaitingVestedState.message)
+    setRowSelection({})
+  }, [makeAwaitingVestedState.message])
+
   const selectedMembers = table.getSelectedRowModel().rows.map(row => row.original)
   const selectedPendingMembers = selectedMembers.filter(member => member.memberStatus === memberStatus.Pending)
 
   const selectedPendingCount = selectedPendingMembers.length
+  const selectedAwaitingMembers = selectedMembers.filter(member => member.memberStatus === memberStatus.Awaiting)
+
+  const selectedAwaitingCount = selectedAwaitingMembers.length
 
   const selectedVestedMembers = selectedMembers.filter(member => member.memberStatus === memberStatus.Vested)
 
@@ -781,16 +784,6 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
       hasMatriculationColumn && columnId === 'associationCode' && 'md:hidden lg:table-cell',
       hasMatriculationColumn && columnId === 'memberMatriculationNumber' && 'md:pl-4 lg:pl-2'
     )
-
-  const eligibleAutoVestCount = useMemo(() => {
-    const cutoffTime = getAwaitingPublicationVestingCutoff().getTime()
-
-    return data.filter(member => {
-      const createdAt = new Date(member.createdAt).getTime()
-
-      return member.memberStatus === memberStatus.Awaiting && Number.isFinite(createdAt) && createdAt <= cutoffTime
-    }).length
-  }, [data])
 
   const summaryTotals = table.getCoreRowModel().rows.reduce(
     (acc, row) => {
@@ -1155,23 +1148,26 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
                 <AlertDialogTrigger asChild>
                   <Button
                     className='min-h-10 whitespace-normal bg-emerald-700 text-white hover:bg-emerald-800 focus-visible:ring-emerald-700/30'
-                    disabled={eligibleAutoVestCount === 0}
+                    disabled={selectedAwaitingCount === 0}
                   >
                     <ShieldCheck />
-                    {copy.autoVest.button(awaitingPublicationVestingLongevityDays, eligibleAutoVestCount)}
+                    {copy.autoVest.button(selectedAwaitingCount)}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>{copy.autoVest.title}</AlertDialogTitle>
                     <AlertDialogDescription>
-                      {copy.autoVest.description(eligibleAutoVestCount)}
+                      {copy.autoVest.description(selectedAwaitingCount)}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
-                  <form action={autoVestFormAction}>
+                  <form action={makeAwaitingVestedFormAction}>
+                    {selectedAwaitingMembers.map(member => (
+                      <input key={member.id} type='hidden' name='memberIds' value={member.id} />
+                    ))}
                     <AlertDialogFooter>
                       <AlertDialogCancel type='button'>{copy.autoVest.cancel}</AlertDialogCancel>
-                      <AutoVestSubmitButton copy={copy.autoVest} disabled={eligibleAutoVestCount === 0} />
+                      <BulkAwaitingVestedSubmitButton copy={copy.autoVest} disabled={selectedAwaitingCount === 0} />
                     </AlertDialogFooter>
                   </form>
                 </AlertDialogContent>
@@ -1233,9 +1229,9 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
               {makeVestedState.message}
             </p>
           ) : null}
-          {autoVestState.message ? (
+          {makeAwaitingVestedState.message ? (
             <p className='text-primary text-sm font-semibold' aria-live='polite'>
-              {autoVestState.message}
+              {makeAwaitingVestedState.message}
             </p>
           ) : null}
           <div className='grid grid-cols-1 gap-6 max-md:*:last:col-span-full sm:grid-cols-2 md:grid-cols-3'>
@@ -1470,7 +1466,13 @@ function BulkVestedSubmitButton({
   )
 }
 
-function AutoVestSubmitButton({ copy, disabled }: { copy: AdminMemberTableCopy['autoVest']; disabled: boolean }) {
+function BulkAwaitingVestedSubmitButton({
+  copy,
+  disabled
+}: {
+  copy: AdminMemberTableCopy['autoVest']
+  disabled: boolean
+}) {
   const { pending } = useFormStatus()
 
   return (

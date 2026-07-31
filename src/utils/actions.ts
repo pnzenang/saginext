@@ -3310,6 +3310,47 @@ export const makeMembersDelinquentAction = async (
   }
 }
 
+export const makeAwaitingMembersVestedAction = async (
+  _prevState: { message: string },
+  formData: FormData
+): Promise<{ message: string }> => {
+  await assertAdminUser()
+
+  try {
+    const memberIds = getStringFormValues(formData, 'memberIds')
+
+    if (memberIds.length === 0) {
+      throw new Error('Select at least one awaiting publication member.')
+    }
+
+    const updatedMembers = await db.member.updateMany({
+      data: {
+        memberStatus: memberStatus.Vested
+      },
+      where: {
+        id: {
+          in: memberIds
+        },
+        memberStatus: memberStatus.Awaiting
+      }
+    })
+
+    revalidatePaymentViews()
+
+    if (updatedMembers.count === 0) {
+      return {
+        message: 'No selected awaiting publication members were found.'
+      }
+    }
+
+    return {
+      message: `${updatedMembers.count} awaiting publication member${updatedMembers.count === 1 ? '' : 's'} moved to Vested. No contribution credit was applied.`
+    }
+  } catch (error) {
+    return renderError(error)
+  }
+}
+
 export const makeMembersVestedAction = async (
   _prevState: { message: string },
   formData: FormData
