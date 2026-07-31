@@ -187,7 +187,8 @@ const adminMemberTableCopy = {
       asExcel: 'Export as Excel',
       asJson: 'Export as JSON',
       page: 'Export Page',
-      printPdf: 'Print PDF'
+      printPdf: 'Print PDF',
+      selection: (count: number) => `Export Selection (${count})`
     },
     filters: {
       clear: (label: string) => `Clear ${label} search`,
@@ -290,7 +291,8 @@ const adminMemberTableCopy = {
       asExcel: 'Exporter en Excel',
       asJson: 'Exporter en JSON',
       page: 'Exporter la page',
-      printPdf: 'Imprimer PDF'
+      printPdf: 'Imprimer PDF',
+      selection: (count: number) => `Exporter sélection (${count})`
     },
     filters: {
       clear: (label: string) => `Effacer la recherche ${label}`,
@@ -900,8 +902,8 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
     XLSX.writeFile(workbook, `all-members-${new Date().toISOString().split('T')[0]}.xlsx`)
   }
 
-  const exportVisibleColumnsToExcel = () => {
-    const dataToExport = table.getFilteredRowModel().rows.map(row => {
+  const getVisibleColumnExportRows = (rows: Row<MemberType>[]) =>
+    rows.map(row => {
       const createdAt = row.getValue('createdAt') as Date
 
       return {
@@ -920,10 +922,12 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
       }
     })
 
+  const writeVisibleColumnsToExcel = (rows: Row<MemberType>[], fileNamePrefix: string, sheetName: string) => {
+    const dataToExport = getVisibleColumnExportRows(rows)
     const worksheet = XLSX.utils.json_to_sheet(dataToExport)
     const workbook = XLSX.utils.book_new()
 
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'All Members')
+    XLSX.utils.book_append_sheet(workbook, worksheet, sheetName)
 
     const cols = [
       { wch: 12 },
@@ -938,7 +942,19 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
 
     worksheet['!cols'] = cols
 
-    XLSX.writeFile(workbook, `all-members-visible-columns-${new Date().toISOString().split('T')[0]}.xlsx`)
+    XLSX.writeFile(workbook, `${fileNamePrefix}-${new Date().toISOString().split('T')[0]}.xlsx`)
+  }
+
+  const exportVisibleColumnsToExcel = () => {
+    writeVisibleColumnsToExcel(table.getFilteredRowModel().rows, 'all-members-visible-columns', 'All Members')
+  }
+
+  const exportSelectedVisibleColumnsToExcel = () => {
+    const selectedRows = table.getSelectedRowModel().rows
+
+    if (selectedRows.length === 0) return
+
+    writeVisibleColumnsToExcel(selectedRows, 'selected-members-visible-columns', 'Selected Members')
   }
 
   const exportToJSON = () => {
@@ -1183,11 +1199,20 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
               />
             </div>
 
-            <div className='grid w-full grid-cols-1 gap-2 sm:grid-cols-3 xl:flex xl:justify-end [&_button]:w-full xl:[&_button]:w-auto'>
+            <div className='grid w-full grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4 xl:flex xl:justify-end [&_button]:w-full xl:[&_button]:w-auto'>
               <PrintButton
                 label={copy.export.printPdf}
                 className='bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40'
               />
+              <Button
+                type='button'
+                onClick={exportSelectedVisibleColumnsToExcel}
+                disabled={selectedMembers.length === 0}
+                className='bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40'
+              >
+                <FileSpreadsheetIcon />
+                {copy.export.selection(selectedMembers.length)}
+              </Button>
               <Button
                 type='button'
                 onClick={exportVisibleColumnsToExcel}
