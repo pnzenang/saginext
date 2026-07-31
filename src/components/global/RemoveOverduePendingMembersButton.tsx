@@ -32,7 +32,7 @@ type RemoveOverduePendingMembersButtonProps = {
 
 const removeOverdueCopy = {
   en: {
-    button: (count: number) => `Remove Overdue Registration (${count} selected)`,
+    button: (count: number) => `Remove Overdue Reg.(${count} Overdue(s))`,
     cancel: 'Cancel',
     description: (count: number) =>
       `This will move ${count} selected overdue pending member${count === 1 ? '' : 's'} past the ${registrationPaymentDeadlineDays}-day registration fee deadline to Removed Members and delete the active member record. If this is a mistake, the member can be restored from Removed Members within 48 hours.`,
