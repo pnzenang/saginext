@@ -17,6 +17,22 @@ const getLongevityUnits = (language: LongevityLanguage, years: number) =>
 
 const formatLongevityUnit = (value: number, unit: string) => `${value} ${unit}`
 
+export const formatLongevityInDays = (
+  startDate: ConfigType,
+  endDate: ConfigType = new Date(),
+  language: LongevityLanguage = 'en'
+) => {
+  const start = day(startDate).startOf('day')
+  const end = day(endDate).startOf('day')
+  const units = getLongevityUnits(language, 0)
+
+  if (!start.isValid() || !end.isValid() || start.valueOf() > end.valueOf()) {
+    return formatLongevityUnit(0, units.days)
+  }
+
+  return formatLongevityUnit(end.diff(start, 'day'), units.days)
+}
+
 export const formatLongevity = (
   startDate: ConfigType,
   endDate: ConfigType = new Date(),

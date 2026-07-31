@@ -89,7 +89,7 @@ import { formatMemberStatus, type AppLanguage } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { getTableCellTitle } from '@/utils/table'
 import { getSelectFilterValues } from '@/utils/table-filter-values'
-import { formatLongevity } from '@/utils/formatLongevity'
+import { formatLongevity, formatLongevityInDays } from '@/utils/formatLongevity'
 import {
   getRegistrationPaymentCountdown,
   getRegistrationPaymentCountdownLabel,
@@ -336,6 +336,14 @@ const getVisibleMatriculationNumber = (status: unknown, matriculationNumber: unk
   return String(matriculationNumber ?? '')
 }
 
+const getVisibleLongevity = (startDate: Date, status: unknown, language: AppLanguage) => {
+  if (status === memberStatus.Pending || status === memberStatus.Awaiting) {
+    return formatLongevityInDays(startDate, new Date(), language)
+  }
+
+  return formatLongevity(startDate, new Date(), language)
+}
+
 const nameFilterIds = new Set(['firstName', 'lastAndMiddleNames'])
 
 const mergeNameColumnFilters = (filters: ColumnFiltersState) => {
@@ -545,8 +553,9 @@ const getColumns = (copy: AdminMemberTableCopy, language: AppLanguage): ColumnDe
     header: copy.columns.longevityShort,
     cell: ({ row }) => {
       const field = row.getValue('createdAt') as Date
+      const status = row.getValue('memberStatus')
 
-      return <div>{formatLongevity(field, new Date(), language)}</div>
+      return <div>{getVisibleLongevity(field, status, language)}</div>
     },
     meta: {
       label: copy.columns.longevity
@@ -918,7 +927,7 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
         ),
         [copy.columns.lastAndMiddleNames]: row.getValue('lastAndMiddleNames'),
         [copy.columns.firstName]: row.getValue('firstName'),
-        [copy.columns.longevity]: formatLongevity(createdAt, new Date(), language),
+        [copy.columns.longevity]: getVisibleLongevity(createdAt, row.getValue('memberStatus'), language),
         [copy.columns.recommendation]: row.getValue('delegateRecommendation'),
         [copy.columns.status]: formatMemberStatus(row.getValue('memberStatus') as string, language),
         [copy.columns.registrationDues]: getRegistrationPaymentWarning(row.original, language)

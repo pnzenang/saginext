@@ -86,7 +86,7 @@ import type { AssociationContributionSummary } from '@/utils/sagi-contribution-s
 import type { AssociationRegistrationSummary } from '@/utils/sagi-registration-summary'
 import { getSelectFilterValues } from '@/utils/table-filter-values'
 import { getTableCellTitle } from '@/utils/table'
-import { formatLongevity } from '@/utils/formatLongevity'
+import { formatLongevity, formatLongevityInDays } from '@/utils/formatLongevity'
 import { memberStatus, type MemberType } from '@/utils/types'
 
 declare module '@tanstack/react-table' {
@@ -279,6 +279,14 @@ const getVisibleMatriculationNumber = (status: unknown, matriculationNumber: unk
   if (status === memberStatus.Pending || status === memberStatus.Awaiting) return pendingLabel
 
   return String(matriculationNumber ?? '')
+}
+
+const getVisibleLongevity = (startDate: Date, status: unknown, language: AppLanguage) => {
+  if (status === memberStatus.Pending || status === memberStatus.Awaiting) {
+    return formatLongevityInDays(startDate, new Date(), language)
+  }
+
+  return formatLongevity(startDate, new Date(), language)
 }
 
 const nameFilterIds = new Set(['firstName', 'lastAndMiddleNames'])
@@ -476,8 +484,9 @@ const getColumns = (copy: MemberTableCopy, language: AppLanguage): ColumnDef<Mem
     header: copy.columns.longevityShort,
     cell: ({ row }) => {
       const field = row.getValue('createdAt') as Date
+      const status = row.getValue('memberStatus')
 
-      return <div>{formatLongevity(field, new Date(), language)}</div>
+      return <div>{getVisibleLongevity(field, status, language)}</div>
     },
     meta: {
       label: copy.columns.longevity
@@ -889,7 +898,7 @@ const MembersDataTable = ({
         ),
         [copy.columns.lastAndMiddleNames]: row.getValue('lastAndMiddleNames'),
         [copy.columns.firstName]: row.getValue('firstName'),
-        [copy.columns.longevity]: formatLongevity(createdAt, new Date(), language),
+        [copy.columns.longevity]: getVisibleLongevity(createdAt, row.getValue('memberStatus'), language),
         [copy.columns.recommendation]: row.getValue('delegateRecommendation'),
         [copy.columns.status]: formatMemberStatus(row.getValue('memberStatus') as string, language),
         [copy.columns.registrationDues]: getRegistrationPaymentWarning(row.original, language)
