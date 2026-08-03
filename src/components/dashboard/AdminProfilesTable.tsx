@@ -67,6 +67,9 @@ const filterProfiles = (profiles: AdminProfileRow[], searchQuery: string) => {
   })
 }
 
+const getDelegateContactTitle = ({ email, name, phone }: { email: string; name: string; phone: string }) =>
+  [name, email, phone].filter(Boolean).join(' - ')
+
 const AdminProfilesTable = ({ profiles }: AdminProfilesTableProps) => {
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
@@ -165,56 +168,102 @@ const AdminProfilesTable = ({ profiles }: AdminProfilesTableProps) => {
               </div>
             </div>
 
-            <div className='hidden md:block'>
-              <Table>
+            <div className='hidden overflow-hidden md:block'>
+              <Table className='min-w-0 table-fixed text-xs lg:text-sm'>
+                <colgroup>
+                  <col className='w-[18%]' />
+                  <col className='w-[9%]' />
+                  <col className='w-[17%]' />
+                  <col className='w-[17%]' />
+                  <col className='w-[17%]' />
+                  <col className='w-[10%]' />
+                  <col className='w-[12%]' />
+                </colgroup>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Association</TableHead>
-                    <TableHead>Code</TableHead>
-                    <TableHead>Primary Delegate</TableHead>
-                    <TableHead>Second Delegate</TableHead>
-                    <TableHead>Board Member</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead>Action</TableHead>
+                    <TableHead title='Association' className='truncate px-1.5'>
+                      Association
+                    </TableHead>
+                    <TableHead title='Code' className='truncate px-1.5'>
+                      Code
+                    </TableHead>
+                    <TableHead title='Primary Delegate' className='truncate px-1.5'>
+                      Primary Delegate
+                    </TableHead>
+                    <TableHead title='Second Delegate' className='truncate px-1.5'>
+                      Second Delegate
+                    </TableHead>
+                    <TableHead title='Board Member' className='truncate px-1.5'>
+                      Board Member
+                    </TableHead>
+                    <TableHead title='Created' className='truncate px-1.5'>
+                      Created
+                    </TableHead>
+                    <TableHead title='Action' className='truncate px-1.5'>
+                      Action
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {paginatedProfiles.length > 0 ? (
                     paginatedProfiles.map(profile => (
                       <TableRow key={profile.id}>
-                        <TableCell className='min-w-64'>
-                          <div className='space-y-1'>
-                            <p className='font-medium whitespace-normal'>{profile.associationName}</p>
+                        <TableCell title={profile.associationName} className='min-w-0 px-1.5'>
+                          <div className='min-w-0 space-y-1'>
+                            <p className='truncate font-medium'>{profile.associationName}</p>
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <Badge variant='outline' className='rounded-md font-mono'>
-                            {profile.associationCode}
+                        <TableCell title={profile.associationCode} className='min-w-0 px-1.5'>
+                          <Badge variant='outline' className='w-full max-w-full justify-start rounded-md font-mono'>
+                            <span className='min-w-0 truncate'>{profile.associationCode}</span>
                           </Badge>
                         </TableCell>
-                        <TableCell>
+                        <TableCell
+                          title={getDelegateContactTitle({
+                            email: profile.firstDelegateEmail,
+                            name: profile.firstDelegateFullName,
+                            phone: profile.firstDelegatePhoneNumber
+                          })}
+                          className='min-w-0 px-1.5'
+                        >
                           <DelegateContact
                             email={profile.firstDelegateEmail}
                             name={profile.firstDelegateFullName}
                             phone={profile.firstDelegatePhoneNumber}
                           />
                         </TableCell>
-                        <TableCell>
+                        <TableCell
+                          title={getDelegateContactTitle({
+                            email: profile.secondDelegateEmail,
+                            name: profile.secondDelegateFullName,
+                            phone: profile.secondDelegatePhoneNumber
+                          })}
+                          className='min-w-0 px-1.5'
+                        >
                           <DelegateContact
                             email={profile.secondDelegateEmail}
                             name={profile.secondDelegateFullName}
                             phone={profile.secondDelegatePhoneNumber}
                           />
                         </TableCell>
-                        <TableCell>
+                        <TableCell
+                          title={getDelegateContactTitle({
+                            email: profile.thirdDelegateEmail,
+                            name: profile.thirdDelegateFullName,
+                            phone: profile.thirdDelegatePhoneNumber
+                          })}
+                          className='min-w-0 px-1.5'
+                        >
                           <DelegateContact
                             email={profile.thirdDelegateEmail}
                             name={profile.thirdDelegateFullName}
                             phone={profile.thirdDelegatePhoneNumber}
                           />
                         </TableCell>
-                        <TableCell>{profile.createdAtLabel}</TableCell>
-                        <TableCell>
+                        <TableCell title={profile.createdAtLabel} className='min-w-0 px-1.5'>
+                          <span className='block truncate'>{profile.createdAtLabel}</span>
+                        </TableCell>
+                        <TableCell className='px-1.5'>
                           <RemoveAssociationProfileButton
                             associationCode={profile.associationCode}
                             associationName={profile.associationName}
@@ -330,12 +379,12 @@ const AdminProfilesTable = ({ profiles }: AdminProfilesTableProps) => {
 
 function DelegateContact({ email, name, phone }: { email: string; name: string; phone: string }) {
   return (
-    <div className='min-w-56 space-y-1'>
-      <p className='font-medium whitespace-normal'>{name}</p>
-      <a className='text-primary block text-sm hover:underline' href={`mailto:${email}`}>
+    <div className='min-w-0 space-y-1'>
+      <p className='truncate font-medium'>{name}</p>
+      <a className='text-primary block truncate text-sm hover:underline' href={`mailto:${email}`}>
         {email}
       </a>
-      <a className='text-muted-foreground block text-sm hover:underline' href={`tel:${phone}`}>
+      <a className='text-muted-foreground block truncate text-sm hover:underline' href={`tel:${phone}`}>
         {phone}
       </a>
     </div>
