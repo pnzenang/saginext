@@ -678,6 +678,22 @@ const getColumnLabel = (column: Column<MemberType, unknown>) => {
 
 const getMemberTableCellLabel = (cell: Cell<MemberType, unknown>) => getColumnLabel(cell.column)
 
+const getMemberTableCellTitle = (cell: Cell<MemberType, unknown>, language: AppLanguage) => {
+  if (cell.column.id === 'registrationPaymentWarning') {
+    return cell.row.original.memberStatus === memberStatus.Pending
+      ? getRegistrationPaymentWarning(cell.row.original, language)
+      : undefined
+  }
+
+  if (cell.column.id === 'memberStatus') {
+    const status = cell.getValue()
+
+    return typeof status === 'string' ? formatMemberStatus(status, language) : undefined
+  }
+
+  return getTableCellTitle(cell)
+}
+
 const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; language?: AppLanguage }) => {
   const copy = adminMemberTableCopy[language]
   const [columnFilters, setColumnFilters] = usePersistentColumnFilters('sagi:admin-all-members:columnFilters')
@@ -1104,7 +1120,7 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
-                    className='min-h-10 whitespace-normal bg-blue-700 text-white hover:bg-blue-800 focus-visible:ring-blue-700/30'
+                    className='min-h-10 bg-blue-700 whitespace-normal text-white hover:bg-blue-800 focus-visible:ring-blue-700/30'
                     disabled={selectedPendingCount === 0}
                   >
                     <UserCheck />
@@ -1132,7 +1148,7 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
-                    className='min-h-10 whitespace-normal bg-green-700 text-white hover:bg-green-800 focus-visible:ring-green-700/30'
+                    className='min-h-10 bg-green-700 whitespace-normal text-white hover:bg-green-800 focus-visible:ring-green-700/30'
                     disabled={selectedDelinquentCount === 0}
                   >
                     <ShieldCheck />
@@ -1160,7 +1176,7 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
-                    className='min-h-10 whitespace-normal bg-red-700 text-white hover:bg-red-800 focus-visible:ring-red-700/30'
+                    className='min-h-10 bg-red-700 whitespace-normal text-white hover:bg-red-800 focus-visible:ring-red-700/30'
                     disabled={selectedVestedCount === 0}
                   >
                     <AlertTriangle />
@@ -1188,7 +1204,7 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
-                    className='min-h-10 whitespace-normal bg-emerald-700 text-white hover:bg-emerald-800 focus-visible:ring-emerald-700/30'
+                    className='min-h-10 bg-emerald-700 whitespace-normal text-white hover:bg-emerald-800 focus-visible:ring-emerald-700/30'
                     disabled={selectedAwaitingCount === 0}
                   >
                     <ShieldCheck />
@@ -1198,9 +1214,7 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>{copy.autoVest.title}</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      {copy.autoVest.description(selectedAwaitingCount)}
-                    </AlertDialogDescription>
+                    <AlertDialogDescription>{copy.autoVest.description(selectedAwaitingCount)}</AlertDialogDescription>
                   </AlertDialogHeader>
                   <form action={makeAwaitingVestedFormAction}>
                     {selectedAwaitingMembers.map(member => (
@@ -1342,13 +1356,19 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
                 {headerGroup.headers.map(header => {
                   const headerTitle = getColumnLabel(header.column)
 
+                  const headerText =
+                    typeof header.column.columnDef.header === 'string' ? header.column.columnDef.header : undefined
+
+                  const headerContent = flexRender(header.column.columnDef.header, header.getContext())
+
                   return (
                     <TableHead
                       key={header.id}
                       title={headerTitle}
+                      showTitleTooltip={Boolean(headerText && headerText !== headerTitle)}
                       style={{ width: `${header.getSize()}px` }}
                       className={cn(
-                        'px-1.5 leading-tight font-extrabold whitespace-normal text-white first:pl-3 last:px-3',
+                        'overflow-hidden px-1.5 leading-tight font-extrabold whitespace-normal text-white first:pl-3 last:px-3',
                         getResponsiveColumnClassName(header.column.id)
                       )}
                     >
@@ -1356,7 +1376,7 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
                         <div
                           className={cn(
                             header.column.getCanSort() &&
-                              'inline-flex h-full cursor-pointer items-center gap-1 select-none'
+                              'inline-flex h-full max-w-full min-w-0 cursor-pointer items-center gap-1 select-none'
                           )}
                           onClick={header.column.getToggleSortingHandler()}
                           onKeyDown={e => {
@@ -1367,7 +1387,7 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
                           }}
                           tabIndex={header.column.getCanSort() ? 0 : undefined}
                         >
-                          {flexRender(header.column.columnDef.header, header.getContext())}
+                          {headerText ? <span className='min-w-0 truncate'>{headerContent}</span> : headerContent}
                           {{
                             asc: <ChevronUpIcon className='shrink-0 opacity-60' size={16} aria-hidden='true' />,
                             desc: <ChevronDownIcon className='shrink-0 opacity-60' size={16} aria-hidden='true' />
@@ -1375,8 +1395,10 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
                             <ArrowUpDown className='shrink-0 opacity-60' size={16} aria-hidden='true' />
                           )}
                         </div>
+                      ) : headerText ? (
+                        <span className='block min-w-0 truncate'>{headerContent}</span>
                       ) : (
-                        flexRender(header.column.columnDef.header, header.getContext())
+                        headerContent
                       )}
                     </TableHead>
                   )
@@ -1399,7 +1421,7 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
                       <TableCell
                         key={cell.id}
                         data-label={cellLabel}
-                        title={getTableCellTitle(cell)}
+                        title={getMemberTableCellTitle(cell, language)}
                         className={cn(
                           'h-14 px-1.5 whitespace-normal first:w-12.5 first:pl-3 last:w-20 last:px-3',
                           getResponsiveColumnClassName(cell.column.id)
@@ -1507,13 +1529,7 @@ function BulkDelinquentSubmitButton({
   )
 }
 
-function BulkVestedSubmitButton({
-  copy,
-  disabled
-}: {
-  copy: AdminMemberTableCopy['bulkVested']
-  disabled: boolean
-}) {
+function BulkVestedSubmitButton({ copy, disabled }: { copy: AdminMemberTableCopy['bulkVested']; disabled: boolean }) {
   const { pending } = useFormStatus()
 
   return (

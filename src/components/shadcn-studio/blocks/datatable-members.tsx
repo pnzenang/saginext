@@ -610,6 +610,22 @@ const getColumnLabel = (column: Column<MemberType, unknown>) => {
 
 const getMemberTableCellLabel = (cell: Cell<MemberType, unknown>) => getColumnLabel(cell.column)
 
+const getMemberTableCellTitle = (cell: Cell<MemberType, unknown>, language: AppLanguage) => {
+  if (cell.column.id === 'registrationPaymentWarning') {
+    return cell.row.original.memberStatus === memberStatus.Pending
+      ? getRegistrationPaymentWarning(cell.row.original, language)
+      : undefined
+  }
+
+  if (cell.column.id === 'memberStatus') {
+    const status = cell.getValue()
+
+    return typeof status === 'string' ? formatMemberStatus(status, language) : undefined
+  }
+
+  return getTableCellTitle(cell)
+}
+
 const PaymentSummaryRow = ({ label, value }: { label: ReactNode; value: number }) => (
   <div className='text-primary/80 flex items-start justify-between gap-4'>
     <span className='min-w-0 break-words'>{label}</span>
@@ -1181,13 +1197,19 @@ const MembersDataTable = ({
                 {headerGroup.headers.map(header => {
                   const headerTitle = getColumnLabel(header.column)
 
+                  const headerText =
+                    typeof header.column.columnDef.header === 'string' ? header.column.columnDef.header : undefined
+
+                  const headerContent = flexRender(header.column.columnDef.header, header.getContext())
+
                   return (
                     <TableHead
                       key={header.id}
                       title={headerTitle}
+                      showTitleTooltip={Boolean(headerText && headerText !== headerTitle)}
                       style={{ width: `${header.getSize()}px` }}
                       className={cn(
-                        'px-1.5 leading-tight font-extrabold whitespace-normal text-white first:pl-3 last:px-3',
+                        'overflow-hidden px-1.5 leading-tight font-extrabold whitespace-normal text-white first:pl-3 last:px-3',
                         getResponsiveColumnClassName(header.column.id)
                       )}
                     >
@@ -1195,7 +1217,7 @@ const MembersDataTable = ({
                         <div
                           className={cn(
                             header.column.getCanSort() &&
-                              'inline-flex h-full cursor-pointer items-center gap-1 select-none'
+                              'inline-flex h-full max-w-full min-w-0 cursor-pointer items-center gap-1 select-none'
                           )}
                           onClick={header.column.getToggleSortingHandler()}
                           onKeyDown={e => {
@@ -1206,7 +1228,7 @@ const MembersDataTable = ({
                           }}
                           tabIndex={header.column.getCanSort() ? 0 : undefined}
                         >
-                          {flexRender(header.column.columnDef.header, header.getContext())}
+                          {headerText ? <span className='min-w-0 truncate'>{headerContent}</span> : headerContent}
                           {{
                             asc: <ChevronUpIcon className='shrink-0 opacity-60' size={16} aria-hidden='true' />,
                             desc: <ChevronDownIcon className='shrink-0 opacity-60' size={16} aria-hidden='true' />
@@ -1214,8 +1236,10 @@ const MembersDataTable = ({
                             <ArrowUpDown className='shrink-0 opacity-60' size={16} aria-hidden='true' />
                           )}
                         </div>
+                      ) : headerText ? (
+                        <span className='block min-w-0 truncate'>{headerContent}</span>
                       ) : (
-                        flexRender(header.column.columnDef.header, header.getContext())
+                        headerContent
                       )}
                     </TableHead>
                   )
@@ -1238,7 +1262,7 @@ const MembersDataTable = ({
                       <TableCell
                         key={cell.id}
                         data-label={cellLabel}
-                        title={getTableCellTitle(cell)}
+                        title={getMemberTableCellTitle(cell, language)}
                         className={cn(
                           'h-14 px-1.5 whitespace-normal first:w-12.5 first:pl-3 last:w-20 last:px-3',
                           getResponsiveColumnClassName(cell.column.id)

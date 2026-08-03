@@ -9,6 +9,10 @@ type TableProps = React.ComponentProps<'table'> & {
   mobileCards?: boolean
 }
 
+type TableHeadProps = React.ComponentProps<'th'> & {
+  showTitleTooltip?: boolean
+}
+
 const getTooltipTitle = (title: React.HTMLAttributes<HTMLElement>['title']) =>
   typeof title === 'string' && title.trim() ? title : undefined
 
@@ -124,7 +128,14 @@ function TableRow({ className, ...props }: React.ComponentProps<'tr'>) {
   )
 }
 
-function TableHead({ className, title, children, 'aria-label': ariaLabel, ...props }: React.ComponentProps<'th'>) {
+function TableHead({
+  className,
+  title,
+  children,
+  'aria-label': ariaLabel,
+  showTitleTooltip = false,
+  ...props
+}: TableHeadProps) {
   const tooltipTitle = getTooltipTitle(title)
   const { elementRef, isTruncated } = useTruncatedTooltip<HTMLTableCellElement>(tooltipTitle)
 
@@ -149,7 +160,7 @@ function TableHead({ className, title, children, 'aria-label': ariaLabel, ...pro
   return (
     <Tooltip>
       <TooltipTrigger asChild>{tableHead}</TooltipTrigger>
-      {isTruncated ? (
+      {showTitleTooltip || isTruncated ? (
         <TooltipContent side='top' sideOffset={4}>
           {tooltipTitle}
         </TooltipContent>
