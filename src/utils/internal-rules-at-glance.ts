@@ -4,7 +4,7 @@ export type InternalRulesAtGlanceSection = {
   bullets: string[]
 }
 
-export const internalRulesDownloadFileName = 'Internal-Rules2.pdf'
+export const internalRulesDownloadFileName = 'InternalRules.pdf'
 
 export const internalRulesAtGlance: InternalRulesAtGlanceSection[] = [
   {
