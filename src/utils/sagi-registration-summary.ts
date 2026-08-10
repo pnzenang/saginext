@@ -32,6 +32,53 @@ export type AssociationRegistrationSummary = {
 }
 
 const decimalToNumber = (value: unknown) => Number(value ?? 0)
+const roundCurrencyAmount = (amount: number) => Number(amount.toFixed(2))
+
+type PendingRegistrationMemberWithAmount = {
+  amountUsed: number
+  createdAt: Date
+  firstName: string
+  lastAndMiddleNames: string
+}
+
+const getPendingMemberName = (member: Pick<PendingRegistrationMemberWithAmount, 'firstName' | 'lastAndMiddleNames'>) =>
+  [member.firstName, member.lastAndMiddleNames].filter(Boolean).join(' ')
+
+const getPendingMemberDueDaysAfterVerifiedOffset = (
+  members: PendingRegistrationMemberWithAmount[],
+  verifiedOffset: number
+) => {
+  let remainingOffset = roundCurrencyAmount(verifiedOffset)
+  const pendingMemberDueDaysByDate = new Map<string, { addedAt: string; amount: number; memberNames: string[] }>()
+
+  const sortedMembers = [...members].sort(
+    (firstMember, secondMember) => firstMember.createdAt.getTime() - secondMember.createdAt.getTime()
+  )
+
+  sortedMembers.forEach(member => {
+    const offsetAmount = Math.min(member.amountUsed, Math.max(remainingOffset, 0))
+    const remainingAmount = roundCurrencyAmount(member.amountUsed - offsetAmount)
+
+    remainingOffset = roundCurrencyAmount(remainingOffset - offsetAmount)
+
+    if (remainingAmount <= 0) {
+      return
+    }
+
+    const dateKey = member.createdAt.toISOString().slice(0, 10)
+    const currentGroup = pendingMemberDueDaysByDate.get(dateKey)
+
+    pendingMemberDueDaysByDate.set(dateKey, {
+      addedAt: `${dateKey}T12:00:00.000Z`,
+      amount: roundCurrencyAmount((currentGroup?.amount ?? 0) + remainingAmount),
+      memberNames: [...(currentGroup?.memberNames ?? []), getPendingMemberName(member)]
+    })
+  })
+
+  return Array.from(pendingMemberDueDaysByDate.values()).sort((firstDay, secondDay) =>
+    secondDay.addedAt.localeCompare(firstDay.addedAt)
+  )
+}
 
 export const fetchRegistrationUsedMemberCount = async (associationCode: string) => {
   return db.member.count({
@@ -90,41 +137,33 @@ export const fetchAssociationRegistrationSummary = async (
     amountUsed: registrationFeePerEligibleMember
   }))
 
-  const balanceDues = Number(
+  const pendingRegistrationFees = Number(
     registrationMembersWithAmounts.reduce((total, member) => total + member.amountUsed, 0).toFixed(2)
   )
 
   const amountVerified = paymentLedgerTotals.amountVerified
   const manualBalanceAdjustment = decimalToNumber(balanceAdjustment?.amount)
   const pendingMember = registrationMembersWithAmounts[0]
+  const balance = roundCurrencyAmount(amountVerified + manualBalanceAdjustment - pendingRegistrationFees)
+  const balanceDues = Math.max(roundCurrencyAmount(pendingRegistrationFees - amountVerified), 0)
 
-  const pendingMemberDueDaysByDate = registrationMembersWithAmounts.reduce((groups, member) => {
-    const dateKey = member.createdAt.toISOString().slice(0, 10)
-    const memberName = [member.firstName, member.lastAndMiddleNames].filter(Boolean).join(' ')
-
-    groups.set(dateKey, {
-      addedAt: `${dateKey}T12:00:00.000Z`,
-      amount: (groups.get(dateKey)?.amount ?? 0) + member.amountUsed,
-      memberNames: [...(groups.get(dateKey)?.memberNames ?? []), memberName]
-    })
-
-    return groups
-  }, new Map<string, { addedAt: string; amount: number; memberNames: string[] }>())
+  const pendingMemberDueDays = getPendingMemberDueDaysAfterVerifiedOffset(
+    registrationMembersWithAmounts,
+    amountVerified
+  )
 
   return {
     amountReceived: decimalToNumber(payment?.amountSent),
-    amountUsed: balanceDues,
+    amountUsed: pendingRegistrationFees,
     amountVerified,
     associationCode,
-    balance: Number((amountVerified + manualBalanceAdjustment - balanceDues).toFixed(2)),
+    balance,
     balanceDues,
     lastSubmittedAt: payment?.lastSubmittedAt?.toISOString() ?? null,
     manualBalanceAdjustment,
     pendingMemberAddedAt: pendingMember?.createdAt.toISOString() ?? null,
-    pendingMemberDueDays: Array.from(pendingMemberDueDaysByDate.values()),
-    pendingMemberNames: registrationMembersWithAmounts.map(member =>
-      [member.firstName, member.lastAndMiddleNames].filter(Boolean).join(' ')
-    ),
+    pendingMemberDueDays,
+    pendingMemberNames: registrationMembersWithAmounts.map(member => getPendingMemberName(member)),
     verifiedAt: payment?.verifiedAt?.toISOString() ?? null
   }
 }
