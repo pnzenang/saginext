@@ -323,17 +323,213 @@ const rotatingHeroImages: RotatingHeroImage[] = [
       fr: 'Délégués examinant ensemble les dossiers de cotisation de fin d’année'
     },
     objectPosition: '64% 100%'
+  },
+  {
+    src: '/images/hero/sagi-hero-fundraising-diverse-team-whiteboard.jpg',
+    alt: {
+      en: 'Diverse team gathered around a table to plan next steps',
+      fr: 'Équipe diversifiée réunie autour d’une table pour planifier les prochaines étapes'
+    },
+    objectPosition: '50% 50%'
+  },
+  {
+    src: '/images/hero/sagi-hero-fundraising-conference-room.jpg',
+    alt: {
+      en: 'Confident group discussing funding ideas in a meeting room',
+      fr: 'Groupe confiant discutant d’idées de financement dans une salle de réunion'
+    },
+    objectPosition: '50% 50%'
+  },
+  {
+    src: '/images/hero/sagi-hero-fundraising-focused-data-meeting.jpg',
+    alt: {
+      en: 'Team studying data and documents for a support fund proposal',
+      fr: 'Équipe étudiant des données et documents pour une proposition de fonds de soutien'
+    },
+    objectPosition: '50% 50%'
+  },
+  {
+    src: '/images/hero/sagi-hero-fundraising-whiteboard-documents.jpg',
+    alt: {
+      en: 'Meeting participants reviewing documents beside a planning board',
+      fr: 'Participants à une réunion examinant des documents près d’un tableau de planification'
+    },
+    objectPosition: '50% 50%'
+  },
+  {
+    src: '/images/hero/sagi-hero-fundraising-collaborative-meeting.jpg',
+    alt: {
+      en: 'Collaborative team meeting focused on project funding strategy',
+      fr: 'Réunion collaborative axée sur la stratégie de financement d’un projet'
+    },
+    objectPosition: '50% 50%'
+  },
+  {
+    src: '/images/hero/sagi-hero-fundraising-three-people-documents.jpg',
+    alt: {
+      en: 'Small team reviewing documents during a focused planning conversation',
+      fr: 'Petite équipe examinant des documents lors d’une discussion de planification'
+    },
+    objectPosition: '50% 50%'
+  },
+  {
+    src: '/images/hero/sagi-hero-fundraising-reviewing-documents.jpg',
+    alt: {
+      en: 'Professionals reviewing paperwork for a funding decision',
+      fr: 'Professionnels examinant des documents pour une décision de financement'
+    },
+    objectPosition: '50% 50%'
+  },
+  {
+    src: '/images/hero/sagi-hero-fundraising-financial-review.jpg',
+    alt: {
+      en: 'Hands reviewing financial paperwork for a support plan',
+      fr: 'Mains examinant des documents financiers pour un plan de soutien'
+    },
+    objectPosition: '50% 50%'
+  },
+  {
+    src: '/images/hero/sagi-hero-fundraising-group-paperwork.jpg',
+    alt: {
+      en: 'Group leaning over paperwork while planning funding details',
+      fr: 'Groupe penché sur des documents pour planifier les détails du financement'
+    },
+    objectPosition: '50% 50%'
+  },
+  {
+    src: '/images/hero/sagi-hero-fundraising-black-woman-document-review.jpg',
+    alt: {
+      en: 'Black woman reviewing important documents during a planning session',
+      fr: 'Femme noire examinant des documents importants pendant une séance de planification'
+    },
+    objectPosition: '50% 50%'
+  },
+  {
+    src: '/images/hero/sagi-hero-fundraising-document-signing.jpg',
+    alt: {
+      en: 'Meeting participants signing documents for an organized plan',
+      fr: 'Participants à une réunion signant des documents pour un plan organisé'
+    },
+    objectPosition: '50% 50%'
+  },
+  {
+    src: '/images/hero/sagi-hero-fundraising-volunteers-donations.jpg',
+    alt: {
+      en: 'Volunteers organizing donations for a community support effort',
+      fr: 'Bénévoles organisant des dons pour un effort de soutien communautaire'
+    },
+    objectPosition: '50% 50%'
+  },
+  {
+    src: '/images/hero/sagi-hero-fundraising-volunteer-team.jpg',
+    alt: {
+      en: 'Volunteer team smiling together while preparing a fundraising effort',
+      fr: 'Équipe de bénévoles souriant ensemble en préparant une collecte de fonds'
+    },
+    objectPosition: '50% 50%'
+  },
+  {
+    src: '/images/hero/sagi-hero-fundraising-presenting-charts.jpg',
+    alt: {
+      en: 'African American presenter explaining charts during a funding meeting',
+      fr: 'Présentateur afro-américain expliquant des graphiques lors d’une réunion de financement'
+    },
+    objectPosition: '50% 50%'
+  },
+  {
+    src: '/images/hero/sagi-hero-fundraising-outdoor-volunteer-planning.jpg',
+    alt: {
+      en: 'Outdoor volunteer team discussing plans for a community project',
+      fr: 'Équipe de bénévoles dehors discutant des plans pour un projet communautaire'
+    },
+    objectPosition: '50% 50%'
+  },
+  {
+    src: '/images/hero/sagi-hero-fundraising-entrepreneur-documents.jpg',
+    alt: {
+      en: 'Black entrepreneur checking documents for an organized initiative',
+      fr: 'Entrepreneur noir vérifiant des documents pour une initiative organisée'
+    },
+    objectPosition: '50% 50%'
+  },
+  {
+    src: '/images/hero/sagi-hero-fundraising-confident-document-review.jpg',
+    alt: {
+      en: 'Confident Black businessman reviewing documents outdoors',
+      fr: 'Homme d’affaires noir confiant examinant des documents à l’extérieur'
+    },
+    objectPosition: '50% 50%'
+  },
+  {
+    src: '/images/hero/sagi-hero-fundraising-focused-documents.jpg',
+    alt: {
+      en: 'Focused Black professional reading documents in a workspace',
+      fr: 'Professionnel noir concentré lisant des documents dans un espace de travail'
+    },
+    objectPosition: '50% 50%'
+  },
+  {
+    src: '/images/hero/sagi-hero-fundraising-laptops-planning.jpg',
+    alt: {
+      en: 'Colleagues using laptops to plan a funding strategy',
+      fr: 'Collègues utilisant des ordinateurs pour planifier une stratégie de financement'
+    },
+    objectPosition: '50% 50%'
+  },
+  {
+    src: '/images/hero/sagi-hero-fundraising-laptop-strategy.jpg',
+    alt: {
+      en: 'Colleagues leaning over a laptop to refine a project strategy',
+      fr: 'Collègues réunis autour d’un ordinateur pour affiner une stratégie de projet'
+    },
+    objectPosition: '50% 50%'
+  },
+  {
+    src: '/images/hero/sagi-hero-fundraising-two-professionals-planning.jpg',
+    alt: {
+      en: 'Two professionals using a laptop to plan next steps',
+      fr: 'Deux professionnels utilisant un ordinateur pour planifier les prochaines étapes'
+    },
+    objectPosition: '50% 50%'
   }
 ]
 
-const heroImageRotationIntervalDays = 7
+const heroImageRotationIntervalDays = 5
 const millisecondsPerDay = 24 * 60 * 60 * 1000
 
+const getSeededRandomValue = (seed: number) => {
+  let value = seed >>> 0
+
+  value ^= value >>> 16
+  value = Math.imul(value, 0x7feb352d)
+  value ^= value >>> 15
+  value = Math.imul(value, 0x846ca68b)
+  value ^= value >>> 16
+
+  return value >>> 0
+}
+
+const getRandomizedHeroImageIndex = (rotationPeriodIndex: number, imageCount: number) => {
+  const cycleIndex = rotationPeriodIndex % imageCount
+  const cycleSeed = Math.floor(rotationPeriodIndex / imageCount)
+  const imageIndexes = Array.from({ length: imageCount }, (_, index) => index)
+
+  for (let index = imageIndexes.length - 1; index > 0; index -= 1) {
+    const swapIndex = getSeededRandomValue(cycleSeed * imageCount + index) % (index + 1)
+    const selectedIndex = imageIndexes[index]
+
+    imageIndexes[index] = imageIndexes[swapIndex]
+    imageIndexes[swapIndex] = selectedIndex
+  }
+
+  return imageIndexes[cycleIndex] ?? 0
+}
+
 const getRotatingHeroImage = (date: Date) => {
-  const startOfYear = Date.UTC(date.getUTCFullYear(), 0, 1)
   const startOfDay = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())
-  const dayOfYearIndex = Math.floor((startOfDay - startOfYear) / millisecondsPerDay)
-  const imageIndex = Math.floor(dayOfYearIndex / heroImageRotationIntervalDays) % rotatingHeroImages.length
+  const daysSinceEpoch = Math.floor(startOfDay / millisecondsPerDay)
+  const rotationPeriodIndex = Math.floor(daysSinceEpoch / heroImageRotationIntervalDays)
+  const imageIndex = getRandomizedHeroImageIndex(rotationPeriodIndex, rotatingHeroImages.length)
 
   return rotatingHeroImages[imageIndex] ?? rotatingHeroImages[0]
 }
