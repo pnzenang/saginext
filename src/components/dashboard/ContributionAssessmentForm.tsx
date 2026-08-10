@@ -37,23 +37,27 @@ const ContributionAssessmentForm = ({
   const [state, formAction] = useActionState(createAssociationContributionAssessmentAction, initialState)
   const [resetState, resetFormAction] = useActionState(resetAssociationContributionCalculationAction, initialState)
   const [zeroState, zeroFormAction] = useActionState(zeroAllAssociationContributionBalancesAction, initialState)
-  const hasContributionCalculation = calculationDeathCount > 0 && monthlyContributionTotal > 0
+
+  const calculatedAmountPerVestedMember =
+    vestedMembersCount > 0 ? Number((monthlyContributionTotal / vestedMembersCount).toFixed(2)) : 0
+
+  const hasVestedMembers = vestedMembersCount > 0
 
   return (
     <Card className='border-primary/30 bg-primary/10 w-full max-w-full min-w-0 overflow-hidden py-0'>
       <CardHeader className='border-primary/20 min-w-0 border-b py-5'>
         <CardTitle className='text-xl leading-tight break-words'>Amount to be contributed this month</CardTitle>
         <CardDescription className='break-words'>
-          The monthly contribution total comes from Contribution Calculation. Publish Contribution saves the death table
-          and divides the total by all vested members, then multiplies that amount by each association&apos;s vested members.
+          Use the calculated contribution values, or enter manual values for the monthly contribution per member and the
+          number of deaths before publishing.
         </CardDescription>
       </CardHeader>
       <CardContent className='min-w-0 py-5'>
         <div className='grid w-full min-w-0 gap-4'>
-          <div className='grid w-full min-w-0 grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-5 md:items-end'>
+          <div className='grid w-full min-w-0 grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2 xl:grid-cols-7 xl:items-end'>
             <form action={formAction} className='contents'>
               <div className='grid min-w-0 gap-2'>
-                <Label>Monthly contribution total</Label>
+                <Label>Calculated contribution total</Label>
                 <div className='border-primary/40 bg-background text-foreground flex min-h-10 items-center gap-2 rounded-md border px-3 py-2 font-semibold'>
                   <DollarSign className='text-muted-foreground size-4 shrink-0' />
                   <span>{currencyFormatter.format(monthlyContributionTotal)}</span>
@@ -61,13 +65,50 @@ const ContributionAssessmentForm = ({
               </div>
 
               <div className='grid min-w-0 gap-2'>
-                <Label htmlFor='deathCount'>Number of deaths</Label>
+                <Label>Calculated per member</Label>
+                <div className='border-primary/40 bg-background text-foreground flex min-h-10 items-center gap-2 rounded-md border px-3 py-2 font-semibold'>
+                  <DollarSign className='text-muted-foreground size-4 shrink-0' />
+                  <span>{currencyFormatter.format(calculatedAmountPerVestedMember)}</span>
+                </div>
+              </div>
+
+              <div className='grid min-w-0 gap-2'>
+                <Label htmlFor='manualAmountPerVestedMember'>Manual per member</Label>
+                <div className='relative'>
+                  <DollarSign className='text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2' />
+                  <Input
+                    id='manualAmountPerVestedMember'
+                    name='manualAmountPerVestedMember'
+                    type='number'
+                    inputMode='decimal'
+                    min='0.01'
+                    step='0.01'
+                    placeholder='Optional'
+                    className='border-primary/40 bg-background text-foreground pl-9 font-semibold'
+                  />
+                </div>
+              </div>
+
+              <div className='grid min-w-0 gap-2'>
+                <Label>Calculated deaths</Label>
+                <div className='border-primary/40 bg-background text-foreground flex min-h-10 items-center gap-2 rounded-md border px-3 py-2 font-semibold'>
+                  <HeartHandshake className='text-muted-foreground size-4 shrink-0' />
+                  <span>{calculationDeathCount}</span>
+                </div>
+              </div>
+
+              <div className='grid min-w-0 gap-2'>
+                <Label htmlFor='manualDeathCount'>Manual deaths</Label>
                 <div className='relative'>
                   <HeartHandshake className='text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2' />
                   <Input
-                    id='deathCount'
-                    value={calculationDeathCount}
-                    readOnly
+                    id='manualDeathCount'
+                    name='manualDeathCount'
+                    type='number'
+                    inputMode='numeric'
+                    min='1'
+                    step='1'
+                    placeholder='Optional'
                     className='border-primary/40 bg-background text-foreground pl-9 font-semibold'
                   />
                 </div>
@@ -89,7 +130,7 @@ const ContributionAssessmentForm = ({
 
               <SubmitButton
                 text='Publish Contribution'
-                disabled={!hasContributionCalculation}
+                disabled={!hasVestedMembers}
                 className='h-auto min-h-10 w-full min-w-0 px-3 py-2 text-center leading-tight whitespace-normal'
               />
             </form>
@@ -123,9 +164,11 @@ const ContributionAssessmentForm = ({
 
           <div className='grid min-w-0 gap-2'>
             <p className='text-muted-foreground text-sm'>Vested members currently counted: {vestedMembersCount}</p>
-            {!hasContributionCalculation ? (
+            {!hasVestedMembers ? (
+              <p className='text-destructive text-sm font-medium'>Add at least one vested member before publishing.</p>
+            ) : calculationDeathCount === 0 || monthlyContributionTotal <= 0 ? (
               <p className='text-destructive text-sm font-medium'>
-                Add at least one death in Contribution Calculation before publishing.
+                Enter manual contribution values, or add deaths in Contribution Calculation before publishing.
               </p>
             ) : null}
             {state.message ? <p className='text-primary text-sm font-medium'>{state.message}</p> : null}

@@ -450,6 +450,38 @@ const getPositiveDollarAmountFromForm = (formData: FormData, fieldName: string) 
   return Number(amount.toFixed(2))
 }
 
+const getOptionalPositiveDollarAmountFromForm = (formData: FormData, fieldName: string, label: string) => {
+  const value = formData.get(fieldName)
+
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    return null
+  }
+
+  const amount = Number(value)
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new Error(`Enter a ${label} greater than zero.`)
+  }
+
+  return Number(amount.toFixed(2))
+}
+
+const getOptionalPositiveIntegerFromForm = (formData: FormData, fieldName: string, label: string) => {
+  const value = formData.get(fieldName)
+
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    return null
+  }
+
+  const amount = Number(value)
+
+  if (!Number.isInteger(amount) || amount <= 0) {
+    throw new Error(`Enter a ${label} greater than zero.`)
+  }
+
+  return amount
+}
+
 const getSignedDollarAmountFromForm = (formData: FormData, fieldName: string) => {
   const amount = Number(getRequiredFormValue(formData, fieldName))
 
@@ -752,6 +784,7 @@ const getCurrentAssociationCode = async (clerkId: string) => {
 }
 
 const revalidatePaymentViews = () => {
+  revalidatePath('/')
   revalidatePath('/admin-contribution-payments')
   revalidatePath('/admin-payment-update')
   revalidatePath('/admin-registration-payments')
@@ -1731,6 +1764,14 @@ export const createAssociationContributionAssessmentAction = async (
   try {
     const dueDate = getRequiredDateFromForm(formData, 'dueDate')
 
+    const manualAmountPerVestedMember = getOptionalPositiveDollarAmountFromForm(
+      formData,
+      'manualAmountPerVestedMember',
+      'manual monthly contribution per member'
+    )
+
+    const manualDeathCount = getOptionalPositiveIntegerFromForm(formData, 'manualDeathCount', 'manual number of deaths')
+
     const [{ adminFee, deathAmount, deathCount }, calculationDeaths] = await Promise.all([
       fetchContributionCalculationSummary(),
       fetchContributionCalculationDeaths()
@@ -1750,10 +1791,36 @@ export const createAssociationContributionAssessmentAction = async (
     }
 
     const adminFeeTotal = roundCurrencyAmount(adminFee * vestedMembers.length)
-    const totalAmount = roundCurrencyAmount(deathAmount + adminFeeTotal)
 
-    if (deathCount === 0 || calculationDeaths.length === 0 || totalAmount <= 0) {
-      throw new Error('Add at least one death with an amount in Contribution Calculation before publishing.')
+    const calculatedTotalAmount = roundCurrencyAmount(deathAmount + adminFeeTotal)
+
+    const hasCalculatedContribution = deathCount > 0 && calculationDeaths.length > 0 && calculatedTotalAmount > 0
+
+    const calculatedAmountPerVestedMember = Number((calculatedTotalAmount / vestedMembers.length).toFixed(2))
+
+    const amountPerVestedMember = manualAmountPerVestedMember ?? calculatedAmountPerVestedMember
+
+    const totalAmount =
+      manualAmountPerVestedMember === null
+        ? calculatedTotalAmount
+        : roundCurrencyAmount(amountPerVestedMember * vestedMembers.length)
+
+    const publishedDeathCount = manualDeathCount ?? deathCount
+
+    const isManualContribution = manualAmountPerVestedMember !== null || manualDeathCount !== null
+
+    if (!manualAmountPerVestedMember && !hasCalculatedContribution) {
+      throw new Error(
+        'Enter a manual monthly contribution per member, or add at least one death with an amount in Contribution Calculation.'
+      )
+    }
+
+    if (!manualDeathCount && !hasCalculatedContribution) {
+      throw new Error('Enter the manual number of deaths, or add at least one death in Contribution Calculation.')
+    }
+
+    if (publishedDeathCount <= 0 || amountPerVestedMember <= 0 || totalAmount <= 0) {
+      throw new Error('Enter valid contribution values before publishing.')
     }
 
     const vestedMembersByCode = vestedMembers.reduce((counts, member) => {
@@ -1762,37 +1829,47 @@ export const createAssociationContributionAssessmentAction = async (
       return counts
     }, new Map<string, number>())
 
-    const amountPerVestedMember = Number((totalAmount / vestedMembers.length).toFixed(2))
-
     const groupEntries = Array.from(vestedMembersByCode.entries()).map(([associationCode, vestedMembersCount]) => ({
       amountOwed: Number((amountPerVestedMember * vestedMembersCount).toFixed(2)),
       associationCode,
       vestedMembersCount
     }))
 
+    const deathEntries = calculationDeaths.map(death => ({
+      amountToContribute: death.amountToContribute,
+      associationCode: death.associationCode || null,
+      associationName: death.associationName,
+      dateOfDeath: death.dateOfDeath,
+      firstName: death.firstName,
+      lastAndMiddleNames: death.lastAndMiddleNames,
+      memberMatriculationNumber: death.memberMatriculationNumber,
+      registrationDate: death.registrationDate
+    }))
+
+    const contributionSourceNote = isManualContribution
+      ? 'Manual contribution values were entered by SAGI.'
+      : `Calculated from Contribution Calculation. Admin fee: ${currencyFormatter.format(adminFee)} x ${
+          vestedMembers.length
+        } vested member(s) = ${currencyFormatter.format(adminFeeTotal)}.`
+
     await db.$transaction(async tx => {
       await tx.associationContributionAssessment.create({
         data: {
           amountPerVestedMember,
-          deathCount,
+          deathCount: publishedDeathCount,
           dueDate,
           totalAmount,
           totalVestedMembers: vestedMembers.length,
           groups: {
             create: groupEntries
           },
-          deaths: {
-            create: calculationDeaths.map(death => ({
-              amountToContribute: death.amountToContribute,
-              associationCode: death.associationCode || null,
-              associationName: death.associationName,
-              dateOfDeath: death.dateOfDeath,
-              firstName: death.firstName,
-              lastAndMiddleNames: death.lastAndMiddleNames,
-              memberMatriculationNumber: death.memberMatriculationNumber,
-              registrationDate: death.registrationDate
-            }))
-          }
+          ...(deathEntries.length > 0
+            ? {
+                deaths: {
+                  create: deathEntries
+                }
+              }
+            : {})
         }
       })
 
@@ -1802,7 +1879,7 @@ export const createAssociationContributionAssessmentAction = async (
           associationCode: group.associationCode,
           createdBy: user.id,
           eventType: associationPaymentLedgerEventTypes.dueOffset,
-          note: `Contribution due created for ${group.vestedMembersCount} vested member(s). Number of deaths in calculation: ${deathCount}. Admin fee: ${currencyFormatter.format(adminFee)} x ${vestedMembers.length} vested member(s) = ${currencyFormatter.format(adminFeeTotal)}.`,
+          note: `Contribution due created for ${group.vestedMembersCount} vested member(s). Number of deaths: ${publishedDeathCount}. Monthly contribution per vested member: ${currencyFormatter.format(amountPerVestedMember)}. ${contributionSourceNote}`,
           paymentType: associationPaymentTypes.contribution
         }))
       })
@@ -1811,7 +1888,15 @@ export const createAssociationContributionAssessmentAction = async (
     revalidatePaymentViews()
 
     return {
-      message: `Published contribution table for ${deathCount} death${deathCount === 1 ? '' : 's'} and distributed ${currencyFormatter.format(totalAmount)} across ${vestedMembers.length} vested members. Each vested member is ${currencyFormatter.format(amountPerVestedMember)}. Admin fee: ${currencyFormatter.format(adminFee)} x ${vestedMembers.length} = ${currencyFormatter.format(adminFeeTotal)}.`
+      message: `Published contribution table for ${publishedDeathCount} death${
+        publishedDeathCount === 1 ? '' : 's'
+      } and distributed ${currencyFormatter.format(totalAmount)} across ${
+        vestedMembers.length
+      } vested members. Each vested member is ${currencyFormatter.format(amountPerVestedMember)}.${
+        isManualContribution
+          ? ' Manual contribution values were used.'
+          : ` Admin fee: ${currencyFormatter.format(adminFee)} x ${vestedMembers.length} = ${currencyFormatter.format(adminFeeTotal)}.`
+      }`
     }
   } catch (error) {
     return renderError(error)
@@ -5689,11 +5774,6 @@ export const fetchPublishedContributionTableAction = async () => {
     },
     orderBy: {
       createdAt: 'desc'
-    },
-    where: {
-      deaths: {
-        some: {}
-      }
     }
   })
 
