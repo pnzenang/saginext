@@ -385,42 +385,10 @@ const rotatingHeroImages: RotatingHeroImage[] = [
     objectPosition: '50% 50%'
   },
   {
-    src: '/images/hero/sagi-hero-fundraising-reviewing-documents.jpg',
-    alt: {
-      en: 'Professionals reviewing paperwork for a funding decision',
-      fr: 'Professionnels examinant des documents pour une décision de financement'
-    },
-    objectPosition: '50% 50%'
-  },
-  {
-    src: '/images/hero/sagi-hero-fundraising-financial-review.jpg',
-    alt: {
-      en: 'Hands reviewing financial paperwork for a support plan',
-      fr: 'Mains examinant des documents financiers pour un plan de soutien'
-    },
-    objectPosition: '50% 50%'
-  },
-  {
     src: '/images/hero/sagi-hero-fundraising-group-paperwork.jpg',
     alt: {
       en: 'Group leaning over paperwork while planning funding details',
       fr: 'Groupe penché sur des documents pour planifier les détails du financement'
-    },
-    objectPosition: '50% 50%'
-  },
-  {
-    src: '/images/hero/sagi-hero-fundraising-black-woman-document-review.jpg',
-    alt: {
-      en: 'Black woman reviewing important documents during a planning session',
-      fr: 'Femme noire examinant des documents importants pendant une séance de planification'
-    },
-    objectPosition: '50% 50%'
-  },
-  {
-    src: '/images/hero/sagi-hero-fundraising-document-signing.jpg',
-    alt: {
-      en: 'Meeting participants signing documents for an organized plan',
-      fr: 'Participants à une réunion signant des documents pour un plan organisé'
     },
     objectPosition: '50% 50%'
   },
@@ -441,42 +409,10 @@ const rotatingHeroImages: RotatingHeroImage[] = [
     objectPosition: '50% 50%'
   },
   {
-    src: '/images/hero/sagi-hero-fundraising-presenting-charts.jpg',
-    alt: {
-      en: 'African American presenter explaining charts during a funding meeting',
-      fr: 'Présentateur afro-américain expliquant des graphiques lors d’une réunion de financement'
-    },
-    objectPosition: '50% 50%'
-  },
-  {
     src: '/images/hero/sagi-hero-fundraising-outdoor-volunteer-planning.jpg',
     alt: {
       en: 'Outdoor volunteer team discussing plans for a community project',
       fr: 'Équipe de bénévoles dehors discutant des plans pour un projet communautaire'
-    },
-    objectPosition: '50% 50%'
-  },
-  {
-    src: '/images/hero/sagi-hero-fundraising-entrepreneur-documents.jpg',
-    alt: {
-      en: 'Black entrepreneur checking documents for an organized initiative',
-      fr: 'Entrepreneur noir vérifiant des documents pour une initiative organisée'
-    },
-    objectPosition: '50% 50%'
-  },
-  {
-    src: '/images/hero/sagi-hero-fundraising-confident-document-review.jpg',
-    alt: {
-      en: 'Confident Black businessman reviewing documents outdoors',
-      fr: 'Homme d’affaires noir confiant examinant des documents à l’extérieur'
-    },
-    objectPosition: '50% 50%'
-  },
-  {
-    src: '/images/hero/sagi-hero-fundraising-focused-documents.jpg',
-    alt: {
-      en: 'Focused Black professional reading documents in a workspace',
-      fr: 'Professionnel noir concentré lisant des documents dans un espace de travail'
     },
     objectPosition: '50% 50%'
   },
