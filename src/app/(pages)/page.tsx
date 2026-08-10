@@ -47,6 +47,7 @@ const heroStats: HeroStat[] = [
 ]
 
 const sagicamUrl = 'https://www.sagicam.org/'
+const sagiNigeriaUrl = 'https://saginigeria.org/'
 
 const CameroonFlagIcon = () => (
   <span aria-hidden='true' className='flex h-4 w-6 overflow-hidden rounded-[2px] ring-1 ring-white/50'>
@@ -55,6 +56,14 @@ const CameroonFlagIcon = () => (
       <span className='text-[8px] leading-none text-[#fcd116]'>★</span>
     </span>
     <span className='flex-1 bg-[#fcd116]' />
+  </span>
+)
+
+const NigeriaFlagIcon = () => (
+  <span aria-hidden='true' className='flex h-4 w-6 overflow-hidden rounded-[2px] ring-1 ring-white/50'>
+    <span className='flex-1 bg-[#008751]' />
+    <span className='flex-1 bg-white' />
+    <span className='flex-1 bg-[#008751]' />
   </span>
 )
 
@@ -754,6 +763,7 @@ const homeContent = {
       primaryCta: 'Join SAGI',
       secondaryCta: 'See how it works',
       sagicamCta: 'Visit SAGICAM',
+      sagiNigeriaCta: 'Visit SAGINIGERIA',
       imageAlt: 'Family receiving compassionate guidance with support documents'
     },
     heroStats,
@@ -866,6 +876,7 @@ const homeContent = {
       primaryCta: 'Rejoindre SAGI',
       secondaryCta: 'Voir le fonctionnement',
       sagicamCta: 'Visiter SAGICAM',
+      sagiNigeriaCta: 'Visiter SAGINIGERIA',
       imageAlt: 'Famille recevant un accompagnement compatissant avec des documents de soutien'
     },
     heroStats: frenchHeroStats,
@@ -1140,6 +1151,17 @@ function HeroSection({
               <a href={sagicamUrl} target='_blank' rel='noopener noreferrer'>
                 {copy.hero.sagicamCta}
                 <CameroonFlagIcon />
+              </a>
+            </Button>
+            <Button
+              asChild
+              size='lg'
+              variant='outline'
+              className='rounded-full border-white/35 bg-white/10 text-white hover:bg-white/20 hover:text-white'
+            >
+              <a href={sagiNigeriaUrl} target='_blank' rel='noopener noreferrer'>
+                {copy.hero.sagiNigeriaCta}
+                <NigeriaFlagIcon />
               </a>
             </Button>
           </div>

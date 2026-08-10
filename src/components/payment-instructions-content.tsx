@@ -19,16 +19,6 @@ import type { AppLanguage } from '@/lib/i18n'
 const zellePaymentLink =
   'https://enroll.zellepay.com/qr-codes?data=eyJuYW1lIjoiUEFUUklDRSIsImFjdGlvbiI6InBheW1lbnQiLCJ0b2tlbiI6IjQ0MzUzMTU4NTIifQ=='
 
-const sagiNigeriaUrl = 'https://saginigeria.org'
-
-const NigeriaFlagIcon = () => (
-  <span aria-hidden='true' className='border-border flex h-4 w-6 overflow-hidden rounded-[2px] border'>
-    <span className='flex-1 bg-[#008751]' />
-    <span className='flex-1 bg-white' />
-    <span className='flex-1 bg-[#008751]' />
-  </span>
-)
-
 const paymentInstructionsCopy = {
   en: {
     badge: 'Payment Instructions',
@@ -44,7 +34,6 @@ const paymentInstructionsCopy = {
     },
     contributionsCta: 'Contribution Payments',
     registrationsCta: 'Registration Payments',
-    sagiNigeriaCta: 'Visit SAGINIGERIA',
     memoCodePlaceholder: 'SAGI-USA-{association 4-letter code}',
     zelle: {
       title: 'Zelle Payment',
@@ -110,7 +99,6 @@ const paymentInstructionsCopy = {
     },
     contributionsCta: 'Paiements des cotisations',
     registrationsCta: "Paiements d'inscription",
-    sagiNigeriaCta: 'Visiter SAGINIGERIA',
     memoCodePlaceholder: "SAGI-USA-{code d'association à 4 lettres}",
     zelle: {
       title: 'Paiement Zelle',
@@ -200,12 +188,6 @@ const PaymentInstructionsContent = ({ associationCode, language = 'en' }: Paymen
             </Button>
             <Button asChild variant='outline'>
               <Link href='/registrationsPayments'>{copy.registrationsCta}</Link>
-            </Button>
-            <Button asChild variant='outline'>
-              <a href={sagiNigeriaUrl} rel='noopener noreferrer' target='_blank'>
-                {copy.sagiNigeriaCta}
-                <NigeriaFlagIcon />
-              </a>
             </Button>
           </div>
         </div>
