@@ -10,11 +10,11 @@ import {
   CircleDollarSignIcon,
   ClipboardCheckIcon,
   Clock3Icon,
-  ExternalLinkIcon,
   FileTextIcon,
   HeartHandshakeIcon,
   LayoutDashboardIcon,
   LockKeyholeIcon,
+  PlaneIcon,
   ShieldCheckIcon,
   UploadCloudIcon,
   UserMinusIcon,
@@ -808,7 +808,7 @@ const homeContent = {
         'A mutual aid community where low monthly contributions create real funeral support for families when it matters most.',
       primaryCta: 'Join SAGI',
       secondaryCta: 'See how it works',
-      sagicamCta: 'Visit SAGICAM',
+      sagicamCta: 'Cameroon Flight',
       imageAlt: 'Family receiving compassionate guidance with support documents'
     },
     heroStats,
@@ -920,7 +920,7 @@ const homeContent = {
         'Une communauté de solidarité où de faibles cotisations mensuelles créent un vrai soutien funéraire pour les familles au moment le plus important.',
       primaryCta: 'Rejoindre SAGI',
       secondaryCta: 'Voir le fonctionnement',
-      sagicamCta: 'Visiter SAGICAM',
+      sagicamCta: 'Vol Cameroun',
       imageAlt: 'Famille recevant un accompagnement compatissant avec des documents de soutien'
     },
     heroStats: frenchHeroStats,
@@ -1194,7 +1194,7 @@ function HeroSection({
             >
               <a href={sagicamUrl} target='_blank' rel='noopener noreferrer'>
                 {copy.hero.sagicamCta}
-                <ExternalLinkIcon className='size-4' />
+                <PlaneIcon className='size-4' />
               </a>
             </Button>
           </div>
