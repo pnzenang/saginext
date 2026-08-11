@@ -58,7 +58,6 @@ const PaymentHistoryPage = async () => {
   const { userId } = await auth()
 
   if (!userId) redirect('/sign-in')
-  if (userId === process.env.ADMIN_USER_ID) redirect('/admin-payment-history')
 
   const profile = await fetchProfile()
 
