@@ -786,6 +786,7 @@ const getCurrentAssociationCode = async (clerkId: string) => {
 const revalidatePaymentViews = () => {
   revalidatePath('/')
   revalidatePath('/admin-contribution-payments')
+  revalidatePath('/admin-payment-history')
   revalidatePath('/admin-payment-update')
   revalidatePath('/admin-registration-payments')
   revalidatePath('/admin-transaction-history')

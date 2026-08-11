@@ -189,6 +189,11 @@ export const getPagesItems = (date: Date = new Date()): MenuItem[] => [
     href: '/admin-payment-update'
   },
   {
+    icon: History,
+    label: 'Admin Payment History',
+    href: '/admin-payment-history'
+  },
+  {
     icon: MessageSquareText,
     label: 'Admin Messages',
     href: '/admin-notes'

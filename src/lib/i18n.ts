@@ -119,6 +119,7 @@ const dashboardMenuLabelTranslations: Record<string, string> = {
   'Admin Count ': 'Décompte admin',
   'Contribution Calculation': 'Calcul des cotisations',
   'Payment Update': 'Mise à jour des paiements',
+  'Admin Payment History': 'Historique des paiements',
   'Admin Messages': 'Messages admin',
   'Admin Contribution Payments': 'Paiements des cotisations',
   'Admin Registration Payments': "Paiements d'inscription",
