@@ -100,6 +100,7 @@ const dashboardMenuLabelTranslations: Record<string, string> = {
   'Death Announcement': 'Annonce de décès',
   'All Deceased Members': 'Tous les membres décédés',
   'Payment Instructions': 'Instructions de paiement',
+  'Payment History': 'Historique des paiements',
   Meeting: 'Réunion',
   Messages: 'Messages',
   'Monthly Additions': 'Ajouts mensuels',

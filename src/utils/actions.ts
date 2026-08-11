@@ -793,6 +793,7 @@ const revalidatePaymentViews = () => {
   revalidatePath('/admin-all-members')
   revalidatePath('/contribution-table')
   revalidatePath('/contributions')
+  revalidatePath('/payment-history')
   revalidatePath('/registrationsPayments')
   revalidatePath('/all-members')
   revalidatePath('/financial-position')

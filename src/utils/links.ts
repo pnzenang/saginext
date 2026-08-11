@@ -61,6 +61,11 @@ export const getPagesItems = (date: Date = new Date()): MenuItem[] => [
     href: '/contributions'
   },
   {
+    icon: History,
+    label: 'Payment History',
+    href: '/payment-history'
+  },
+  {
     icon: UserMinus,
     label: 'Remove Member',
     href: '/navigation-instructions/removedMembers'
