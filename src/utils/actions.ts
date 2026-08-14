@@ -155,6 +155,7 @@ const createMissingVerifiedLedgerEntry = async ({
     },
     where: {
       associationCode,
+      cancelledAt: null,
       eventType: associationPaymentLedgerEventTypes.verified,
       paymentType
     }
@@ -204,6 +205,7 @@ const createMissingSubmittedLedgerEntry = async ({
     },
     where: {
       associationCode,
+      cancelledAt: null,
       eventType: associationPaymentLedgerEventTypes.submitted,
       paymentType
     }
@@ -808,6 +810,12 @@ const resettableTransactionHistoryEventTypes = [
   associationPaymentLedgerEventTypes.verified
 ]
 
+const cancellableTransactionHistoryEventTypes: string[] = [
+  associationPaymentLedgerEventTypes.manualAdjustment,
+  associationPaymentLedgerEventTypes.submitted,
+  associationPaymentLedgerEventTypes.verified
+]
+
 export const resetTransactionHistoryAction = async (): Promise<{ message: string }> => {
   await assertAdminUser()
 
@@ -828,6 +836,397 @@ export const resetTransactionHistoryAction = async (): Promise<{ message: string
           ? 'No transaction history records were found to reset.'
           : `${deletedHistory.count} transaction history record${deletedHistory.count === 1 ? '' : 's'} reset successfully.`
     }
+  } catch (error) {
+    return renderError(error)
+  }
+}
+
+const getOptionalTransactionCancellationReason = (formData: FormData) => {
+  const reason = formData.get('cancellationReason')
+
+  if (typeof reason !== 'string') return null
+
+  const normalizedReason = reason.trim()
+
+  return normalizedReason.length > 0 ? normalizedReason : null
+}
+
+const getLatestActiveLedgerEntryDate = async ({
+  associationCode,
+  eventType,
+  paymentType,
+  tx
+}: {
+  associationCode: string
+  eventType: string
+  paymentType: string
+  tx: Prisma.TransactionClient
+}) => {
+  const latestEntry = await tx.associationPaymentLedgerEntry.findFirst({
+    orderBy: {
+      createdAt: 'desc'
+    },
+    select: {
+      createdAt: true
+    },
+    where: {
+      associationCode,
+      cancelledAt: null,
+      eventType,
+      paymentType
+    }
+  })
+
+  return latestEntry?.createdAt ?? null
+}
+
+const assertPositiveTransactionAmount = (amount: number) => {
+  if (amount <= 0) {
+    throw new Error('Only positive submitted and verified payment entries can be cancelled.')
+  }
+}
+
+const assertNonZeroTransactionAmount = (amount: number) => {
+  if (amount === 0) {
+    throw new Error('This transaction entry has no amount to cancel.')
+  }
+}
+
+const assertTransactionEntryIsInCurrentPaymentCycle = async ({
+  associationCode,
+  createdAt,
+  paymentType,
+  tx
+}: {
+  associationCode: string
+  createdAt: Date
+  paymentType: string
+  tx: Prisma.TransactionClient
+}) => {
+  const laterReset = await tx.associationPaymentLedgerEntry.findFirst({
+    select: {
+      id: true
+    },
+    where: {
+      associationCode,
+      cancelledAt: null,
+      createdAt: {
+        gt: createdAt
+      },
+      eventType: associationPaymentLedgerEventTypes.reset,
+      paymentType
+    }
+  })
+
+  if (laterReset) {
+    throw new Error('This entry belongs to a previous payment cycle and cannot be cancelled after a reset.')
+  }
+}
+
+const cancelSubmittedTransactionEntry = async ({
+  amount,
+  associationCode,
+  paymentType,
+  tx
+}: {
+  amount: number
+  associationCode: string
+  paymentType: string
+  tx: Prisma.TransactionClient
+}) => {
+  assertPositiveTransactionAmount(amount)
+
+  const latestSubmittedAt = await getLatestActiveLedgerEntryDate({
+    associationCode,
+    eventType: associationPaymentLedgerEventTypes.submitted,
+    paymentType,
+    tx
+  })
+
+  if (paymentType === associationPaymentTypes.contribution) {
+    const payment = await tx.associationContributionPayment.findUnique({
+      where: {
+        associationCode
+      }
+    })
+
+    if (!payment) {
+      throw new Error('No contribution payment record found for this transaction.')
+    }
+
+    const currentAmountSent = decimalToNumber(payment.amountSent)
+    const currentAmountVerified = decimalToNumber(payment.amountVerified)
+    const nextAmountSent = roundCurrencyAmount(currentAmountSent - amount)
+
+    if (nextAmountSent < 0) {
+      throw new Error('This submitted contribution amount is no longer available to cancel.')
+    }
+
+    if (nextAmountSent < currentAmountVerified) {
+      throw new Error('Cancel the verified contribution entry before cancelling this submitted contribution entry.')
+    }
+
+    await tx.associationContributionPayment.update({
+      data: {
+        amountSent: nextAmountSent,
+        lastSubmittedAt: latestSubmittedAt
+      },
+      where: {
+        associationCode
+      }
+    })
+
+    return
+  }
+
+  if (paymentType === associationPaymentTypes.registration) {
+    const payment = await tx.associationRegistrationPayment.findUnique({
+      where: {
+        associationCode
+      }
+    })
+
+    if (!payment) {
+      throw new Error('No registration payment record found for this transaction.')
+    }
+
+    const currentAmountSent = decimalToNumber(payment.amountSent)
+    const nextAmountSent = roundCurrencyAmount(currentAmountSent - amount)
+
+    if (nextAmountSent < 0) {
+      throw new Error('This submitted registration amount has already been verified or cleared.')
+    }
+
+    await tx.associationRegistrationPayment.update({
+      data: {
+        amountSent: nextAmountSent,
+        lastSubmittedAt: latestSubmittedAt
+      },
+      where: {
+        associationCode
+      }
+    })
+
+    return
+  }
+
+  throw new Error('Unsupported payment type for submitted transaction cancellation.')
+}
+
+const cancelVerifiedTransactionEntry = async ({
+  amount,
+  associationCode,
+  paymentType,
+  tx
+}: {
+  amount: number
+  associationCode: string
+  paymentType: string
+  tx: Prisma.TransactionClient
+}) => {
+  assertPositiveTransactionAmount(amount)
+
+  const latestVerifiedAt = await getLatestActiveLedgerEntryDate({
+    associationCode,
+    eventType: associationPaymentLedgerEventTypes.verified,
+    paymentType,
+    tx
+  })
+
+  if (paymentType === associationPaymentTypes.contribution) {
+    const payment = await tx.associationContributionPayment.findUnique({
+      where: {
+        associationCode
+      }
+    })
+
+    if (!payment) {
+      throw new Error('No contribution payment record found for this transaction.')
+    }
+
+    const nextAmountVerified = roundCurrencyAmount(decimalToNumber(payment.amountVerified) - amount)
+
+    if (nextAmountVerified < 0) {
+      throw new Error('This verified contribution amount is no longer available to cancel.')
+    }
+
+    await tx.associationContributionPayment.update({
+      data: {
+        amountVerified: nextAmountVerified,
+        verifiedAt: latestVerifiedAt
+      },
+      where: {
+        associationCode
+      }
+    })
+
+    return
+  }
+
+  if (paymentType === associationPaymentTypes.registration) {
+    const payment = await tx.associationRegistrationPayment.findUnique({
+      where: {
+        associationCode
+      }
+    })
+
+    if (!payment) {
+      throw new Error('No registration payment record found for this transaction.')
+    }
+
+    const nextAmountVerified = roundCurrencyAmount(decimalToNumber(payment.amountVerified) - amount)
+
+    if (nextAmountVerified < 0) {
+      throw new Error('This verified registration amount is no longer available to cancel.')
+    }
+
+    const latestSubmittedAt =
+      (await getLatestActiveLedgerEntryDate({
+        associationCode,
+        eventType: associationPaymentLedgerEventTypes.submitted,
+        paymentType,
+        tx
+      })) ?? payment.lastSubmittedAt
+
+    await tx.associationRegistrationPayment.update({
+      data: {
+        amountSent: {
+          increment: amount
+        },
+        amountVerified: nextAmountVerified,
+        lastSubmittedAt: latestSubmittedAt,
+        verifiedAt: latestVerifiedAt
+      },
+      where: {
+        associationCode
+      }
+    })
+
+    return
+  }
+
+  throw new Error('Unsupported payment type for verified transaction cancellation.')
+}
+
+const cancelManualAdjustmentTransactionEntry = async ({
+  amount,
+  associationCode,
+  paymentType,
+  tx
+}: {
+  amount: number
+  associationCode: string
+  paymentType: string
+  tx: Prisma.TransactionClient
+}) => {
+  assertNonZeroTransactionAmount(amount)
+
+  await tx.associationBalanceAdjustment.upsert({
+    create: {
+      amount: roundCurrencyAmount(-amount),
+      associationCode,
+      balanceType: paymentType
+    },
+    update: {
+      amount: {
+        decrement: amount
+      }
+    },
+    where: {
+      associationCode_balanceType: {
+        associationCode,
+        balanceType: paymentType
+      }
+    }
+  })
+}
+
+export const cancelTransactionHistoryEntryAction = async (
+  _prevState: { message: string },
+  formData: FormData
+): Promise<{ message: string }> => {
+  const user = await assertAdminUser()
+
+  try {
+    const entryId = getRequiredFormValue(formData, 'transactionEntryId')
+    const cancellationReason = getOptionalTransactionCancellationReason(formData)
+
+    const entry = await db.associationPaymentLedgerEntry.findUnique({
+      where: {
+        id: entryId
+      }
+    })
+
+    if (!entry) {
+      throw new Error('Transaction history entry not found.')
+    }
+
+    if (entry.cancelledAt) {
+      throw new Error('This transaction history entry has already been cancelled.')
+    }
+
+    if (!cancellableTransactionHistoryEventTypes.includes(entry.eventType)) {
+      throw new Error('Only submitted, verified, and adjusted transaction entries can be cancelled.')
+    }
+
+    const amount = decimalToNumber(entry.amount)
+    const cancelledAt = new Date()
+
+    await db.$transaction(async tx => {
+      await assertTransactionEntryIsInCurrentPaymentCycle({
+        associationCode: entry.associationCode,
+        createdAt: entry.createdAt,
+        paymentType: entry.paymentType,
+        tx
+      })
+
+      const cancelledEntry = await tx.associationPaymentLedgerEntry.updateMany({
+        data: {
+          cancelledAt,
+          cancelledBy: user.id,
+          cancellationReason
+        },
+        where: {
+          cancelledAt: null,
+          id: entry.id
+        }
+      })
+
+      if (cancelledEntry.count !== 1) {
+        throw new Error('This transaction history entry has already been cancelled.')
+      }
+
+      if (entry.eventType === associationPaymentLedgerEventTypes.submitted) {
+        await cancelSubmittedTransactionEntry({
+          amount,
+          associationCode: entry.associationCode,
+          paymentType: entry.paymentType,
+          tx
+        })
+      }
+
+      if (entry.eventType === associationPaymentLedgerEventTypes.verified) {
+        await cancelVerifiedTransactionEntry({
+          amount,
+          associationCode: entry.associationCode,
+          paymentType: entry.paymentType,
+          tx
+        })
+      }
+
+      if (entry.eventType === associationPaymentLedgerEventTypes.manualAdjustment) {
+        await cancelManualAdjustmentTransactionEntry({
+          amount,
+          associationCode: entry.associationCode,
+          paymentType: entry.paymentType,
+          tx
+        })
+      }
+    })
+
+    revalidatePaymentViews()
+
+    return { message: 'Transaction history entry cancelled.' }
   } catch (error) {
     return renderError(error)
   }
@@ -2006,6 +2405,7 @@ export const resetAssociationContributionCalculationAction = async (): Promise<{
               associationCode: {
                 in: paymentAssociationCodes
               },
+              cancelledAt: null,
               eventType: {
                 in: [associationPaymentLedgerEventTypes.submitted, associationPaymentLedgerEventTypes.verified]
               },
@@ -2268,6 +2668,7 @@ const fetchLatestContributionPaymentStateLedgerEntry = async (associationCode: s
     },
     where: {
       associationCode,
+      cancelledAt: null,
       eventType: associationPaymentLedgerEventTypes.reset,
       paymentType: associationPaymentTypes.contribution
     }
@@ -2284,6 +2685,7 @@ const fetchLatestContributionPaymentStateLedgerEntry = async (associationCode: s
     },
     where: {
       associationCode,
+      cancelledAt: null,
       eventType: {
         in: [associationPaymentLedgerEventTypes.notFound, associationPaymentLedgerEventTypes.submitted]
       },
@@ -2303,6 +2705,7 @@ const fetchLatestRegistrationPaymentStateLedgerEntry = async (associationCode: s
     },
     where: {
       associationCode,
+      cancelledAt: null,
       eventType: associationPaymentLedgerEventTypes.reset,
       paymentType: associationPaymentTypes.registration
     }
@@ -2319,6 +2722,7 @@ const fetchLatestRegistrationPaymentStateLedgerEntry = async (associationCode: s
     },
     where: {
       associationCode,
+      cancelledAt: null,
       eventType: {
         in: [associationPaymentLedgerEventTypes.notFound, associationPaymentLedgerEventTypes.submitted]
       },

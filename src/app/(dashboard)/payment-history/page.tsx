@@ -67,6 +67,7 @@ const PaymentHistoryPage = async () => {
     },
     where: {
       associationCode: profile.associationCode,
+      cancelledAt: null,
       eventType: associationPaymentLedgerEventTypes.verified
     }
   })

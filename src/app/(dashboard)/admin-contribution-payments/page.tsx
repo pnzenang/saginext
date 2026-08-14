@@ -47,6 +47,7 @@ const fetchContributionVerifiedLedgerTotalsByCode = async (associationCodes: str
       FROM "AssociationPaymentLedgerEntry"
       WHERE "paymentType" = ${associationPaymentTypes.contribution}
         AND "eventType" = ${associationPaymentLedgerEventTypes.reset}
+        AND "cancelledAt" IS NULL
         AND "associationCode" IN (${Prisma.join(associationCodes)})
       GROUP BY "associationCode"
     )
@@ -56,12 +57,15 @@ const fetchContributionVerifiedLedgerTotalsByCode = async (associationCodes: str
       ON latest_reset."associationCode" = ledger."associationCode"
     WHERE ledger."paymentType" = ${associationPaymentTypes.contribution}
       AND ledger."eventType" = ${associationPaymentLedgerEventTypes.verified}
+      AND ledger."cancelledAt" IS NULL
       AND ledger."associationCode" IN (${Prisma.join(associationCodes)})
       AND (latest_reset."resetAt" IS NULL OR ledger."createdAt" > latest_reset."resetAt")
     GROUP BY ledger."associationCode"
   `)
 
-  return new Map(totals.map(total => [total.associationCode, roundCurrencyAmount(decimalToNumber(total.amountVerified))]))
+  return new Map(
+    totals.map(total => [total.associationCode, roundCurrencyAmount(decimalToNumber(total.amountVerified))])
+  )
 }
 
 const AdminContributionPayments = async () => {

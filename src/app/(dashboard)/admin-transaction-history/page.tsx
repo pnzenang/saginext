@@ -31,6 +31,12 @@ const historyEventTypes = [
   associationPaymentLedgerEventTypes.verified
 ]
 
+const cancellableHistoryEventTypes: string[] = [
+  associationPaymentLedgerEventTypes.manualAdjustment,
+  associationPaymentLedgerEventTypes.submitted,
+  associationPaymentLedgerEventTypes.verified
+]
+
 const dateTimeFormatter = new Intl.DateTimeFormat('en-US', {
   dateStyle: 'medium',
   timeStyle: 'short',
@@ -82,6 +88,11 @@ const AdminTransactionHistory = async () => {
       amountSubmitted: entry.eventType === associationPaymentLedgerEventTypes.submitted ? amount : null,
       amountVerified: entry.eventType === associationPaymentLedgerEventTypes.verified ? amount : null,
       associationCode: entry.associationCode,
+      canCancel: cancellableHistoryEventTypes.includes(entry.eventType) && !entry.cancelledAt,
+      cancellationReason: entry.cancellationReason ?? '',
+      cancelledAt: entry.cancelledAt?.toISOString() ?? null,
+      cancelledAtLabel: entry.cancelledAt ? dateTimeFormatter.format(entry.cancelledAt) : null,
+      cancelledBy: entry.cancelledBy ?? '',
       createdAt: entry.createdAt.toISOString(),
       createdAtLabel: dateTimeFormatter.format(entry.createdAt),
       createdBy: entry.createdBy ?? '',
@@ -97,6 +108,10 @@ const AdminTransactionHistory = async () => {
 
   const totals: AdminTransactionHistoryTotals = rows.reduce(
     (currentTotals, row) => {
+      if (row.cancelledAt) {
+        return currentTotals
+      }
+
       currentTotals.amountAdjusted = roundCurrencyAmount(currentTotals.amountAdjusted + (row.amountAdjusted ?? 0))
       currentTotals.amountReset = roundCurrencyAmount(currentTotals.amountReset + (row.amountReset ?? 0))
       currentTotals.amountSubmitted = roundCurrencyAmount(currentTotals.amountSubmitted + (row.amountSubmitted ?? 0))

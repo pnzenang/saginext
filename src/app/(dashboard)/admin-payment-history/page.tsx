@@ -113,6 +113,7 @@ const AdminPaymentHistoryPage = async () => {
         createdAt: 'desc'
       },
       where: {
+        cancelledAt: null,
         eventType: associationPaymentLedgerEventTypes.verified
       }
     }),

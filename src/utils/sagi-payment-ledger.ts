@@ -74,29 +74,26 @@ const buildLegacyLedgerEntries = (
   entries: AssociationPaymentLedgerEntry[],
   payments: AssociationPaymentAggregate[]
 ): AssociationPaymentLedgerEntry[] => {
-  const entriesByPayment = entries.reduce(
-    (groups, entry) => {
-      const key = `${entry.associationCode}:${entry.paymentType}`
+  const entriesByPayment = entries.reduce((groups, entry) => {
+    const key = `${entry.associationCode}:${entry.paymentType}`
 
-      const currentGroup = groups.get(key) ?? {
-        submittedTotal: 0,
-        verifiedTotal: 0
-      }
+    const currentGroup = groups.get(key) ?? {
+      submittedTotal: 0,
+      verifiedTotal: 0
+    }
 
-      if (entry.eventType === associationPaymentLedgerEventTypes.submitted) {
-        currentGroup.submittedTotal = roundCurrencyAmount(currentGroup.submittedTotal + entry.amount)
-      }
+    if (entry.eventType === associationPaymentLedgerEventTypes.submitted) {
+      currentGroup.submittedTotal = roundCurrencyAmount(currentGroup.submittedTotal + entry.amount)
+    }
 
-      if (entry.eventType === associationPaymentLedgerEventTypes.verified) {
-        currentGroup.verifiedTotal = roundCurrencyAmount(currentGroup.verifiedTotal + entry.amount)
-      }
+    if (entry.eventType === associationPaymentLedgerEventTypes.verified) {
+      currentGroup.verifiedTotal = roundCurrencyAmount(currentGroup.verifiedTotal + entry.amount)
+    }
 
-      groups.set(key, currentGroup)
+    groups.set(key, currentGroup)
 
-      return groups
-    },
-    new Map<string, { submittedTotal: number; verifiedTotal: number }>()
-  )
+    return groups
+  }, new Map<string, { submittedTotal: number; verifiedTotal: number }>())
 
   return payments.flatMap(payment => {
     const key = `${payment.associationCode}:${payment.paymentType}`
@@ -106,8 +103,14 @@ const buildLegacyLedgerEntries = (
       verifiedTotal: 0
     }
 
-    const missingSubmittedAmount = roundCurrencyAmount(getAggregateSubmittedAmount(payment) - entryTotals.submittedTotal)
-    const missingVerifiedAmount = roundCurrencyAmount(decimalToNumber(payment.amountVerified) - entryTotals.verifiedTotal)
+    const missingSubmittedAmount = roundCurrencyAmount(
+      getAggregateSubmittedAmount(payment) - entryTotals.submittedTotal
+    )
+
+    const missingVerifiedAmount = roundCurrencyAmount(
+      decimalToNumber(payment.amountVerified) - entryTotals.verifiedTotal
+    )
+
     const legacyEntries: AssociationPaymentLedgerEntry[] = []
 
     if (missingSubmittedAmount > 0) {
@@ -209,6 +212,7 @@ export const fetchAssociationPaymentLedgerEntries = async (
     },
     where: {
       associationCode,
+      cancelledAt: null,
       eventType: associationPaymentLedgerEventTypes.reset,
       ...(paymentType ? { paymentType } : {})
     }
@@ -221,6 +225,7 @@ export const fetchAssociationPaymentLedgerEntries = async (
     take: limit,
     where: {
       associationCode,
+      cancelledAt: null,
       eventType: {
         in: eventTypes
       },
@@ -244,7 +249,9 @@ export const fetchAssociationPaymentLedgerEntries = async (
   const legacyLedgerEntries = buildLegacyLedgerEntries(paymentLedgerEntries, aggregatePayments)
 
   return [...paymentLedgerEntries, ...legacyLedgerEntries]
-    .sort((firstEntry, secondEntry) => new Date(secondEntry.createdAt).getTime() - new Date(firstEntry.createdAt).getTime())
+    .sort(
+      (firstEntry, secondEntry) => new Date(secondEntry.createdAt).getTime() - new Date(firstEntry.createdAt).getTime()
+    )
     .slice(0, limit)
 }
 
@@ -266,6 +273,7 @@ export const fetchAssociationPaymentLedgerTotals = async (
     },
     where: {
       associationCode,
+      cancelledAt: null,
       eventType: associationPaymentLedgerEventTypes.reset,
       paymentType
     }
@@ -279,6 +287,7 @@ export const fetchAssociationPaymentLedgerTotals = async (
       by: ['eventType'],
       where: {
         associationCode,
+        cancelledAt: null,
         eventType: {
           in: paymentHistoryEventTypes
         },

@@ -7,6 +7,7 @@ import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
+  Ban,
   ChevronLeftIcon,
   ChevronRightIcon,
   Download,
@@ -14,15 +15,30 @@ import {
 } from 'lucide-react'
 import * as XLSX from 'xlsx'
 
+import FormContainer from '@/components/forms/FormContainer'
+import { SubmitButton } from '@/components/forms/Buttons'
 import PrintButton from '@/components/global/PrintButton'
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger
+} from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem } from '@/components/ui/pagination'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Textarea } from '@/components/ui/textarea'
 import { usePagination } from '@/hooks/use-pagination'
 import { cn } from '@/lib/utils'
+import { cancelTransactionHistoryEntryAction } from '@/utils/actions'
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   currency: 'USD',
@@ -35,6 +51,11 @@ export type AdminTransactionHistoryRow = {
   amountSubmitted: number | null
   amountVerified: number | null
   associationCode: string
+  canCancel: boolean
+  cancellationReason: string
+  cancelledAt: string | null
+  cancelledAtLabel: string | null
+  cancelledBy: string
   createdAt: string
   createdAtLabel: string
   createdBy: string
@@ -94,14 +115,16 @@ const exportColumnWidths: Partial<Record<SortKey, number>> = {
 const columnWidths: Partial<Record<SortKey, number>> = {
   amountAdjusted: 9,
   amountReset: 6,
-  amountSubmitted: 14,
-  amountVerified: 11,
-  associationCode: 8,
-  createdAt: 12,
-  eventType: 13,
-  note: 18,
+  amountSubmitted: 13,
+  amountVerified: 10,
+  associationCode: 7,
+  createdAt: 11,
+  eventType: 12,
+  note: 15,
   paymentType: 9
 }
+
+const actionColumnStyle = { width: '8%' }
 
 const roundCurrencyAmount = (amount: number) => Number(amount.toFixed(2))
 
@@ -133,12 +156,13 @@ const compareValues = (
 
 const formatAmount = (amount: number | null) => (amount === null ? '-' : currencyFormatter.format(amount))
 
-const getAmountClassName = (amount: number | null) =>
+const getAmountClassName = (amount: number | null, isCancelled = false) =>
   cn(
     'font-semibold tabular-nums',
     amount === null && 'text-muted-foreground font-medium',
     amount !== null && amount < 0 && 'text-red-700 dark:text-red-300',
-    amount !== null && amount > 0 && 'text-green-700 dark:text-green-300'
+    amount !== null && amount > 0 && 'text-green-700 dark:text-green-300',
+    isCancelled && 'text-muted-foreground line-through decoration-2'
   )
 
 const getEventBadgeClassName = (eventType: string) =>
@@ -155,9 +179,18 @@ const getPaymentBadgeClassName = (paymentType: string) =>
     registration: 'border-cyan-500/30 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300'
   })[paymentType] ?? 'border-border bg-muted text-foreground'
 
+const getStatusBadgeClassName = (isCancelled: boolean) =>
+  isCancelled
+    ? 'border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-300'
+    : 'border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-300'
+
 const getTransactionTotals = (rows: AdminTransactionHistoryRow[]): AdminTransactionHistoryTotals =>
   rows.reduce(
     (currentTotals, row) => {
+      if (row.cancelledAt) {
+        return currentTotals
+      }
+
       currentTotals.amountAdjusted = roundCurrencyAmount(currentTotals.amountAdjusted + (row.amountAdjusted ?? 0))
       currentTotals.amountReset = roundCurrencyAmount(currentTotals.amountReset + (row.amountReset ?? 0))
       currentTotals.amountSubmitted = roundCurrencyAmount(currentTotals.amountSubmitted + (row.amountSubmitted ?? 0))
@@ -204,6 +237,74 @@ const SummaryStat = ({ label, value }: { label: string; value: string | number }
   </div>
 )
 
+const TransactionStatusBadge = ({ row }: { row: AdminTransactionHistoryRow }) => {
+  const isCancelled = Boolean(row.cancelledAt)
+
+  return (
+    <Badge
+      variant='outline'
+      className={cn('rounded-md capitalize', getStatusBadgeClassName(isCancelled))}
+      title={isCancelled && row.cancelledAtLabel ? `Cancelled ${row.cancelledAtLabel}` : 'Active'}
+    >
+      {isCancelled ? 'Cancelled' : 'Active'}
+    </Badge>
+  )
+}
+
+const CancelTransactionEntryButton = ({ row }: { row: AdminTransactionHistoryRow }) => {
+  if (row.cancelledAt) {
+    return <TransactionStatusBadge row={row} />
+  }
+
+  if (!row.canCancel) {
+    return <span className='text-muted-foreground text-xs font-semibold'>-</span>
+  }
+
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button
+          type='button'
+          variant='outline'
+          size='sm'
+          className='h-8 border-red-200 px-2 text-xs text-red-700 hover:bg-red-50 hover:text-red-800 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-950/40'
+        >
+          <Ban className='size-3.5' />
+          Cancel
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Cancel transaction entry?</AlertDialogTitle>
+          <AlertDialogDescription className='leading-6'>
+            This marks the entry cancelled and reverses its effect on the related payment totals. The entry remains
+            visible in transaction history for audit.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <FormContainer action={cancelTransactionHistoryEntryAction} className='space-y-4'>
+          <input type='hidden' name='transactionEntryId' value={row.id} />
+          <div className='space-y-2'>
+            <Label htmlFor={`cancellation-reason-${row.id}`}>Reason</Label>
+            <Textarea
+              id={`cancellation-reason-${row.id}`}
+              name='cancellationReason'
+              placeholder='Optional note'
+              className='min-h-24 resize-y'
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel type='button'>Keep entry</AlertDialogCancel>
+            <SubmitButton
+              text='Cancel entry'
+              className='h-9 w-full bg-red-700 px-4 text-sm normal-case hover:bg-red-800 sm:w-auto'
+            />
+          </AlertDialogFooter>
+        </FormContainer>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
+}
+
 const AdminTransactionHistoryTable = ({
   rows,
   totals
@@ -223,7 +324,19 @@ const AdminTransactionHistoryTable = ({
     if (!normalizedSearch) return rows
 
     return rows.filter(row =>
-      [row.associationCode, row.createdAtLabel, row.createdBy, row.eventType, row.note, row.paymentType, row.source]
+      [
+        row.associationCode,
+        row.cancellationReason,
+        row.cancelledAtLabel ?? '',
+        row.cancelledBy,
+        row.cancelledAt ? 'cancelled' : 'active',
+        row.createdAtLabel,
+        row.createdBy,
+        row.eventType,
+        row.note,
+        row.paymentType,
+        row.source
+      ]
         .join(' ')
         .toLowerCase()
         .includes(normalizedSearch)
@@ -297,6 +410,7 @@ const AdminTransactionHistoryTable = ({
         'Association code',
         'Payment type',
         'Action',
+        'Status',
         'Source',
         'Amount set by association',
         'Amount adjusted',
@@ -309,15 +423,21 @@ const AdminTransactionHistoryTable = ({
         row.associationCode,
         row.paymentType,
         row.eventType,
+        row.cancelledAt ? 'Cancelled' : 'Active',
         row.source,
         row.amountSubmitted ?? '',
         row.amountAdjusted ?? '',
         row.amountVerified ?? '',
         row.amountReset ?? '',
-        row.note
+        row.cancelledAt
+          ? [row.note, row.cancelledAtLabel ? `Cancelled ${row.cancelledAtLabel}` : '', row.cancellationReason]
+              .filter(Boolean)
+              .join(' | ')
+          : row.note
       ]),
       [
         'Total',
+        '',
         '',
         '',
         '',
@@ -337,6 +457,7 @@ const AdminTransactionHistoryTable = ({
       { wch: exportColumnWidths.associationCode },
       { wch: exportColumnWidths.paymentType },
       { wch: exportColumnWidths.eventType },
+      { wch: 14 },
       { wch: exportColumnWidths.source },
       { wch: exportColumnWidths.amountSubmitted },
       { wch: exportColumnWidths.amountAdjusted },
@@ -415,6 +536,7 @@ const AdminTransactionHistoryTable = ({
               {columns.map(column => (
                 <col key={column.key} style={getColumnStyle(column.key)} />
               ))}
+              <col style={actionColumnStyle} />
             </colgroup>
             <TableHeader>
               <TableRow className='bg-primary hover:bg-primary h-16'>
@@ -440,12 +562,15 @@ const AdminTransactionHistoryTable = ({
                     </TableHead>
                   )
                 })}
+                <TableHead className='text-primary-foreground h-16 text-right' style={actionColumnStyle}>
+                  Actions
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {sortedRows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={columns.length} className='text-muted-foreground h-24 text-center'>
+                  <TableCell colSpan={columns.length + 1} className='text-muted-foreground h-24 text-center'>
                     {normalizedSearch
                       ? `No transaction history matching "${search.trim()}" found.`
                       : 'No transaction history found.'}
@@ -453,7 +578,10 @@ const AdminTransactionHistoryTable = ({
                 </TableRow>
               ) : (
                 paginatedRows.map(row => (
-                  <TableRow key={row.id} className='odd:bg-muted/30 even:bg-background'>
+                  <TableRow
+                    key={row.id}
+                    className={cn('odd:bg-muted/30 even:bg-background', row.cancelledAt && 'text-muted-foreground')}
+                  >
                     <TableCell
                       title={row.createdAtLabel}
                       className='truncate text-xs font-semibold'
@@ -499,25 +627,52 @@ const AdminTransactionHistoryTable = ({
                       </Badge>
                     </TableCell>
                     <TableCell className='text-right' style={getColumnStyle('amountSubmitted')}>
-                      <span className={getAmountClassName(row.amountSubmitted)}>
+                      <span className={getAmountClassName(row.amountSubmitted, Boolean(row.cancelledAt))}>
                         {formatAmount(row.amountSubmitted)}
                       </span>
                     </TableCell>
                     <TableCell className='text-right' style={getColumnStyle('amountAdjusted')}>
-                      <span className={getAmountClassName(row.amountAdjusted)}>{formatAmount(row.amountAdjusted)}</span>
+                      <span className={getAmountClassName(row.amountAdjusted, Boolean(row.cancelledAt))}>
+                        {formatAmount(row.amountAdjusted)}
+                      </span>
                     </TableCell>
                     <TableCell className='text-right' style={getColumnStyle('amountVerified')}>
-                      <span className={getAmountClassName(row.amountVerified)}>{formatAmount(row.amountVerified)}</span>
+                      <span className={getAmountClassName(row.amountVerified, Boolean(row.cancelledAt))}>
+                        {formatAmount(row.amountVerified)}
+                      </span>
                     </TableCell>
                     <TableCell className='text-right' style={getColumnStyle('amountReset')}>
-                      <span className={getAmountClassName(row.amountReset)}>{formatAmount(row.amountReset)}</span>
+                      <span className={getAmountClassName(row.amountReset, Boolean(row.cancelledAt))}>
+                        {formatAmount(row.amountReset)}
+                      </span>
                     </TableCell>
                     <TableCell
-                      title={row.note || '-'}
+                      title={
+                        row.cancelledAt
+                          ? [
+                              row.note,
+                              row.cancelledAtLabel ? `Cancelled ${row.cancelledAtLabel}` : '',
+                              row.cancellationReason
+                            ]
+                              .filter(Boolean)
+                              .join(' | ') || '-'
+                          : row.note || '-'
+                      }
                       className='text-muted-foreground truncate text-xs'
                       style={getColumnStyle('note')}
                     >
-                      {row.note || '-'}
+                      {row.cancelledAt
+                        ? [
+                            row.note,
+                            row.cancelledAtLabel ? `Cancelled ${row.cancelledAtLabel}` : '',
+                            row.cancellationReason
+                          ]
+                            .filter(Boolean)
+                            .join(' | ') || '-'
+                        : row.note || '-'}
+                    </TableCell>
+                    <TableCell className='text-right' style={actionColumnStyle}>
+                      <CancelTransactionEntryButton row={row} />
                     </TableCell>
                   </TableRow>
                 ))
@@ -547,6 +702,7 @@ const AdminTransactionHistoryTable = ({
                     {currencyFormatter.format(visibleTotals.amountReset)}
                   </TableCell>
                   <TableCell style={getColumnStyle('note')} />
+                  <TableCell style={actionColumnStyle} />
                 </TableRow>
               </TableFooter>
             )}
@@ -562,16 +718,24 @@ const AdminTransactionHistoryTable = ({
             </div>
           ) : (
             paginatedRows.map(row => (
-              <article key={row.id} className='bg-background overflow-hidden rounded-md border shadow-sm'>
+              <article
+                key={row.id}
+                className={cn(
+                  'bg-background overflow-hidden rounded-md border shadow-sm',
+                  row.cancelledAt && 'opacity-80'
+                )}
+              >
                 <div className='flex flex-col gap-2 border-b px-3 py-3 sm:flex-row sm:items-start sm:justify-between sm:px-4'>
                   <div className='min-w-0'>
                     <div className='text-lg font-extrabold'>{row.associationCode}</div>
                   </div>
-                  <div className='text-muted-foreground shrink-0 text-left text-xs font-semibold sm:text-right'>
-                    {row.createdAtLabel}
+                  <div className='flex shrink-0 flex-col gap-2 text-left sm:items-end sm:text-right'>
+                    <div className='text-muted-foreground text-xs font-semibold'>{row.createdAtLabel}</div>
+                    <CancelTransactionEntryButton row={row} />
                   </div>
                 </div>
                 <div className='grid gap-2 px-3 py-3 text-sm sm:px-4'>
+                  <MobileValue label='Status' value={<TransactionStatusBadge row={row} />} />
                   <MobileValue
                     label='Type'
                     value={
@@ -598,27 +762,37 @@ const AdminTransactionHistoryTable = ({
                   <MobileValue
                     label='Amount set by association'
                     value={formatAmount(row.amountSubmitted)}
-                    valueClassName={getAmountClassName(row.amountSubmitted)}
+                    valueClassName={getAmountClassName(row.amountSubmitted, Boolean(row.cancelledAt))}
                   />
                   <MobileValue
                     label='Amount adjusted'
                     value={formatAmount(row.amountAdjusted)}
-                    valueClassName={getAmountClassName(row.amountAdjusted)}
+                    valueClassName={getAmountClassName(row.amountAdjusted, Boolean(row.cancelledAt))}
                   />
                   <MobileValue
                     label='Amount verified'
                     value={formatAmount(row.amountVerified)}
-                    valueClassName={getAmountClassName(row.amountVerified)}
+                    valueClassName={getAmountClassName(row.amountVerified, Boolean(row.cancelledAt))}
                   />
                   <MobileValue
                     label='Reset'
                     value={formatAmount(row.amountReset)}
-                    valueClassName={getAmountClassName(row.amountReset)}
+                    valueClassName={getAmountClassName(row.amountReset, Boolean(row.cancelledAt))}
                   />
                   {row.note ? (
                     <div className='border-t pt-3'>
                       <div className='text-muted-foreground text-xs font-semibold uppercase'>Note</div>
                       <div className='mt-1 text-sm font-semibold break-words'>{row.note}</div>
+                    </div>
+                  ) : null}
+                  {row.cancelledAt ? (
+                    <div className='border-t pt-3'>
+                      <div className='text-muted-foreground text-xs font-semibold uppercase'>Cancellation</div>
+                      <div className='mt-1 text-sm font-semibold break-words'>
+                        {[row.cancelledAtLabel ? `Cancelled ${row.cancelledAtLabel}` : '', row.cancellationReason]
+                          .filter(Boolean)
+                          .join(' | ') || 'Cancelled'}
+                      </div>
                     </div>
                   ) : null}
                 </div>
