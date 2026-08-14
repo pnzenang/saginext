@@ -90,9 +90,9 @@ const columns: AdminTransactionHistoryColumn[] = [
   { key: 'associationCode', label: 'Code' },
   { key: 'paymentType', label: 'Type' },
   { key: 'eventType', label: 'Action' },
-  { key: 'amountSubmitted', label: 'Amount set by association', align: 'right' },
-  { key: 'amountAdjusted', label: 'Amount adjusted', align: 'right' },
-  { key: 'amountVerified', label: 'Amount verified', align: 'right' },
+  { key: 'amountSubmitted', label: 'Submitted', align: 'right' },
+  { key: 'amountAdjusted', label: 'Adjusted', align: 'right' },
+  { key: 'amountVerified', label: 'Verified', align: 'right' },
   { key: 'amountReset', label: 'Reset', align: 'right' },
   { key: 'note', label: 'Note' }
 ]
@@ -115,16 +115,16 @@ const exportColumnWidths: Partial<Record<SortKey, number>> = {
 const columnWidths: Partial<Record<SortKey, number>> = {
   amountAdjusted: 9,
   amountReset: 6,
-  amountSubmitted: 13,
-  amountVerified: 10,
-  associationCode: 7,
-  createdAt: 11,
-  eventType: 12,
-  note: 15,
-  paymentType: 9
+  amountSubmitted: 10,
+  amountVerified: 9,
+  associationCode: 6,
+  createdAt: 12,
+  eventType: 10,
+  note: 24,
+  paymentType: 8
 }
 
-const actionColumnStyle = { width: '8%' }
+const actionColumnStyle = { width: '6%' }
 
 const roundCurrencyAmount = (amount: number) => Number(amount.toFixed(2))
 
@@ -266,11 +266,12 @@ const CancelTransactionEntryButton = ({ row }: { row: AdminTransactionHistoryRow
         <Button
           type='button'
           variant='outline'
-          size='sm'
-          className='h-8 border-red-200 px-2 text-xs text-red-700 hover:bg-red-50 hover:text-red-800 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-950/40'
+          size='icon-xs'
+          title='Cancel entry'
+          aria-label='Cancel transaction entry'
+          className='border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-950/40'
         >
           <Ban className='size-3.5' />
-          Cancel
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
@@ -530,8 +531,8 @@ const AdminTransactionHistoryTable = ({
       </div>
 
       <div className='border-border max-w-full min-w-0 overflow-hidden rounded-lg border'>
-        <div className='hidden overflow-x-auto xl:block'>
-          <Table className='table-fixed [&_td]:whitespace-nowrap [&_th]:whitespace-normal'>
+        <div className='hidden xl:block'>
+          <Table className='min-w-0 table-fixed text-[11px] leading-tight [&_td]:px-1 [&_td]:py-1.5 [&_td]:whitespace-nowrap [&_th]:px-1 [&_th]:whitespace-normal'>
             <colgroup>
               {columns.map(column => (
                 <col key={column.key} style={getColumnStyle(column.key)} />
@@ -553,17 +554,17 @@ const AdminTransactionHistoryTable = ({
                     >
                       <button
                         type='button'
-                        className={`flex min-h-12 w-full items-center gap-1.5 text-left font-semibold ${column.align === 'right' ? 'justify-end text-right [&>span]:text-right' : 'justify-start'}`}
+                        className={`flex min-h-10 w-full items-center gap-1 text-left font-semibold ${column.align === 'right' ? 'justify-end text-right [&>span]:text-right' : 'justify-start'}`}
                         onClick={() => handleSort(column.key)}
                       >
-                        <span>{column.label}</span>
+                        <span className='min-w-0 truncate'>{column.label}</span>
                         {getSortIcon(isActive, sortDirection)}
                       </button>
                     </TableHead>
                   )
                 })}
                 <TableHead className='text-primary-foreground h-16 text-right' style={actionColumnStyle}>
-                  Actions
+                  Manage
                 </TableHead>
               </TableRow>
             </TableHeader>
