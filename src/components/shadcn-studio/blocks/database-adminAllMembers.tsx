@@ -1706,6 +1706,16 @@ function SharedLastNameWordsPanel({
     [copy, groups, language, sharedNameSort]
   )
 
+  const alphabetizedDropdownGroups = useMemo(
+    () =>
+      [...sortedGroups].sort(
+        (left, right) =>
+          left.firstSharedNameWord.localeCompare(right.firstSharedNameWord) ||
+          left.secondSharedNameWord.localeCompare(right.secondSharedNameWord)
+      ),
+    [sortedGroups]
+  )
+
   const scrollToGroup = (firstSharedNameWord: string, secondSharedNameWord: string) => {
     document
       .getElementById(getSharedNameWordGroupId(firstSharedNameWord, secondSharedNameWord))
@@ -1764,7 +1774,7 @@ function SharedLastNameWordsPanel({
               align='start'
               className='max-h-80 w-[min(calc(100vw-2rem),22rem)] overflow-y-auto'
             >
-              {sortedGroups.map(group => (
+              {alphabetizedDropdownGroups.map(group => (
                 <DropdownMenuItem
                   key={getSharedNameWordGroupKey(group.firstSharedNameWord, group.secondSharedNameWord)}
                   className='flex cursor-pointer items-center justify-between gap-4'
