@@ -116,6 +116,8 @@ declare module '@tanstack/react-table' {
 
 const numberFormatter = new Intl.NumberFormat('en-US')
 const formatNumber = (value: number) => numberFormatter.format(value)
+const adminActionButtonClassName = 'h-10 min-h-10 min-w-0 overflow-hidden whitespace-nowrap'
+const adminActionButtonLabelClassName = 'min-w-0 truncate'
 
 const adminMemberTableCopy = {
   en: {
@@ -1302,15 +1304,20 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
               </Pagination>
             </div>
 
-            <div className='grid w-full grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-5 [&_button]:w-full'>
+            <div className='grid w-full grid-cols-1 items-stretch gap-2 sm:grid-cols-2 xl:grid-cols-5 [&_button]:h-10 [&_button]:min-h-10 [&_button]:min-w-0 [&_button]:overflow-hidden [&_button]:whitespace-nowrap [&_button]:w-full'>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
-                    className='min-h-10 bg-blue-700 whitespace-normal text-white hover:bg-blue-800 focus-visible:ring-blue-700/30'
+                    className={cn(
+                      adminActionButtonClassName,
+                      'bg-blue-700 text-white hover:bg-blue-800 focus-visible:ring-blue-700/30'
+                    )}
                     disabled={selectedPendingCount === 0}
                   >
                     <UserCheck />
-                    {copy.bulkAwaiting.button(selectedPendingCount)}
+                    <span className={adminActionButtonLabelClassName}>
+                      {copy.bulkAwaiting.button(selectedPendingCount)}
+                    </span>
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
@@ -1334,11 +1341,16 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
-                    className='min-h-10 bg-green-700 whitespace-normal text-white hover:bg-green-800 focus-visible:ring-green-700/30'
+                    className={cn(
+                      adminActionButtonClassName,
+                      'bg-green-700 text-white hover:bg-green-800 focus-visible:ring-green-700/30'
+                    )}
                     disabled={selectedDelinquentCount === 0}
                   >
                     <ShieldCheck />
-                    {copy.bulkVested.button(selectedDelinquentCount)}
+                    <span className={adminActionButtonLabelClassName}>
+                      {copy.bulkVested.button(selectedDelinquentCount)}
+                    </span>
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
@@ -1362,11 +1374,16 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
-                    className='min-h-10 bg-red-700 whitespace-normal text-white hover:bg-red-800 focus-visible:ring-red-700/30'
+                    className={cn(
+                      adminActionButtonClassName,
+                      'bg-red-700 text-white hover:bg-red-800 focus-visible:ring-red-700/30'
+                    )}
                     disabled={selectedVestedCount === 0}
                   >
                     <AlertTriangle />
-                    {copy.bulkDelinquent.button(selectedVestedCount)}
+                    <span className={adminActionButtonLabelClassName}>
+                      {copy.bulkDelinquent.button(selectedVestedCount)}
+                    </span>
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
@@ -1390,11 +1407,16 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
-                    className='min-h-10 bg-emerald-700 whitespace-normal text-white hover:bg-emerald-800 focus-visible:ring-emerald-700/30'
+                    className={cn(
+                      adminActionButtonClassName,
+                      'bg-emerald-700 text-white hover:bg-emerald-800 focus-visible:ring-emerald-700/30'
+                    )}
                     disabled={selectedAwaitingCount === 0}
                   >
                     <ShieldCheck />
-                    {copy.autoVest.button(selectedAwaitingCount)}
+                    <span className={adminActionButtonLabelClassName}>
+                      {copy.autoVest.button(selectedAwaitingCount)}
+                    </span>
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
@@ -1421,16 +1443,21 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
               />
             </div>
 
-            <div className='grid w-full grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-6 xl:flex xl:justify-end [&_button]:w-full xl:[&_button]:w-auto'>
+            <div className='grid w-full grid-cols-1 items-stretch gap-2 sm:grid-cols-2 lg:grid-cols-6 xl:flex xl:justify-end [&_button]:h-10 [&_button]:min-h-10 [&_button]:min-w-0 [&_button]:overflow-hidden [&_button]:whitespace-nowrap [&_button]:w-full xl:[&_button]:w-auto'>
               <Sheet>
                 <SheetTrigger asChild>
                   <Button
                     type='button'
                     disabled={sharedLastAndMiddleNameGroups.length === 0}
-                    className='bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40'
+                    className={cn(
+                      adminActionButtonClassName,
+                      'bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40'
+                    )}
                   >
                     <SearchIcon />
-                    {copy.sharedLastNameWords.button(sharedLastAndMiddleNameGroups.length)}
+                    <span className={adminActionButtonLabelClassName}>
+                      {copy.sharedLastNameWords.button(sharedLastAndMiddleNameGroups.length)}
+                    </span>
                   </Button>
                 </SheetTrigger>
                 <SharedLastNameWordsPanel
@@ -1442,7 +1469,10 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
               </Sheet>
               <PrintButton
                 label={copy.export.printPdf}
-                className='bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40'
+                className={cn(
+                  adminActionButtonClassName,
+                  'bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40'
+                )}
               />
               <PrintButton
                 label={copy.export.printSelection(selectedMembers.length)}
@@ -1451,31 +1481,45 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
                   printSelectedRowsToPdf()
                 }}
                 disabled={selectedMembers.length === 0}
-                className='bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40'
+                className={cn(
+                  adminActionButtonClassName,
+                  'bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40'
+                )}
               />
               <Button
                 type='button'
                 onClick={exportSelectedVisibleColumnsToExcel}
                 disabled={selectedMembers.length === 0}
-                className='bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40'
+                className={cn(
+                  adminActionButtonClassName,
+                  'bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40'
+                )}
               >
                 <FileSpreadsheetIcon />
-                {copy.export.selection(selectedMembers.length)}
+                <span className={adminActionButtonLabelClassName}>{copy.export.selection(selectedMembers.length)}</span>
               </Button>
               <Button
                 type='button'
                 onClick={exportVisibleColumnsToExcel}
                 disabled={table.getFilteredRowModel().rows.length === 0}
-                className='bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40'
+                className={cn(
+                  adminActionButtonClassName,
+                  'bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40'
+                )}
               >
                 <FileSpreadsheetIcon />
-                {copy.export.page}
+                <span className={adminActionButtonLabelClassName}>{copy.export.page}</span>
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button className='bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40'>
+                  <Button
+                    className={cn(
+                      adminActionButtonClassName,
+                      'bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40'
+                    )}
+                  >
                     <UploadIcon />
-                    {copy.export.all}
+                    <span className={adminActionButtonLabelClassName}>{copy.export.all}</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align='end'>
@@ -1885,7 +1929,10 @@ function BulkAwaitingSubmitButton({
     <Button
       type='submit'
       disabled={disabled || pending}
-      className='bg-blue-700 text-white hover:bg-blue-800 focus-visible:ring-blue-700/30'
+      className={cn(
+        adminActionButtonClassName,
+        'bg-blue-700 text-white hover:bg-blue-800 focus-visible:ring-blue-700/30'
+      )}
     >
       {pending ? (
         <>
@@ -1912,7 +1959,10 @@ function BulkDelinquentSubmitButton({
     <Button
       type='submit'
       disabled={disabled || pending}
-      className='bg-red-700 text-white hover:bg-red-800 focus-visible:ring-red-700/30'
+      className={cn(
+        adminActionButtonClassName,
+        'bg-red-700 text-white hover:bg-red-800 focus-visible:ring-red-700/30'
+      )}
     >
       {pending ? (
         <>
@@ -1933,7 +1983,10 @@ function BulkVestedSubmitButton({ copy, disabled }: { copy: AdminMemberTableCopy
     <Button
       type='submit'
       disabled={disabled || pending}
-      className='bg-green-700 text-white hover:bg-green-800 focus-visible:ring-green-700/30'
+      className={cn(
+        adminActionButtonClassName,
+        'bg-green-700 text-white hover:bg-green-800 focus-visible:ring-green-700/30'
+      )}
     >
       {pending ? (
         <>
@@ -1960,7 +2013,10 @@ function BulkAwaitingVestedSubmitButton({
     <Button
       type='submit'
       disabled={disabled || pending}
-      className='bg-emerald-700 text-white hover:bg-emerald-800 focus-visible:ring-emerald-700/30'
+      className={cn(
+        adminActionButtonClassName,
+        'bg-emerald-700 text-white hover:bg-emerald-800 focus-visible:ring-emerald-700/30'
+      )}
     >
       {pending ? (
         <>
