@@ -9,7 +9,10 @@ const nextConfig: NextConfig = {
     }
   },
   reactStrictMode: true,
-  pageExtensions: ['js', 'jsx', 'ts', 'tsx']
+  pageExtensions: ['js', 'jsx', 'ts', 'tsx'],
+  turbopack: {
+    root: process.cwd()
+  }
 }
 
 export default withNextVideo(nextConfig);

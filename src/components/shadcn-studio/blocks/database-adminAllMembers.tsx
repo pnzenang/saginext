@@ -81,7 +81,9 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem } from '@/components/ui/pagination'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { usePersistentColumnFilters } from '@/hooks/use-persistent-column-filters'
 import { usePagination } from '@/hooks/use-pagination'
@@ -208,6 +210,15 @@ const adminMemberTableCopy = {
       previousAria: 'Go to previous page'
     },
     pendingMatriculation: 'Pending',
+    sharedLastNameWords: {
+      button: (count: number) => `Shared Last/Middle Words (${count})`,
+      dateOfBirth: 'Date of Birth',
+      description: (groupCount: string, memberCount: string) =>
+        `${groupCount} repeated word group(s), across ${memberCount} member record(s).`,
+      empty: 'No shared words found in last and middle names.',
+      memberCount: (count: number) => `${count} member${count === 1 ? '' : 's'}`,
+      title: 'Members Sharing Last/Middle Name Words'
+    },
     selection: {
       member: (name: string) => `Select ${name}`,
       page: 'Select all pending, awaiting, vested, or delinquent members on this page'
@@ -313,6 +324,15 @@ const adminMemberTableCopy = {
       previousAria: 'Aller à la page précédente'
     },
     pendingMatriculation: 'En attente',
+    sharedLastNameWords: {
+      button: (count: number) => `Mots nom/prénoms (${count})`,
+      dateOfBirth: 'Date de naissance',
+      description: (groupCount: string, memberCount: string) =>
+        `${groupCount} groupe(s) de mots répétés, dans ${memberCount} fiche(s) membre.`,
+      empty: 'Aucun mot partagé trouvé dans les noms et prénoms intermédiaires.',
+      memberCount: (count: number) => `${count} membre${count === 1 ? '' : 's'}`,
+      title: 'Membres partageant des mots de nom/prénoms'
+    },
     selection: {
       member: (name: string) => `Sélectionner ${name}`,
       page: 'Sélectionner tous les membres en attente, en attente de publication, acquis ou pas en règle sur cette page'
@@ -391,6 +411,42 @@ const getRegistrationPaymentSortValue = (member: MemberType) => {
   if (member.memberStatus !== memberStatus.Pending) return undefined
 
   return getRegistrationPaymentCountdown(member.createdAt).daysRemaining
+}
+
+const getLastAndMiddleNameWords = (name: string) =>
+  Array.from(
+    new Set(
+      name
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toUpperCase()
+        .match(/[A-Z0-9]+/g) ?? []
+    )
+  ).filter(word => word.length >= 2)
+
+const sortMembersByName = (left: MemberType, right: MemberType) => {
+  const leftName = `${left.lastAndMiddleNames} ${left.firstName}`
+  const rightName = `${right.lastAndMiddleNames} ${right.firstName}`
+
+  return leftName.localeCompare(rightName) || left.associationCode.localeCompare(right.associationCode)
+}
+
+const getSharedLastAndMiddleNameGroups = (members: MemberType[]) => {
+  const groupsByWord = new Map<string, MemberType[]>()
+
+  members.forEach(member => {
+    getLastAndMiddleNameWords(member.lastAndMiddleNames).forEach(word => {
+      groupsByWord.set(word, [...(groupsByWord.get(word) ?? []), member])
+    })
+  })
+
+  return Array.from(groupsByWord.entries())
+    .filter(([, groupedMembers]) => groupedMembers.length > 1)
+    .map(([word, groupedMembers]) => ({
+      members: [...groupedMembers].sort(sortMembersByName),
+      word
+    }))
+    .sort((left, right) => right.members.length - left.members.length || left.word.localeCompare(right.word))
 }
 
 const RegistrationPaymentWarningCell = ({ language, member }: { language: AppLanguage; member: MemberType }) => {
@@ -886,6 +942,13 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
     }
   ]
 
+  const sharedLastAndMiddleNameGroups = useMemo(() => getSharedLastAndMiddleNameGroups(data), [data])
+
+  const sharedLastNameWordMemberCount = useMemo(
+    () => new Set(sharedLastAndMiddleNameGroups.flatMap(group => group.members.map(member => member.id))).size,
+    [sharedLastAndMiddleNameGroups]
+  )
+
   const exportToCSV = () => {
     const selectedRows = table.getSelectedRowModel().rows
 
@@ -1235,7 +1298,25 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
               />
             </div>
 
-            <div className='grid w-full grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5 xl:flex xl:justify-end [&_button]:w-full xl:[&_button]:w-auto'>
+            <div className='grid w-full grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-6 xl:flex xl:justify-end [&_button]:w-full xl:[&_button]:w-auto'>
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button
+                    type='button'
+                    disabled={sharedLastAndMiddleNameGroups.length === 0}
+                    className='bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40'
+                  >
+                    <SearchIcon />
+                    {copy.sharedLastNameWords.button(sharedLastAndMiddleNameGroups.length)}
+                  </Button>
+                </SheetTrigger>
+                <SharedLastNameWordsPanel
+                  copy={copy}
+                  groups={sharedLastAndMiddleNameGroups}
+                  language={language}
+                  memberCount={sharedLastNameWordMemberCount}
+                />
+              </Sheet>
               <PrintButton
                 label={copy.export.printPdf}
                 className='bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40'
@@ -1474,6 +1555,85 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
 }
 
 export default MembersDataTable
+
+function SharedLastNameWordsPanel({
+  copy,
+  groups,
+  language,
+  memberCount
+}: {
+  copy: AdminMemberTableCopy
+  groups: ReturnType<typeof getSharedLastAndMiddleNameGroups>
+  language: AppLanguage
+  memberCount: number
+}) {
+  return (
+    <SheetContent className='w-[min(100vw,980px)] gap-0 p-0 sm:max-w-none'>
+      <SheetHeader className='border-b p-4 pr-12 sm:p-6 sm:pr-12'>
+        <SheetTitle className='text-xl'>{copy.sharedLastNameWords.title}</SheetTitle>
+        <SheetDescription>
+          {copy.sharedLastNameWords.description(formatNumber(groups.length), formatNumber(memberCount))}
+        </SheetDescription>
+      </SheetHeader>
+      <ScrollArea className='min-h-0 flex-1'>
+        <div className='space-y-4 p-4 sm:p-6'>
+          {groups.length === 0 ? (
+            <div className='text-muted-foreground rounded-md border border-dashed p-6 text-center text-sm'>
+              {copy.sharedLastNameWords.empty}
+            </div>
+          ) : (
+            groups.map(group => (
+              <section key={group.word} className='overflow-hidden rounded-md border'>
+                <div className='bg-muted/60 flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2'>
+                  <Badge variant='secondary' className='rounded-sm font-mono text-sm'>
+                    {group.word}
+                  </Badge>
+                  <span className='text-muted-foreground text-xs font-medium'>
+                    {copy.sharedLastNameWords.memberCount(group.members.length)}
+                  </span>
+                </div>
+                <div className='grid gap-3 p-3 md:grid-cols-2 xl:grid-cols-3'>
+                  {group.members.map(member => (
+                    <div key={`${group.word}-${member.id}`} className='bg-background rounded-md border p-3'>
+                      <div className='mb-3 flex flex-wrap items-center gap-2'>
+                        <Badge variant='outline' className='rounded-sm font-mono'>
+                          {member.associationCode}
+                        </Badge>
+                        {member.memberStatus ? (
+                          <Badge variant='outline' className='rounded-sm capitalize'>
+                            {formatMemberStatus(member.memberStatus, language)}
+                          </Badge>
+                        ) : null}
+                      </div>
+                      <p className='text-sm font-semibold break-words'>{member.lastAndMiddleNames}</p>
+                      <p className='text-muted-foreground mt-1 text-sm break-words'>{member.firstName}</p>
+                      <div className='mt-3 grid gap-2 text-xs sm:grid-cols-2'>
+                        <div className='min-w-0'>
+                          <p className='text-muted-foreground font-medium'>{copy.columns.matriculation}</p>
+                          <p className='truncate font-mono'>
+                            {getVisibleMatriculationNumber(
+                              member.memberStatus,
+                              member.memberMatriculationNumber,
+                              copy.pendingMatriculation
+                            )}
+                          </p>
+                        </div>
+                        <div className='min-w-0'>
+                          <p className='text-muted-foreground font-medium'>{copy.sharedLastNameWords.dateOfBirth}</p>
+                          <p className='truncate font-mono'>{member.dateOfBirth}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ))
+          )}
+        </div>
+      </ScrollArea>
+    </SheetContent>
+  )
+}
 
 function BulkAwaitingSubmitButton({
   copy,
