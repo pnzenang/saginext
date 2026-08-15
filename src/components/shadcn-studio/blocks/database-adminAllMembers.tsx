@@ -447,21 +447,27 @@ const sortMembersByName = (left: MemberType, right: MemberType) => {
 }
 
 const getMembersWithSharedFirstNameWord = (members: MemberType[]) => {
-  const firstNameWordsByMemberId = new Map<MemberType['id'], string[]>()
-  const firstNameWordCounts = new Map<string, number>()
+  const firstNameWordsByMember = new Map<MemberType, Set<string>>()
 
   members.forEach(member => {
-    const firstNameWords = getNameWords(member.firstName)
-
-    firstNameWordsByMemberId.set(member.id, firstNameWords)
-    firstNameWords.forEach(word => {
-      firstNameWordCounts.set(word, (firstNameWordCounts.get(word) ?? 0) + 1)
-    })
+    firstNameWordsByMember.set(member, new Set(getNameWords(member.firstName)))
   })
 
-  return members.filter(member =>
-    firstNameWordsByMemberId.get(member.id)?.some(word => (firstNameWordCounts.get(word) ?? 0) > 1)
-  )
+  return members.filter(member => {
+    const memberFirstNameWords = firstNameWordsByMember.get(member)
+
+    if (!memberFirstNameWords?.size) return false
+
+    return members.some(candidate => {
+      if (candidate === member) return false
+
+      const candidateFirstNameWords = firstNameWordsByMember.get(candidate)
+
+      if (!candidateFirstNameWords?.size) return false
+
+      return Array.from(memberFirstNameWords).some(word => candidateFirstNameWords.has(word))
+    })
+  })
 }
 
 const getSharedLastAndMiddleNameGroups = (members: MemberType[]) => {
