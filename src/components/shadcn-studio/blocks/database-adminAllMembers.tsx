@@ -428,6 +428,8 @@ const getRegistrationPaymentSortValue = (member: MemberType) => {
   return getRegistrationPaymentCountdown(member.createdAt).daysRemaining
 }
 
+const ignoredSharedNameWords = new Set(['EPSE', 'EPOUSE'])
+
 const getNameWords = (name: string) =>
   Array.from(
     new Set(
@@ -437,7 +439,7 @@ const getNameWords = (name: string) =>
         .toUpperCase()
         .match(/[A-Z0-9]+/g) ?? []
     )
-  ).filter(word => word.length >= 2)
+  ).filter(word => word.length >= 2 && !ignoredSharedNameWords.has(word))
 
 const sortMembersByName = (left: MemberType, right: MemberType) => {
   const leftName = `${left.lastAndMiddleNames} ${left.firstName}`
