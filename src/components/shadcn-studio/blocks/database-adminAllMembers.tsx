@@ -211,12 +211,12 @@ const adminMemberTableCopy = {
     },
     pendingMatriculation: 'Pending',
     sharedLastNameWords: {
-      button: (count: number) => `Shared Name Words (${count})`,
+      button: (count: number) => `Shared Name Matches (${count})`,
       dateOfBirth: 'Date of Birth',
       description: (groupCount: string, memberCount: string) =>
-        `${groupCount} repeated word group(s), across ${memberCount} member record(s).`,
+        `${groupCount} matching word pair(s), across ${memberCount} member record(s).`,
       empty: 'No members share both last/middle and first-name words.',
-      jumpToWord: 'Choose shared word',
+      jumpToWord: 'Choose shared words',
       memberCount: (count: number) => `${count} member${count === 1 ? '' : 's'}`,
       title: 'Members Sharing Last/Middle and First Name Words'
     },
@@ -326,12 +326,12 @@ const adminMemberTableCopy = {
     },
     pendingMatriculation: 'En attente',
     sharedLastNameWords: {
-      button: (count: number) => `Mots de noms partagés (${count})`,
+      button: (count: number) => `Correspondances de noms (${count})`,
       dateOfBirth: 'Date de naissance',
       description: (groupCount: string, memberCount: string) =>
-        `${groupCount} groupe(s) de mots répétés, dans ${memberCount} fiche(s) membre.`,
+        `${groupCount} paire(s) de mots correspondants, dans ${memberCount} fiche(s) membre.`,
       empty: 'Aucun membre ne partage à la fois des mots de nom/prénoms et de prénom.',
-      jumpToWord: 'Choisir un mot partagé',
+      jumpToWord: 'Choisir des mots partagés',
       memberCount: (count: number) => `${count} membre${count === 1 ? '' : 's'}`,
       title: 'Membres partageant des mots de nom/prénoms et de prénom'
     },
@@ -446,54 +446,55 @@ const sortMembersByName = (left: MemberType, right: MemberType) => {
   return leftName.localeCompare(rightName) || left.associationCode.localeCompare(right.associationCode)
 }
 
-const getMembersWithSharedFirstNameWord = (members: MemberType[]) => {
-  const firstNameWordsByMember = new Map<MemberType, Set<string>>()
-
-  members.forEach(member => {
-    firstNameWordsByMember.set(member, new Set(getNameWords(member.firstName)))
-  })
-
-  return members.filter(member => {
-    const memberFirstNameWords = firstNameWordsByMember.get(member)
-
-    if (!memberFirstNameWords?.size) return false
-
-    return members.some(candidate => {
-      if (candidate === member) return false
-
-      const candidateFirstNameWords = firstNameWordsByMember.get(candidate)
-
-      if (!candidateFirstNameWords?.size) return false
-
-      return Array.from(memberFirstNameWords).some(word => candidateFirstNameWords.has(word))
-    })
-  })
-}
+const getSharedNameWordGroupKey = (lastAndMiddleNameWord: string, firstNameWord: string) =>
+  `${lastAndMiddleNameWord}:${firstNameWord}`
 
 const getSharedLastAndMiddleNameGroups = (members: MemberType[]) => {
-  const groupsByWord = new Map<string, MemberType[]>()
+  const groupsByWordPair = new Map<
+    string,
+    {
+      firstNameWord: string
+      lastAndMiddleNameWord: string
+      members: MemberType[]
+    }
+  >()
 
   members.forEach(member => {
-    getNameWords(member.lastAndMiddleNames).forEach(word => {
-      groupsByWord.set(word, [...(groupsByWord.get(word) ?? []), member])
+    const firstNameWords = getNameWords(member.firstName)
+    const lastAndMiddleNameWords = getNameWords(member.lastAndMiddleNames)
+
+    lastAndMiddleNameWords.forEach(lastAndMiddleNameWord => {
+      firstNameWords.forEach(firstNameWord => {
+        const groupKey = getSharedNameWordGroupKey(lastAndMiddleNameWord, firstNameWord)
+
+        const group = groupsByWordPair.get(groupKey) ?? {
+          firstNameWord,
+          lastAndMiddleNameWord,
+          members: []
+        }
+
+        group.members.push(member)
+        groupsByWordPair.set(groupKey, group)
+      })
     })
   })
 
-  return Array.from(groupsByWord.entries())
-    .filter(([, groupedMembers]) => groupedMembers.length > 1)
-    .map(([word, groupedMembers]) => {
-      const membersWithSharedFirstNameWord = getMembersWithSharedFirstNameWord(groupedMembers)
-
-      return {
-        members: membersWithSharedFirstNameWord.sort(sortMembersByName),
-        word
-      }
-    })
+  return Array.from(groupsByWordPair.values())
     .filter(group => group.members.length > 1)
-    .sort((left, right) => right.members.length - left.members.length || left.word.localeCompare(right.word))
+    .map(group => ({
+      ...group,
+      members: [...group.members].sort(sortMembersByName)
+    }))
+    .sort(
+      (left, right) =>
+        right.members.length - left.members.length ||
+        left.lastAndMiddleNameWord.localeCompare(right.lastAndMiddleNameWord) ||
+        left.firstNameWord.localeCompare(right.firstNameWord)
+    )
 }
 
-const getSharedLastNameWordGroupId = (word: string) => `shared-last-name-word-${word.toLowerCase()}`
+const getSharedNameWordGroupId = (lastAndMiddleNameWord: string, firstNameWord: string) =>
+  `shared-name-words-${lastAndMiddleNameWord.toLowerCase()}-${firstNameWord.toLowerCase()}`
 
 const getDateOfBirthSortValue = (dateOfBirth: string) => {
   const match = dateOfBirth.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
@@ -1674,11 +1675,13 @@ function SharedLastNameWordsPanel({
     [copy, groups, language, sharedNameSort]
   )
 
-  const scrollToGroup = (word: string) => {
-    document.getElementById(getSharedLastNameWordGroupId(word))?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start'
-    })
+  const scrollToGroup = (lastAndMiddleNameWord: string, firstNameWord: string) => {
+    document
+      .getElementById(getSharedNameWordGroupId(lastAndMiddleNameWord, firstNameWord))
+      ?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      })
   }
 
   const toggleSharedNameSort = (key: SharedLastNameSortKey) => {
@@ -1732,11 +1735,15 @@ function SharedLastNameWordsPanel({
             >
               {sortedGroups.map(group => (
                 <DropdownMenuItem
-                  key={group.word}
+                  key={getSharedNameWordGroupKey(group.lastAndMiddleNameWord, group.firstNameWord)}
                   className='flex cursor-pointer items-center justify-between gap-4'
-                  onSelect={() => scrollToGroup(group.word)}
+                  onSelect={() => scrollToGroup(group.lastAndMiddleNameWord, group.firstNameWord)}
                 >
-                  <span className='font-mono font-semibold'>{group.word}</span>
+                  <span className='flex min-w-0 items-center gap-1.5 font-mono font-semibold'>
+                    <span className='truncate'>{group.lastAndMiddleNameWord}</span>
+                    <span className='text-muted-foreground'>+</span>
+                    <span className='truncate'>{group.firstNameWord}</span>
+                  </span>
                   <Badge variant='secondary' className='rounded-sm'>
                     {group.members.length}
                   </Badge>
@@ -1755,14 +1762,20 @@ function SharedLastNameWordsPanel({
           ) : (
             sortedGroups.map(group => (
               <section
-                key={group.word}
-                id={getSharedLastNameWordGroupId(group.word)}
+                key={getSharedNameWordGroupKey(group.lastAndMiddleNameWord, group.firstNameWord)}
+                id={getSharedNameWordGroupId(group.lastAndMiddleNameWord, group.firstNameWord)}
                 className='scroll-mt-3 overflow-hidden rounded-md border'
               >
                 <div className='bg-muted/60 flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2'>
-                  <Badge variant='secondary' className='rounded-sm font-mono text-sm'>
-                    {group.word}
-                  </Badge>
+                  <div className='flex min-w-0 flex-wrap items-center gap-1.5'>
+                    <Badge variant='secondary' className='rounded-sm font-mono text-sm'>
+                      {group.lastAndMiddleNameWord}
+                    </Badge>
+                    <span className='text-muted-foreground text-xs font-semibold'>+</span>
+                    <Badge variant='outline' className='rounded-sm font-mono text-sm'>
+                      {group.firstNameWord}
+                    </Badge>
+                  </div>
                   <span className='text-muted-foreground text-xs font-medium'>
                     {copy.sharedLastNameWords.memberCount(group.members.length)}
                   </span>
@@ -1780,7 +1793,9 @@ function SharedLastNameWordsPanel({
                   </TableHeader>
                   <TableBody>
                     {group.members.map(member => (
-                      <TableRow key={`${group.word}-${member.id}`}>
+                      <TableRow
+                        key={`${getSharedNameWordGroupKey(group.lastAndMiddleNameWord, group.firstNameWord)}-${member.id}`}
+                      >
                         <TableCell className='font-mono font-semibold'>{member.associationCode}</TableCell>
                         <TableCell className='font-mono'>
                           {getVisibleMatriculationNumber(
