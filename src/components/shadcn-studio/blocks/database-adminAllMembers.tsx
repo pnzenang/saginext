@@ -211,14 +211,14 @@ const adminMemberTableCopy = {
     },
     pendingMatriculation: 'Pending',
     sharedLastNameWords: {
-      button: (count: number) => `Shared Last/Middle Words (${count})`,
+      button: (count: number) => `Shared Name Words (${count})`,
       dateOfBirth: 'Date of Birth',
       description: (groupCount: string, memberCount: string) =>
         `${groupCount} repeated word group(s), across ${memberCount} member record(s).`,
-      empty: 'No shared words found in last and middle names.',
+      empty: 'No members share both last/middle and first-name words.',
       jumpToWord: 'Choose shared word',
       memberCount: (count: number) => `${count} member${count === 1 ? '' : 's'}`,
-      title: 'Members Sharing Last/Middle Name Words'
+      title: 'Members Sharing Last/Middle and First Name Words'
     },
     selection: {
       member: (name: string) => `Select ${name}`,
@@ -326,14 +326,14 @@ const adminMemberTableCopy = {
     },
     pendingMatriculation: 'En attente',
     sharedLastNameWords: {
-      button: (count: number) => `Mots nom/prénoms (${count})`,
+      button: (count: number) => `Mots de noms partagés (${count})`,
       dateOfBirth: 'Date de naissance',
       description: (groupCount: string, memberCount: string) =>
         `${groupCount} groupe(s) de mots répétés, dans ${memberCount} fiche(s) membre.`,
-      empty: 'Aucun mot partagé trouvé dans les noms et prénoms intermédiaires.',
+      empty: 'Aucun membre ne partage à la fois des mots de nom/prénoms et de prénom.',
       jumpToWord: 'Choisir un mot partagé',
       memberCount: (count: number) => `${count} membre${count === 1 ? '' : 's'}`,
-      title: 'Membres partageant des mots de nom/prénoms'
+      title: 'Membres partageant des mots de nom/prénoms et de prénom'
     },
     selection: {
       member: (name: string) => `Sélectionner ${name}`,
@@ -428,7 +428,7 @@ const getRegistrationPaymentSortValue = (member: MemberType) => {
   return getRegistrationPaymentCountdown(member.createdAt).daysRemaining
 }
 
-const getLastAndMiddleNameWords = (name: string) =>
+const getNameWords = (name: string) =>
   Array.from(
     new Set(
       name
@@ -446,21 +446,44 @@ const sortMembersByName = (left: MemberType, right: MemberType) => {
   return leftName.localeCompare(rightName) || left.associationCode.localeCompare(right.associationCode)
 }
 
+const getMembersWithSharedFirstNameWord = (members: MemberType[]) => {
+  const firstNameWordsByMemberId = new Map<MemberType['id'], string[]>()
+  const firstNameWordCounts = new Map<string, number>()
+
+  members.forEach(member => {
+    const firstNameWords = getNameWords(member.firstName)
+
+    firstNameWordsByMemberId.set(member.id, firstNameWords)
+    firstNameWords.forEach(word => {
+      firstNameWordCounts.set(word, (firstNameWordCounts.get(word) ?? 0) + 1)
+    })
+  })
+
+  return members.filter(member =>
+    firstNameWordsByMemberId.get(member.id)?.some(word => (firstNameWordCounts.get(word) ?? 0) > 1)
+  )
+}
+
 const getSharedLastAndMiddleNameGroups = (members: MemberType[]) => {
   const groupsByWord = new Map<string, MemberType[]>()
 
   members.forEach(member => {
-    getLastAndMiddleNameWords(member.lastAndMiddleNames).forEach(word => {
+    getNameWords(member.lastAndMiddleNames).forEach(word => {
       groupsByWord.set(word, [...(groupsByWord.get(word) ?? []), member])
     })
   })
 
   return Array.from(groupsByWord.entries())
     .filter(([, groupedMembers]) => groupedMembers.length > 1)
-    .map(([word, groupedMembers]) => ({
-      members: [...groupedMembers].sort(sortMembersByName),
-      word
-    }))
+    .map(([word, groupedMembers]) => {
+      const membersWithSharedFirstNameWord = getMembersWithSharedFirstNameWord(groupedMembers)
+
+      return {
+        members: membersWithSharedFirstNameWord.sort(sortMembersByName),
+        word
+      }
+    })
+    .filter(group => group.members.length > 1)
     .sort((left, right) => right.members.length - left.members.length || left.word.localeCompare(right.word))
 }
 
