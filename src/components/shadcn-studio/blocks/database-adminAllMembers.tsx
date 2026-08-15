@@ -1592,40 +1592,46 @@ function SharedLastNameWordsPanel({
                     {copy.sharedLastNameWords.memberCount(group.members.length)}
                   </span>
                 </div>
-                <div className='grid gap-3 p-3 md:grid-cols-2 xl:grid-cols-3'>
-                  {group.members.map(member => (
-                    <div key={`${group.word}-${member.id}`} className='bg-background rounded-md border p-3'>
-                      <div className='mb-3 flex flex-wrap items-center gap-2'>
-                        <Badge variant='outline' className='rounded-sm font-mono'>
-                          {member.associationCode}
-                        </Badge>
-                        {member.memberStatus ? (
-                          <Badge variant='outline' className='rounded-sm capitalize'>
-                            {formatMemberStatus(member.memberStatus, language)}
-                          </Badge>
-                        ) : null}
-                      </div>
-                      <p className='text-sm font-semibold break-words'>{member.lastAndMiddleNames}</p>
-                      <p className='text-muted-foreground mt-1 text-sm break-words'>{member.firstName}</p>
-                      <div className='mt-3 grid gap-2 text-xs sm:grid-cols-2'>
-                        <div className='min-w-0'>
-                          <p className='text-muted-foreground font-medium'>{copy.columns.matriculation}</p>
-                          <p className='truncate font-mono'>
-                            {getVisibleMatriculationNumber(
-                              member.memberStatus,
-                              member.memberMatriculationNumber,
-                              copy.pendingMatriculation
-                            )}
-                          </p>
-                        </div>
-                        <div className='min-w-0'>
-                          <p className='text-muted-foreground font-medium'>{copy.sharedLastNameWords.dateOfBirth}</p>
-                          <p className='truncate font-mono'>{member.dateOfBirth}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <Table className='text-xs'>
+                  <TableHeader>
+                    <TableRow className='bg-muted/40 hover:bg-muted/40'>
+                      <TableHead className='w-20'>{copy.columns.code}</TableHead>
+                      <TableHead className='w-36'>{copy.columns.matriculationShort}</TableHead>
+                      <TableHead className='min-w-56'>{copy.columns.lastAndMiddleShort}</TableHead>
+                      <TableHead className='min-w-40'>{copy.columns.firstShort}</TableHead>
+                      <TableHead className='w-32'>{copy.sharedLastNameWords.dateOfBirth}</TableHead>
+                      <TableHead className='w-40'>{copy.columns.status}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {group.members.map(member => (
+                      <TableRow key={`${group.word}-${member.id}`}>
+                        <TableCell className='font-mono font-semibold'>{member.associationCode}</TableCell>
+                        <TableCell className='font-mono'>
+                          {getVisibleMatriculationNumber(
+                            member.memberStatus,
+                            member.memberMatriculationNumber,
+                            copy.pendingMatriculation
+                          )}
+                        </TableCell>
+                        <TableCell title={member.lastAndMiddleNames} className='max-w-64'>
+                          <span className='block truncate font-semibold'>{member.lastAndMiddleNames}</span>
+                        </TableCell>
+                        <TableCell title={member.firstName} className='max-w-48'>
+                          <span className='block truncate'>{member.firstName}</span>
+                        </TableCell>
+                        <TableCell className='font-mono'>{member.dateOfBirth}</TableCell>
+                        <TableCell>
+                          {member.memberStatus ? (
+                            <Badge variant='outline' className='rounded-sm capitalize'>
+                              {formatMemberStatus(member.memberStatus, language)}
+                            </Badge>
+                          ) : null}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </section>
             ))
           )}
