@@ -216,6 +216,7 @@ const adminMemberTableCopy = {
       description: (groupCount: string, memberCount: string) =>
         `${groupCount} repeated word group(s), across ${memberCount} member record(s).`,
       empty: 'No shared words found in last and middle names.',
+      jumpToWord: 'Choose shared word',
       memberCount: (count: number) => `${count} member${count === 1 ? '' : 's'}`,
       title: 'Members Sharing Last/Middle Name Words'
     },
@@ -330,6 +331,7 @@ const adminMemberTableCopy = {
       description: (groupCount: string, memberCount: string) =>
         `${groupCount} groupe(s) de mots répétés, dans ${memberCount} fiche(s) membre.`,
       empty: 'Aucun mot partagé trouvé dans les noms et prénoms intermédiaires.',
+      jumpToWord: 'Choisir un mot partagé',
       memberCount: (count: number) => `${count} membre${count === 1 ? '' : 's'}`,
       title: 'Membres partageant des mots de nom/prénoms'
     },
@@ -349,6 +351,19 @@ const adminMemberTableCopy = {
 } as const
 
 type AdminMemberTableCopy = (typeof adminMemberTableCopy)[AppLanguage]
+type SharedLastNameSortDirection = 'asc' | 'desc'
+type SharedLastNameSortKey =
+  | 'associationCode'
+  | 'dateOfBirth'
+  | 'firstName'
+  | 'lastAndMiddleNames'
+  | 'memberMatriculationNumber'
+  | 'memberStatus'
+
+type SharedLastNameSortState = {
+  direction: SharedLastNameSortDirection
+  key: SharedLastNameSortKey
+}
 
 const getVisibleMatriculationNumber = (status: unknown, matriculationNumber: unknown, pendingLabel = 'Pending') => {
   if (status === memberStatus.Pending || status === memberStatus.Awaiting) return pendingLabel
@@ -447,6 +462,53 @@ const getSharedLastAndMiddleNameGroups = (members: MemberType[]) => {
       word
     }))
     .sort((left, right) => right.members.length - left.members.length || left.word.localeCompare(right.word))
+}
+
+const getSharedLastNameWordGroupId = (word: string) => `shared-last-name-word-${word.toLowerCase()}`
+
+const getDateOfBirthSortValue = (dateOfBirth: string) => {
+  const match = dateOfBirth.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
+
+  if (!match) return Number.NEGATIVE_INFINITY
+
+  return Date.UTC(Number(match[3]), Number(match[1]) - 1, Number(match[2]))
+}
+
+const getSharedLastNameSortValue = (
+  member: MemberType,
+  key: SharedLastNameSortKey,
+  copy: AdminMemberTableCopy,
+  language: AppLanguage
+) => {
+  if (key === 'dateOfBirth') return getDateOfBirthSortValue(member.dateOfBirth)
+
+  if (key === 'memberMatriculationNumber') {
+    return getVisibleMatriculationNumber(member.memberStatus, member.memberMatriculationNumber, copy.pendingMatriculation)
+  }
+
+  if (key === 'memberStatus') {
+    return member.memberStatus ? formatMemberStatus(member.memberStatus, language) : ''
+  }
+
+  return member[key] ?? ''
+}
+
+const compareSharedLastNameMembers = (
+  left: MemberType,
+  right: MemberType,
+  sort: SharedLastNameSortState,
+  copy: AdminMemberTableCopy,
+  language: AppLanguage
+) => {
+  const leftValue = getSharedLastNameSortValue(left, sort.key, copy, language)
+  const rightValue = getSharedLastNameSortValue(right, sort.key, copy, language)
+  const direction = sort.direction === 'asc' ? 1 : -1
+
+  if (typeof leftValue === 'number' && typeof rightValue === 'number') {
+    return (leftValue - rightValue) * direction || sortMembersByName(left, right)
+  }
+
+  return String(leftValue).localeCompare(String(rightValue)) * direction || sortMembersByName(left, right)
 }
 
 const RegistrationPaymentWarningCell = ({ language, member }: { language: AppLanguage; member: MemberType }) => {
@@ -1567,6 +1629,57 @@ function SharedLastNameWordsPanel({
   language: AppLanguage
   memberCount: number
 }) {
+  const [sharedNameSort, setSharedNameSort] = useState<SharedLastNameSortState>({
+    direction: 'asc',
+    key: 'lastAndMiddleNames'
+  })
+
+  const sortedGroups = useMemo(
+    () =>
+      groups.map(group => ({
+        ...group,
+        members: [...group.members].sort((left, right) =>
+          compareSharedLastNameMembers(left, right, sharedNameSort, copy, language)
+        )
+      })),
+    [copy, groups, language, sharedNameSort]
+  )
+
+  const scrollToGroup = (word: string) => {
+    document.getElementById(getSharedLastNameWordGroupId(word))?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    })
+  }
+
+  const toggleSharedNameSort = (key: SharedLastNameSortKey) => {
+    setSharedNameSort(currentSort => ({
+      direction: currentSort.key === key && currentSort.direction === 'asc' ? 'desc' : 'asc',
+      key
+    }))
+  }
+
+  const renderSortableHeader = (key: SharedLastNameSortKey, label: string, className?: string) => {
+    const isActive = sharedNameSort.key === key
+    const SortIcon = isActive ? (sharedNameSort.direction === 'asc' ? ChevronUpIcon : ChevronDownIcon) : ArrowUpDown
+
+    return (
+      <TableHead
+        aria-sort={isActive ? (sharedNameSort.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
+        className={className}
+      >
+        <button
+          type='button'
+          className='inline-flex h-full max-w-full min-w-0 items-center gap-1 text-left font-medium'
+          onClick={() => toggleSharedNameSort(key)}
+        >
+          <span className='truncate'>{label}</span>
+          <SortIcon aria-hidden='true' className='size-3.5 shrink-0 opacity-70' />
+        </button>
+      </TableHead>
+    )
+  }
+
   return (
     <SheetContent className='w-[min(100vw,980px)] gap-0 p-0 sm:max-w-none'>
       <SheetHeader className='border-b p-4 pr-12 sm:p-6 sm:pr-12'>
@@ -1575,6 +1688,35 @@ function SharedLastNameWordsPanel({
           {copy.sharedLastNameWords.description(formatNumber(groups.length), formatNumber(memberCount))}
         </SheetDescription>
       </SheetHeader>
+      {groups.length > 0 ? (
+        <div className='bg-background border-b px-4 py-3 sm:px-6'>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button type='button' variant='outline' className='w-full justify-between sm:w-auto'>
+                <span>{copy.sharedLastNameWords.jumpToWord}</span>
+                <ChevronDownIcon aria-hidden='true' className='size-4 opacity-70' />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align='start'
+              className='max-h-80 w-[min(calc(100vw-2rem),22rem)] overflow-y-auto'
+            >
+              {sortedGroups.map(group => (
+                <DropdownMenuItem
+                  key={group.word}
+                  className='flex cursor-pointer items-center justify-between gap-4'
+                  onSelect={() => scrollToGroup(group.word)}
+                >
+                  <span className='font-mono font-semibold'>{group.word}</span>
+                  <Badge variant='secondary' className='rounded-sm'>
+                    {group.members.length}
+                  </Badge>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      ) : null}
       <ScrollArea className='min-h-0 flex-1'>
         <div className='space-y-4 p-4 sm:p-6'>
           {groups.length === 0 ? (
@@ -1582,8 +1724,12 @@ function SharedLastNameWordsPanel({
               {copy.sharedLastNameWords.empty}
             </div>
           ) : (
-            groups.map(group => (
-              <section key={group.word} className='overflow-hidden rounded-md border'>
+            sortedGroups.map(group => (
+              <section
+                key={group.word}
+                id={getSharedLastNameWordGroupId(group.word)}
+                className='scroll-mt-3 overflow-hidden rounded-md border'
+              >
                 <div className='bg-muted/60 flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2'>
                   <Badge variant='secondary' className='rounded-sm font-mono text-sm'>
                     {group.word}
@@ -1595,12 +1741,12 @@ function SharedLastNameWordsPanel({
                 <Table className='text-xs'>
                   <TableHeader>
                     <TableRow className='bg-muted/40 hover:bg-muted/40'>
-                      <TableHead className='w-20'>{copy.columns.code}</TableHead>
-                      <TableHead className='w-36'>{copy.columns.matriculationShort}</TableHead>
-                      <TableHead className='min-w-56'>{copy.columns.lastAndMiddleShort}</TableHead>
-                      <TableHead className='min-w-40'>{copy.columns.firstShort}</TableHead>
-                      <TableHead className='w-32'>{copy.sharedLastNameWords.dateOfBirth}</TableHead>
-                      <TableHead className='w-40'>{copy.columns.status}</TableHead>
+                      {renderSortableHeader('associationCode', copy.columns.code, 'w-20')}
+                      {renderSortableHeader('memberMatriculationNumber', copy.columns.matriculationShort, 'w-36')}
+                      {renderSortableHeader('lastAndMiddleNames', copy.columns.lastAndMiddleShort, 'min-w-56')}
+                      {renderSortableHeader('firstName', copy.columns.firstShort, 'min-w-40')}
+                      {renderSortableHeader('dateOfBirth', copy.sharedLastNameWords.dateOfBirth, 'w-32')}
+                      {renderSortableHeader('memberStatus', copy.columns.status, 'w-40')}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
