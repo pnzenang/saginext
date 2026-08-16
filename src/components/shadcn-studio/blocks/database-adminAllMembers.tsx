@@ -86,6 +86,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { usePersistentColumnFilters } from '@/hooks/use-persistent-column-filters'
+import { usePersistentState } from '@/hooks/use-persistent-state'
 import { usePagination } from '@/hooks/use-pagination'
 import { formatMemberStatus, type AppLanguage } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
@@ -118,6 +119,7 @@ const numberFormatter = new Intl.NumberFormat('en-US')
 const formatNumber = (value: number) => numberFormatter.format(value)
 const adminActionButtonClassName = 'h-10 min-h-10 min-w-0 overflow-hidden whitespace-nowrap'
 const adminActionButtonLabelClassName = 'min-w-0 truncate'
+const dismissedSharedNameGroupStorageKey = 'sagi:admin-all-members:dismissedSharedNameGroups'
 
 const adminMemberTableCopy = {
   en: {
@@ -213,13 +215,19 @@ const adminMemberTableCopy = {
     },
     pendingMatriculation: 'Pending',
     sharedLastNameWords: {
+      allHidden: 'All matching word pairs have been hidden as not duplicates.',
       button: (count: number) => `Shared Name Matches (${count})`,
       dateOfBirth: 'Date of Birth',
       description: (groupCount: string, memberCount: string) =>
         `${groupCount} matching word pair(s), across ${memberCount} member record(s).`,
+      dismissSet: 'Not a duplicate',
+      dismissSetAria: (firstSharedNameWord: string, secondSharedNameWord: string) =>
+        `Hide ${firstSharedNameWord} and ${secondSharedNameWord} as not duplicates`,
       empty: 'No members share both last/middle and first-name words.',
+      hiddenCount: (count: number) => `${count} hidden`,
       jumpToWord: 'Choose shared words',
       memberCount: (count: number) => `${count} member${count === 1 ? '' : 's'}`,
+      resetHidden: 'Show hidden matches',
       title: 'Members Sharing Last/Middle and First Name Words'
     },
     selection: {
@@ -328,13 +336,19 @@ const adminMemberTableCopy = {
     },
     pendingMatriculation: 'En attente',
     sharedLastNameWords: {
+      allHidden: 'Toutes les paires de mots correspondantes ont été masquées comme non-doublons.',
       button: (count: number) => `Correspondances de noms (${count})`,
       dateOfBirth: 'Date de naissance',
       description: (groupCount: string, memberCount: string) =>
         `${groupCount} paire(s) de mots correspondants, dans ${memberCount} fiche(s) membre.`,
+      dismissSet: 'Pas doublon',
+      dismissSetAria: (firstSharedNameWord: string, secondSharedNameWord: string) =>
+        `Masquer ${firstSharedNameWord} et ${secondSharedNameWord} comme non-doublons`,
       empty: 'Aucun membre ne partage à la fois des mots de nom/prénoms et de prénom.',
+      hiddenCount: (count: number) => `${count} masquée(s)`,
       jumpToWord: 'Choisir des mots partagés',
       memberCount: (count: number) => `${count} membre${count === 1 ? '' : 's'}`,
+      resetHidden: 'Réafficher les correspondances masquées',
       title: 'Membres partageant des mots de nom/prénoms et de prénom'
     },
     selection: {
@@ -473,6 +487,24 @@ const getSharedNameWordCombination = (leftNameWord: string, rightNameWord: strin
 
 const getSharedNameWordGroupKey = (leftNameWord: string, rightNameWord: string) =>
   getSharedNameWordCombination(leftNameWord, rightNameWord).join(':')
+
+const getSharedNameWordGroupKeyForGroup = ({
+  firstSharedNameWord,
+  secondSharedNameWord
+}: {
+  firstSharedNameWord: string
+  secondSharedNameWord: string
+}) => getSharedNameWordGroupKey(firstSharedNameWord, secondSharedNameWord)
+
+const getSharedNameWordDismissalKeyForGroup = (group: {
+  firstSharedNameWord: string
+  members: Pick<MemberType, 'id'>[]
+  secondSharedNameWord: string
+}) => {
+  const memberIds = group.members.map(member => member.id).sort().join(',')
+
+  return `${getSharedNameWordGroupKeyForGroup(group)}|${memberIds}`
+}
 
 const getSharedLastAndMiddleNameGroups = (members: MemberType[]) => {
   const groupsByWordPair = new Map<
@@ -878,6 +910,12 @@ const getMemberTableCellTitle = (cell: Cell<MemberType, unknown>, language: AppL
 const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; language?: AppLanguage }) => {
   const copy = adminMemberTableCopy[language]
   const [columnFilters, setColumnFilters] = usePersistentColumnFilters('sagi:admin-all-members:columnFilters')
+
+  const [dismissedSharedNameGroupKeys, setDismissedSharedNameGroupKeys] = usePersistentState<string[]>(
+    dismissedSharedNameGroupStorageKey,
+    []
+  )
+
   const [printSelectedOnly, setPrintSelectedOnly] = useState(false)
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
   const clearRowSelection = useCallback(() => setRowSelection({}), [])
@@ -1067,12 +1105,46 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
     }
   ]
 
-  const sharedLastAndMiddleNameGroups = useMemo(() => getSharedLastAndMiddleNameGroups(data), [data])
+  const allSharedLastAndMiddleNameGroups = useMemo(() => getSharedLastAndMiddleNameGroups(data), [data])
+
+  const dismissedSharedNameGroupKeySet = useMemo(
+    () => new Set(dismissedSharedNameGroupKeys),
+    [dismissedSharedNameGroupKeys]
+  )
+
+  const sharedLastAndMiddleNameGroups = useMemo(
+    () =>
+      allSharedLastAndMiddleNameGroups.filter(
+        group => !dismissedSharedNameGroupKeySet.has(getSharedNameWordDismissalKeyForGroup(group))
+      ),
+    [allSharedLastAndMiddleNameGroups, dismissedSharedNameGroupKeySet]
+  )
+
+  const dismissedSharedNameGroupCount = useMemo(
+    () =>
+      allSharedLastAndMiddleNameGroups.filter(group =>
+        dismissedSharedNameGroupKeySet.has(getSharedNameWordDismissalKeyForGroup(group))
+      ).length,
+    [allSharedLastAndMiddleNameGroups, dismissedSharedNameGroupKeySet]
+  )
 
   const sharedLastNameWordMemberCount = useMemo(
     () => new Set(sharedLastAndMiddleNameGroups.flatMap(group => group.members.map(member => member.id))).size,
     [sharedLastAndMiddleNameGroups]
   )
+
+  const dismissSharedNameGroup = useCallback(
+    (groupKey: string) => {
+      setDismissedSharedNameGroupKeys(currentKeys =>
+        currentKeys.includes(groupKey) ? currentKeys : [...currentKeys, groupKey]
+      )
+    },
+    [setDismissedSharedNameGroupKeys]
+  )
+
+  const resetDismissedSharedNameGroups = useCallback(() => {
+    setDismissedSharedNameGroupKeys([])
+  }, [setDismissedSharedNameGroupKeys])
 
   const exportToCSV = () => {
     const selectedRows = table.getSelectedRowModel().rows
@@ -1448,7 +1520,7 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
                 <SheetTrigger asChild>
                   <Button
                     type='button'
-                    disabled={sharedLastAndMiddleNameGroups.length === 0}
+                    disabled={allSharedLastAndMiddleNameGroups.length === 0}
                     className={cn(
                       adminActionButtonClassName,
                       'bg-primary/10 text-primary hover:bg-primary/20 focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40'
@@ -1462,9 +1534,12 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
                 </SheetTrigger>
                 <SharedLastNameWordsPanel
                   copy={copy}
+                  dismissedGroupCount={dismissedSharedNameGroupCount}
                   groups={sharedLastAndMiddleNameGroups}
                   language={language}
                   memberCount={sharedLastNameWordMemberCount}
+                  onDismissGroup={dismissSharedNameGroup}
+                  onResetDismissedGroups={resetDismissedSharedNameGroups}
                 />
               </Sheet>
               <PrintButton
@@ -1725,14 +1800,20 @@ export default MembersDataTable
 
 function SharedLastNameWordsPanel({
   copy,
+  dismissedGroupCount,
   groups,
   language,
-  memberCount
+  memberCount,
+  onDismissGroup,
+  onResetDismissedGroups
 }: {
   copy: AdminMemberTableCopy
+  dismissedGroupCount: number
   groups: ReturnType<typeof getSharedLastAndMiddleNameGroups>
   language: AppLanguage
   memberCount: number
+  onDismissGroup: (groupKey: string) => void
+  onResetDismissedGroups: () => void
 }) {
   const [sharedNameSort, setSharedNameSort] = useState<SharedLastNameSortState>({
     direction: 'asc',
@@ -1801,114 +1882,150 @@ function SharedLastNameWordsPanel({
     <SheetContent className='w-[min(100vw,980px)] gap-0 p-0 sm:max-w-none'>
       <SheetHeader className='border-b p-4 pr-12 sm:p-6 sm:pr-12'>
         <SheetTitle className='text-xl'>{copy.sharedLastNameWords.title}</SheetTitle>
-        <SheetDescription>
-          {copy.sharedLastNameWords.description(formatNumber(groups.length), formatNumber(memberCount))}
+        <SheetDescription className='flex flex-wrap items-center gap-2'>
+          <span>{copy.sharedLastNameWords.description(formatNumber(groups.length), formatNumber(memberCount))}</span>
+          {dismissedGroupCount > 0 ? (
+            <Badge variant='outline' className='rounded-sm'>
+              {copy.sharedLastNameWords.hiddenCount(dismissedGroupCount)}
+            </Badge>
+          ) : null}
         </SheetDescription>
       </SheetHeader>
-      {groups.length > 0 ? (
-        <div className='bg-background border-b px-4 py-3 sm:px-6'>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button type='button' variant='outline' className='w-full justify-between sm:w-auto'>
-                <span>{copy.sharedLastNameWords.jumpToWord}</span>
-                <ChevronDownIcon aria-hidden='true' className='size-4 opacity-70' />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align='start'
-              className='max-h-80 w-[min(calc(100vw-2rem),22rem)] overflow-y-auto'
+      {groups.length > 0 || dismissedGroupCount > 0 ? (
+        <div className='bg-background flex flex-col gap-2 border-b px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6'>
+          {groups.length > 0 ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button type='button' variant='outline' className='w-full justify-between sm:w-auto'>
+                  <span>{copy.sharedLastNameWords.jumpToWord}</span>
+                  <ChevronDownIcon aria-hidden='true' className='size-4 opacity-70' />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align='start' className='max-h-80 w-[min(calc(100vw-2rem),22rem)] overflow-y-auto'>
+                {alphabetizedDropdownGroups.map(group => (
+                  <DropdownMenuItem
+                    key={getSharedNameWordGroupKeyForGroup(group)}
+                    className='flex cursor-pointer items-center justify-between gap-4'
+                    onSelect={() => scrollToGroup(group.firstSharedNameWord, group.secondSharedNameWord)}
+                  >
+                    <span className='flex min-w-0 items-center gap-1.5 font-mono font-semibold'>
+                      <span className='truncate'>{group.firstSharedNameWord}</span>
+                      <span className='text-muted-foreground'>+</span>
+                      <span className='truncate'>{group.secondSharedNameWord}</span>
+                    </span>
+                    <Badge variant='secondary' className='rounded-sm'>
+                      {group.members.length}
+                    </Badge>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <p className='text-muted-foreground text-sm'>{copy.sharedLastNameWords.allHidden}</p>
+          )}
+          {dismissedGroupCount > 0 ? (
+            <Button
+              type='button'
+              variant='outline'
+              size='sm'
+              className='w-full sm:w-auto'
+              onClick={onResetDismissedGroups}
             >
-              {alphabetizedDropdownGroups.map(group => (
-                <DropdownMenuItem
-                  key={getSharedNameWordGroupKey(group.firstSharedNameWord, group.secondSharedNameWord)}
-                  className='flex cursor-pointer items-center justify-between gap-4'
-                  onSelect={() => scrollToGroup(group.firstSharedNameWord, group.secondSharedNameWord)}
-                >
-                  <span className='flex min-w-0 items-center gap-1.5 font-mono font-semibold'>
-                    <span className='truncate'>{group.firstSharedNameWord}</span>
-                    <span className='text-muted-foreground'>+</span>
-                    <span className='truncate'>{group.secondSharedNameWord}</span>
-                  </span>
-                  <Badge variant='secondary' className='rounded-sm'>
-                    {group.members.length}
-                  </Badge>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+              {copy.sharedLastNameWords.resetHidden}
+            </Button>
+          ) : null}
         </div>
       ) : null}
       <ScrollArea className='min-h-0 flex-1'>
         <div className='space-y-4 p-4 sm:p-6'>
           {groups.length === 0 ? (
             <div className='text-muted-foreground rounded-md border border-dashed p-6 text-center text-sm'>
-              {copy.sharedLastNameWords.empty}
+              {dismissedGroupCount > 0 ? copy.sharedLastNameWords.allHidden : copy.sharedLastNameWords.empty}
             </div>
           ) : (
-            sortedGroups.map(group => (
-              <section
-                key={getSharedNameWordGroupKey(group.firstSharedNameWord, group.secondSharedNameWord)}
-                id={getSharedNameWordGroupId(group.firstSharedNameWord, group.secondSharedNameWord)}
-                className='scroll-mt-3 overflow-hidden rounded-md border'
-              >
-                <div className='bg-muted/60 flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2'>
-                  <div className='flex min-w-0 flex-wrap items-center gap-1.5'>
-                    <Badge variant='secondary' className='rounded-sm font-mono text-sm'>
-                      {group.firstSharedNameWord}
-                    </Badge>
-                    <span className='text-muted-foreground text-xs font-semibold'>+</span>
-                    <Badge variant='outline' className='rounded-sm font-mono text-sm'>
-                      {group.secondSharedNameWord}
-                    </Badge>
-                  </div>
-                  <span className='text-muted-foreground text-xs font-medium'>
-                    {copy.sharedLastNameWords.memberCount(group.members.length)}
-                  </span>
-                </div>
-                <Table className='text-xs'>
-                  <TableHeader>
-                    <TableRow className='bg-muted/40 hover:bg-muted/40'>
-                      {renderSortableHeader('associationCode', copy.columns.code, 'w-20')}
-                      {renderSortableHeader('memberMatriculationNumber', copy.columns.matriculationShort, 'w-36')}
-                      {renderSortableHeader('lastAndMiddleNames', copy.columns.lastAndMiddleShort, 'min-w-56')}
-                      {renderSortableHeader('firstName', copy.columns.firstShort, 'min-w-40')}
-                      {renderSortableHeader('dateOfBirth', copy.sharedLastNameWords.dateOfBirth, 'w-32')}
-                      {renderSortableHeader('memberStatus', copy.columns.status, 'w-40')}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {group.members.map(member => (
-                      <TableRow
-                        key={`${getSharedNameWordGroupKey(group.firstSharedNameWord, group.secondSharedNameWord)}-${member.id}`}
+            sortedGroups.map(group => {
+              const groupKey = getSharedNameWordGroupKeyForGroup(group)
+              const dismissalKey = getSharedNameWordDismissalKeyForGroup(group)
+
+              return (
+                <section
+                  key={groupKey}
+                  id={getSharedNameWordGroupId(group.firstSharedNameWord, group.secondSharedNameWord)}
+                  className='scroll-mt-3 overflow-hidden rounded-md border'
+                >
+                  <div className='bg-muted/60 flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2'>
+                    <div className='flex min-w-0 flex-wrap items-center gap-1.5'>
+                      <Badge variant='secondary' className='rounded-sm font-mono text-sm'>
+                        {group.firstSharedNameWord}
+                      </Badge>
+                      <span className='text-muted-foreground text-xs font-semibold'>+</span>
+                      <Badge variant='outline' className='rounded-sm font-mono text-sm'>
+                        {group.secondSharedNameWord}
+                      </Badge>
+                    </div>
+                    <div className='flex min-w-0 flex-wrap items-center justify-end gap-2'>
+                      <span className='text-muted-foreground text-xs font-medium'>
+                        {copy.sharedLastNameWords.memberCount(group.members.length)}
+                      </span>
+                      <Button
+                        type='button'
+                        variant='ghost'
+                        size='xs'
+                        className='text-muted-foreground hover:text-foreground h-7'
+                        onClick={() => onDismissGroup(dismissalKey)}
+                        aria-label={copy.sharedLastNameWords.dismissSetAria(
+                          group.firstSharedNameWord,
+                          group.secondSharedNameWord
+                        )}
                       >
-                        <TableCell className='font-mono font-semibold'>{member.associationCode}</TableCell>
-                        <TableCell className='font-mono'>
-                          {getVisibleMatriculationNumber(
-                            member.memberStatus,
-                            member.memberMatriculationNumber,
-                            copy.pendingMatriculation
-                          )}
-                        </TableCell>
-                        <TableCell title={member.lastAndMiddleNames} className='max-w-64'>
-                          <span className='block truncate font-semibold'>{member.lastAndMiddleNames}</span>
-                        </TableCell>
-                        <TableCell title={member.firstName} className='max-w-48'>
-                          <span className='block truncate'>{member.firstName}</span>
-                        </TableCell>
-                        <TableCell className='font-mono'>{member.dateOfBirth}</TableCell>
-                        <TableCell>
-                          {member.memberStatus ? (
-                            <Badge variant='outline' className='rounded-sm capitalize'>
-                              {formatMemberStatus(member.memberStatus, language)}
-                            </Badge>
-                          ) : null}
-                        </TableCell>
+                        <XIcon aria-hidden='true' className='size-3.5' />
+                        <span>{copy.sharedLastNameWords.dismissSet}</span>
+                      </Button>
+                    </div>
+                  </div>
+                  <Table className='text-xs'>
+                    <TableHeader>
+                      <TableRow className='bg-muted/40 hover:bg-muted/40'>
+                        {renderSortableHeader('associationCode', copy.columns.code, 'w-20')}
+                        {renderSortableHeader('memberMatriculationNumber', copy.columns.matriculationShort, 'w-36')}
+                        {renderSortableHeader('lastAndMiddleNames', copy.columns.lastAndMiddleShort, 'min-w-56')}
+                        {renderSortableHeader('firstName', copy.columns.firstShort, 'min-w-40')}
+                        {renderSortableHeader('dateOfBirth', copy.sharedLastNameWords.dateOfBirth, 'w-32')}
+                        {renderSortableHeader('memberStatus', copy.columns.status, 'w-40')}
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </section>
-            ))
+                    </TableHeader>
+                    <TableBody>
+                      {group.members.map(member => (
+                        <TableRow key={`${groupKey}-${member.id}`}>
+                          <TableCell className='font-mono font-semibold'>{member.associationCode}</TableCell>
+                          <TableCell className='font-mono'>
+                            {getVisibleMatriculationNumber(
+                              member.memberStatus,
+                              member.memberMatriculationNumber,
+                              copy.pendingMatriculation
+                            )}
+                          </TableCell>
+                          <TableCell title={member.lastAndMiddleNames} className='max-w-64'>
+                            <span className='block truncate font-semibold'>{member.lastAndMiddleNames}</span>
+                          </TableCell>
+                          <TableCell title={member.firstName} className='max-w-48'>
+                            <span className='block truncate'>{member.firstName}</span>
+                          </TableCell>
+                          <TableCell className='font-mono'>{member.dateOfBirth}</TableCell>
+                          <TableCell>
+                            {member.memberStatus ? (
+                              <Badge variant='outline' className='rounded-sm capitalize'>
+                                {formatMemberStatus(member.memberStatus, language)}
+                              </Badge>
+                            ) : null}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </section>
+              )
+            })
           )}
         </div>
       </ScrollArea>
