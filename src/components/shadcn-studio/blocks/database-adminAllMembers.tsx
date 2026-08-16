@@ -1978,7 +1978,7 @@ function SharedLastNameWordsPanel({
                         {renderSortableHeader('lastAndMiddleNames', copy.columns.lastAndMiddleShort, 'min-w-56')}
                         {renderSortableHeader('firstName', copy.columns.firstShort, 'min-w-40')}
                         {renderSortableHeader('dateOfBirth', copy.sharedLastNameWords.dateOfBirth, 'w-32')}
-                        {renderSortableHeader('memberStatus', copy.columns.status, 'w-40')}
+                        {renderSortableHeader('memberStatus', copy.columns.status, 'w-28 max-w-28')}
                         <TableHead className='w-36'>{copy.columns.actionsShort}</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -2004,9 +2004,9 @@ function SharedLastNameWordsPanel({
                               <span className='block truncate'>{member.firstName}</span>
                             </TableCell>
                             <TableCell className='font-mono'>{member.dateOfBirth}</TableCell>
-                            <TableCell>
+                            <TableCell className='w-28 max-w-28'>
                               {member.memberStatus ? (
-                                <Badge variant='outline' className='rounded-sm capitalize'>
+                                <Badge variant='outline' className='w-full max-w-full justify-start truncate rounded-sm capitalize'>
                                   {formatMemberStatus(member.memberStatus, language)}
                                 </Badge>
                               ) : null}
