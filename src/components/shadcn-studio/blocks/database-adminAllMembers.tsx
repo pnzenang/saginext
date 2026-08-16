@@ -119,7 +119,7 @@ const numberFormatter = new Intl.NumberFormat('en-US')
 const formatNumber = (value: number) => numberFormatter.format(value)
 const adminActionButtonClassName = 'h-10 min-h-10 min-w-0 overflow-hidden whitespace-nowrap'
 const adminActionButtonLabelClassName = 'min-w-0 truncate'
-const dismissedSharedNameGroupStorageKey = 'sagi:admin-all-members:dismissedSharedNameGroups'
+const dismissedSharedNameRowStorageKey = 'sagi:admin-all-members:dismissedSharedNameRows'
 
 const adminMemberTableCopy = {
   en: {
@@ -215,19 +215,19 @@ const adminMemberTableCopy = {
     },
     pendingMatriculation: 'Pending',
     sharedLastNameWords: {
-      allHidden: 'All matching word pairs have been hidden as not duplicates.',
       button: (count: number) => `Shared Name Matches (${count})`,
       dateOfBirth: 'Date of Birth',
       description: (groupCount: string, memberCount: string) =>
         `${groupCount} matching word pair(s), across ${memberCount} member record(s).`,
-      dismissSet: 'Not a duplicate',
-      dismissSetAria: (firstSharedNameWord: string, secondSharedNameWord: string) =>
-        `Hide ${firstSharedNameWord} and ${secondSharedNameWord} as not duplicates`,
+      dismissRow: 'Not a duplicate',
+      dismissRowAria: (memberName: string, firstSharedNameWord: string, secondSharedNameWord: string) =>
+        `Hide ${memberName} from the ${firstSharedNameWord} and ${secondSharedNameWord} match set`,
+      dismissedRows: (count: number) => `${count} dismissed row${count === 1 ? '' : 's'}`,
       empty: 'No members share both last/middle and first-name words.',
-      hiddenCount: (count: number) => `${count} hidden`,
+      emptyAfterDismissal: 'All matching rows have been dismissed as not duplicates.',
       jumpToWord: 'Choose shared words',
       memberCount: (count: number) => `${count} member${count === 1 ? '' : 's'}`,
-      resetHidden: 'Show hidden matches',
+      resetDismissedRows: 'Show dismissed rows',
       title: 'Members Sharing Last/Middle and First Name Words'
     },
     selection: {
@@ -336,19 +336,19 @@ const adminMemberTableCopy = {
     },
     pendingMatriculation: 'En attente',
     sharedLastNameWords: {
-      allHidden: 'Toutes les paires de mots correspondantes ont été masquées comme non-doublons.',
       button: (count: number) => `Correspondances de noms (${count})`,
       dateOfBirth: 'Date de naissance',
       description: (groupCount: string, memberCount: string) =>
         `${groupCount} paire(s) de mots correspondants, dans ${memberCount} fiche(s) membre.`,
-      dismissSet: 'Pas doublon',
-      dismissSetAria: (firstSharedNameWord: string, secondSharedNameWord: string) =>
-        `Masquer ${firstSharedNameWord} et ${secondSharedNameWord} comme non-doublons`,
+      dismissRow: 'Pas doublon',
+      dismissRowAria: (memberName: string, firstSharedNameWord: string, secondSharedNameWord: string) =>
+        `Masquer ${memberName} dans la correspondance ${firstSharedNameWord} et ${secondSharedNameWord}`,
+      dismissedRows: (count: number) => `${count} ligne${count === 1 ? '' : 's'} masquée${count === 1 ? '' : 's'}`,
       empty: 'Aucun membre ne partage à la fois des mots de nom/prénoms et de prénom.',
-      hiddenCount: (count: number) => `${count} masquée(s)`,
+      emptyAfterDismissal: 'Toutes les lignes correspondantes ont été masquées comme non-doublons.',
       jumpToWord: 'Choisir des mots partagés',
       memberCount: (count: number) => `${count} membre${count === 1 ? '' : 's'}`,
-      resetHidden: 'Réafficher les correspondances masquées',
+      resetDismissedRows: 'Réafficher les lignes masquées',
       title: 'Membres partageant des mots de nom/prénoms et de prénom'
     },
     selection: {
@@ -496,15 +496,13 @@ const getSharedNameWordGroupKeyForGroup = ({
   secondSharedNameWord: string
 }) => getSharedNameWordGroupKey(firstSharedNameWord, secondSharedNameWord)
 
-const getSharedNameWordDismissalKeyForGroup = (group: {
-  firstSharedNameWord: string
-  members: Pick<MemberType, 'id'>[]
-  secondSharedNameWord: string
-}) => {
-  const memberIds = group.members.map(member => member.id).sort().join(',')
-
-  return `${getSharedNameWordGroupKeyForGroup(group)}|${memberIds}`
-}
+const getSharedNameWordRowDismissalKey = (
+  group: {
+    firstSharedNameWord: string
+    secondSharedNameWord: string
+  },
+  memberId: string
+) => `${getSharedNameWordGroupKeyForGroup(group)}:${memberId}`
 
 const getSharedLastAndMiddleNameGroups = (members: MemberType[]) => {
   const groupsByWordPair = new Map<
@@ -911,8 +909,8 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
   const copy = adminMemberTableCopy[language]
   const [columnFilters, setColumnFilters] = usePersistentColumnFilters('sagi:admin-all-members:columnFilters')
 
-  const [dismissedSharedNameGroupKeys, setDismissedSharedNameGroupKeys] = usePersistentState<string[]>(
-    dismissedSharedNameGroupStorageKey,
+  const [dismissedSharedNameRowKeys, setDismissedSharedNameRowKeys] = usePersistentState<string[]>(
+    dismissedSharedNameRowStorageKey,
     []
   )
 
@@ -1106,26 +1104,32 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
   ]
 
   const allSharedLastAndMiddleNameGroups = useMemo(() => getSharedLastAndMiddleNameGroups(data), [data])
-
-  const dismissedSharedNameGroupKeySet = useMemo(
-    () => new Set(dismissedSharedNameGroupKeys),
-    [dismissedSharedNameGroupKeys]
-  )
+  const dismissedSharedNameRowKeySet = useMemo(() => new Set(dismissedSharedNameRowKeys), [dismissedSharedNameRowKeys])
 
   const sharedLastAndMiddleNameGroups = useMemo(
     () =>
-      allSharedLastAndMiddleNameGroups.filter(
-        group => !dismissedSharedNameGroupKeySet.has(getSharedNameWordDismissalKeyForGroup(group))
-      ),
-    [allSharedLastAndMiddleNameGroups, dismissedSharedNameGroupKeySet]
+      allSharedLastAndMiddleNameGroups
+        .map(group => ({
+          ...group,
+          members: group.members.filter(
+            member => !dismissedSharedNameRowKeySet.has(getSharedNameWordRowDismissalKey(group, member.id))
+          )
+        }))
+        .filter(group => group.members.length > 1),
+    [allSharedLastAndMiddleNameGroups, dismissedSharedNameRowKeySet]
   )
 
-  const dismissedSharedNameGroupCount = useMemo(
+  const dismissedSharedNameRowCount = useMemo(
     () =>
-      allSharedLastAndMiddleNameGroups.filter(group =>
-        dismissedSharedNameGroupKeySet.has(getSharedNameWordDismissalKeyForGroup(group))
-      ).length,
-    [allSharedLastAndMiddleNameGroups, dismissedSharedNameGroupKeySet]
+      allSharedLastAndMiddleNameGroups.reduce(
+        (count, group) =>
+          count +
+          group.members.filter(member =>
+            dismissedSharedNameRowKeySet.has(getSharedNameWordRowDismissalKey(group, member.id))
+          ).length,
+        0
+      ),
+    [allSharedLastAndMiddleNameGroups, dismissedSharedNameRowKeySet]
   )
 
   const sharedLastNameWordMemberCount = useMemo(
@@ -1133,18 +1137,18 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
     [sharedLastAndMiddleNameGroups]
   )
 
-  const dismissSharedNameGroup = useCallback(
-    (groupKey: string) => {
-      setDismissedSharedNameGroupKeys(currentKeys =>
-        currentKeys.includes(groupKey) ? currentKeys : [...currentKeys, groupKey]
+  const dismissSharedNameRow = useCallback(
+    (rowKey: string) => {
+      setDismissedSharedNameRowKeys(currentKeys =>
+        currentKeys.includes(rowKey) ? currentKeys : [...currentKeys, rowKey]
       )
     },
-    [setDismissedSharedNameGroupKeys]
+    [setDismissedSharedNameRowKeys]
   )
 
-  const resetDismissedSharedNameGroups = useCallback(() => {
-    setDismissedSharedNameGroupKeys([])
-  }, [setDismissedSharedNameGroupKeys])
+  const resetDismissedSharedNameRows = useCallback(() => {
+    setDismissedSharedNameRowKeys([])
+  }, [setDismissedSharedNameRowKeys])
 
   const exportToCSV = () => {
     const selectedRows = table.getSelectedRowModel().rows
@@ -1534,12 +1538,12 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
                 </SheetTrigger>
                 <SharedLastNameWordsPanel
                   copy={copy}
-                  dismissedGroupCount={dismissedSharedNameGroupCount}
+                  dismissedRowCount={dismissedSharedNameRowCount}
                   groups={sharedLastAndMiddleNameGroups}
                   language={language}
                   memberCount={sharedLastNameWordMemberCount}
-                  onDismissGroup={dismissSharedNameGroup}
-                  onResetDismissedGroups={resetDismissedSharedNameGroups}
+                  onDismissRow={dismissSharedNameRow}
+                  onResetDismissedRows={resetDismissedSharedNameRows}
                 />
               </Sheet>
               <PrintButton
@@ -1800,20 +1804,20 @@ export default MembersDataTable
 
 function SharedLastNameWordsPanel({
   copy,
-  dismissedGroupCount,
+  dismissedRowCount,
   groups,
   language,
   memberCount,
-  onDismissGroup,
-  onResetDismissedGroups
+  onDismissRow,
+  onResetDismissedRows
 }: {
   copy: AdminMemberTableCopy
-  dismissedGroupCount: number
+  dismissedRowCount: number
   groups: ReturnType<typeof getSharedLastAndMiddleNameGroups>
   language: AppLanguage
   memberCount: number
-  onDismissGroup: (groupKey: string) => void
-  onResetDismissedGroups: () => void
+  onDismissRow: (rowKey: string) => void
+  onResetDismissedRows: () => void
 }) {
   const [sharedNameSort, setSharedNameSort] = useState<SharedLastNameSortState>({
     direction: 'asc',
@@ -1884,14 +1888,14 @@ function SharedLastNameWordsPanel({
         <SheetTitle className='text-xl'>{copy.sharedLastNameWords.title}</SheetTitle>
         <SheetDescription className='flex flex-wrap items-center gap-2'>
           <span>{copy.sharedLastNameWords.description(formatNumber(groups.length), formatNumber(memberCount))}</span>
-          {dismissedGroupCount > 0 ? (
+          {dismissedRowCount > 0 ? (
             <Badge variant='outline' className='rounded-sm'>
-              {copy.sharedLastNameWords.hiddenCount(dismissedGroupCount)}
+              {copy.sharedLastNameWords.dismissedRows(dismissedRowCount)}
             </Badge>
           ) : null}
         </SheetDescription>
       </SheetHeader>
-      {groups.length > 0 || dismissedGroupCount > 0 ? (
+      {groups.length > 0 || dismissedRowCount > 0 ? (
         <div className='bg-background flex flex-col gap-2 border-b px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6'>
           {groups.length > 0 ? (
             <DropdownMenu>
@@ -1921,17 +1925,17 @@ function SharedLastNameWordsPanel({
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <p className='text-muted-foreground text-sm'>{copy.sharedLastNameWords.allHidden}</p>
+            <p className='text-muted-foreground text-sm'>{copy.sharedLastNameWords.emptyAfterDismissal}</p>
           )}
-          {dismissedGroupCount > 0 ? (
+          {dismissedRowCount > 0 ? (
             <Button
               type='button'
               variant='outline'
               size='sm'
               className='w-full sm:w-auto'
-              onClick={onResetDismissedGroups}
+              onClick={onResetDismissedRows}
             >
-              {copy.sharedLastNameWords.resetHidden}
+              {copy.sharedLastNameWords.resetDismissedRows}
             </Button>
           ) : null}
         </div>
@@ -1940,12 +1944,11 @@ function SharedLastNameWordsPanel({
         <div className='space-y-4 p-4 sm:p-6'>
           {groups.length === 0 ? (
             <div className='text-muted-foreground rounded-md border border-dashed p-6 text-center text-sm'>
-              {dismissedGroupCount > 0 ? copy.sharedLastNameWords.allHidden : copy.sharedLastNameWords.empty}
+              {dismissedRowCount > 0 ? copy.sharedLastNameWords.emptyAfterDismissal : copy.sharedLastNameWords.empty}
             </div>
           ) : (
             sortedGroups.map(group => {
               const groupKey = getSharedNameWordGroupKeyForGroup(group)
-              const dismissalKey = getSharedNameWordDismissalKeyForGroup(group)
 
               return (
                 <section
@@ -1963,25 +1966,9 @@ function SharedLastNameWordsPanel({
                         {group.secondSharedNameWord}
                       </Badge>
                     </div>
-                    <div className='flex min-w-0 flex-wrap items-center justify-end gap-2'>
-                      <span className='text-muted-foreground text-xs font-medium'>
-                        {copy.sharedLastNameWords.memberCount(group.members.length)}
-                      </span>
-                      <Button
-                        type='button'
-                        variant='ghost'
-                        size='xs'
-                        className='text-muted-foreground hover:text-foreground h-7'
-                        onClick={() => onDismissGroup(dismissalKey)}
-                        aria-label={copy.sharedLastNameWords.dismissSetAria(
-                          group.firstSharedNameWord,
-                          group.secondSharedNameWord
-                        )}
-                      >
-                        <XIcon aria-hidden='true' className='size-3.5' />
-                        <span>{copy.sharedLastNameWords.dismissSet}</span>
-                      </Button>
-                    </div>
+                    <span className='text-muted-foreground text-xs font-medium'>
+                      {copy.sharedLastNameWords.memberCount(group.members.length)}
+                    </span>
                   </div>
                   <Table className='text-xs'>
                     <TableHeader>
@@ -1992,35 +1979,58 @@ function SharedLastNameWordsPanel({
                         {renderSortableHeader('firstName', copy.columns.firstShort, 'min-w-40')}
                         {renderSortableHeader('dateOfBirth', copy.sharedLastNameWords.dateOfBirth, 'w-32')}
                         {renderSortableHeader('memberStatus', copy.columns.status, 'w-40')}
+                        <TableHead className='w-36'>{copy.columns.actionsShort}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {group.members.map(member => (
-                        <TableRow key={`${groupKey}-${member.id}`}>
-                          <TableCell className='font-mono font-semibold'>{member.associationCode}</TableCell>
-                          <TableCell className='font-mono'>
-                            {getVisibleMatriculationNumber(
-                              member.memberStatus,
-                              member.memberMatriculationNumber,
-                              copy.pendingMatriculation
-                            )}
-                          </TableCell>
-                          <TableCell title={member.lastAndMiddleNames} className='max-w-64'>
-                            <span className='block truncate font-semibold'>{member.lastAndMiddleNames}</span>
-                          </TableCell>
-                          <TableCell title={member.firstName} className='max-w-48'>
-                            <span className='block truncate'>{member.firstName}</span>
-                          </TableCell>
-                          <TableCell className='font-mono'>{member.dateOfBirth}</TableCell>
-                          <TableCell>
-                            {member.memberStatus ? (
-                              <Badge variant='outline' className='rounded-sm capitalize'>
-                                {formatMemberStatus(member.memberStatus, language)}
-                              </Badge>
-                            ) : null}
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {group.members.map(member => {
+                        const memberName = `${member.firstName} ${member.lastAndMiddleNames}`.trim()
+                        const dismissalKey = getSharedNameWordRowDismissalKey(group, member.id)
+
+                        return (
+                          <TableRow key={`${groupKey}-${member.id}`}>
+                            <TableCell className='font-mono font-semibold'>{member.associationCode}</TableCell>
+                            <TableCell className='font-mono'>
+                              {getVisibleMatriculationNumber(
+                                member.memberStatus,
+                                member.memberMatriculationNumber,
+                                copy.pendingMatriculation
+                              )}
+                            </TableCell>
+                            <TableCell title={member.lastAndMiddleNames} className='max-w-64'>
+                              <span className='block truncate font-semibold'>{member.lastAndMiddleNames}</span>
+                            </TableCell>
+                            <TableCell title={member.firstName} className='max-w-48'>
+                              <span className='block truncate'>{member.firstName}</span>
+                            </TableCell>
+                            <TableCell className='font-mono'>{member.dateOfBirth}</TableCell>
+                            <TableCell>
+                              {member.memberStatus ? (
+                                <Badge variant='outline' className='rounded-sm capitalize'>
+                                  {formatMemberStatus(member.memberStatus, language)}
+                                </Badge>
+                              ) : null}
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                type='button'
+                                variant='ghost'
+                                size='xs'
+                                className='text-muted-foreground hover:text-foreground h-7'
+                                onClick={() => onDismissRow(dismissalKey)}
+                                aria-label={copy.sharedLastNameWords.dismissRowAria(
+                                  memberName,
+                                  group.firstSharedNameWord,
+                                  group.secondSharedNameWord
+                                )}
+                              >
+                                <XIcon aria-hidden='true' className='size-3.5' />
+                                <span>{copy.sharedLastNameWords.dismissRow}</span>
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })}
                     </TableBody>
                   </Table>
                 </section>
