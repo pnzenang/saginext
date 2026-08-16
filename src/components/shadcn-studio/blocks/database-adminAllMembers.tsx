@@ -1970,16 +1970,16 @@ function SharedLastNameWordsPanel({
                       {copy.sharedLastNameWords.memberCount(group.members.length)}
                     </span>
                   </div>
-                  <Table className='table-fixed text-xs'>
+                  <Table className='text-xs'>
                     <TableHeader>
                       <TableRow className='bg-muted/40 hover:bg-muted/40'>
-                        {renderSortableHeader('associationCode', copy.columns.code, 'w-16 max-w-16')}
-                        {renderSortableHeader('memberMatriculationNumber', copy.columns.matriculationShort, 'w-28 max-w-28')}
-                        {renderSortableHeader('lastAndMiddleNames', copy.columns.lastAndMiddleShort, 'w-44 max-w-44')}
-                        {renderSortableHeader('firstName', copy.columns.firstShort, 'w-32 max-w-32')}
-                        {renderSortableHeader('dateOfBirth', copy.sharedLastNameWords.dateOfBirth, 'w-28 max-w-28')}
-                        {renderSortableHeader('memberStatus', copy.columns.status, 'w-24 max-w-24')}
-                        <TableHead className='w-32 max-w-32'>{copy.columns.actionsShort}</TableHead>
+                        {renderSortableHeader('associationCode', copy.columns.code, 'w-20')}
+                        {renderSortableHeader('memberMatriculationNumber', copy.columns.matriculationShort, 'w-36')}
+                        {renderSortableHeader('lastAndMiddleNames', copy.columns.lastAndMiddleShort, 'min-w-56')}
+                        {renderSortableHeader('firstName', copy.columns.firstShort, 'min-w-40')}
+                        {renderSortableHeader('dateOfBirth', copy.sharedLastNameWords.dateOfBirth, 'w-32')}
+                        {renderSortableHeader('memberStatus', copy.columns.status, 'w-28 max-w-28')}
+                        <TableHead className='w-36'>{copy.columns.actionsShort}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1989,40 +1989,34 @@ function SharedLastNameWordsPanel({
 
                         return (
                           <TableRow key={`${groupKey}-${member.id}`}>
-                            <TableCell className='w-16 max-w-16 font-mono font-semibold'>
-                              <span className='block truncate'>{member.associationCode}</span>
+                            <TableCell className='font-mono font-semibold'>{member.associationCode}</TableCell>
+                            <TableCell className='font-mono'>
+                              {getVisibleMatriculationNumber(
+                                member.memberStatus,
+                                member.memberMatriculationNumber,
+                                copy.pendingMatriculation
+                              )}
                             </TableCell>
-                            <TableCell className='w-28 max-w-28 font-mono'>
-                              <span className='block truncate'>
-                                {getVisibleMatriculationNumber(
-                                  member.memberStatus,
-                                  member.memberMatriculationNumber,
-                                  copy.pendingMatriculation
-                                )}
-                              </span>
-                            </TableCell>
-                            <TableCell title={member.lastAndMiddleNames} className='w-44 max-w-44'>
+                            <TableCell title={member.lastAndMiddleNames} className='max-w-64'>
                               <span className='block truncate font-semibold'>{member.lastAndMiddleNames}</span>
                             </TableCell>
-                            <TableCell title={member.firstName} className='w-32 max-w-32'>
+                            <TableCell title={member.firstName} className='max-w-48'>
                               <span className='block truncate'>{member.firstName}</span>
                             </TableCell>
-                            <TableCell className='w-28 max-w-28 font-mono'>
-                              <span className='block truncate'>{member.dateOfBirth}</span>
-                            </TableCell>
-                            <TableCell className='w-24 max-w-24'>
+                            <TableCell className='font-mono'>{member.dateOfBirth}</TableCell>
+                            <TableCell className='w-28 max-w-28'>
                               {member.memberStatus ? (
                                 <Badge variant='outline' className='w-full max-w-full justify-start truncate rounded-sm capitalize'>
                                   {formatMemberStatus(member.memberStatus, language)}
                                 </Badge>
                               ) : null}
                             </TableCell>
-                            <TableCell className='w-32 max-w-32'>
+                            <TableCell>
                               <Button
                                 type='button'
                                 variant='ghost'
                                 size='xs'
-                                className='text-muted-foreground hover:text-foreground h-7 max-w-full justify-start px-1.5'
+                                className='text-muted-foreground hover:text-foreground h-7'
                                 onClick={() => onDismissRow(dismissalKey)}
                                 aria-label={copy.sharedLastNameWords.dismissRowAria(
                                   memberName,
@@ -2031,7 +2025,7 @@ function SharedLastNameWordsPanel({
                                 )}
                               >
                                 <XIcon aria-hidden='true' className='size-3.5' />
-                                <span className='truncate'>{copy.sharedLastNameWords.dismissRow}</span>
+                                <span>{copy.sharedLastNameWords.dismissRow}</span>
                               </Button>
                             </TableCell>
                           </TableRow>
