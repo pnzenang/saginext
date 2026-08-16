@@ -1883,7 +1883,7 @@ function SharedLastNameWordsPanel({
   }
 
   return (
-    <SheetContent className='w-[min(100vw,980px)] gap-0 p-0 sm:max-w-none'>
+    <SheetContent className='w-[min(100vw,1200px)] gap-0 p-0 sm:max-w-none'>
       <SheetHeader className='border-b p-4 pr-12 sm:p-6 sm:pr-12'>
         <SheetTitle className='text-xl'>{copy.sharedLastNameWords.title}</SheetTitle>
         <SheetDescription className='flex flex-wrap items-center gap-2'>
