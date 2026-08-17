@@ -702,10 +702,9 @@ const AssociationPaymentNavigationCards = ({
 }) => {
   const currentMonthName = getMonthFormatter(language).format(new Date())
 
-  const contributionDueDate =
-    currentContribution.amountOwed > 0 && currentContribution.dueDate
-      ? getDateFormatter(language).format(new Date(currentContribution.dueDate))
-      : null
+  const contributionDueDate = currentContribution.dueDate
+    ? getDateFormatter(language).format(new Date(currentContribution.dueDate))
+    : null
 
   const registrationMembersCount = Math.round(currentRegistrationPayment.balanceDues / registrationFeePerEligibleMember)
 
