@@ -166,7 +166,7 @@ const memberTableCopy = {
     payment: {
       contributionCta: 'Go to contribution payment',
       contributionDetail: (count: number, amount: string) => `${count} vested member(s) x ${amount}`,
-      contributionDueDate: (date: string) => `Contribution due date: ${date}`,
+      contributionDueDate: (date: string) => `Due date: ${date}`,
       contributionTitle: (month: string) => `${month}'s Contribution`,
       registrationCta: 'Go to registration payment',
       registrationDetail: (count: number, amount: string) => `${count} pending member(s) x ${amount}`,
@@ -246,7 +246,7 @@ const memberTableCopy = {
     payment: {
       contributionCta: 'Aller au paiement des cotisations',
       contributionDetail: (count: number, amount: string) => `${count} membre(s) acquis x ${amount}`,
-      contributionDueDate: (date: string) => `Date d'échéance de la cotisation : ${date}`,
+      contributionDueDate: (date: string) => `Date d'échéance : ${date}`,
       contributionTitle: (month: string) => `Cotisation de ${month}`,
       registrationCta: "Aller au paiement d'inscription",
       registrationDetail: (count: number, amount: string) => `${count} membre(s) en attente x ${amount}`,
