@@ -660,12 +660,21 @@ const PaymentRouteCard = ({
   title: string
 }) => (
   <div className='border-primary/20 bg-primary/10 text-primary flex h-full min-w-0 flex-col rounded-md border px-3 py-3 sm:px-4'>
-    <p className='flex items-center gap-2 text-lg font-extrabold break-words sm:text-xl'>
+    <p className='flex flex-wrap items-center gap-x-2 gap-y-1 text-lg font-extrabold break-words sm:text-xl'>
       <CircleDollarSign className='size-5 shrink-0' aria-hidden='true' />
-      {title}: {formatCurrency(amount)}
+      <span className='min-w-0 break-words'>
+        {title}: {formatCurrency(amount)}
+      </span>
+      {afterTitle ? (
+        <span className='hidden min-w-0 text-sm font-extrabold break-words text-green-700 md:inline dark:text-green-300'>
+          {afterTitle}
+        </span>
+      ) : null}
     </p>
     {afterTitle ? (
-      <div className='mt-2 text-sm font-extrabold break-words text-green-700 dark:text-green-300'>{afterTitle}</div>
+      <div className='mt-2 text-sm font-extrabold break-words text-green-700 md:hidden dark:text-green-300'>
+        {afterTitle}
+      </div>
     ) : null}
     <div className='text-primary/80 mt-1 text-sm font-semibold break-words'>{description}</div>
     <div className='text-primary/80 mt-3 grid gap-1.5 text-xs font-semibold'>{details}</div>
