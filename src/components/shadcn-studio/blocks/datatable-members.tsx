@@ -166,6 +166,7 @@ const memberTableCopy = {
     payment: {
       contributionCta: 'Go to contribution payment',
       contributionDetail: (count: number, amount: string) => `${count} vested member(s) x ${amount}`,
+      contributionDueDate: (date: string) => `Contribution due date: ${date}`,
       contributionTitle: (month: string) => `${month}'s Contribution`,
       registrationCta: 'Go to registration payment',
       registrationDetail: (count: number, amount: string) => `${count} pending member(s) x ${amount}`,
@@ -245,6 +246,7 @@ const memberTableCopy = {
     payment: {
       contributionCta: 'Aller au paiement des cotisations',
       contributionDetail: (count: number, amount: string) => `${count} membre(s) acquis x ${amount}`,
+      contributionDueDate: (date: string) => `Date d'échéance de la cotisation : ${date}`,
       contributionTitle: (month: string) => `Cotisation de ${month}`,
       registrationCta: "Aller au paiement d'inscription",
       registrationDetail: (count: number, amount: string) => `${count} membre(s) en attente x ${amount}`,
@@ -273,6 +275,13 @@ type MemberTableCopy = (typeof memberTableCopy)[AppLanguage]
 const getMonthFormatter = (language: AppLanguage) =>
   new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : 'en-US', {
     month: 'long'
+  })
+
+const getDateFormatter = (language: AppLanguage) =>
+  new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : 'en-US', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
   })
 
 const getVisibleMatriculationNumber = (status: unknown, matriculationNumber: unknown, pendingLabel = 'Pending') => {
@@ -634,6 +643,7 @@ const PaymentSummaryRow = ({ label, value }: { label: ReactNode; value: number }
 )
 
 const PaymentRouteCard = ({
+  afterTitle,
   amount,
   cta,
   description,
@@ -641,6 +651,7 @@ const PaymentRouteCard = ({
   href,
   title
 }: {
+  afterTitle?: ReactNode
   amount: number
   cta: string
   description: ReactNode
@@ -653,6 +664,7 @@ const PaymentRouteCard = ({
       <CircleDollarSign className='size-5 shrink-0' aria-hidden='true' />
       {title}: {formatCurrency(amount)}
     </p>
+    {afterTitle ? <div className='text-primary/80 mt-2 text-sm font-extrabold break-words'>{afterTitle}</div> : null}
     <div className='text-primary/80 mt-1 text-sm font-semibold break-words'>{description}</div>
     <div className='text-primary/80 mt-3 grid gap-1.5 text-xs font-semibold'>{details}</div>
     <Button asChild className='mt-4 w-fit'>
@@ -676,11 +688,17 @@ const AssociationPaymentNavigationCards = ({
   paymentCopy: MemberTableCopy['payment']
 }) => {
   const currentMonthName = getMonthFormatter(language).format(new Date())
+
+  const contributionDueDate = currentContribution.dueDate
+    ? getDateFormatter(language).format(new Date(currentContribution.dueDate))
+    : null
+
   const registrationMembersCount = Math.round(currentRegistrationPayment.balanceDues / registrationFeePerEligibleMember)
 
   return (
     <div className='grid w-full grid-cols-1 items-stretch gap-4 lg:grid-cols-2'>
       <PaymentRouteCard
+        afterTitle={contributionDueDate ? paymentCopy.contributionDueDate(contributionDueDate) : undefined}
         amount={currentContribution.amountOwed}
         cta={paymentCopy.contributionCta}
         description={
