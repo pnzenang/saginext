@@ -170,6 +170,7 @@ const memberTableCopy = {
       contributionTitle: (month: string) => `${month}'s Contribution`,
       registrationCta: 'Go to registration payment',
       registrationDetail: (count: number, amount: string) => `${count} pending member(s) x ${amount}`,
+      registrationDueDate: `Due ${registrationPaymentDeadlineDays} days after adding Names`,
       registrationTitle: 'Registration Payment',
       sent: 'Sent',
       verified: 'Verified'
@@ -250,6 +251,7 @@ const memberTableCopy = {
       contributionTitle: (month: string) => `Cotisation de ${month}`,
       registrationCta: "Aller au paiement d'inscription",
       registrationDetail: (count: number, amount: string) => `${count} membre(s) en attente x ${amount}`,
+      registrationDueDate: `Échéance : ${registrationPaymentDeadlineDays} jours après l'ajout des noms`,
       registrationTitle: "Paiement d'inscription",
       sent: 'Envoyé',
       verified: 'Vérifié'
@@ -732,6 +734,7 @@ const AssociationPaymentNavigationCards = ({
         title={paymentCopy.contributionTitle(currentMonthName)}
       />
       <PaymentRouteCard
+        afterTitle={paymentCopy.registrationDueDate}
         amount={currentRegistrationPayment.balanceDues}
         cta={paymentCopy.registrationCta}
         description={
