@@ -16,19 +16,22 @@ const hasCachedModelField = (client: PrismaClient, modelName: string, fieldName:
 const hasCurrentPrismaDelegates = (client?: PrismaClient) =>
   Boolean(
     client &&
-      'associationPaymentLedgerEntry' in (client as unknown as Record<string, unknown>) &&
-      'delegateIssueNote' in (client as unknown as Record<string, unknown>) &&
-      'delegateIssueNoteMessage' in (client as unknown as Record<string, unknown>) &&
-      'deceasedMemberDocument' in (client as unknown as Record<string, unknown>) &&
-      'memberTransferRequest' in (client as unknown as Record<string, unknown>) &&
-      'nameChangeRequest' in (client as unknown as Record<string, unknown>) &&
-      hasCachedModelField(client, 'DelegateIssueNote', 'delegateUnread') &&
-      hasCachedModelField(client, 'DelegateIssueNoteMessage', 'authorRole') &&
-      hasCachedModelField(client, 'DelegateIssueNoteMessage', 'cloudinaryPublicId') &&
-      hasCachedModelField(client, 'DeceasedMember', 'associationCode') &&
-      hasCachedModelField(client, 'DeceasedMemberDocument', 'cloudinaryPublicId') &&
-      hasCachedModelField(client, 'NameChangeRequest', 'cloudinaryPublicId') &&
-      hasCachedModelField(client, 'MemberTransferRequest', 'receivingAssociationCode')
+    'associationPaymentLedgerEntry' in (client as unknown as Record<string, unknown>) &&
+    'delegateIssueNote' in (client as unknown as Record<string, unknown>) &&
+    'delegateIssueNoteMessage' in (client as unknown as Record<string, unknown>) &&
+    'deceasedMemberDocument' in (client as unknown as Record<string, unknown>) &&
+    'memberTransferRequest' in (client as unknown as Record<string, unknown>) &&
+    'nameChangeRequest' in (client as unknown as Record<string, unknown>) &&
+    hasCachedModelField(client, 'DelegateIssueNote', 'delegateUnread') &&
+    hasCachedModelField(client, 'DelegateIssueNoteMessage', 'authorRole') &&
+    hasCachedModelField(client, 'DelegateIssueNoteMessage', 'cloudinaryPublicId') &&
+    hasCachedModelField(client, 'DeceasedMember', 'associationCode') &&
+    hasCachedModelField(client, 'DeceasedMember', 'originalMemberVestedAt') &&
+    hasCachedModelField(client, 'DeceasedMemberDocument', 'cloudinaryPublicId') &&
+    hasCachedModelField(client, 'Member', 'vestedAt') &&
+    hasCachedModelField(client, 'RemovedMember', 'originalMemberVestedAt') &&
+    hasCachedModelField(client, 'NameChangeRequest', 'cloudinaryPublicId') &&
+    hasCachedModelField(client, 'MemberTransferRequest', 'receivingAssociationCode')
   )
 
 let prisma = hasCurrentPrismaDelegates(globalForPrisma.prisma) ? globalForPrisma.prisma : undefined

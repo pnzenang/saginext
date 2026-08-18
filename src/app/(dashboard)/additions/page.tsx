@@ -41,14 +41,7 @@ const getTimeZoneParts = (date: Date) => {
 const getTimeZoneOffsetMs = (date: Date) => {
   const parts = getTimeZoneParts(date)
 
-  const sameWallTimeInUtc = Date.UTC(
-    parts.year,
-    parts.month - 1,
-    parts.day,
-    parts.hour,
-    parts.minute,
-    parts.second
-  )
+  const sameWallTimeInUtc = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second)
 
   return sameWallTimeInUtc - date.getTime()
 }
@@ -76,12 +69,7 @@ const MonthlyAdditions = async () => {
   const { monthKey, monthStart, nextMonthStart } = getCurrentMonthRange()
 
   const members = await db.member.findMany({
-    orderBy: [
-      { updatedAt: 'desc' },
-      { associationCode: 'asc' },
-      { lastAndMiddleNames: 'asc' },
-      { firstName: 'asc' }
-    ],
+    orderBy: [{ vestedAt: 'desc' }, { associationCode: 'asc' }, { lastAndMiddleNames: 'asc' }, { firstName: 'asc' }],
     select: {
       associationCode: true,
       associationName: true,
@@ -89,26 +77,32 @@ const MonthlyAdditions = async () => {
       id: true,
       lastAndMiddleNames: true,
       memberMatriculationNumber: true,
-      updatedAt: true
+      vestedAt: true
     },
     where: {
       memberStatus: memberStatus.Vested,
-      updatedAt: {
+      vestedAt: {
         gte: monthStart,
         lt: nextMonthStart
       }
     }
   })
 
-  const rows: MonthlyAdditionRow[] = members.map(member => ({
-    associationCode: member.associationCode,
-    associationName: member.associationName,
-    firstName: member.firstName,
-    id: member.id,
-    lastAndMiddleNames: member.lastAndMiddleNames,
-    memberMatriculationNumber: member.memberMatriculationNumber,
-    vestedAt: member.updatedAt.toISOString()
-  }))
+  const rows: MonthlyAdditionRow[] = members.flatMap(member =>
+    member.vestedAt
+      ? [
+          {
+            associationCode: member.associationCode,
+            associationName: member.associationName,
+            firstName: member.firstName,
+            id: member.id,
+            lastAndMiddleNames: member.lastAndMiddleNames,
+            memberMatriculationNumber: member.memberMatriculationNumber,
+            vestedAt: member.vestedAt.toISOString()
+          }
+        ]
+      : []
+  )
 
   return (
     <section className='max-w-full min-w-0 space-y-6 py-4 sm:py-10'>

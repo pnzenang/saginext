@@ -47,10 +47,12 @@ model Member {
   associationCode           String
   createdAt                 DateTime                @default(now())
   updatedAt                 DateTime                @updatedAt
+  vestedAt                  DateTime?
   nameChangeRequests        NameChangeRequest[]
   memberTransferRequests    MemberTransferRequest[]
 
   @@unique([firstName, lastAndMiddleNames, dateOfBirth, delegateRecommendation])
+  @@index([vestedAt])
 }
 
 model RemovedMember {
@@ -70,6 +72,7 @@ model RemovedMember {
   memberStatus              String?
   reasonForLeaving          String
   originalMemberCreatedAt   DateTime?
+  originalMemberVestedAt    DateTime?
   createdAt                 DateTime  @default(now())
   updatedAt                 DateTime  @updatedAt
 }
@@ -90,6 +93,7 @@ model DeceasedMember {
   delegateRecommendation    String?
   memberStatus              String?
   originalMemberCreatedAt   DateTime?
+  originalMemberVestedAt    DateTime?
   familyContactName         String?
   familyContactPhoneNumber  String?
   dateOfDeath               String

@@ -597,10 +597,7 @@ const createPendingRegistrationUsage = async ({
   await createRegistrationUsage(db, { associationCode, memberMatriculationNumber })
 }
 
-const removeRegistrationUsage = async (
-  client: RegistrationUsageClient,
-  memberMatriculationNumber: string
-) => {
+const removeRegistrationUsage = async (client: RegistrationUsageClient, memberMatriculationNumber: string) => {
   await client.associationRegistrationUsage.deleteMany({
     where: {
       memberMatriculationNumber
@@ -737,6 +734,14 @@ const syncVestedContributionCredit = async ({
   }
 }
 
+const getVestedAtRemovalData = ({ nextStatus, previousStatus }: { nextStatus: string; previousStatus: string }) => {
+  if (previousStatus === memberStatus.Vested && nextStatus !== memberStatus.Vested) {
+    return { vestedAt: null }
+  }
+
+  return {}
+}
+
 const addDeceasedMemberContributionUsage = async (associationCode: string) => {
   await db.associationContributionUsage.upsert({
     create: {
@@ -793,6 +798,7 @@ const revalidatePaymentViews = () => {
   revalidatePath('/admin-registration-payments')
   revalidatePath('/admin-transaction-history')
   revalidatePath('/admin-all-members')
+  revalidatePath('/additions')
   revalidatePath('/contribution-table')
   revalidatePath('/contributions')
   revalidatePath('/payment-history')
@@ -3762,7 +3768,8 @@ export const makeMembersDelinquentAction = async (
 
       const updatedMembers = await tx.member.updateMany({
         data: {
-          memberStatus: memberStatus.Delinquent
+          memberStatus: memberStatus.Delinquent,
+          vestedAt: null
         },
         where: {
           id: {
@@ -3816,7 +3823,8 @@ export const makeAwaitingMembersVestedAction = async (
 
     const updatedMembers = await db.member.updateMany({
       data: {
-        memberStatus: memberStatus.Vested
+        memberStatus: memberStatus.Vested,
+        vestedAt: new Date()
       },
       where: {
         id: {
@@ -3878,7 +3886,8 @@ export const makeMembersVestedAction = async (
 
       const updatedMembers = await tx.member.updateMany({
         data: {
-          memberStatus: memberStatus.Vested
+          memberStatus: memberStatus.Vested,
+          vestedAt: new Date()
         },
         where: {
           id: {
@@ -4001,7 +4010,13 @@ export const updateMemberDetailsAction = async (prevState: any, formData: FormDa
         id: memberId
       },
       data: {
-        ...validatedFields
+        ...validatedFields,
+        ...(currentMember
+          ? getVestedAtRemovalData({
+              nextStatus: validatedFields.memberStatus,
+              previousStatus: currentMember.memberStatus
+            })
+          : {})
       }
     })
 
@@ -4057,7 +4072,13 @@ export const updateMemberDetailsActionAdmin = async (prevState: any, formData: F
         id: memberId
       },
       data: {
-        ...validatedFields
+        ...validatedFields,
+        ...(currentMember
+          ? getVestedAtRemovalData({
+              nextStatus: validatedFields.memberStatus,
+              previousStatus: currentMember.memberStatus
+            })
+          : {})
       }
     })
 
@@ -5294,7 +5315,10 @@ export const reviewIncomingMemberTransferRequestAction = async (
     const isReceivingDelegateAcceptanceReview =
       request.status === 'initiating_delegate_approved' && request.receivingClerkId === user.id
 
-    if (['admin_initiated', 'receiving_delegate_pending'].includes(request.status) && request.initiatingClerkId !== user.id) {
+    if (
+      ['admin_initiated', 'receiving_delegate_pending'].includes(request.status) &&
+      request.initiatingClerkId !== user.id
+    ) {
       throw new Error(copy.currentDelegateOnlyRelease)
     }
 
@@ -5574,6 +5598,7 @@ export const createRemovedMemberAction = async (provState: any, formData: FormDa
           memberStatus: member.memberStatus,
           nameOfBeneficiary: member.nameOfBeneficiary,
           originalMemberCreatedAt: member.createdAt,
+          originalMemberVestedAt: member.vestedAt,
           originalMemberId: member.id,
           reasonForLeaving: validatedFields.reasonForLeaving,
           registrationDate: validatedFields.registrationDate
@@ -5631,6 +5656,7 @@ export const createRemovedMemberActionAdmin = async (
           memberStatus: member.memberStatus,
           nameOfBeneficiary: member.nameOfBeneficiary,
           originalMemberCreatedAt: member.createdAt,
+          originalMemberVestedAt: member.vestedAt,
           originalMemberId: member.id,
           reasonForLeaving: validatedFields.reasonForLeaving,
           registrationDate: validatedFields.registrationDate
@@ -5908,6 +5934,7 @@ export const createDeceasedMemberAction = async (provState: any, formData: FormD
           delegateRecommendation: member.delegateRecommendation,
           memberStatus: member.memberStatus,
           originalMemberCreatedAt: member.createdAt,
+          originalMemberVestedAt: member.vestedAt,
           originalMemberId: member.id,
           registrationDate: formatRegistrationDate(member.createdAt)
         }
@@ -6003,6 +6030,7 @@ export const createDeceasedMemberActionAdmin = async (
           delegateRecommendation: member.delegateRecommendation,
           memberStatus: member.memberStatus,
           originalMemberCreatedAt: member.createdAt,
+          originalMemberVestedAt: member.vestedAt,
           originalMemberId: member.id,
           registrationDate: formatRegistrationDate(member.createdAt)
         }
