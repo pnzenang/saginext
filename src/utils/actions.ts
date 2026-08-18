@@ -734,7 +734,17 @@ const syncVestedContributionCredit = async ({
   }
 }
 
-const getVestedAtRemovalData = ({ nextStatus, previousStatus }: { nextStatus: string; previousStatus: string }) => {
+const getManualVestedAtUpdateData = ({
+  nextStatus,
+  previousStatus
+}: {
+  nextStatus: string
+  previousStatus: string
+}) => {
+  if (previousStatus !== memberStatus.Vested && nextStatus === memberStatus.Vested) {
+    return { vestedAt: new Date() }
+  }
+
   if (previousStatus === memberStatus.Vested && nextStatus !== memberStatus.Vested) {
     return { vestedAt: null }
   }
@@ -4012,7 +4022,7 @@ export const updateMemberDetailsAction = async (prevState: any, formData: FormDa
       data: {
         ...validatedFields,
         ...(currentMember
-          ? getVestedAtRemovalData({
+          ? getManualVestedAtUpdateData({
               nextStatus: validatedFields.memberStatus,
               previousStatus: currentMember.memberStatus
             })
@@ -4074,7 +4084,7 @@ export const updateMemberDetailsActionAdmin = async (prevState: any, formData: F
       data: {
         ...validatedFields,
         ...(currentMember
-          ? getVestedAtRemovalData({
+          ? getManualVestedAtUpdateData({
               nextStatus: validatedFields.memberStatus,
               previousStatus: currentMember.memberStatus
             })
