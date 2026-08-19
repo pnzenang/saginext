@@ -17,6 +17,7 @@ const hasCurrentPrismaDelegates = (client?: PrismaClient) =>
   Boolean(
     client &&
     'associationPaymentLedgerEntry' in (client as unknown as Record<string, unknown>) &&
+    'dashboardActivityLog' in (client as unknown as Record<string, unknown>) &&
     'delegateIssueNote' in (client as unknown as Record<string, unknown>) &&
     'delegateIssueNoteMessage' in (client as unknown as Record<string, unknown>) &&
     'deceasedMemberDocument' in (client as unknown as Record<string, unknown>) &&
@@ -25,6 +26,8 @@ const hasCurrentPrismaDelegates = (client?: PrismaClient) =>
     hasCachedModelField(client, 'DelegateIssueNote', 'delegateUnread') &&
     hasCachedModelField(client, 'DelegateIssueNoteMessage', 'authorRole') &&
     hasCachedModelField(client, 'DelegateIssueNoteMessage', 'cloudinaryPublicId') &&
+    hasCachedModelField(client, 'DashboardActivityLog', 'actorEmail') &&
+    hasCachedModelField(client, 'DashboardActivityLog', 'actorAssociationCode') &&
     hasCachedModelField(client, 'DeceasedMember', 'associationCode') &&
     hasCachedModelField(client, 'DeceasedMember', 'originalMemberVestedAt') &&
     hasCachedModelField(client, 'DeceasedMemberDocument', 'cloudinaryPublicId') &&

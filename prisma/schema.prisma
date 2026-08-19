@@ -368,6 +368,28 @@ model PaymentAlertReset {
   updatedAt DateTime @updatedAt
 }
 
+model DashboardActivityLog {
+  id                   String   @id @default(uuid())
+  dashboardScope       String
+  associationCode      String?
+  actorClerkId         String
+  actorEmail           String?
+  actorAssociationCode String?
+  actorName            String?
+  action               String
+  entityType           String
+  entityId             String?
+  summary              String
+  metadata             Json?
+  createdAt            DateTime @default(now())
+
+  @@index([dashboardScope, createdAt])
+  @@index([associationCode, createdAt])
+  @@index([actorClerkId, createdAt])
+  @@index([action, createdAt])
+  @@index([entityType, entityId])
+}
+
 model DelegateIssueNote {
   id                 String                     @id @default(uuid())
   associationCode    String

@@ -2,7 +2,7 @@
 
 import { randomUUID } from 'crypto'
 
-import { auth } from '@clerk/nextjs/server'
+import { auth, currentUser } from '@clerk/nextjs/server'
 
 import { redirect } from 'next/navigation'
 
@@ -34,6 +34,7 @@ import {
   type DelegateIssueNoteRole,
   type DeceasedMemberDocumentStatus,
   type DeceasedMemberDocumentType,
+  type DashboardActivityLogRow,
   type MemberTransferRequestStatus,
   type NameChangeRequestStatus
 } from './types'
@@ -91,6 +92,221 @@ const registrationDateFormatter = new Intl.DateTimeFormat('en-US', {
   month: '2-digit',
   year: 'numeric'
 })
+
+const getAssociationDisplayName = (profile: { associationCode: string; associationName: string }) =>
+  profile.associationName.trim() || profile.associationCode
+
+const getMemberActivityLabel = (member: {
+  firstName: string
+  lastAndMiddleNames: string
+  memberMatriculationNumber?: string | null
+}) => {
+  const fullName = `${member.firstName} ${member.lastAndMiddleNames}`.trim()
+  const matriculationNumber = member.memberMatriculationNumber?.trim()
+
+  return matriculationNumber ? `${fullName} (${matriculationNumber})` : fullName
+}
+
+const dashboardActivityScopes = {
+  admin: 'admin',
+  association: 'association'
+} as const
+
+type DashboardActivityScope = (typeof dashboardActivityScopes)[keyof typeof dashboardActivityScopes]
+type DashboardActivityLogClient = Prisma.TransactionClient | typeof db
+let dashboardActivityLogSchemaAvailable: boolean | undefined
+
+const revalidateDashboardActivityLogs = () => {
+  revalidatePath('/activity-log')
+  revalidatePath('/admin-activity-log')
+}
+
+const hasDashboardActivityLogTable = async (client: DashboardActivityLogClient) => {
+  if (dashboardActivityLogSchemaAvailable) return true
+
+  const [result] = await client.$queryRaw<{ exists: boolean }[]>(
+    Prisma.sql`
+      SELECT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'DashboardActivityLog'
+          AND column_name = 'actorEmail'
+      ) AS "exists"
+    `
+  )
+
+  dashboardActivityLogSchemaAvailable = Boolean(result?.exists)
+
+  return dashboardActivityLogSchemaAvailable
+}
+
+const defaultAdminActivityEmail = 'info@sagiusa.org'
+
+const findEmailClaim = (claims: unknown) => {
+  if (!claims || typeof claims !== 'object') return null
+
+  const record = claims as Record<string, unknown>
+  const emailClaimNames = ['email', 'email_address', 'login_email', 'identifier']
+
+  for (const claimName of emailClaimNames) {
+    const value = record[claimName]
+
+    if (typeof value === 'string' && value.includes('@')) {
+      return value
+    }
+  }
+
+  return null
+}
+
+const getAdminActivityEmail = (actorClerkId: string) => {
+  if (actorClerkId !== process.env.ADMIN_USER_ID) return null
+
+  const adminActivityEmail = process.env.ADMIN_ACTIVITY_EMAIL?.trim() || defaultAdminActivityEmail
+
+  return adminActivityEmail.includes('@') ? adminActivityEmail : null
+}
+
+const fetchCurrentActorEmail = async (actorClerkId: string) => {
+  const currentAuth = await auth().catch(() => null)
+
+  if (currentAuth?.userId !== actorClerkId) return null
+
+  const sessionEmail = findEmailClaim(currentAuth.sessionClaims)
+  const actor = await currentUser().catch(() => null)
+
+  if (actor?.id !== actorClerkId) return null
+
+  const adminActivityEmail = getAdminActivityEmail(actorClerkId)
+
+  const matchingAdminActivityEmail = adminActivityEmail
+    ? actor.emailAddresses.find(email => email.emailAddress.toLowerCase() === adminActivityEmail.toLowerCase())
+        ?.emailAddress
+    : null
+
+  if (matchingAdminActivityEmail) return matchingAdminActivityEmail
+  if (sessionEmail) return sessionEmail
+
+  return actor.primaryEmailAddress?.emailAddress ?? actor.emailAddresses[0]?.emailAddress ?? null
+}
+
+const recordDashboardActivity = async ({
+  action,
+  actorClerkId,
+  associationCode,
+  dashboardScope,
+  entityId,
+  entityType,
+  metadata,
+  summary,
+  tx = db
+}: {
+  action: string
+  actorClerkId: string
+  associationCode?: string | null
+  dashboardScope: DashboardActivityScope
+  entityId?: string | null
+  entityType: string
+  metadata?: Prisma.InputJsonValue
+  summary: string
+  tx?: DashboardActivityLogClient
+}) => {
+  if (!(await hasDashboardActivityLogTable(tx))) {
+    console.warn('DashboardActivityLog table is not available. Skipping activity log write.')
+
+    return
+  }
+
+  const actorProfile = await tx.profile
+    .findUnique({
+      select: {
+        associationCode: true,
+        associationName: true
+      },
+      where: {
+        clerkId: actorClerkId
+      }
+    })
+    .catch(() => null)
+
+  const actorEmail = await fetchCurrentActorEmail(actorClerkId)
+
+  await tx.dashboardActivityLog.create({
+    data: {
+      action,
+      actorAssociationCode: actorProfile?.associationCode ?? null,
+      actorClerkId,
+      actorEmail,
+      actorName: actorProfile ? getAssociationDisplayName(actorProfile) : null,
+      associationCode: associationCode ?? null,
+      dashboardScope,
+      entityId: entityId ?? null,
+      entityType,
+      ...(metadata === undefined ? {} : { metadata }),
+      summary
+    }
+  })
+}
+
+const fetchDashboardActivityLogs = async (
+  where: Prisma.DashboardActivityLogWhereInput
+): Promise<DashboardActivityLogRow[]> => {
+  noStore()
+
+  if (!(await hasDashboardActivityLogTable(db))) {
+    console.warn('DashboardActivityLog table is not available. Returning an empty activity log.')
+
+    return []
+  }
+
+  const logs = await db.dashboardActivityLog.findMany({
+    orderBy: {
+      createdAt: 'desc'
+    },
+    take: 500,
+    where
+  })
+
+  const associationCodes = Array.from(
+    new Set(logs.map(log => log.associationCode).filter((code): code is string => Boolean(code)))
+  )
+
+  const associations =
+    associationCodes.length > 0
+      ? await db.profile.findMany({
+          select: {
+            associationCode: true,
+            associationName: true
+          },
+          where: {
+            associationCode: {
+              in: associationCodes
+            }
+          }
+        })
+      : []
+
+  const associationsByCode = new Map(associations.map(association => [association.associationCode, association]))
+
+  return logs.map(log => {
+    const association = log.associationCode ? associationsByCode.get(log.associationCode) : null
+    const associationName = association ? getAssociationDisplayName(association) : ''
+
+    return {
+      action: log.action,
+      actorEmail: log.actorEmail ?? '',
+      associationCode: log.associationCode ?? '',
+      associationLabel: [associationName, log.associationCode].filter(Boolean).join(' - '),
+      createdAt: log.createdAt.toISOString(),
+      dashboardScope: log.dashboardScope,
+      entityId: log.entityId ?? '',
+      entityType: log.entityType,
+      id: log.id,
+      summary: log.summary
+    }
+  })
+}
 
 const getAuthUser = async () => {
   const { userId } = await auth()
@@ -800,9 +1016,25 @@ const getCurrentAssociationCode = async (clerkId: string) => {
   return profile.associationCode
 }
 
+export const fetchAssociationDashboardActivityLogsAction = async () => {
+  const user = await getAuthUser()
+  const associationCode = await getCurrentAssociationCode(user.id)
+
+  return fetchDashboardActivityLogs({
+    associationCode
+  })
+}
+
+export const fetchAdminDashboardActivityLogsAction = async () => {
+  await assertAdminUser()
+
+  return fetchDashboardActivityLogs({})
+}
+
 const revalidatePaymentViews = () => {
   revalidatePath('/')
   revalidatePath('/admin-contribution-payments')
+  revalidatePath('/admin-activity-log')
   revalidatePath('/admin-payment-history')
   revalidatePath('/admin-payment-update')
   revalidatePath('/admin-registration-payments')
@@ -816,6 +1048,7 @@ const revalidatePaymentViews = () => {
   revalidatePath('/all-members')
   revalidatePath('/financial-position')
   revalidatePath('/admin-count')
+  revalidateDashboardActivityLogs()
 }
 
 const resettableTransactionHistoryEventTypes = [
@@ -833,7 +1066,7 @@ const cancellableTransactionHistoryEventTypes: string[] = [
 ]
 
 export const resetTransactionHistoryAction = async (): Promise<{ message: string }> => {
-  await assertAdminUser()
+  const user = await assertAdminUser()
 
   try {
     const deletedHistory = await db.associationPaymentLedgerEntry.deleteMany({
@@ -842,6 +1075,17 @@ export const resetTransactionHistoryAction = async (): Promise<{ message: string
           in: resettableTransactionHistoryEventTypes
         }
       }
+    })
+
+    await recordDashboardActivity({
+      action: 'transaction_history_reset',
+      actorClerkId: user.id,
+      dashboardScope: dashboardActivityScopes.admin,
+      entityType: 'transaction_history',
+      summary:
+        deletedHistory.count === 0
+          ? 'Reset transaction history with no matching records found.'
+          : `Reset ${deletedHistory.count} transaction history record${deletedHistory.count === 1 ? '' : 's'}.`
     })
 
     revalidatePaymentViews()
@@ -1238,6 +1482,19 @@ export const cancelTransactionHistoryEntryAction = async (
           tx
         })
       }
+
+      await recordDashboardActivity({
+        action: 'transaction_history_cancelled',
+        actorClerkId: user.id,
+        associationCode: entry.associationCode,
+        dashboardScope: dashboardActivityScopes.admin,
+        entityId: entry.id,
+        entityType: 'transaction_history',
+        summary: `Cancelled ${entry.paymentType} ${entry.eventType} transaction for ${entry.associationCode}: ${currencyFormatter.format(amount)}.${
+          cancellationReason ? ` Reason: ${cancellationReason}` : ''
+        }`,
+        tx
+      })
     })
 
     revalidatePaymentViews()
@@ -1253,6 +1510,7 @@ const revalidateDeathDocumentationViews = () => {
   revalidatePath('/admin-death-documentations')
   revalidatePath('/death-documentations')
   revalidatePath('/deceased-members')
+  revalidateDashboardActivityLogs()
 }
 
 const sendDeathAnnouncementAcknowledgmentToDelegate = async (associationCode: string) => {
@@ -1304,11 +1562,13 @@ const revalidateNameChangeDocumentationViews = () => {
   revalidatePath('/admin-name-changes')
   revalidatePath('/all-members')
   revalidatePath('/name-modification')
+  revalidateDashboardActivityLogs()
 }
 
 const revalidateMemberTransferViews = () => {
   revalidatePath('/admin-member-transfers')
   revalidatePath('/member-transfer')
+  revalidateDashboardActivityLogs()
 }
 
 const issueNoteSubjectMaxLength = 140
@@ -1317,6 +1577,7 @@ const issueNoteBodyMaxLength = 4000
 const revalidateIssueNoteViews = () => {
   revalidatePath('/notes')
   revalidatePath('/admin-notes')
+  revalidateDashboardActivityLogs()
 }
 
 const getIssueNoteTextField = (formData: FormData, fieldName: string, maxLength: number) => {
@@ -1387,7 +1648,8 @@ const assertIssueNoteAccess = async (noteId: string, actor: Awaited<ReturnType<t
     select: {
       associationCode: true,
       id: true,
-      status: true
+      status: true,
+      subject: true
     },
     where: {
       id: noteId
@@ -1529,6 +1791,16 @@ export const createDelegateIssueNoteAction = async (
       throw error
     }
 
+    await recordDashboardActivity({
+      action: 'message_created',
+      actorClerkId: actor.id,
+      associationCode: actor.profile.associationCode,
+      dashboardScope: dashboardActivityScopes.association,
+      entityId: noteId,
+      entityType: 'message',
+      summary: `Sent message to admin: ${subject}.`
+    })
+
     revalidateIssueNoteViews()
 
     return { message: 'Message sent to the admin team.' }
@@ -1612,6 +1884,16 @@ export const createAdminIssueNoteAction = async (prevState: any, formData: FormD
       throw error
     }
 
+    await recordDashboardActivity({
+      action: 'message_created',
+      actorClerkId: user.id,
+      associationCode: profile.associationCode,
+      dashboardScope: dashboardActivityScopes.admin,
+      entityId: noteId,
+      entityType: 'message',
+      summary: `Sent message to ${profile.associationCode}: ${subject}.`
+    })
+
     revalidateIssueNoteViews()
 
     return { message: 'Message sent to the delegate.' }
@@ -1683,6 +1965,16 @@ export const replyToIssueNoteAction = async (prevState: any, formData: FormData)
       throw error
     }
 
+    await recordDashboardActivity({
+      action: 'message_replied',
+      actorClerkId: actor.id,
+      associationCode: note.associationCode,
+      dashboardScope: isAdminReply ? dashboardActivityScopes.admin : dashboardActivityScopes.association,
+      entityId: note.id,
+      entityType: 'message',
+      summary: `Replied to message: ${note.subject}.`
+    })
+
     revalidateIssueNoteViews()
 
     return { message: 'Reply added.' }
@@ -1731,8 +2023,10 @@ export const resolveIssueNoteAction = async (prevState: any, formData: FormData)
 
     const note = await db.delegateIssueNote.findUnique({
       select: {
+        associationCode: true,
         id: true,
-        status: true
+        status: true,
+        subject: true
       },
       where: {
         id: noteId
@@ -1758,6 +2052,16 @@ export const resolveIssueNoteAction = async (prevState: any, formData: FormData)
       where: {
         id: note.id
       }
+    })
+
+    await recordDashboardActivity({
+      action: 'message_resolved',
+      actorClerkId: user.id,
+      associationCode: note.associationCode,
+      dashboardScope: dashboardActivityScopes.admin,
+      entityId: note.id,
+      entityType: 'message',
+      summary: `Resolved message: ${note.subject}.`
     })
 
     revalidateIssueNoteViews()
@@ -1841,6 +2145,16 @@ export const createMemberAction = async (provState: any, formData: FormData): Pr
       }
 
       return createdMember
+    })
+
+    await recordDashboardActivity({
+      action: 'member_created',
+      actorClerkId: user.id,
+      associationCode: member.associationCode,
+      dashboardScope: dashboardActivityScopes.association,
+      entityId: member.id,
+      entityType: 'member',
+      summary: `Added ${getMemberActivityLabel(member)} with ${member.memberStatus} status.`
     })
 
     revalidatePaymentViews()
@@ -2302,6 +2616,16 @@ export const createAssociationContributionAssessmentAction = async (
       })
     })
 
+    await recordDashboardActivity({
+      action: 'contribution_assessment_published',
+      actorClerkId: user.id,
+      dashboardScope: dashboardActivityScopes.admin,
+      entityType: 'contribution_assessment',
+      summary: `Published contribution table for ${publishedDeathCount} death${
+        publishedDeathCount === 1 ? '' : 's'
+      }, ${vestedMembers.length} vested members, and ${currencyFormatter.format(totalAmount)} total.`
+    })
+
     revalidatePaymentViews()
 
     return {
@@ -2533,6 +2857,15 @@ export const resetAssociationContributionCalculationAction = async (): Promise<{
         timeout: 20000
       }
     )
+
+    await recordDashboardActivity({
+      action: 'contribution_calculation_reset',
+      actorClerkId: user.id,
+      dashboardScope: dashboardActivityScopes.admin,
+      entityType: 'contribution_calculation',
+      summary:
+        'Reset contribution calculation, cleared Payment Update for the new contribution cycle, and kept contribution balances.'
+    })
 
     revalidatePaymentViews()
     revalidatePath('/admin-contribution-calculation')
@@ -2830,6 +3163,19 @@ export const saveAssociationContributionPaymentAction = async (
           }
         })
 
+        await recordDashboardActivity({
+          action: 'contribution_payment_submitted',
+          actorClerkId: user.id,
+          associationCode,
+          dashboardScope: dashboardActivityScopes.association,
+          entityId: payment.id,
+          entityType: 'payment',
+          summary: `Submitted contribution payment of ${currencyFormatter.format(amountSent)}.${
+            uploadedProofDocument ? ' Proof of payment was uploaded.' : ''
+          }`,
+          tx
+        })
+
         if (uploadedProofDocument && proofMessageId && proofNoteId) {
           const messageBody = `Proof of payment uploaded for the contribution payment SAGI marked not found (${formattedAmountNotFound}). The delegate recorded a new contribution amount of ${currencyFormatter.format(amountSent)}.`
 
@@ -3006,6 +3352,19 @@ export const saveAssociationRegistrationPaymentAction = async (
           }
         })
 
+        await recordDashboardActivity({
+          action: 'registration_payment_submitted',
+          actorClerkId: user.id,
+          associationCode,
+          dashboardScope: dashboardActivityScopes.association,
+          entityId: payment.id,
+          entityType: 'payment',
+          summary: `Submitted registration payment of ${currencyFormatter.format(amountSent)}.${
+            uploadedProofDocument ? ' Proof of payment was uploaded.' : ''
+          }`,
+          tx
+        })
+
         if (uploadedProofDocument && proofMessageId && proofNoteId) {
           const messageBody = `Proof of payment uploaded for the registration payment SAGI marked not found (${formattedAmountNotFound}). The delegate recorded a new registration amount of ${currencyFormatter.format(amountSent)}.`
 
@@ -3154,6 +3513,17 @@ export const verifyAssociationContributionPaymentAction = async (formData: FormD
           paymentType: associationPaymentTypes.contribution
         }
       })
+
+      await recordDashboardActivity({
+        action: 'contribution_payment_verified',
+        actorClerkId: user.id,
+        associationCode,
+        dashboardScope: dashboardActivityScopes.admin,
+        entityId: payment.id,
+        entityType: 'payment',
+        summary: `Verified contribution payment of ${currencyFormatter.format(amountToVerify)} for ${associationCode}.`,
+        tx
+      })
     })
 
     revalidatePaymentViews()
@@ -3198,6 +3568,16 @@ const addAssociationBalanceAdjustment = async (formData: FormData, balanceType: 
           note: `${balanceType} balance manually adjusted by SAGI.`,
           paymentType: balanceType
         }
+      })
+
+      await recordDashboardActivity({
+        action: 'payment_balance_adjusted',
+        actorClerkId: user.id,
+        associationCode,
+        dashboardScope: dashboardActivityScopes.admin,
+        entityType: 'payment',
+        summary: `Adjusted ${balanceType} balance for ${associationCode} by ${currencyFormatter.format(amount)}.`,
+        tx
       })
     })
 
@@ -3276,6 +3656,16 @@ export const addAssociationContributionSentAdjustmentAction = async (formData: F
           note: 'Contribution payment found by SAGI.',
           paymentType: associationPaymentTypes.contribution
         }
+      })
+
+      await recordDashboardActivity({
+        action: 'contribution_payment_found',
+        actorClerkId: user.id,
+        associationCode,
+        dashboardScope: dashboardActivityScopes.admin,
+        entityType: 'payment',
+        summary: `Recorded found contribution payment for ${associationCode}: ${currencyFormatter.format(amount)}.`,
+        tx
       })
     })
 
@@ -3377,6 +3767,17 @@ export const markAssociationContributionPaymentNotFoundAction = async (formData:
           subject: getContributionProofRequestSubject(formattedAmountNotFound)
         }
       })
+
+      await recordDashboardActivity({
+        action: 'contribution_payment_not_found',
+        actorClerkId: user.id,
+        associationCode,
+        dashboardScope: dashboardActivityScopes.admin,
+        entityId: noteId,
+        entityType: 'payment',
+        summary: `Marked contribution payment not found for ${associationCode}: ${formattedAmountNotFound}.`,
+        tx
+      })
     })
 
     revalidatePaymentViews()
@@ -3452,6 +3853,16 @@ export const addAssociationRegistrationSentAdjustmentAction = async (formData: F
           paymentType: associationPaymentTypes.registration
         }
       })
+
+      await recordDashboardActivity({
+        action: 'registration_payment_found',
+        actorClerkId: user.id,
+        associationCode,
+        dashboardScope: dashboardActivityScopes.admin,
+        entityType: 'payment',
+        summary: `Recorded found registration payment for ${associationCode}: ${currencyFormatter.format(amount)}.`,
+        tx
+      })
     })
 
     revalidatePaymentViews()
@@ -3515,6 +3926,17 @@ export const verifyAssociationRegistrationPaymentAction = async (formData: FormD
           note: 'Registration payment verified by SAGI.',
           paymentType: associationPaymentTypes.registration
         }
+      })
+
+      await recordDashboardActivity({
+        action: 'registration_payment_verified',
+        actorClerkId: user.id,
+        associationCode,
+        dashboardScope: dashboardActivityScopes.admin,
+        entityId: payment.id,
+        entityType: 'payment',
+        summary: `Verified registration payment of ${currencyFormatter.format(amountSent)} for ${associationCode}.`,
+        tx
       })
     })
 
@@ -3614,6 +4036,17 @@ export const markAssociationRegistrationPaymentNotFoundAction = async (formData:
           subject: getRegistrationProofRequestSubject(formattedAmountNotFound)
         }
       })
+
+      await recordDashboardActivity({
+        action: 'registration_payment_not_found',
+        actorClerkId: user.id,
+        associationCode,
+        dashboardScope: dashboardActivityScopes.admin,
+        entityId: noteId,
+        entityType: 'payment',
+        summary: `Marked registration payment not found for ${associationCode}: ${formattedAmountNotFound}.`,
+        tx
+      })
     })
 
     revalidatePaymentViews()
@@ -3661,6 +4094,16 @@ export const resetAssociationRegistrationPaymentAction = async (formData: FormDa
           associationCode
         }
       })
+
+      await recordDashboardActivity({
+        action: 'registration_payment_reset',
+        actorClerkId: user.id,
+        associationCode,
+        dashboardScope: dashboardActivityScopes.admin,
+        entityType: 'payment',
+        summary: `Reset registration payment balance for ${associationCode}.`,
+        tx
+      })
     })
 
     revalidatePaymentViews()
@@ -3673,7 +4116,7 @@ export const movePendingMembersToAwaitingPublicationAction = async (
   _prevState: { message: string },
   formData: FormData
 ): Promise<{ message: string }> => {
-  await assertAdminUser()
+  const user = await assertAdminUser()
 
   try {
     const memberIds = getStringFormValues(formData, 'memberIds')
@@ -3726,6 +4169,16 @@ export const movePendingMembersToAwaitingPublicationAction = async (
       return updatedMembers.count
     })
 
+    if (updatedCount > 0) {
+      await recordDashboardActivity({
+        action: 'members_moved_to_awaiting_publication',
+        actorClerkId: user.id,
+        dashboardScope: dashboardActivityScopes.admin,
+        entityType: 'member',
+        summary: `Moved ${updatedCount} pending member${updatedCount === 1 ? '' : 's'} to Awaiting Publication.`
+      })
+    }
+
     revalidatePaymentViews()
 
     if (updatedCount === 0) {
@@ -3746,7 +4199,7 @@ export const makeMembersDelinquentAction = async (
   _prevState: { message: string },
   formData: FormData
 ): Promise<{ message: string }> => {
-  await assertAdminUser()
+  const user = await assertAdminUser()
 
   try {
     const memberIds = getStringFormValues(formData, 'memberIds')
@@ -3802,6 +4255,16 @@ export const makeMembersDelinquentAction = async (
       return updatedMembers.count
     })
 
+    if (updatedCount > 0) {
+      await recordDashboardActivity({
+        action: 'members_moved_to_not_in_good_standing',
+        actorClerkId: user.id,
+        dashboardScope: dashboardActivityScopes.admin,
+        entityType: 'member',
+        summary: `Moved ${updatedCount} vested member${updatedCount === 1 ? '' : 's'} to Not in Good Standing.`
+      })
+    }
+
     revalidatePaymentViews()
 
     if (updatedCount === 0) {
@@ -3822,7 +4285,7 @@ export const makeAwaitingMembersVestedAction = async (
   _prevState: { message: string },
   formData: FormData
 ): Promise<{ message: string }> => {
-  await assertAdminUser()
+  const user = await assertAdminUser()
 
   try {
     const memberIds = getStringFormValues(formData, 'memberIds')
@@ -3844,6 +4307,18 @@ export const makeAwaitingMembersVestedAction = async (
       }
     })
 
+    if (updatedMembers.count > 0) {
+      await recordDashboardActivity({
+        action: 'members_moved_to_vested',
+        actorClerkId: user.id,
+        dashboardScope: dashboardActivityScopes.admin,
+        entityType: 'member',
+        summary: `Moved ${updatedMembers.count} awaiting publication member${
+          updatedMembers.count === 1 ? '' : 's'
+        } to Vested without applying contribution credit.`
+      })
+    }
+
     revalidatePaymentViews()
 
     if (updatedMembers.count === 0) {
@@ -3864,7 +4339,7 @@ export const makeMembersVestedAction = async (
   _prevState: { message: string },
   formData: FormData
 ): Promise<{ message: string }> => {
-  await assertAdminUser()
+  const user = await assertAdminUser()
 
   try {
     const memberIds = getStringFormValues(formData, 'memberIds')
@@ -3929,6 +4404,16 @@ export const makeMembersVestedAction = async (
       return updatedMembers.count
     })
 
+    if (updatedCount > 0) {
+      await recordDashboardActivity({
+        action: 'members_moved_to_vested',
+        actorClerkId: user.id,
+        dashboardScope: dashboardActivityScopes.admin,
+        entityType: 'member',
+        summary: `Moved ${updatedCount} delinquent member${updatedCount === 1 ? '' : 's'} to Vested.`
+      })
+    }
+
     revalidatePaymentViews()
 
     if (updatedCount === 0) {
@@ -3946,7 +4431,7 @@ export const makeMembersVestedAction = async (
 }
 
 const resetPaymentAlert = async (alertType: string): Promise<void> => {
-  await assertAdminUser()
+  const user = await assertAdminUser()
 
   const resetAt = new Date()
 
@@ -3956,6 +4441,14 @@ const resetPaymentAlert = async (alertType: string): Promise<void> => {
     ON CONFLICT ("alertType")
     DO UPDATE SET "resetAt" = ${resetAt}, "updatedAt" = ${resetAt}
   `
+
+  await recordDashboardActivity({
+    action: 'payment_alert_reset',
+    actorClerkId: user.id,
+    dashboardScope: dashboardActivityScopes.admin,
+    entityType: 'payment',
+    summary: `Reset ${alertType} payment alert.`
+  })
 
   revalidatePaymentViews()
 }
@@ -4000,6 +4493,8 @@ export const fetchSingleMemberDetailsAdmin = async (memberId: string) => {
 }
 
 export const updateMemberDetailsAction = async (prevState: any, formData: FormData) => {
+  const user = await getAuthUser()
+
   try {
     const memberId = formData.get('id') as string
     const rawData = Object.fromEntries(formData)
@@ -4010,12 +4505,15 @@ export const updateMemberDetailsAction = async (prevState: any, formData: FormDa
         id: memberId
       },
       select: {
+        associationCode: true,
+        firstName: true,
+        lastAndMiddleNames: true,
         memberMatriculationNumber: true,
         memberStatus: true
       }
     })
 
-    await db.member.update({
+    const updatedMember = await db.member.update({
       where: {
         id: memberId
       },
@@ -4047,6 +4545,16 @@ export const updateMemberDetailsAction = async (prevState: any, formData: FormDa
         previousStatus: currentMember.memberStatus
       })
     }
+
+    await recordDashboardActivity({
+      action: 'member_updated',
+      actorClerkId: user.id,
+      associationCode: updatedMember.associationCode,
+      dashboardScope: dashboardActivityScopes.association,
+      entityId: updatedMember.id,
+      entityType: 'member',
+      summary: `Updated ${getMemberActivityLabel(updatedMember)}. Status: ${updatedMember.memberStatus}.`
+    })
 
     revalidatePath(`all-members/${memberId}/edit`)
     revalidatePaymentViews()
@@ -4060,7 +4568,7 @@ export const updateMemberDetailsAction = async (prevState: any, formData: FormDa
 }
 
 export const updateMemberDetailsActionAdmin = async (prevState: any, formData: FormData) => {
-  await assertAdminUser()
+  const user = await assertAdminUser()
 
   try {
     const memberId = formData.get('id') as string
@@ -4072,12 +4580,15 @@ export const updateMemberDetailsActionAdmin = async (prevState: any, formData: F
         id: memberId
       },
       select: {
+        associationCode: true,
+        firstName: true,
+        lastAndMiddleNames: true,
         memberMatriculationNumber: true,
         memberStatus: true
       }
     })
 
-    await db.member.update({
+    const updatedMember = await db.member.update({
       where: {
         id: memberId
       },
@@ -4109,6 +4620,16 @@ export const updateMemberDetailsActionAdmin = async (prevState: any, formData: F
         previousStatus: currentMember.memberStatus
       })
     }
+
+    await recordDashboardActivity({
+      action: 'member_updated',
+      actorClerkId: user.id,
+      associationCode: updatedMember.associationCode,
+      dashboardScope: dashboardActivityScopes.admin,
+      entityId: updatedMember.id,
+      entityType: 'member',
+      summary: `Updated ${getMemberActivityLabel(updatedMember)}. Status: ${updatedMember.memberStatus}.`
+    })
 
     revalidatePath(`admin-all-members/${memberId}/edit`)
     revalidatePaymentViews()
@@ -4131,7 +4652,7 @@ export const updateMemberDetailsActionAdmin = async (prevState: any, formData: F
 }
 
 export const vestEligibleAwaitingPublicationMembersAction = async (): Promise<{ message: string }> => {
-  await assertAdminUser()
+  const user = await assertAdminUser()
 
   try {
     const cutoffAt = getAwaitingPublicationVestingCutoff()
@@ -4147,6 +4668,18 @@ export const vestEligibleAwaitingPublicationMembersAction = async (): Promise<{ 
         memberStatus: memberStatus.Awaiting
       }
     })
+
+    if (updatedMembers.count > 0) {
+      await recordDashboardActivity({
+        action: 'eligible_members_vested',
+        actorClerkId: user.id,
+        dashboardScope: dashboardActivityScopes.admin,
+        entityType: 'member',
+        summary: `Moved ${updatedMembers.count} eligible awaiting publication member${
+          updatedMembers.count === 1 ? '' : 's'
+        } to Vested.`
+      })
+    }
 
     revalidatePaymentViews()
 
@@ -4294,7 +4827,8 @@ export const submitNameChangeRequestAction = async (
         clerkId: true,
         firstName: true,
         id: true,
-        lastAndMiddleNames: true
+        lastAndMiddleNames: true,
+        memberMatriculationNumber: true
       },
       where: {
         id: memberId
@@ -4331,7 +4865,7 @@ export const submitNameChangeRequestAction = async (
       throw new Error('This member already has a name change request waiting for admin review.')
     }
 
-    await db.nameChangeRequest.create({
+    const request = await db.nameChangeRequest.create({
       data: {
         associationCode: member.associationCode,
         clerkId: member.clerkId,
@@ -4345,6 +4879,16 @@ export const submitNameChangeRequestAction = async (
         requestedLastAndMiddleNames,
         status: 'submitted'
       }
+    })
+
+    await recordDashboardActivity({
+      action: 'name_change_requested',
+      actorClerkId: user.id,
+      associationCode: member.associationCode,
+      dashboardScope: isAdminUser ? dashboardActivityScopes.admin : dashboardActivityScopes.association,
+      entityId: request.id,
+      entityType: 'name_change',
+      summary: `Requested name change for ${getMemberActivityLabel(member)} to ${requestedFirstName} ${requestedLastAndMiddleNames}.`
     })
 
     revalidateNameChangeDocumentationViews()
@@ -4379,6 +4923,7 @@ export const uploadNameChangeDocumentationAction = async (
 
     const request = await db.nameChangeRequest.findUnique({
       select: {
+        associationCode: true,
         cloudinaryDeliveryType: true,
         cloudinaryPublicId: true,
         cloudinaryResourceType: true,
@@ -4444,6 +4989,16 @@ export const uploadNameChangeDocumentationAction = async (
 
     await deleteCloudinaryDocumentWithoutBlocking(request)
 
+    await recordDashboardActivity({
+      action: 'name_change_document_uploaded',
+      actorClerkId: user.id,
+      associationCode: request.associationCode,
+      dashboardScope: isAdminUser ? dashboardActivityScopes.admin : dashboardActivityScopes.association,
+      entityId: request.id,
+      entityType: 'name_change',
+      summary: `Uploaded documentation for name change request.`
+    })
+
     revalidateNameChangeDocumentationViews()
 
     return { message: 'Name change documentation uploaded successfully' }
@@ -4476,10 +5031,18 @@ export const reviewNameChangeRequestAction = async (
         id: requestId
       },
       select: {
+        associationCode: true,
         cloudinaryPublicId: true,
         documentRequired: true,
         fileData: true,
         id: true,
+        member: {
+          select: {
+            firstName: true,
+            lastAndMiddleNames: true,
+            memberMatriculationNumber: true
+          }
+        },
         memberId: true,
         requestedFirstName: true,
         requestedLastAndMiddleNames: true,
@@ -4511,6 +5074,16 @@ export const reviewNameChangeRequestAction = async (
         where: {
           id: request.id
         }
+      })
+
+      await recordDashboardActivity({
+        action: 'name_change_documentation_requested',
+        actorClerkId: user.id,
+        associationCode: request.associationCode,
+        dashboardScope: dashboardActivityScopes.admin,
+        entityId: request.id,
+        entityType: 'name_change',
+        summary: `Requested documentation for ${getMemberActivityLabel(request.member)} name change.`
       })
 
       revalidateNameChangeDocumentationViews()
@@ -4555,6 +5128,19 @@ export const reviewNameChangeRequestAction = async (
       })
     }
 
+    await recordDashboardActivity({
+      action: `name_change_${status}`,
+      actorClerkId: user.id,
+      associationCode: request.associationCode,
+      dashboardScope: dashboardActivityScopes.admin,
+      entityId: request.id,
+      entityType: 'name_change',
+      summary:
+        status === 'approved'
+          ? `Approved name change for ${getMemberActivityLabel(request.member)} to ${request.requestedFirstName} ${request.requestedLastAndMiddleNames}.`
+          : `Rejected name change for ${getMemberActivityLabel(request.member)}.${rejectionReason ? ` Reason: ${rejectionReason}` : ''}`
+    })
+
     revalidatePaymentViews()
     revalidateNameChangeDocumentationViews()
 
@@ -4575,6 +5161,7 @@ export const deleteNameChangeRequestAction = async (prevState: { requestId: stri
   try {
     const request = await db.nameChangeRequest.findUnique({
       select: {
+        associationCode: true,
         cloudinaryDeliveryType: true,
         cloudinaryPublicId: true,
         cloudinaryResourceType: true,
@@ -4608,6 +5195,16 @@ export const deleteNameChangeRequestAction = async (prevState: { requestId: stri
       where: {
         id: request.id
       }
+    })
+
+    await recordDashboardActivity({
+      action: 'name_change_deleted',
+      actorClerkId: user.id,
+      associationCode: request.associationCode,
+      dashboardScope: dashboardActivityScopes.association,
+      entityId: request.id,
+      entityType: 'name_change',
+      summary: 'Removed a name change request.'
     })
 
     revalidateNameChangeDocumentationViews()
@@ -5002,7 +5599,7 @@ export const submitAdminMemberTransferRequestAction = async (
   const copy = memberTransferActionCopy[await getServerActionLanguage()]
 
   try {
-    await assertAdminUser()
+    const user = await assertAdminUser()
 
     const memberId = getRequiredFormValue(formData, 'memberId')
 
@@ -5080,7 +5677,7 @@ export const submitAdminMemberTransferRequestAction = async (
       throw new Error(copy.openRequest)
     }
 
-    await db.memberTransferRequest.create({
+    const request = await db.memberTransferRequest.create({
       data: {
         currentFirstName: member.firstName,
         currentLastAndMiddleNames: member.lastAndMiddleNames,
@@ -5092,6 +5689,18 @@ export const submitAdminMemberTransferRequestAction = async (
         receivingClerkId: receivingAssociation.clerkId,
         status: 'admin_initiated'
       }
+    })
+
+    await recordDashboardActivity({
+      action: 'member_transfer_requested',
+      actorClerkId: user.id,
+      associationCode: member.associationCode,
+      dashboardScope: dashboardActivityScopes.admin,
+      entityId: request.id,
+      entityType: 'member_transfer',
+      summary: `Started transfer for ${getMemberActivityLabel(member)} from ${
+        initiatingAssociation.associationCode
+      } to ${receivingAssociation.associationCode}.`
     })
 
     revalidateMemberTransferViews()
@@ -5168,7 +5777,7 @@ export const submitMemberTransferRequestAction = async (
       throw new Error(copy.openRequest)
     }
 
-    await db.memberTransferRequest.create({
+    const request = await db.memberTransferRequest.create({
       data: {
         currentFirstName: member.firstName,
         currentLastAndMiddleNames: member.lastAndMiddleNames,
@@ -5180,6 +5789,18 @@ export const submitMemberTransferRequestAction = async (
         receivingClerkId: receivingAssociation.clerkId,
         status: 'receiving_delegate_pending'
       }
+    })
+
+    await recordDashboardActivity({
+      action: 'member_transfer_requested',
+      actorClerkId: receivingAssociation.clerkId,
+      associationCode: receivingAssociation.associationCode,
+      dashboardScope: dashboardActivityScopes.association,
+      entityId: request.id,
+      entityType: 'member_transfer',
+      summary: `Requested transfer for ${getMemberActivityLabel(member)} from ${
+        releasingAssociation.associationCode
+      } to ${receivingAssociation.associationCode}.`
     })
 
     revalidateMemberTransferViews()
@@ -5267,7 +5888,7 @@ export const submitOutgoingMemberTransferRequestAction = async (
       throw new Error(copy.openRequest)
     }
 
-    await db.memberTransferRequest.create({
+    const request = await db.memberTransferRequest.create({
       data: {
         currentFirstName: member.firstName,
         currentLastAndMiddleNames: member.lastAndMiddleNames,
@@ -5279,6 +5900,18 @@ export const submitOutgoingMemberTransferRequestAction = async (
         receivingClerkId: receivingAssociation.clerkId,
         status: 'initiating_delegate_approved'
       }
+    })
+
+    await recordDashboardActivity({
+      action: 'member_transfer_requested',
+      actorClerkId: initiatingAssociation.clerkId,
+      associationCode: initiatingAssociation.associationCode,
+      dashboardScope: dashboardActivityScopes.association,
+      entityId: request.id,
+      entityType: 'member_transfer',
+      summary: `Requested outgoing transfer for ${getMemberActivityLabel(member)} from ${
+        initiatingAssociation.associationCode
+      } to ${receivingAssociation.associationCode}.`
     })
 
     revalidateMemberTransferViews()
@@ -5370,6 +6003,27 @@ export const reviewIncomingMemberTransferRequestAction = async (
       }
     })
 
+    await recordDashboardActivity({
+      action:
+        status === 'receiving_delegate_rejected' ? 'member_transfer_rejected' : 'member_transfer_delegate_approved',
+      actorClerkId: user.id,
+      associationCode: isCurrentDelegateReleaseReview
+        ? request.initiatingAssociationCode
+        : request.receivingAssociationCode,
+      dashboardScope: dashboardActivityScopes.association,
+      entityId: request.id,
+      entityType: 'member_transfer',
+      summary: `${
+        status === 'receiving_delegate_rejected' ? 'Rejected' : 'Approved'
+      } transfer for ${getMemberActivityLabel({
+        firstName: request.currentFirstName,
+        lastAndMiddleNames: request.currentLastAndMiddleNames,
+        memberMatriculationNumber: request.memberMatriculationNumber
+      })} from ${request.initiatingAssociationCode} to ${request.receivingAssociationCode}.${
+        rejectionReason ? ` Reason: ${rejectionReason}` : ''
+      }`
+    })
+
     revalidateMemberTransferViews()
 
     return {
@@ -5436,6 +6090,23 @@ export const cancelMemberTransferRequestAction = async (prevState: { requestId: 
       }
     })
 
+    await recordDashboardActivity({
+      action: 'member_transfer_cancelled',
+      actorClerkId: user.id,
+      associationCode:
+        requestInitiatorClerkId === request.initiatingClerkId
+          ? request.initiatingAssociationCode
+          : request.receivingAssociationCode,
+      dashboardScope: dashboardActivityScopes.association,
+      entityId: request.id,
+      entityType: 'member_transfer',
+      summary: `Cancelled transfer for ${getMemberActivityLabel({
+        firstName: request.currentFirstName,
+        lastAndMiddleNames: request.currentLastAndMiddleNames,
+        memberMatriculationNumber: request.memberMatriculationNumber
+      })} from ${request.initiatingAssociationCode} to ${request.receivingAssociationCode}.`
+    })
+
     revalidateMemberTransferViews()
 
     return { message: copy.cancelled }
@@ -5488,6 +6159,18 @@ export const reviewAdminMemberTransferRequestAction = async (
         where: {
           id: request.id
         }
+      })
+
+      await recordDashboardActivity({
+        action: 'member_transfer_admin_rejected',
+        actorClerkId: user.id,
+        associationCode: request.initiatingAssociationCode,
+        dashboardScope: dashboardActivityScopes.admin,
+        entityId: request.id,
+        entityType: 'member_transfer',
+        summary: `Admin rejected transfer for ${getMemberActivityLabel(request.member)} from ${
+          request.initiatingAssociationCode
+        } to ${request.receivingAssociationCode}.${rejectionReason ? ` Reason: ${rejectionReason}` : ''}`
       })
 
       revalidateMemberTransferViews()
@@ -5565,6 +6248,18 @@ export const reviewAdminMemberTransferRequestAction = async (
       })
     ])
 
+    await recordDashboardActivity({
+      action: 'member_transfer_admin_approved',
+      actorClerkId: user.id,
+      associationCode: receivingAssociation.associationCode,
+      dashboardScope: dashboardActivityScopes.admin,
+      entityId: request.id,
+      entityType: 'member_transfer',
+      summary: `Admin approved transfer for ${getMemberActivityLabel(request.member)} from ${
+        request.initiatingAssociationCode
+      } to ${receivingAssociation.associationCode}. New matriculation number: ${nextMemberMatriculationNumber}.`
+    })
+
     revalidatePaymentViews()
     revalidateMemberTransferViews()
 
@@ -5594,7 +6289,7 @@ export const createRemovedMemberAction = async (provState: any, formData: FormDa
     if (!member) throw new Error('Member not found')
 
     await db.$transaction(async tx => {
-      await tx.removedMember.create({
+      const removedMember = await tx.removedMember.create({
         data: {
           associationCode: member.associationCode,
           associationName: member.associationName,
@@ -5621,6 +6316,17 @@ export const createRemovedMemberAction = async (provState: any, formData: FormDa
         where: {
           id: memberId
         }
+      })
+
+      await recordDashboardActivity({
+        action: 'member_removed',
+        actorClerkId: user.id,
+        associationCode: member.associationCode,
+        dashboardScope: dashboardActivityScopes.association,
+        entityId: removedMember.id,
+        entityType: 'member',
+        summary: `Removed ${getMemberActivityLabel(member)}. Reason: ${validatedFields.reasonForLeaving}.`,
+        tx
       })
     })
 
@@ -5636,7 +6342,7 @@ export const createRemovedMemberActionAdmin = async (
   provState: any,
   formData: FormData
 ): Promise<{ message: string }> => {
-  await assertAdminUser()
+  const user = await assertAdminUser()
 
   try {
     const memberId = formData.get('id') as string
@@ -5652,7 +6358,7 @@ export const createRemovedMemberActionAdmin = async (
     if (!member) throw new Error('Member not found')
 
     await db.$transaction(async tx => {
-      await tx.removedMember.create({
+      const removedMember = await tx.removedMember.create({
         data: {
           associationCode: member.associationCode,
           associationName: member.associationName,
@@ -5679,6 +6385,17 @@ export const createRemovedMemberActionAdmin = async (
         where: {
           id: memberId
         }
+      })
+
+      await recordDashboardActivity({
+        action: 'member_removed',
+        actorClerkId: user.id,
+        associationCode: member.associationCode,
+        dashboardScope: dashboardActivityScopes.admin,
+        entityId: removedMember.id,
+        entityType: 'member',
+        summary: `Removed ${getMemberActivityLabel(member)}. Reason: ${validatedFields.reasonForLeaving}.`,
+        tx
       })
     })
 
@@ -5765,6 +6482,17 @@ export const removeOverduePendingMembersAction = async (
           }
         }
       })
+
+      await recordDashboardActivity({
+        action: 'overdue_pending_members_removed',
+        actorClerkId: userId,
+        dashboardScope: isAdminUser ? dashboardActivityScopes.admin : dashboardActivityScopes.association,
+        entityType: 'member',
+        summary: `Moved ${overdueMembers.length} overdue pending member${
+          overdueMembers.length === 1 ? '' : 's'
+        } to Removed Members.`,
+        tx
+      })
     })
 
     revalidatePaymentViews()
@@ -5843,7 +6571,7 @@ export const restoreRemovedMemberAction = async (prevState: { removedMemberId: s
     const nameOfBeneficiary = removedMember.nameOfBeneficiary
 
     await db.$transaction(async tx => {
-      await tx.member.create({
+      const restoredMember = await tx.member.create({
         data: {
           ...(removedMember.originalMemberId ? { id: removedMember.originalMemberId } : {}),
           clerkId: removedMember.clerkId,
@@ -5888,6 +6616,17 @@ export const restoreRemovedMemberAction = async (prevState: { removedMemberId: s
           }
         })
       }
+
+      await recordDashboardActivity({
+        action: 'member_restored',
+        actorClerkId: user.id,
+        associationCode: removedMember.associationCode,
+        dashboardScope: isAdminUser ? dashboardActivityScopes.admin : dashboardActivityScopes.association,
+        entityId: restoredMember.id,
+        entityType: 'member',
+        summary: `Restored ${getMemberActivityLabel(restoredMember)} from Removed Members.`,
+        tx
+      })
     })
 
     revalidatePath('/removed-members')
@@ -5934,8 +6673,8 @@ export const createDeceasedMemberAction = async (provState: any, formData: FormD
       registrationDate: member.createdAt
     })
 
-    await db.$transaction([
-      db.deceasedMember.create({
+    await db.$transaction(async tx => {
+      const deceasedMember = await tx.deceasedMember.create({
         data: {
           ...validatedFields,
           associationCode: member.associationCode,
@@ -5948,18 +6687,31 @@ export const createDeceasedMemberAction = async (provState: any, formData: FormD
           originalMemberId: member.id,
           registrationDate: formatRegistrationDate(member.createdAt)
         }
-      }),
-      db.member.delete({
+      })
+
+      await tx.member.delete({
         where: {
           id: memberId
         }
-      }),
-      db.associationRegistrationUsage.deleteMany({
+      })
+
+      await tx.associationRegistrationUsage.deleteMany({
         where: {
           memberMatriculationNumber: member.memberMatriculationNumber
         }
       })
-    ])
+
+      await recordDashboardActivity({
+        action: 'death_announced',
+        actorClerkId: user.id,
+        associationCode: member.associationCode,
+        dashboardScope: dashboardActivityScopes.association,
+        entityId: deceasedMember.id,
+        entityType: 'deceased_member',
+        summary: `Moved ${getMemberActivityLabel(member)} to deceased members. Date of death: ${validatedFields.dateOfDeath}.`,
+        tx
+      })
+    })
 
     await addDeceasedMemberContributionUsage(member.associationCode)
     revalidatePaymentViews()
@@ -6003,7 +6755,7 @@ export const createDeceasedMemberActionAdmin = async (
   provState: any,
   formData: FormData
 ): Promise<{ message: string }> => {
-  await assertAdminUser()
+  const user = await assertAdminUser()
 
   try {
     const memberId = formData.get('id') as string
@@ -6030,8 +6782,8 @@ export const createDeceasedMemberActionAdmin = async (
       registrationDate: member.createdAt
     })
 
-    await db.$transaction([
-      db.deceasedMember.create({
+    await db.$transaction(async tx => {
+      const deceasedMember = await tx.deceasedMember.create({
         data: {
           ...validatedFields,
           associationCode: member.associationCode,
@@ -6044,18 +6796,31 @@ export const createDeceasedMemberActionAdmin = async (
           originalMemberId: member.id,
           registrationDate: formatRegistrationDate(member.createdAt)
         }
-      }),
-      db.member.delete({
+      })
+
+      await tx.member.delete({
         where: {
           id: memberId
         }
-      }),
-      db.associationRegistrationUsage.deleteMany({
+      })
+
+      await tx.associationRegistrationUsage.deleteMany({
         where: {
           memberMatriculationNumber: member.memberMatriculationNumber
         }
       })
-    ])
+
+      await recordDashboardActivity({
+        action: 'death_announced',
+        actorClerkId: user.id,
+        associationCode: member.associationCode,
+        dashboardScope: dashboardActivityScopes.admin,
+        entityId: deceasedMember.id,
+        entityType: 'deceased_member',
+        summary: `Moved ${getMemberActivityLabel(member)} to deceased members. Date of death: ${validatedFields.dateOfDeath}.`,
+        tx
+      })
+    })
 
     await addDeceasedMemberContributionUsage(member.associationCode)
     revalidatePaymentViews()
@@ -6119,9 +6884,19 @@ export const saveContributionCalculationAdminFeeAction = async (
       }
     })
 
+    await recordDashboardActivity({
+      action: 'contribution_admin_fee_saved',
+      actorClerkId: user.id,
+      dashboardScope: dashboardActivityScopes.admin,
+      entityId: 'current',
+      entityType: 'contribution_calculation',
+      summary: `Saved contribution calculation admin fee at ${currencyFormatter.format(adminFee)}.`
+    })
+
     revalidatePath('/admin-contribution-calculation')
     revalidatePath('/admin-contribution-payments')
     revalidatePath('/admin-contribution-payments')
+    revalidateDashboardActivityLogs()
 
     return { message: `Admin fee saved: ${currencyFormatter.format(adminFee)}.` }
   } catch (error) {
@@ -6155,6 +6930,7 @@ export const addContributionCalculationDeathAction = async (
         memberMatriculationNumber
       },
       select: {
+        associationCode: true,
         firstName: true,
         id: true,
         lastAndMiddleNames: true,
@@ -6183,7 +6959,20 @@ export const addContributionCalculationDeathAction = async (
       }
     })
 
+    await recordDashboardActivity({
+      action: 'contribution_calculation_death_added',
+      actorClerkId: user.id,
+      associationCode: deceasedMember.associationCode,
+      dashboardScope: dashboardActivityScopes.admin,
+      entityId: deceasedMember.id,
+      entityType: 'contribution_calculation',
+      summary: `Added ${getMemberActivityLabel(deceasedMember)} to contribution calculation for ${currencyFormatter.format(
+        roundCurrencyAmount(amountToContribute)
+      )}.`
+    })
+
     revalidatePath('/admin-contribution-calculation')
+    revalidateDashboardActivityLogs()
 
     return {
       message: `${deceasedMember.firstName} ${deceasedMember.lastAndMiddleNames} is ready for contribution calculation.`
@@ -6333,11 +7122,27 @@ export const fetchPublishedContributionTableAction = async () => {
 }
 
 export const deleteContributionCalculationDeathAction = async (formData: FormData): Promise<void> => {
-  await assertAdminUser()
+  const user = await assertAdminUser()
 
   const contributionCalculationDeathId = String(formData.get('contributionCalculationDeathId') ?? '')
 
   if (!contributionCalculationDeathId) return
+
+  const contributionCalculationDeath = await db.contributionCalculationDeath.findUnique({
+    include: {
+      deceasedMember: {
+        select: {
+          associationCode: true,
+          firstName: true,
+          lastAndMiddleNames: true,
+          memberMatriculationNumber: true
+        }
+      }
+    },
+    where: {
+      id: contributionCalculationDeathId
+    }
+  })
 
   await db.contributionCalculationDeath.delete({
     where: {
@@ -6345,8 +7150,23 @@ export const deleteContributionCalculationDeathAction = async (formData: FormDat
     }
   })
 
+  if (contributionCalculationDeath) {
+    await recordDashboardActivity({
+      action: 'contribution_calculation_death_removed',
+      actorClerkId: user.id,
+      associationCode: contributionCalculationDeath.deceasedMember.associationCode,
+      dashboardScope: dashboardActivityScopes.admin,
+      entityId: contributionCalculationDeath.deceasedMemberId,
+      entityType: 'contribution_calculation',
+      summary: `Removed ${getMemberActivityLabel(
+        contributionCalculationDeath.deceasedMember
+      )} from contribution calculation.`
+    })
+  }
+
   revalidatePath('/admin-contribution-calculation')
   revalidatePath('/admin-contribution-payments')
+  revalidateDashboardActivityLogs()
 }
 
 export const restoreDeceasedMemberAction = async (prevState: { deceasedMemberId: string }) => {
@@ -6405,7 +7225,7 @@ export const restoreDeceasedMemberAction = async (prevState: { deceasedMemberId:
     const nameOfBeneficiary = deceasedMember.nameOfBeneficiary
 
     await db.$transaction(async tx => {
-      await tx.member.create({
+      const restoredMember = await tx.member.create({
         data: {
           ...(deceasedMember.originalMemberId ? { id: deceasedMember.originalMemberId } : {}),
           associationCode,
@@ -6450,6 +7270,17 @@ export const restoreDeceasedMemberAction = async (prevState: { deceasedMemberId:
           }
         })
       }
+
+      await recordDashboardActivity({
+        action: 'deceased_member_restored',
+        actorClerkId: user.id,
+        associationCode,
+        dashboardScope: isAdminUser ? dashboardActivityScopes.admin : dashboardActivityScopes.association,
+        entityId: restoredMember.id,
+        entityType: 'deceased_member',
+        summary: `Restored ${getMemberActivityLabel(restoredMember)} from deceased members.`,
+        tx
+      })
 
       const contributionUsage = await tx.associationContributionUsage.findUnique({
         where: {
@@ -6577,8 +7408,12 @@ export const updateDeathDocumentationDetailsAction = async (
 
     const deceasedMember = await db.deceasedMember.findUnique({
       select: {
+        associationCode: true,
         clerkId: true,
-        id: true
+        firstName: true,
+        id: true,
+        lastAndMiddleNames: true,
+        memberMatriculationNumber: true
       },
       where: {
         id: deceasedMemberId
@@ -6604,6 +7439,16 @@ export const updateDeathDocumentationDetailsAction = async (
       where: {
         id: deceasedMember.id
       }
+    })
+
+    await recordDashboardActivity({
+      action: 'death_documentation_details_updated',
+      actorClerkId: user.id,
+      associationCode: deceasedMember.associationCode,
+      dashboardScope: isAdminUser ? dashboardActivityScopes.admin : dashboardActivityScopes.association,
+      entityId: deceasedMember.id,
+      entityType: 'death_documentation',
+      summary: `Updated death documentation details for ${getMemberActivityLabel(deceasedMember)}.`
     })
 
     revalidateDeathDocumentationViews()
@@ -6693,7 +7538,7 @@ export const uploadDeceasedMemberDocumentAction = async (
     })
 
     try {
-      await db.deceasedMemberDocument.upsert({
+      const document = await db.deceasedMemberDocument.upsert({
         create: {
           associationCode: deceasedMember.associationCode,
           clerkId: user.id,
@@ -6718,6 +7563,16 @@ export const uploadDeceasedMemberDocumentAction = async (
             documentType
           }
         }
+      })
+
+      await recordDashboardActivity({
+        action: 'death_document_uploaded',
+        actorClerkId: user.id,
+        associationCode: deceasedMember.associationCode,
+        dashboardScope: isAdminUser ? dashboardActivityScopes.admin : dashboardActivityScopes.association,
+        entityId: document.id,
+        entityType: 'death_documentation',
+        summary: `Uploaded ${deceasedMemberDocumentLabels[documentType]} for a death announcement.`
       })
     } catch (error) {
       await deleteCloudinaryDocumentWithoutBlocking({
@@ -6748,10 +7603,12 @@ export const deleteDeceasedMemberDocumentAction = async (prevState: { documentId
   try {
     const document = await db.deceasedMemberDocument.findUnique({
       select: {
+        associationCode: true,
         cloudinaryDeliveryType: true,
         cloudinaryPublicId: true,
         cloudinaryResourceType: true,
         clerkId: true,
+        documentType: true,
         id: true
       },
       where: {
@@ -6779,6 +7636,16 @@ export const deleteDeceasedMemberDocumentAction = async (prevState: { documentId
       }
     })
 
+    await recordDashboardActivity({
+      action: 'death_document_deleted',
+      actorClerkId: user.id,
+      associationCode: document.associationCode,
+      dashboardScope: dashboardActivityScopes.association,
+      entityId: document.id,
+      entityType: 'death_documentation',
+      summary: `Removed ${deceasedMemberDocumentLabels[document.documentType as DeceasedMemberDocumentType] ?? document.documentType}.`
+    })
+
     revalidateDeathDocumentationViews()
 
     return { message: 'Document removed successfully' }
@@ -6791,7 +7658,7 @@ export const reviewDeceasedMemberDocumentAction = async (
   provState: any,
   formData: FormData
 ): Promise<{ message: string }> => {
-  await assertAdminUser()
+  const user = await assertAdminUser()
 
   try {
     const documentId = getRequiredFormValue(formData, 'documentId')
@@ -6801,6 +7668,17 @@ export const reviewDeceasedMemberDocumentAction = async (
     if (!isDeceasedMemberDocumentStatus(status)) {
       throw new Error('Select a valid document review status.')
     }
+
+    const document = await db.deceasedMemberDocument.findUnique({
+      select: {
+        associationCode: true,
+        documentType: true,
+        id: true
+      },
+      where: {
+        id: documentId
+      }
+    })
 
     const { count } = await db.deceasedMemberDocument.updateMany({
       data: {
@@ -6815,6 +7693,20 @@ export const reviewDeceasedMemberDocumentAction = async (
 
     if (count === 0) {
       throw new Error('Document not found. It may have been removed or replaced. Please refresh and try again.')
+    }
+
+    if (document) {
+      await recordDashboardActivity({
+        action: `death_document_${status}`,
+        actorClerkId: user.id,
+        associationCode: document.associationCode,
+        dashboardScope: dashboardActivityScopes.admin,
+        entityId: document.id,
+        entityType: 'death_documentation',
+        summary: `Marked ${
+          deceasedMemberDocumentLabels[document.documentType as DeceasedMemberDocumentType] ?? document.documentType
+        } ${status}.${status === 'rejected' && rejectionReason ? ` Reason: ${rejectionReason}` : ''}`
+      })
     }
 
     revalidateDeathDocumentationViews()
@@ -6845,17 +7737,44 @@ export const deleteRemovedMemberAction = async (prevState: { removedMemberId: st
 }
 
 export const deleteDeceasedMemberAction = async (prevState: { deceasedMemberId: string }) => {
-  await assertAdminUser()
+  const user = await assertAdminUser()
 
   const { deceasedMemberId } = prevState
 
   try {
+    const deceasedMember = await db.deceasedMember.findUnique({
+      select: {
+        associationCode: true,
+        firstName: true,
+        id: true,
+        lastAndMiddleNames: true,
+        memberMatriculationNumber: true
+      },
+      where: {
+        id: deceasedMemberId
+      }
+    })
+
     await db.deceasedMember.delete({
       where: {
         id: deceasedMemberId
       }
     })
+
+    if (deceasedMember) {
+      await recordDashboardActivity({
+        action: 'deceased_member_deleted',
+        actorClerkId: user.id,
+        associationCode: deceasedMember.associationCode,
+        dashboardScope: dashboardActivityScopes.admin,
+        entityId: deceasedMember.id,
+        entityType: 'deceased_member',
+        summary: `Deleted deceased member record for ${getMemberActivityLabel(deceasedMember)}.`
+      })
+    }
+
     revalidatePath('/deceased-members')
+    revalidateDashboardActivityLogs()
 
     return { message: 'deceased member removed ' }
   } catch (error) {
@@ -6893,7 +7812,7 @@ export const fetchSingleDeceasedMemberDetailsAdmin = async (deceasedMemberId: st
 }
 
 const updateDeceasedMemberDetailsAsAdmin = async (formData: FormData) => {
-  await assertAdminUser()
+  const user = await assertAdminUser()
 
   const deceasedMemberId = formData.get('id')
 
@@ -6906,7 +7825,11 @@ const updateDeceasedMemberDetailsAsAdmin = async (formData: FormData) => {
 
   const deceasedMember = await db.deceasedMember.findUnique({
     select: {
-      createdAt: true
+      associationCode: true,
+      createdAt: true,
+      firstName: true,
+      lastAndMiddleNames: true,
+      memberMatriculationNumber: true
     },
     where: {
       id: deceasedMemberId
@@ -6932,9 +7855,24 @@ const updateDeceasedMemberDetailsAsAdmin = async (formData: FormData) => {
     }
   })
 
+  await recordDashboardActivity({
+    action: 'deceased_member_updated',
+    actorClerkId: user.id,
+    associationCode: deceasedMember.associationCode,
+    dashboardScope: dashboardActivityScopes.admin,
+    entityId: deceasedMemberId,
+    entityType: 'deceased_member',
+    summary: `Updated deceased member record for ${getMemberActivityLabel({
+      firstName: validatedFields.firstName,
+      lastAndMiddleNames: validatedFields.lastAndMiddleNames,
+      memberMatriculationNumber: validatedFields.memberMatriculationNumber
+    })}.`
+  })
+
   revalidatePath('/admin-all-deceased')
   revalidatePath('/deceased-members')
   revalidatePath(`/admin-all-deceased/${deceasedMemberId}/edit`)
+  revalidateDashboardActivityLogs()
 }
 
 export const updateDeceasedMemberDetailsAction = async (prevState: any, formData: FormData) => {

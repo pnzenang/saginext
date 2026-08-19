@@ -66,6 +66,11 @@ export const getPagesItems = (date: Date = new Date()): MenuItem[] => [
     href: '/payment-history'
   },
   {
+    icon: History,
+    label: 'Activity Log',
+    href: '/activity-log'
+  },
+  {
     icon: UserMinus,
     label: 'Remove Member',
     href: '/navigation-instructions/removedMembers'
@@ -197,6 +202,11 @@ export const getPagesItems = (date: Date = new Date()): MenuItem[] => [
     icon: History,
     label: 'Admin Payment History',
     href: '/admin-payment-history'
+  },
+  {
+    icon: History,
+    label: 'Admin Activity Log',
+    href: '/admin-activity-log'
   },
   {
     icon: MessageSquareText,

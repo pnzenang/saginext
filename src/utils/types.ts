@@ -295,6 +295,19 @@ export const memberTransferRequestStatusLabels: Record<MemberTransferRequestStat
   receiving_delegate_rejected: 'Delegate rejected'
 }
 
+export type DashboardActivityLogRow = {
+  action: string
+  actorEmail: string
+  associationCode: string
+  associationLabel: string
+  createdAt: string
+  dashboardScope: string
+  entityId: string
+  entityType: string
+  id: string
+  summary: string
+}
+
 export const delegateIssueNoteStatuses = ['open', 'resolved'] as const
 
 export type DelegateIssueNoteStatus = (typeof delegateIssueNoteStatuses)[number]
