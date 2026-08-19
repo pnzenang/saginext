@@ -168,7 +168,7 @@ const DashboardActivityLogTable = ({
   }
 
   return (
-    <div className='max-w-full min-w-0 space-y-4'>
+    <div className='w-full min-w-0 space-y-4'>
       <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
         <form role='search' onSubmit={event => event.preventDefault()} className='min-w-0 flex-1'>
           <label htmlFor='dashboard-activity-search' className='sr-only'>
@@ -193,9 +193,9 @@ const DashboardActivityLogTable = ({
         </Badge>
       </div>
 
-      <div className='border-border max-w-full min-w-0 overflow-hidden rounded-lg border'>
+      <div className='border-border w-full min-w-0 overflow-hidden rounded-lg border'>
         <div className='hidden overflow-x-auto lg:block'>
-          <Table className='table-fixed [&_td]:whitespace-normal [&_th]:whitespace-normal'>
+          <Table className='w-full table-fixed [&_td]:whitespace-normal [&_th]:whitespace-normal'>
             <colgroup>
               {columns.map(column => (
                 <col key={column.key} style={{ width: `${column.width}%` }} />
