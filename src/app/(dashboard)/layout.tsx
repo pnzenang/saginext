@@ -26,6 +26,7 @@ import db from '@/utils/db'
 import { dashboardText, languageCookieName, normalizeLanguage, translateDashboardMenuItems } from '@/lib/i18n'
 import { getPagesItems } from '@/utils/links'
 import { contributionPaymentAlertType, registrationPaymentAlertType } from '@/utils/payment-constants'
+import { getRequiredDeceasedMemberDocumentTypes } from '@/utils/types'
 
 export const dynamic = 'force-dynamic'
 
@@ -122,6 +123,64 @@ const getAdminIssueNoteAlertCount = () =>
     }
   })
 
+type DeathDocumentationAlertCase = {
+  familyContactName: string | null
+  familyContactPhoneNumber: string | null
+  placeOfDeathCountry: string | null
+  documents: {
+    documentType: string
+    status: string
+  }[]
+}
+
+const needsDelegateDeathDocumentationAction = (deceasedMember: DeathDocumentationAlertCase) => {
+  const hasDocumentationDetails = Boolean(
+    deceasedMember.familyContactName?.trim() &&
+      deceasedMember.familyContactPhoneNumber?.trim() &&
+      deceasedMember.placeOfDeathCountry?.trim()
+  )
+
+  if (!hasDocumentationDetails) return true
+
+  const documentsByType = new Map(
+    deceasedMember.documents.map(document => [document.documentType, document.status])
+  )
+
+  return getRequiredDeceasedMemberDocumentTypes(deceasedMember).some(documentType => {
+    const status = documentsByType.get(documentType)
+
+    return !status || status === 'rejected'
+  })
+}
+
+const getDelegateDeathDocumentationAlertCount = async (userId: string) => {
+  const deceasedMembers = await db.deceasedMember.findMany({
+    select: {
+      documents: {
+        select: {
+          documentType: true,
+          status: true
+        }
+      },
+      familyContactName: true,
+      familyContactPhoneNumber: true,
+      placeOfDeathCountry: true
+    },
+    where: {
+      clerkId: userId
+    }
+  })
+
+  return deceasedMembers.filter(needsDelegateDeathDocumentationAction).length
+}
+
+const getAdminDeathDocumentationAlertCount = () =>
+  db.deceasedMemberDocument.count({
+    where: {
+      status: 'submitted'
+    }
+  })
+
 type DashboardSidebarActionCounts = Record<string, number>
 
 const getDashboardSidebarActionCounts = async (userId?: string | null): Promise<DashboardSidebarActionCounts> => {
@@ -129,7 +188,13 @@ const getDashboardSidebarActionCounts = async (userId?: string | null): Promise<
 
   const isAdminUser = userId === process.env.ADMIN_USER_ID
 
-  const [nameChangeDocumentationCount, memberTransferCount, delegateIssueNoteCount, adminCounts] = await Promise.all([
+  const [
+    nameChangeDocumentationCount,
+    memberTransferCount,
+    delegateDeathDocumentationCount,
+    delegateIssueNoteCount,
+    adminCounts
+  ] = await Promise.all([
     db.nameChangeRequest.count({
       where: {
         clerkId: userId,
@@ -152,6 +217,7 @@ const getDashboardSidebarActionCounts = async (userId?: string | null): Promise<
         ]
       }
     }),
+    isAdminUser ? Promise.resolve(0) : getDelegateDeathDocumentationAlertCount(userId),
     isAdminUser ? Promise.resolve(0) : getDelegateIssueNoteAlertCount(userId),
     isAdminUser
       ? Promise.all([
@@ -165,16 +231,18 @@ const getDashboardSidebarActionCounts = async (userId?: string | null): Promise<
               status: 'receiving_delegate_approved'
             }
           }),
+          getAdminDeathDocumentationAlertCount(),
           getContributionPaymentAlertCount(),
           getAdminIssueNoteAlertCount(),
           getRegistrationPaymentAlertCount()
         ])
-      : Promise.resolve<[number, number, number, number, number]>([0, 0, 0, 0, 0])
+      : Promise.resolve<[number, number, number, number, number, number]>([0, 0, 0, 0, 0, 0])
   ])
 
   const [
     adminNameChangeCount,
     adminMemberTransferCount,
+    adminDeathDocumentationCount,
     adminContributionPaymentCount,
     adminIssueNoteCount,
     adminRegistrationPaymentCount
@@ -182,10 +250,12 @@ const getDashboardSidebarActionCounts = async (userId?: string | null): Promise<
 
   return {
     '/admin-contribution-payments': adminContributionPaymentCount,
+    '/admin-death-documentations': adminDeathDocumentationCount,
     '/admin-member-transfers': adminMemberTransferCount,
     '/admin-name-changes': adminNameChangeCount,
     '/admin-notes': adminIssueNoteCount,
     '/admin-registration-payments': adminRegistrationPaymentCount,
+    '/death-documentations': delegateDeathDocumentationCount,
     '/member-transfer': memberTransferCount,
     '/name-modification': nameChangeDocumentationCount,
     '/notes': delegateIssueNoteCount
