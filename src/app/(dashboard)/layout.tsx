@@ -26,7 +26,7 @@ import db from '@/utils/db'
 import { dashboardText, languageCookieName, normalizeLanguage, translateDashboardMenuItems } from '@/lib/i18n'
 import { getPagesItems } from '@/utils/links'
 import { contributionPaymentAlertType, registrationPaymentAlertType } from '@/utils/payment-constants'
-import { getRequiredDeceasedMemberDocumentTypes } from '@/utils/types'
+import { needsDelegateDeathDocumentationAction } from '@/utils/death-documentation-alerts'
 
 export const dynamic = 'force-dynamic'
 
@@ -122,36 +122,6 @@ const getAdminIssueNoteAlertCount = () =>
       status: 'open'
     }
   })
-
-type DeathDocumentationAlertCase = {
-  familyContactName: string | null
-  familyContactPhoneNumber: string | null
-  placeOfDeathCountry: string | null
-  documents: {
-    documentType: string
-    status: string
-  }[]
-}
-
-const needsDelegateDeathDocumentationAction = (deceasedMember: DeathDocumentationAlertCase) => {
-  const hasDocumentationDetails = Boolean(
-    deceasedMember.familyContactName?.trim() &&
-      deceasedMember.familyContactPhoneNumber?.trim() &&
-      deceasedMember.placeOfDeathCountry?.trim()
-  )
-
-  if (!hasDocumentationDetails) return true
-
-  const documentsByType = new Map(
-    deceasedMember.documents.map(document => [document.documentType, document.status])
-  )
-
-  return getRequiredDeceasedMemberDocumentTypes(deceasedMember).some(documentType => {
-    const status = documentsByType.get(documentType)
-
-    return !status || status === 'rejected'
-  })
-}
 
 const getDelegateDeathDocumentationAlertCount = async (userId: string) => {
   const deceasedMembers = await db.deceasedMember.findMany({

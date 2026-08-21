@@ -7,6 +7,9 @@ import { fetchNameChangeDocumentationPageAction } from '@/utils/actions'
 
 import NameChangeProposalForm from './NameChangeProposalForm'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 const NameModification = async () => {
   const { currentUserId, members, requests } = await fetchNameChangeDocumentationPageAction()
   const requiredActionCount = requests.filter(request => request.status === 'documentation_requested').length

@@ -9,6 +9,9 @@ import { fetchMemberTransferPageAction } from '@/utils/actions'
 
 import MemberTransferRequestForm from './MemberTransferRequestForm'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 const memberTransferPageCopy = {
   en: {
     alertBadge: (count: number) => `${count} required`,

@@ -9,6 +9,9 @@ import { fetchAdminMemberTransferPageAction } from '@/utils/actions'
 
 import MemberTransferRequestForm from '../member-transfer/MemberTransferRequestForm'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 const adminMemberTransfersPageCopy = {
   en: {
     description: 'Initiate member transfer requests and complete them after both delegate associations approve.',

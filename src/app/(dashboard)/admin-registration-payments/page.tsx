@@ -17,6 +17,9 @@ import {
 import { registrationPaymentAlertType } from '@/utils/payment-constants'
 import { memberStatus } from '@/utils/types'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 const decimalToNumber = (value: unknown) => Number(value ?? 0)
 const defaultPaymentAlertResetAt = new Date(0)
 

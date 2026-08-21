@@ -5,6 +5,9 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { fetchAdminNameChangeRequestsAction } from '@/utils/actions'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 const AdminNameChangesPage = async () => {
   const { currentUserId, requests } = await fetchAdminNameChangeRequestsAction()
   const pendingReviewCount = requests.filter(request => request.status === 'submitted').length

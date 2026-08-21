@@ -10,6 +10,11 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import {
+  countSubmittedDeathDocuments,
+  hasDeathDocumentationDetails,
+  needsDelegateDeathDocumentationAction
+} from '@/utils/death-documentation-alerts'
+import {
   deleteDeceasedMemberDocumentAction,
   reviewDeceasedMemberDocumentAction,
   updateDeathDocumentationDetailsAction,
@@ -98,13 +103,6 @@ const getCaseSearchText = (deceasedMember: DeathDocumentationCase) =>
   ]
     .join(' ')
     .toLowerCase()
-
-const hasDocumentationDetails = (deceasedMember: DeathDocumentationCase) =>
-  Boolean(
-    deceasedMember.familyContactName?.trim() &&
-    deceasedMember.familyContactPhoneNumber?.trim() &&
-    deceasedMember.placeOfDeathCountry?.trim()
-  )
 
 const ReviewDocumentControls = ({ uploadedDocument }: { uploadedDocument: DeathDocumentationDocument }) => {
   if (uploadedDocument.status === 'approved') return null
@@ -239,7 +237,7 @@ const DocumentationSlot = ({
 }
 
 const DeathDocumentationDetailsForm = ({ deceasedMember }: { deceasedMember: DeathDocumentationCase }) => {
-  const detailsComplete = hasDocumentationDetails(deceasedMember)
+  const detailsComplete = hasDeathDocumentationDetails(deceasedMember)
   const countryOfDeath = deceasedMember.placeOfDeathCountry?.trim()
   const requiresInternationalDocuments = Boolean(countryOfDeath && !isUnitedStatesDeathCountry(countryOfDeath))
 
@@ -424,6 +422,26 @@ const DeathDocumentationsContent = ({
     0
   )
 
+  const actionRequiredCount = isAdminUser
+    ? countSubmittedDeathDocuments(deceasedMembers)
+    : deceasedMembers.filter(needsDelegateDeathDocumentationAction).length
+
+  const alertToneClassName = isAdminUser
+    ? 'border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/40'
+    : 'border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/40'
+
+  const alertTextClassName = isAdminUser
+    ? 'text-amber-800 dark:text-amber-200'
+    : 'text-blue-800 dark:text-blue-200'
+
+  const alertMutedTextClassName = isAdminUser
+    ? 'text-amber-700 dark:text-amber-300'
+    : 'text-blue-700 dark:text-blue-300'
+
+  const actionLabel = isAdminUser
+    ? `${actionRequiredCount} document${actionRequiredCount === 1 ? '' : 's'}`
+    : `${actionRequiredCount} case${actionRequiredCount === 1 ? '' : 's'}`
+
   return (
     <section className='grid w-full max-w-full min-w-0 shrink-0 gap-5 overflow-visible px-0 py-4 sm:px-6 sm:py-8 lg:px-8'>
       <div className='flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between'>
@@ -435,6 +453,33 @@ const DeathDocumentationsContent = ({
           {uploadedDocuments} / {totalRequiredDocuments} documents uploaded
         </Badge>
       </div>
+
+      {actionRequiredCount > 0 ? (
+        <Card className={cn('rounded-lg py-0', alertToneClassName)}>
+          <CardContent className='flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between'>
+            <div className='flex min-w-0 items-start gap-3'>
+              {isAdminUser ? (
+                <ShieldCheck className={cn('mt-0.5 size-5 shrink-0', alertMutedTextClassName)} />
+              ) : (
+                <FileText className={cn('mt-0.5 size-5 shrink-0', alertMutedTextClassName)} />
+              )}
+              <div className='min-w-0'>
+                <p className={cn('font-extrabold', alertTextClassName)}>
+                  {isAdminUser ? 'Death document review pending' : 'Death documentation action required'}
+                </p>
+                <p className={cn('text-sm', alertMutedTextClassName)}>
+                  {isAdminUser
+                    ? `${actionLabel} waiting for admin review.`
+                    : `${actionLabel} need details, missing documents, or corrected uploads.`}
+                </p>
+              </div>
+            </div>
+            <Badge variant='outline' className={cn('w-fit border-current bg-white dark:bg-black/20', alertTextClassName)}>
+              {actionRequiredCount} {isAdminUser ? 'pending' : 'required'}
+            </Badge>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {deceasedMembers.length === 0 ? (
         <Card className='rounded-lg'>
