@@ -344,14 +344,6 @@ const rotatingHeroImages: RotatingHeroImage[] = [
       fr: 'Délégués examinant ensemble les dossiers de cotisation de fin d’année'
     },
     objectPosition: '64% 100%'
-  },
-  {
-    src: '/images/hero/sagi-hero-fundraising-focused-data-meeting.jpg',
-    alt: {
-      en: 'Team studying data and documents for a support fund proposal',
-      fr: 'Équipe étudiant des données et documents pour une proposition de fonds de soutien'
-    },
-    objectPosition: '50% 50%'
   }
 ]
 
