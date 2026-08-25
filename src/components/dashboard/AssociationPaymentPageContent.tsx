@@ -759,6 +759,7 @@ const AssociationPaymentPageContent = (props: AssociationPaymentPageContentProps
             height={320}
             alt={copy.paymentQrAlt}
             className='h-auto max-h-80 w-full max-w-80'
+            unoptimized
           />
         </Link>
 

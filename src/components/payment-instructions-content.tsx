@@ -181,13 +181,15 @@ const PaymentInstructionsContent = ({ associationCode, language = 'en' }: Paymen
           </div>
           <div className='mt-6 flex flex-col gap-3 sm:flex-row'>
             <Button asChild>
-              <Link href='/contributions'>
+              <Link href='/contributions' prefetch={false}>
                 {copy.contributionsCta}
                 <ArrowRight className='size-4' />
               </Link>
             </Button>
             <Button asChild variant='outline'>
-              <Link href='/registrationsPayments'>{copy.registrationsCta}</Link>
+              <Link href='/registrationsPayments' prefetch={false}>
+                {copy.registrationsCta}
+              </Link>
             </Button>
           </div>
         </div>
@@ -219,6 +221,7 @@ const PaymentInstructionsContent = ({ associationCode, language = 'en' }: Paymen
                 height={300}
                 priority
                 src='https://res.cloudinary.com/dp8tkb7hq/image/upload/v1778042720/sagiQrCode_jmwsbf.svg'
+                unoptimized
                 width={300}
               />
             </Link>

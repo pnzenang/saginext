@@ -177,6 +177,7 @@ const DelegatePaymentsDashboard = ({
               height={190}
               alt='SAGI payment QR code'
               className='h-auto max-h-48 w-full max-w-48'
+              unoptimized
             />
           </Link>
           <div className='border-primary/20 bg-primary/10 text-primary flex h-full min-w-0 flex-col justify-center rounded-md border px-3 py-3 sm:px-4'>
