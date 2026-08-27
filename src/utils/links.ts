@@ -62,7 +62,7 @@ export const getPagesItems = (date: Date = new Date()): MenuItem[] => [
   },
   {
     icon: History,
-    label: 'Payment History',
+    label: 'Transaction History',
     href: '/payment-history'
   },
   {
