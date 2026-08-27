@@ -9,7 +9,7 @@ import DelegatePaymentHistoryTable, {
 } from '@/components/global/DelegatePaymentHistoryTable'
 import { fetchProfile } from '@/utils/actions'
 import db from '@/utils/db'
-import { associationPaymentLedgerEventTypes } from '@/utils/sagi-payment-ledger'
+import { associationPaymentLedgerEventTypes, associationPaymentTypes } from '@/utils/sagi-payment-ledger'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -37,12 +37,19 @@ const transactionHistoryEventTypes = [
   associationPaymentLedgerEventTypes.verified
 ]
 
+const paymentTypeLabels: Record<string, string> = {
+  [associationPaymentTypes.contribution]: 'Contribution',
+  [associationPaymentTypes.registration]: 'Registration'
+}
+
 type MonthBucket = {
   amountSentOrAdjusted: number
   amountVerified: number
   entryCount: number
   month: string
   monthLabel: string
+  paymentType: string
+  paymentTypeKey: string
 }
 
 const getMonthKey = (date: Date) => {
@@ -67,17 +74,20 @@ const getSentOrAdjustedEffect = (eventType: string, amount: number) => {
 }
 
 const getMonthlyTransactionHistoryRows = (
-  ledgerEntries: { amount: unknown; createdAt: Date; eventType: string }[]
+  ledgerEntries: { amount: unknown; createdAt: Date; eventType: string; paymentType: string }[]
 ): DelegatePaymentHistoryRow[] => {
   const bucketsByMonth = ledgerEntries.reduce((buckets, entry) => {
     const month = getMonthKey(entry.createdAt)
+    const bucketKey = `${month}:${entry.paymentType}`
 
-    const bucket = buckets.get(month) ?? {
+    const bucket = buckets.get(bucketKey) ?? {
       amountSentOrAdjusted: 0,
       amountVerified: 0,
       entryCount: 0,
       month,
-      monthLabel: monthLabelFormatter.format(entry.createdAt)
+      monthLabel: monthLabelFormatter.format(entry.createdAt),
+      paymentType: paymentTypeLabels[entry.paymentType] ?? entry.paymentType,
+      paymentTypeKey: entry.paymentType
     }
 
     const amount = decimalToNumber(entry.amount)
@@ -91,33 +101,50 @@ const getMonthlyTransactionHistoryRows = (
     }
 
     bucket.entryCount += 1
-    buckets.set(month, bucket)
+    buckets.set(bucketKey, bucket)
 
     return buckets
   }, new Map<string, MonthBucket>())
 
-  let runningBalance = 0
+  const balancesByPaymentType = new Map<string, number>()
 
   return Array.from(bucketsByMonth.values())
-    .sort((firstBucket, secondBucket) => firstBucket.month.localeCompare(secondBucket.month))
+    .sort((firstBucket, secondBucket) => {
+      const monthComparison = firstBucket.month.localeCompare(secondBucket.month)
+
+      if (monthComparison !== 0) return monthComparison
+
+      return firstBucket.paymentType.localeCompare(secondBucket.paymentType, undefined, {
+        numeric: true,
+        sensitivity: 'base'
+      })
+    })
     .map(bucket => {
-      runningBalance = roundCurrencyAmount(runningBalance + bucket.amountSentOrAdjusted - bucket.amountVerified)
+      const runningBalance = roundCurrencyAmount(
+        (balancesByPaymentType.get(bucket.paymentTypeKey) ?? 0) + bucket.amountSentOrAdjusted - bucket.amountVerified
+      )
+
+      balancesByPaymentType.set(bucket.paymentTypeKey, runningBalance)
 
       return {
         ...bucket,
         balance: runningBalance,
-        id: bucket.month
+        id: `${bucket.month}-${bucket.paymentTypeKey}`
       }
     })
 }
 
-const getPaymentHistoryTotals = (rows: DelegatePaymentHistoryRow[]): DelegatePaymentHistoryTotals =>
-  rows.reduce(
+const getPaymentHistoryTotals = (rows: DelegatePaymentHistoryRow[]): DelegatePaymentHistoryTotals => {
+  const months = new Set<string>()
+
+  return rows.reduce(
     (totals, row) => {
+      months.add(row.month)
+
       totals.amountSentOrAdjusted = roundCurrencyAmount(totals.amountSentOrAdjusted + row.amountSentOrAdjusted)
       totals.amountVerified = roundCurrencyAmount(totals.amountVerified + row.amountVerified)
       totals.balance = roundCurrencyAmount(totals.amountSentOrAdjusted - totals.amountVerified)
-      totals.monthCount += 1
+      totals.monthCount = months.size
       totals.transactionCount += row.entryCount
 
       return totals
@@ -130,6 +157,7 @@ const getPaymentHistoryTotals = (rows: DelegatePaymentHistoryRow[]): DelegatePay
       transactionCount: 0
     }
   )
+}
 
 const PaymentHistoryPage = async () => {
   noStore()
@@ -147,7 +175,8 @@ const PaymentHistoryPage = async () => {
     select: {
       amount: true,
       createdAt: true,
-      eventType: true
+      eventType: true,
+      paymentType: true
     },
     where: {
       associationCode: profile.associationCode,
@@ -167,8 +196,8 @@ const PaymentHistoryPage = async () => {
       <div className='min-w-0'>
         <h1 className='text-4xl font-semibold tracking-normal'>Sponsor Transaction History</h1>
         <p className='text-muted-foreground mt-2 max-w-4xl text-sm leading-6'>
-          Monthly sent amounts, SAGI-USA adjustments, verified payments, and running balance for{' '}
-          {profile.associationCode} - {profile.associationName}.
+          Monthly contribution and registration sent amounts, SAGI-USA adjustments, verified payments, and running
+          balances for {profile.associationCode} - {profile.associationName}.
         </p>
       </div>
 

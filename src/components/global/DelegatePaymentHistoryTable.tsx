@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 
 import PrintButton from '@/components/global/PrintButton'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -36,6 +37,8 @@ export type DelegatePaymentHistoryRow = {
   id: string
   month: string
   monthLabel: string
+  paymentType: string
+  paymentTypeKey: string
 }
 
 export type DelegatePaymentHistoryTotals = {
@@ -48,6 +51,7 @@ export type DelegatePaymentHistoryTotals = {
 
 type SortKey = keyof DelegatePaymentHistoryRow
 type SortDirection = 'asc' | 'desc'
+type PaymentTypeFilter = 'all' | 'contribution' | 'registration'
 
 type DelegatePaymentHistoryColumn = {
   align?: 'left' | 'right'
@@ -57,19 +61,27 @@ type DelegatePaymentHistoryColumn = {
 
 const columns: DelegatePaymentHistoryColumn[] = [
   { key: 'month', label: 'Month' },
+  { key: 'paymentType', label: 'Payment Type' },
   { align: 'right', key: 'amountSentOrAdjusted', label: 'Amount Sent / Adjustments' },
   { align: 'right', key: 'amountVerified', label: 'Amount Verified' },
   { align: 'right', key: 'balance', label: 'Balance' }
 ]
 
 const columnWidths: Partial<Record<SortKey, number>> = {
-  amountSentOrAdjusted: 28,
-  amountVerified: 24,
-  balance: 24,
-  month: 24
+  amountSentOrAdjusted: 24,
+  amountVerified: 20,
+  balance: 20,
+  month: 20,
+  paymentType: 16
 }
 
 const pageSizeOptions = [10, 25, 50, 100]
+
+const paymentTypeFilterLabels: Record<PaymentTypeFilter, string> = {
+  all: 'All payment types',
+  contribution: 'Contribution',
+  registration: 'Registration'
+}
 
 const getColumnStyle = (columnKey: SortKey) => ({ width: `${columnWidths[columnKey] ?? 10}%` })
 
@@ -100,17 +112,24 @@ const compareValues = (
 const getHistoryTotals = (rows: DelegatePaymentHistoryRow[]): DelegatePaymentHistoryTotals => {
   const amountSentOrAdjusted = roundCurrencyAmount(rows.reduce((total, row) => total + row.amountSentOrAdjusted, 0))
   const amountVerified = roundCurrencyAmount(rows.reduce((total, row) => total + row.amountVerified, 0))
+  const months = new Set(rows.map(row => row.month))
 
   return {
     amountSentOrAdjusted,
     amountVerified,
     balance: roundCurrencyAmount(amountSentOrAdjusted - amountVerified),
-    monthCount: rows.length,
+    monthCount: months.size,
     transactionCount: rows.reduce((total, row) => total + row.entryCount, 0)
   }
 }
 
-const getRowSearchText = (row: DelegatePaymentHistoryRow) => row.monthLabel.toLowerCase()
+const getRowSearchText = (row: DelegatePaymentHistoryRow) => [row.monthLabel, row.paymentType].join(' ').toLowerCase()
+
+const getPaymentBadgeClassName = (paymentType: string) =>
+  ({
+    contribution: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+    registration: 'border-cyan-500/30 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300'
+  })[paymentType] ?? 'border-border bg-muted text-foreground'
 
 const getAmountClassName = (amount: number) =>
   cn(
@@ -175,6 +194,7 @@ const DelegatePaymentHistoryTable = ({
 }) => {
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(25)
+  const [paymentTypeFilter, setPaymentTypeFilter] = useState<PaymentTypeFilter>('all')
   const [search, setSearch] = useState('')
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
   const [sortKey, setSortKey] = useState<SortKey>('month')
@@ -182,8 +202,13 @@ const DelegatePaymentHistoryTable = ({
   const normalizedSearch = search.trim().toLowerCase()
 
   const filteredRows = useMemo(() => {
-    return rows.filter(row => (normalizedSearch ? getRowSearchText(row).includes(normalizedSearch) : true))
-  }, [normalizedSearch, rows])
+    return rows.filter(row => {
+      const matchesSearch = normalizedSearch ? getRowSearchText(row).includes(normalizedSearch) : true
+      const matchesPaymentType = paymentTypeFilter === 'all' || row.paymentTypeKey === paymentTypeFilter
+
+      return matchesSearch && matchesPaymentType
+    })
+  }, [normalizedSearch, paymentTypeFilter, rows])
 
   const sortedRows = useMemo(() => {
     return [...filteredRows].sort((firstRow, secondRow) => {
@@ -194,10 +219,10 @@ const DelegatePaymentHistoryTable = ({
   }, [filteredRows, sortDirection, sortKey])
 
   const visibleTotals = useMemo(() => {
-    if (!normalizedSearch) return totals
+    if (!normalizedSearch && paymentTypeFilter === 'all') return totals
 
     return getHistoryTotals(filteredRows)
-  }, [filteredRows, normalizedSearch, totals])
+  }, [filteredRows, normalizedSearch, paymentTypeFilter, totals])
 
   const totalPages = Math.max(1, Math.ceil(sortedRows.length / pageSize))
   const effectiveCurrentPage = Math.min(currentPage, totalPages)
@@ -227,6 +252,11 @@ const DelegatePaymentHistoryTable = ({
 
   const handleSearchChange = (nextSearch: string) => {
     setSearch(nextSearch)
+    setCurrentPage(1)
+  }
+
+  const handlePaymentTypeFilterChange = (nextPaymentType: string) => {
+    setPaymentTypeFilter(nextPaymentType as PaymentTypeFilter)
     setCurrentPage(1)
   }
 
@@ -260,13 +290,28 @@ const DelegatePaymentHistoryTable = ({
               id='delegate-payment-history-search'
               value={search}
               onChange={event => handleSearchChange(event.target.value)}
-              placeholder='Search month'
+              placeholder='Search month or payment type'
               className='bg-background h-10 w-full pl-9 text-sm font-semibold'
             />
           </div>
         </form>
 
-        <PrintButton label='Print PDF' size='sm' className='h-10 whitespace-nowrap' />
+        <div className='grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] xl:w-auto xl:min-w-[22rem]'>
+          <Select value={paymentTypeFilter} onValueChange={handlePaymentTypeFilterChange}>
+            <SelectTrigger className='bg-background h-10 w-full'>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {(Object.keys(paymentTypeFilterLabels) as PaymentTypeFilter[]).map(option => (
+                <SelectItem key={option} value={option}>
+                  {paymentTypeFilterLabels[option]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <PrintButton label='Print PDF' size='sm' className='h-10 whitespace-nowrap' />
+        </div>
       </div>
 
       <div className='border-border max-w-full min-w-0 overflow-hidden rounded-lg border'>
@@ -327,6 +372,21 @@ const DelegatePaymentHistoryTable = ({
                     >
                       {row.monthLabel}
                     </TableCell>
+                    <TableCell
+                      title={row.paymentType}
+                      className='truncate text-sm font-semibold'
+                      style={getColumnStyle('paymentType')}
+                    >
+                      <Badge
+                        variant='outline'
+                        className={cn(
+                          'w-full max-w-full justify-start truncate rounded-md capitalize',
+                          getPaymentBadgeClassName(row.paymentTypeKey)
+                        )}
+                      >
+                        {row.paymentType}
+                      </Badge>
+                    </TableCell>
                     <TableCell className='text-right' style={getColumnStyle('amountSentOrAdjusted')}>
                       <span className={getAmountClassName(row.amountSentOrAdjusted)}>
                         {currencyFormatter.format(row.amountSentOrAdjusted)}
@@ -349,6 +409,9 @@ const DelegatePaymentHistoryTable = ({
                 <TableRow className='bg-white text-base text-black hover:bg-white dark:bg-white dark:text-black dark:hover:bg-white'>
                   <TableCell className='font-extrabold' style={getColumnStyle('month')}>
                     Total
+                  </TableCell>
+                  <TableCell className='font-semibold' style={getColumnStyle('paymentType')}>
+                    {visibleTotals.transactionCount} transaction(s)
                   </TableCell>
                   <TableCell
                     className='text-right font-extrabold tabular-nums'
@@ -382,9 +445,17 @@ const DelegatePaymentHistoryTable = ({
             paginatedRows.map(row => (
               <article key={row.id} className='bg-background overflow-hidden rounded-md border shadow-sm'>
                 <div className='flex flex-col gap-2 border-b px-3 py-3 sm:flex-row sm:items-start sm:justify-between sm:px-4'>
-                  <div className='flex min-w-0 items-center gap-2'>
-                    <CalendarDays className='text-primary size-4 shrink-0' aria-hidden='true' />
-                    <div className='truncate text-lg font-extrabold'>{row.monthLabel}</div>
+                  <div className='min-w-0'>
+                    <div className='flex min-w-0 items-center gap-2'>
+                      <CalendarDays className='text-primary size-4 shrink-0' aria-hidden='true' />
+                      <div className='truncate text-lg font-extrabold'>{row.monthLabel}</div>
+                    </div>
+                    <Badge
+                      variant='outline'
+                      className={cn('mt-2 w-fit rounded-md capitalize', getPaymentBadgeClassName(row.paymentTypeKey))}
+                    >
+                      {row.paymentType}
+                    </Badge>
                   </div>
                   <div className='text-muted-foreground text-xs font-semibold'>
                     {row.entryCount} transaction{row.entryCount === 1 ? '' : 's'}
