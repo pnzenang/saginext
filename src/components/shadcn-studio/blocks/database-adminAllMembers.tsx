@@ -103,6 +103,7 @@ import {
   makeAwaitingMembersVestedAction,
   makeMembersDelinquentAction,
   makeMembersVestedAction,
+  makeVestedMembersAwaitingAction,
   movePendingMembersToAwaitingPublicationAction
 } from '@/utils/actions'
 import { memberStatus, type MemberType } from '@/utils/types'
@@ -147,6 +148,15 @@ const adminMemberTableCopy = {
         `This will move ${count} selected pending member${count === 1 ? '' : 's'} to Awaiting Publication. Their registration fee dues will no longer count as pending.`,
       pending: 'Please wait...',
       title: 'Move selected pending members to Awaiting?'
+    },
+    bulkVestedAwaiting: {
+      button: (count: number) => `Make Awaiting (${count} vested)`,
+      cancel: 'Cancel',
+      confirm: 'Make Awaiting',
+      description: (count: number) =>
+        `This will move ${count} selected vested member${count === 1 ? '' : 's'} to Awaiting Publication. Accounting records will not be changed.`,
+      pending: 'Please wait...',
+      title: 'Move selected vested members to Awaiting?'
     },
     bulkDelinquent: {
       button: (count: number) => `Make Delinquent (${count} vested)`,
@@ -268,6 +278,15 @@ const adminMemberTableCopy = {
         `Cette action déplacera ${count} membre${count === 1 ? '' : 's'} en attente sélectionné${count === 1 ? '' : 's'} vers En attente de publication. Les frais d'inscription ne compteront plus comme dus.`,
       pending: 'Veuillez patienter...',
       title: 'Passer les membres sélectionnés à En attente de publication ?'
+    },
+    bulkVestedAwaiting: {
+      button: (count: number) => `Mettre en attente (${count} acquis)`,
+      cancel: 'Annuler',
+      confirm: 'Mettre en attente',
+      description: (count: number) =>
+        `Cette action déplacera ${count} membre${count === 1 ? '' : 's'} acquis sélectionné${count === 1 ? '' : 's'} vers En attente de publication. Les enregistrements comptables ne seront pas modifiés.`,
+      pending: 'Veuillez patienter...',
+      title: 'Passer les membres acquis sélectionnés à En attente de publication ?'
     },
     bulkDelinquent: {
       button: (count: number) => `Marquer pas en règle (${count} acquis)`,
@@ -933,6 +952,10 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
     message: ''
   })
 
+  const [makeVestedAwaitingState, makeVestedAwaitingFormAction] = useActionState(makeVestedMembersAwaitingAction, {
+    message: ''
+  })
+
   const [makeVestedState, makeVestedFormAction] = useActionState(makeMembersVestedAction, {
     message: ''
   })
@@ -995,6 +1018,13 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
     toast(makeDelinquentState.message)
     clearRowSelection()
   }, [clearRowSelection, makeDelinquentState.message])
+
+  useEffect(() => {
+    if (!makeVestedAwaitingState.message) return
+
+    toast(makeVestedAwaitingState.message)
+    clearRowSelection()
+  }, [clearRowSelection, makeVestedAwaitingState.message])
 
   useEffect(() => {
     if (!makeVestedState.message) return
@@ -1380,7 +1410,7 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
               </Pagination>
             </div>
 
-            <div className='grid w-full grid-cols-1 items-stretch gap-2 sm:grid-cols-2 xl:grid-cols-5 [&_button]:h-10 [&_button]:min-h-10 [&_button]:min-w-0 [&_button]:overflow-hidden [&_button]:whitespace-nowrap [&_button]:w-full'>
+            <div className='grid w-full grid-cols-1 items-stretch gap-2 sm:grid-cols-2 xl:grid-cols-6 [&_button]:h-10 [&_button]:min-h-10 [&_button]:min-w-0 [&_button]:overflow-hidden [&_button]:whitespace-nowrap [&_button]:w-full'>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
@@ -1410,6 +1440,42 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
                     <AlertDialogFooter>
                       <AlertDialogCancel type='button'>{copy.bulkAwaiting.cancel}</AlertDialogCancel>
                       <BulkAwaitingSubmitButton copy={copy.bulkAwaiting} disabled={selectedPendingCount === 0} />
+                    </AlertDialogFooter>
+                  </form>
+                </AlertDialogContent>
+              </AlertDialog>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    className={cn(
+                      adminActionButtonClassName,
+                      'bg-sky-700 text-white hover:bg-sky-800 focus-visible:ring-sky-700/30'
+                    )}
+                    disabled={selectedVestedCount === 0}
+                  >
+                    <Clock />
+                    <span className={adminActionButtonLabelClassName}>
+                      {copy.bulkVestedAwaiting.button(selectedVestedCount)}
+                    </span>
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>{copy.bulkVestedAwaiting.title}</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {copy.bulkVestedAwaiting.description(selectedVestedCount)}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <form action={makeVestedAwaitingFormAction}>
+                    {selectedVestedMembers.map(member => (
+                      <input key={member.id} type='hidden' name='memberIds' value={member.id} />
+                    ))}
+                    <AlertDialogFooter>
+                      <AlertDialogCancel type='button'>{copy.bulkVestedAwaiting.cancel}</AlertDialogCancel>
+                      <BulkVestedAwaitingSubmitButton
+                        copy={copy.bulkVestedAwaiting}
+                        disabled={selectedVestedCount === 0}
+                      />
                     </AlertDialogFooter>
                   </form>
                 </AlertDialogContent>
@@ -2089,6 +2155,36 @@ function BulkDelinquentSubmitButton({
       className={cn(
         adminActionButtonClassName,
         'bg-red-700 text-white hover:bg-red-800 focus-visible:ring-red-700/30'
+      )}
+    >
+      {pending ? (
+        <>
+          <Loader className='animate-spin' />
+          {copy.pending}
+        </>
+      ) : (
+        copy.confirm
+      )}
+    </Button>
+  )
+}
+
+function BulkVestedAwaitingSubmitButton({
+  copy,
+  disabled
+}: {
+  copy: AdminMemberTableCopy['bulkVestedAwaiting']
+  disabled: boolean
+}) {
+  const { pending } = useFormStatus()
+
+  return (
+    <Button
+      type='submit'
+      disabled={disabled || pending}
+      className={cn(
+        adminActionButtonClassName,
+        'bg-sky-700 text-white hover:bg-sky-800 focus-visible:ring-sky-700/30'
       )}
     >
       {pending ? (

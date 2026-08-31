@@ -4281,6 +4281,60 @@ export const makeMembersDelinquentAction = async (
   }
 }
 
+export const makeVestedMembersAwaitingAction = async (
+  _prevState: { message: string },
+  formData: FormData
+): Promise<{ message: string }> => {
+  const user = await assertAdminUser()
+
+  try {
+    const memberIds = getStringFormValues(formData, 'memberIds')
+
+    if (memberIds.length === 0) {
+      throw new Error('Select at least one vested member.')
+    }
+
+    const updatedMembers = await db.member.updateMany({
+      data: {
+        memberStatus: memberStatus.Awaiting,
+        vestedAt: null
+      },
+      where: {
+        id: {
+          in: memberIds
+        },
+        memberStatus: memberStatus.Vested
+      }
+    })
+
+    if (updatedMembers.count > 0) {
+      await recordDashboardActivity({
+        action: 'members_moved_to_awaiting_publication',
+        actorClerkId: user.id,
+        dashboardScope: dashboardActivityScopes.admin,
+        entityType: 'member',
+        summary: `Moved ${updatedMembers.count} vested member${
+          updatedMembers.count === 1 ? '' : 's'
+        } to Awaiting Publication without changing accounting records.`
+      })
+    }
+
+    revalidatePaymentViews()
+
+    if (updatedMembers.count === 0) {
+      return {
+        message: 'No selected vested members were found.'
+      }
+    }
+
+    return {
+      message: `${updatedMembers.count} vested member${updatedMembers.count === 1 ? '' : 's'} moved to Awaiting Publication. Accounting records were not changed.`
+    }
+  } catch (error) {
+    return renderError(error)
+  }
+}
+
 export const makeAwaitingMembersVestedAction = async (
   _prevState: { message: string },
   formData: FormData
