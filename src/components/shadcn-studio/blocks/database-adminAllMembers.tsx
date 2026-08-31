@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useCallback, useEffect, useId, useMemo, useState } from 'react'
+import { useActionState, useCallback, useEffect, useId, useMemo, useState, type ReactNode } from 'react'
 
 import { flushSync, useFormStatus } from 'react-dom'
 
@@ -85,6 +85,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { usePersistentColumnFilters } from '@/hooks/use-persistent-column-filters'
 import { usePersistentState } from '@/hooks/use-persistent-state'
 import { usePagination } from '@/hooks/use-pagination'
@@ -138,7 +139,9 @@ const adminMemberTableCopy = {
       description: (count: number) =>
         `This will move ${count} selected awaiting member${count === 1 ? '' : 's'} to Vested. No contribution credit will be created.`,
       pending: 'Please wait...',
-      title: 'Move selected awaiting members to Vested?'
+      title: 'Move selected awaiting members to Vested?',
+      tooltip: (count: number) =>
+        `${count} selected awaiting publication member${count === 1 ? '' : 's'} will become Vested. No contribution credit will be created.`
     },
     bulkAwaiting: {
       button: (count: number) => `Make Awaiting (${count} pending)`,
@@ -147,7 +150,9 @@ const adminMemberTableCopy = {
       description: (count: number) =>
         `This will move ${count} selected pending member${count === 1 ? '' : 's'} to Awaiting Publication. Their registration fee dues will no longer count as pending.`,
       pending: 'Please wait...',
-      title: 'Move selected pending members to Awaiting?'
+      title: 'Move selected pending members to Awaiting?',
+      tooltip: (count: number) =>
+        `${count} selected pending member${count === 1 ? '' : 's'} will become Awaiting Publication. Registration fee dues will no longer count as pending.`
     },
     bulkVestedAwaiting: {
       button: (count: number) => `Make Awaiting (${count} vested)`,
@@ -156,7 +161,9 @@ const adminMemberTableCopy = {
       description: (count: number) =>
         `This will move ${count} selected vested member${count === 1 ? '' : 's'} to Awaiting Publication. Accounting records will not be changed.`,
       pending: 'Please wait...',
-      title: 'Move selected vested members to Awaiting?'
+      title: 'Move selected vested members to Awaiting?',
+      tooltip: (count: number) =>
+        `${count} selected vested member${count === 1 ? '' : 's'} will become Awaiting Publication. Accounting records will not be changed.`
     },
     bulkDelinquent: {
       button: (count: number) => `Make Delinquent (${count} vested)`,
@@ -165,7 +172,9 @@ const adminMemberTableCopy = {
       description: (count: number) =>
         `This will move ${count} selected vested member${count === 1 ? '' : 's'} to Not in Good Standing.`,
       pending: 'Please wait...',
-      title: 'Move selected vested members to Delinquent?'
+      title: 'Move selected vested members to Delinquent?',
+      tooltip: (count: number) =>
+        `${count} selected vested member${count === 1 ? '' : 's'} will become Not in Good Standing. Their vested contribution credit will be removed.`
     },
     bulkVested: {
       button: (count: number) => `Make Vested (${count} delinquent)`,
@@ -174,7 +183,9 @@ const adminMemberTableCopy = {
       description: (count: number) =>
         `This will move ${count} selected delinquent member${count === 1 ? '' : 's'} back to Vested.`,
       pending: 'Please wait...',
-      title: 'Move selected delinquent members to Vested?'
+      title: 'Move selected delinquent members to Vested?',
+      tooltip: (count: number) =>
+        `${count} selected delinquent member${count === 1 ? '' : 's'} will become Vested. Vested contribution credit will be applied.`
     },
     columns: {
       actions: 'Actions',
@@ -268,7 +279,9 @@ const adminMemberTableCopy = {
       description: (count: number) =>
         `Cette action déplacera ${count} membre${count === 1 ? '' : 's'} en attente de publication sélectionné${count === 1 ? '' : 's'} vers Acquis. Aucun crédit de cotisation ne sera créé.`,
       pending: 'Veuillez patienter...',
-      title: 'Passer les membres en attente sélectionnés à Acquis ?'
+      title: 'Passer les membres en attente sélectionnés à Acquis ?',
+      tooltip: (count: number) =>
+        `${count} membre${count === 1 ? '' : 's'} en attente de publication sélectionné${count === 1 ? '' : 's'} passeront à Acquis. Aucun crédit de cotisation ne sera créé.`
     },
     bulkAwaiting: {
       button: (count: number) => `Mettre en attente (${count} en attente)`,
@@ -277,7 +290,9 @@ const adminMemberTableCopy = {
       description: (count: number) =>
         `Cette action déplacera ${count} membre${count === 1 ? '' : 's'} en attente sélectionné${count === 1 ? '' : 's'} vers En attente de publication. Les frais d'inscription ne compteront plus comme dus.`,
       pending: 'Veuillez patienter...',
-      title: 'Passer les membres sélectionnés à En attente de publication ?'
+      title: 'Passer les membres sélectionnés à En attente de publication ?',
+      tooltip: (count: number) =>
+        `${count} membre${count === 1 ? '' : 's'} en attente sélectionné${count === 1 ? '' : 's'} passeront à En attente de publication. Les frais d'inscription ne compteront plus comme dus.`
     },
     bulkVestedAwaiting: {
       button: (count: number) => `Mettre en attente (${count} acquis)`,
@@ -286,7 +301,9 @@ const adminMemberTableCopy = {
       description: (count: number) =>
         `Cette action déplacera ${count} membre${count === 1 ? '' : 's'} acquis sélectionné${count === 1 ? '' : 's'} vers En attente de publication. Les enregistrements comptables ne seront pas modifiés.`,
       pending: 'Veuillez patienter...',
-      title: 'Passer les membres acquis sélectionnés à En attente de publication ?'
+      title: 'Passer les membres acquis sélectionnés à En attente de publication ?',
+      tooltip: (count: number) =>
+        `${count} membre${count === 1 ? '' : 's'} acquis sélectionné${count === 1 ? '' : 's'} passeront à En attente de publication. Les enregistrements comptables ne seront pas modifiés.`
     },
     bulkDelinquent: {
       button: (count: number) => `Marquer pas en règle (${count} acquis)`,
@@ -295,7 +312,9 @@ const adminMemberTableCopy = {
       description: (count: number) =>
         `Cette action déplacera ${count} membre${count === 1 ? '' : 's'} acquis sélectionné${count === 1 ? '' : 's'} vers Pas en règle.`,
       pending: 'Veuillez patienter...',
-      title: 'Passer les membres acquis sélectionnés à Pas en règle ?'
+      title: 'Passer les membres acquis sélectionnés à Pas en règle ?',
+      tooltip: (count: number) =>
+        `${count} membre${count === 1 ? '' : 's'} acquis sélectionné${count === 1 ? '' : 's'} passeront à Pas en règle. Leur crédit de cotisation acquis sera supprimé.`
     },
     bulkVested: {
       button: (count: number) => `Marquer acquis (${count} pas en règle)`,
@@ -304,7 +323,9 @@ const adminMemberTableCopy = {
       description: (count: number) =>
         `Cette action replacera ${count} membre${count === 1 ? '' : 's'} pas en règle sélectionné${count === 1 ? '' : 's'} au statut Acquis.`,
       pending: 'Veuillez patienter...',
-      title: 'Passer les membres pas en règle sélectionnés à Acquis ?'
+      title: 'Passer les membres pas en règle sélectionnés à Acquis ?',
+      tooltip: (count: number) =>
+        `${count} membre${count === 1 ? '' : 's'} pas en règle sélectionné${count === 1 ? '' : 's'} passeront à Acquis. Le crédit de cotisation acquis sera appliqué.`
     },
     columns: {
       actions: 'Actions',
@@ -640,6 +661,21 @@ const RegistrationPaymentWarningCell = ({ language, member }: { language: AppLan
     </Badge>
   )
 }
+
+const MakeActionTooltip = ({ children, content }: { children: ReactNode; content: string }) => (
+  <TooltipProvider delayDuration={150}>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className='inline-flex w-full min-w-0' aria-label={content}>
+          {children}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent className='max-w-72 text-center leading-5' side='top' sideOffset={6}>
+        {content}
+      </TooltipContent>
+    </Tooltip>
+  </TooltipProvider>
+)
 
 const getColumns = (copy: AdminMemberTableCopy, language: AppLanguage): ColumnDef<MemberType>[] => [
   {
@@ -1412,20 +1448,22 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
 
             <div className='grid w-full grid-cols-1 items-stretch gap-2 sm:grid-cols-2 xl:grid-cols-6 [&_button]:h-10 [&_button]:min-h-10 [&_button]:min-w-0 [&_button]:overflow-hidden [&_button]:whitespace-nowrap [&_button]:w-full'>
               <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    className={cn(
-                      adminActionButtonClassName,
-                      'bg-blue-700 text-white hover:bg-blue-800 focus-visible:ring-blue-700/30'
-                    )}
-                    disabled={selectedPendingCount === 0}
-                  >
-                    <UserCheck />
-                    <span className={adminActionButtonLabelClassName}>
-                      {copy.bulkAwaiting.button(selectedPendingCount)}
-                    </span>
-                  </Button>
-                </AlertDialogTrigger>
+                <MakeActionTooltip content={copy.bulkAwaiting.tooltip(selectedPendingCount)}>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      className={cn(
+                        adminActionButtonClassName,
+                        'bg-blue-700 text-white hover:bg-blue-800 focus-visible:ring-blue-700/30'
+                      )}
+                      disabled={selectedPendingCount === 0}
+                    >
+                      <UserCheck />
+                      <span className={adminActionButtonLabelClassName}>
+                        {copy.bulkAwaiting.button(selectedPendingCount)}
+                      </span>
+                    </Button>
+                  </AlertDialogTrigger>
+                </MakeActionTooltip>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>{copy.bulkAwaiting.title}</AlertDialogTitle>
@@ -1445,20 +1483,22 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
                 </AlertDialogContent>
               </AlertDialog>
               <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    className={cn(
-                      adminActionButtonClassName,
-                      'bg-sky-700 text-white hover:bg-sky-800 focus-visible:ring-sky-700/30'
-                    )}
-                    disabled={selectedVestedCount === 0}
-                  >
-                    <Clock />
-                    <span className={adminActionButtonLabelClassName}>
-                      {copy.bulkVestedAwaiting.button(selectedVestedCount)}
-                    </span>
-                  </Button>
-                </AlertDialogTrigger>
+                <MakeActionTooltip content={copy.bulkVestedAwaiting.tooltip(selectedVestedCount)}>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      className={cn(
+                        adminActionButtonClassName,
+                        'bg-sky-700 text-white hover:bg-sky-800 focus-visible:ring-sky-700/30'
+                      )}
+                      disabled={selectedVestedCount === 0}
+                    >
+                      <Clock />
+                      <span className={adminActionButtonLabelClassName}>
+                        {copy.bulkVestedAwaiting.button(selectedVestedCount)}
+                      </span>
+                    </Button>
+                  </AlertDialogTrigger>
+                </MakeActionTooltip>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>{copy.bulkVestedAwaiting.title}</AlertDialogTitle>
@@ -1481,20 +1521,22 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
                 </AlertDialogContent>
               </AlertDialog>
               <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    className={cn(
-                      adminActionButtonClassName,
-                      'bg-green-700 text-white hover:bg-green-800 focus-visible:ring-green-700/30'
-                    )}
-                    disabled={selectedDelinquentCount === 0}
-                  >
-                    <ShieldCheck />
-                    <span className={adminActionButtonLabelClassName}>
-                      {copy.bulkVested.button(selectedDelinquentCount)}
-                    </span>
-                  </Button>
-                </AlertDialogTrigger>
+                <MakeActionTooltip content={copy.bulkVested.tooltip(selectedDelinquentCount)}>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      className={cn(
+                        adminActionButtonClassName,
+                        'bg-green-700 text-white hover:bg-green-800 focus-visible:ring-green-700/30'
+                      )}
+                      disabled={selectedDelinquentCount === 0}
+                    >
+                      <ShieldCheck />
+                      <span className={adminActionButtonLabelClassName}>
+                        {copy.bulkVested.button(selectedDelinquentCount)}
+                      </span>
+                    </Button>
+                  </AlertDialogTrigger>
+                </MakeActionTooltip>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>{copy.bulkVested.title}</AlertDialogTitle>
@@ -1514,20 +1556,22 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
                 </AlertDialogContent>
               </AlertDialog>
               <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    className={cn(
-                      adminActionButtonClassName,
-                      'bg-red-700 text-white hover:bg-red-800 focus-visible:ring-red-700/30'
-                    )}
-                    disabled={selectedVestedCount === 0}
-                  >
-                    <AlertTriangle />
-                    <span className={adminActionButtonLabelClassName}>
-                      {copy.bulkDelinquent.button(selectedVestedCount)}
-                    </span>
-                  </Button>
-                </AlertDialogTrigger>
+                <MakeActionTooltip content={copy.bulkDelinquent.tooltip(selectedVestedCount)}>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      className={cn(
+                        adminActionButtonClassName,
+                        'bg-red-700 text-white hover:bg-red-800 focus-visible:ring-red-700/30'
+                      )}
+                      disabled={selectedVestedCount === 0}
+                    >
+                      <AlertTriangle />
+                      <span className={adminActionButtonLabelClassName}>
+                        {copy.bulkDelinquent.button(selectedVestedCount)}
+                      </span>
+                    </Button>
+                  </AlertDialogTrigger>
+                </MakeActionTooltip>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>{copy.bulkDelinquent.title}</AlertDialogTitle>
@@ -1547,20 +1591,22 @@ const MembersDataTable = ({ data, language = 'en' }: { data: MemberType[]; langu
                 </AlertDialogContent>
               </AlertDialog>
               <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    className={cn(
-                      adminActionButtonClassName,
-                      'bg-emerald-700 text-white hover:bg-emerald-800 focus-visible:ring-emerald-700/30'
-                    )}
-                    disabled={selectedAwaitingCount === 0}
-                  >
-                    <ShieldCheck />
-                    <span className={adminActionButtonLabelClassName}>
-                      {copy.autoVest.button(selectedAwaitingCount)}
-                    </span>
-                  </Button>
-                </AlertDialogTrigger>
+                <MakeActionTooltip content={copy.autoVest.tooltip(selectedAwaitingCount)}>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      className={cn(
+                        adminActionButtonClassName,
+                        'bg-emerald-700 text-white hover:bg-emerald-800 focus-visible:ring-emerald-700/30'
+                      )}
+                      disabled={selectedAwaitingCount === 0}
+                    >
+                      <ShieldCheck />
+                      <span className={adminActionButtonLabelClassName}>
+                        {copy.autoVest.button(selectedAwaitingCount)}
+                      </span>
+                    </Button>
+                  </AlertDialogTrigger>
+                </MakeActionTooltip>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>{copy.autoVest.title}</AlertDialogTitle>
@@ -2182,10 +2228,7 @@ function BulkVestedAwaitingSubmitButton({
     <Button
       type='submit'
       disabled={disabled || pending}
-      className={cn(
-        adminActionButtonClassName,
-        'bg-sky-700 text-white hover:bg-sky-800 focus-visible:ring-sky-700/30'
-      )}
+      className={cn(adminActionButtonClassName, 'bg-sky-700 text-white hover:bg-sky-800 focus-visible:ring-sky-700/30')}
     >
       {pending ? (
         <>
