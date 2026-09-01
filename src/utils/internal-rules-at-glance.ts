@@ -97,6 +97,7 @@ export const internalRulesAtGlance: InternalRulesAtGlanceSection[] = [
       'For a death in the United States, required documents include a death certificate, SAGI matriculation number, photo of the deceased, government picture ID, funeral home invoice, and proof the association is in good standing.',
       'The cause of death may be redacted before documents are sent to SAGI.',
       'For a death outside the United States, additional proof may include consular death records, passport or visa pages, and evidence of the trip date.',
+      'DOCUMENTS SUBMISSION DEADLINE is set to 180 days after the passing of the member.',
       'SAGI does not issue death certificates and does not keep medical records for families.'
     ]
   },
