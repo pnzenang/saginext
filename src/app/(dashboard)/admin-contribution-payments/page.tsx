@@ -15,7 +15,7 @@ import {
 } from '@/utils/actions'
 import {
   contributionBalanceAdjustmentType,
-  fetchLatestAssociationContributionAssessment
+  fetchLatestAssociationContributionAssessmentForMonth
 } from '@/utils/sagi-contribution-summary'
 import { contributionPaymentAlertType } from '@/utils/payment-constants'
 import { associationPaymentLedgerEventTypes, associationPaymentTypes } from '@/utils/sagi-payment-ledger'
@@ -72,7 +72,7 @@ const AdminContributionPayments = async () => {
   const [
     profiles,
     payments,
-    latestContributionAssessment,
+    currentMonthContributionAssessment,
     contributionAssessmentGroups,
     contributionUsages,
     balanceAdjustments,
@@ -91,7 +91,7 @@ const AdminContributionPayments = async () => {
         associationCode: 'asc'
       }
     }),
-    fetchLatestAssociationContributionAssessment(),
+    fetchLatestAssociationContributionAssessmentForMonth(),
     db.associationContributionAssessmentGroup.findMany({
       distinct: ['associationCode'],
       orderBy: {
@@ -170,7 +170,7 @@ const AdminContributionPayments = async () => {
     new Set([
       ...profilesByCode.keys(),
       ...paymentsByCode.keys(),
-      ...(latestContributionAssessment?.groups.map(group => group.associationCode) ?? []),
+      ...(currentMonthContributionAssessment?.groups.map(group => group.associationCode) ?? []),
       ...contributionAssessmentGroups.map(group => group.associationCode),
       ...contributionUsages.map(usage => usage.associationCode),
       ...balanceAdjustments.map(adjustment => adjustment.associationCode),
@@ -184,7 +184,7 @@ const AdminContributionPayments = async () => {
   )
 
   const verifiedLedgerTotalsByCode = await fetchContributionVerifiedLedgerTotalsByCode(associationCodes)
-  const amountPerVestedMember = decimalToNumber(latestContributionAssessment?.amountPerVestedMember)
+  const amountPerVestedMember = decimalToNumber(currentMonthContributionAssessment?.amountPerVestedMember)
 
   const contributionAmountsByCode = new Map(
     associationCodes.map(associationCode => {
@@ -280,11 +280,11 @@ const AdminContributionPayments = async () => {
         <h1 className='text-xl font-semibold tracking-normal break-words md:text-4xl'>Admin Contribution Payments</h1>
         <p className='text-muted-foreground mt-2 max-w-4xl text-sm leading-6 break-words sm:text-base'>
           Review contribution payments recorded by associations, verify received amounts, and compare balances against
-          the latest contribution calculation
-          {latestContributionAssessment
-            ? ` created on ${dateFormatter.format(latestContributionAssessment.createdAt)}${
-                latestContributionAssessment.dueDate
-                  ? ` and due on ${dateFormatter.format(latestContributionAssessment.dueDate)}`
+          the current month contribution calculation
+          {currentMonthContributionAssessment
+            ? ` created on ${dateFormatter.format(currentMonthContributionAssessment.createdAt)}${
+                currentMonthContributionAssessment.dueDate
+                  ? ` and due on ${dateFormatter.format(currentMonthContributionAssessment.dueDate)}`
                   : ''
               }`
             : ''}

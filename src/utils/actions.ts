@@ -42,6 +42,7 @@ import {
   contributionBalanceAdjustmentType,
   contributionCreditPerVestedMember,
   fetchAssociationContributionSummary,
+  getContributionAssessmentMonthWhere,
   fetchLatestAssociationContributionAssessment
 } from './sagi-contribution-summary'
 import { awaitingPublicationVestingLongevityDays, getAwaitingPublicationVestingCutoff } from './sagi-member-longevity'
@@ -2705,7 +2706,9 @@ export const resetAssociationContributionCalculationAction = async (): Promise<{
     const contributionSummaries =
       affectedAssociationCodes.length > 0
         ? await Promise.all(
-            affectedAssociationCodes.map(associationCode => fetchAssociationContributionSummary(associationCode))
+            affectedAssociationCodes.map(associationCode =>
+              fetchAssociationContributionSummary(associationCode, { assessmentScope: 'latest' })
+            )
           )
         : []
 
@@ -2927,7 +2930,9 @@ export const zeroAllAssociationContributionBalancesAction = async (): Promise<{ 
     }
 
     const contributionSummaries = await Promise.all(
-      affectedAssociationCodes.map(associationCode => fetchAssociationContributionSummary(associationCode))
+      affectedAssociationCodes.map(associationCode =>
+        fetchAssociationContributionSummary(associationCode, { assessmentScope: 'latest' })
+      )
     )
 
     const resetEntries = contributionSummaries.filter(
@@ -7061,7 +7066,8 @@ export const fetchPublishedContributionTableAction = async () => {
     },
     orderBy: {
       createdAt: 'desc'
-    }
+    },
+    where: getContributionAssessmentMonthWhere()
   })
 
   if (!publishedAssessment) return null

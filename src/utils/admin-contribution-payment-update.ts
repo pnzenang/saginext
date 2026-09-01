@@ -3,7 +3,7 @@ import { Prisma } from '@/generated/prisma/client'
 import db from '@/utils/db'
 import {
   contributionBalanceAdjustmentType,
-  fetchLatestAssociationContributionAssessment
+  fetchLatestAssociationContributionAssessmentForMonth
 } from '@/utils/sagi-contribution-summary'
 import { associationPaymentLedgerEventTypes, associationPaymentTypes } from '@/utils/sagi-payment-ledger'
 import { memberStatus } from '@/utils/types'
@@ -60,7 +60,7 @@ export const fetchAdminContributionPaymentUpdateRows = async () => {
   const [
     profiles,
     payments,
-    latestContributionAssessment,
+    currentMonthContributionAssessment,
     contributionAssessmentGroups,
     contributionUsages,
     balanceAdjustments,
@@ -77,7 +77,7 @@ export const fetchAdminContributionPaymentUpdateRows = async () => {
         associationCode: 'asc'
       }
     }),
-    fetchLatestAssociationContributionAssessment(),
+    fetchLatestAssociationContributionAssessmentForMonth(),
     db.associationContributionAssessmentGroup.findMany({
       distinct: ['associationCode'],
       orderBy: {
@@ -130,7 +130,7 @@ export const fetchAdminContributionPaymentUpdateRows = async () => {
   const profilesByCode = new Map(profiles.map(profile => [profile.associationCode, profile]))
   const paymentsByCode = new Map(payments.map(payment => [payment.associationCode, payment]))
 
-  if (!latestContributionAssessment) return []
+  if (!currentMonthContributionAssessment) return []
 
   const balanceAdjustmentsByCode = new Map(
     balanceAdjustments.map(adjustment => [adjustment.associationCode, decimalToNumber(adjustment.amount)])
@@ -151,7 +151,7 @@ export const fetchAdminContributionPaymentUpdateRows = async () => {
     new Set([
       ...profilesByCode.keys(),
       ...paymentsByCode.keys(),
-      ...(latestContributionAssessment?.groups.map(group => group.associationCode) ?? []),
+      ...(currentMonthContributionAssessment?.groups.map(group => group.associationCode) ?? []),
       ...contributionAssessmentGroups.map(group => group.associationCode),
       ...contributionUsages.map(usage => usage.associationCode),
       ...balanceAdjustments.map(adjustment => adjustment.associationCode),
@@ -165,7 +165,7 @@ export const fetchAdminContributionPaymentUpdateRows = async () => {
   )
 
   const verifiedLedgerTotalsByCode = await fetchContributionVerifiedLedgerTotalsByCode(associationCodes)
-  const amountPerVestedMember = decimalToNumber(latestContributionAssessment?.amountPerVestedMember)
+  const amountPerVestedMember = decimalToNumber(currentMonthContributionAssessment?.amountPerVestedMember)
 
   return associationCodes.map<AdminContributionPaymentUpdateRow>(associationCode => {
     const payment = paymentsByCode.get(associationCode)

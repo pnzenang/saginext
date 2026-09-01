@@ -8,6 +8,8 @@ export const contributionBalanceAdjustmentType = 'contribution'
 export { contributionCreditPerVestedMember } from './payment-constants'
 
 type FetchAssociationContributionSummaryOptions = {
+  assessmentDate?: Date
+  assessmentScope?: 'currentMonth' | 'latest'
   noStore?: boolean
 }
 
@@ -54,9 +56,29 @@ export const getContributionMonthDateRange = (date = new Date()) => {
   }
 }
 
-export const fetchLatestAssociationContributionAssessmentForMonth = (date = new Date()) => {
+export const getContributionAssessmentMonthWhere = (date = new Date()) => {
   const { monthStart, nextMonthStart } = getContributionMonthDateRange(date)
 
+  return {
+    OR: [
+      {
+        dueDate: {
+          gte: monthStart,
+          lt: nextMonthStart
+        }
+      },
+      {
+        createdAt: {
+          gte: monthStart,
+          lt: nextMonthStart
+        },
+        dueDate: null
+      }
+    ]
+  }
+}
+
+export const fetchLatestAssociationContributionAssessmentForMonth = (date = new Date()) => {
   return db.associationContributionAssessment.findFirst({
     include: {
       groups: true
@@ -64,23 +86,7 @@ export const fetchLatestAssociationContributionAssessmentForMonth = (date = new 
     orderBy: {
       createdAt: 'desc'
     },
-    where: {
-      OR: [
-        {
-          dueDate: {
-            gte: monthStart,
-            lt: nextMonthStart
-          }
-        },
-        {
-          createdAt: {
-            gte: monthStart,
-            lt: nextMonthStart
-          },
-          dueDate: null
-        }
-      ]
-    }
+    where: getContributionAssessmentMonthWhere(date)
   })
 }
 
@@ -92,7 +98,11 @@ export const fetchAssociationContributionSummary = async (
     noStore()
   }
 
-  const latestAssessment = await fetchLatestAssociationContributionAssessment()
+  const latestAssessment =
+    options.assessmentScope === 'latest'
+      ? await fetchLatestAssociationContributionAssessment()
+      : await fetchLatestAssociationContributionAssessmentForMonth(options.assessmentDate)
+
   const amountPerVestedMember = decimalToNumber(latestAssessment?.amountPerVestedMember)
 
   const [payment, balanceAdjustment, vestedMembersCount, contributionAssessmentGroups, paymentLedgerTotals] =
