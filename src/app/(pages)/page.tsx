@@ -33,7 +33,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { languageCookieName, normalizeLanguage } from '@/lib/i18n'
 import db from '@/utils/db'
-import { fetchLatestAssociationContributionAssessment } from '@/utils/sagi-contribution-summary'
+import { fetchLatestAssociationContributionAssessmentForMonth } from '@/utils/sagi-contribution-summary'
 
 type HeroStat = {
   value: string
@@ -897,11 +897,11 @@ const fetchTotalRegisteredMembers = async () => {
 const fetchHeroContributionBanner = async () => {
   noStore()
 
-  const latestAssessment = await fetchLatestAssociationContributionAssessment()
+  const currentMonthAssessment = await fetchLatestAssociationContributionAssessmentForMonth()
 
   return {
-    amountPerMember: Number(latestAssessment?.amountPerVestedMember ?? 0),
-    deathCount: latestAssessment?.deathCount ?? 0
+    amountPerMember: Number(currentMonthAssessment?.amountPerVestedMember ?? 0),
+    deathCount: currentMonthAssessment?.deathCount ?? 0
   }
 }
 

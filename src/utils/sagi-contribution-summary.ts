@@ -44,6 +44,46 @@ export const fetchLatestAssociationContributionAssessment = () =>
     }
   })
 
+export const getContributionMonthDateRange = (date = new Date()) => {
+  const monthStart = new Date(date.getFullYear(), date.getMonth(), 1)
+  const nextMonthStart = new Date(date.getFullYear(), date.getMonth() + 1, 1)
+
+  return {
+    monthStart,
+    nextMonthStart
+  }
+}
+
+export const fetchLatestAssociationContributionAssessmentForMonth = (date = new Date()) => {
+  const { monthStart, nextMonthStart } = getContributionMonthDateRange(date)
+
+  return db.associationContributionAssessment.findFirst({
+    include: {
+      groups: true
+    },
+    orderBy: {
+      createdAt: 'desc'
+    },
+    where: {
+      OR: [
+        {
+          dueDate: {
+            gte: monthStart,
+            lt: nextMonthStart
+          }
+        },
+        {
+          createdAt: {
+            gte: monthStart,
+            lt: nextMonthStart
+          },
+          dueDate: null
+        }
+      ]
+    }
+  })
+}
+
 export const fetchAssociationContributionSummary = async (
   associationCode: string,
   options: FetchAssociationContributionSummaryOptions = {}
