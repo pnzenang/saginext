@@ -41,6 +41,9 @@ const roundCurrencyAmount = (amount: number) => Number(amount.toFixed(2))
 
 type ContributionMonthDateRange = ReturnType<typeof getContributionMonthDateRange>
 
+const isDateInContributionMonthDateRange = (date: Date | null | undefined, dateRange: ContributionMonthDateRange) =>
+  Boolean(date && date >= dateRange.monthStart && date < dateRange.nextMonthStart)
+
 const fetchContributionVerifiedLedgerTotalsByCode = async (
   associationCodes: string[],
   dateRange: ContributionMonthDateRange
@@ -205,8 +208,16 @@ const AdminContributionPayments = async () => {
       const payment = paymentsByCode.get(associationCode)
       const vestedMembers = vestedCountsByCode.get(associationCode) ?? 0
       const currentAmountSent = decimalToNumber(payment?.amountSent)
+
+      const currentAmountVerified = isDateInContributionMonthDateRange(
+        payment?.verifiedAt,
+        currentContributionDateRange
+      )
+        ? decimalToNumber(payment?.amountVerified)
+        : 0
+
       const recordedAmountVerified = verifiedLedgerTotalsByCode.get(associationCode) ?? 0
-      const amountVerified = roundCurrencyAmount(recordedAmountVerified)
+      const amountVerified = roundCurrencyAmount(Math.max(recordedAmountVerified, currentAmountVerified))
       const amountOwed = roundCurrencyAmount(amountPerVestedMember * vestedMembers)
       const manualBalanceAdjustment = balanceAdjustmentsByCode.get(associationCode) ?? 0
 
@@ -214,7 +225,7 @@ const AdminContributionPayments = async () => {
         associationCode,
         {
           amountOwed,
-          amountReceived: roundCurrencyAmount(Math.max(currentAmountSent - amountVerified, 0)),
+          amountReceived: roundCurrencyAmount(Math.max(currentAmountSent - currentAmountVerified, 0)),
           amountVerified,
           balance: roundCurrencyAmount(amountVerified + manualBalanceAdjustment - amountOwed)
         }

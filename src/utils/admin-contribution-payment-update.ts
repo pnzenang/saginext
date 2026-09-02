@@ -29,6 +29,9 @@ const roundCurrencyAmount = (amount: number) => Number(amount.toFixed(2))
 
 type ContributionMonthDateRange = ReturnType<typeof getContributionMonthDateRange>
 
+const isDateInContributionMonthDateRange = (date: Date | null | undefined, dateRange: ContributionMonthDateRange) =>
+  Boolean(date && date >= dateRange.monthStart && date < dateRange.nextMonthStart)
+
 const fetchContributionVerifiedLedgerTotalsByCode = async (
   associationCodes: string[],
   dateRange: ContributionMonthDateRange
@@ -186,10 +189,15 @@ export const fetchAdminContributionPaymentUpdateRows = async () => {
     const profile = profilesByCode.get(associationCode)
     const vestedMembers = vestedCountsByCode.get(associationCode) ?? 0
     const currentAmountSent = decimalToNumber(payment?.amountSent)
+
+    const currentAmountVerified = isDateInContributionMonthDateRange(payment?.verifiedAt, currentContributionDateRange)
+      ? decimalToNumber(payment?.amountVerified)
+      : 0
+
     const recordedAmountVerified = verifiedLedgerTotalsByCode.get(associationCode) ?? 0
-    const amountVerified = roundCurrencyAmount(recordedAmountVerified)
+    const amountVerified = roundCurrencyAmount(Math.max(recordedAmountVerified, currentAmountVerified))
     const contributionDue = roundCurrencyAmount(amountPerVestedMember * vestedMembers)
-    const amountSent = roundCurrencyAmount(Math.max(currentAmountSent - amountVerified, 0))
+    const amountSent = roundCurrencyAmount(Math.max(currentAmountSent - currentAmountVerified, 0))
     const manualBalanceAdjustment = balanceAdjustmentsByCode.get(associationCode) ?? 0
 
     const associationName =

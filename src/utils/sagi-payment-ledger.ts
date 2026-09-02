@@ -358,6 +358,6 @@ export const fetchAssociationPaymentLedgerTotals = async (
 
   return {
     amountSubmitted: Math.max(recordedSubmittedTotal, aggregateSubmittedTotal),
-    amountVerified: createdAtRange ? recordedVerifiedTotal : Math.max(recordedVerifiedTotal, aggregateVerifiedTotal)
+    amountVerified: Math.max(recordedVerifiedTotal, aggregateVerifiedTotal)
   }
 }
