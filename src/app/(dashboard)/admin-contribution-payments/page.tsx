@@ -41,9 +41,6 @@ const roundCurrencyAmount = (amount: number) => Number(amount.toFixed(2))
 
 type ContributionMonthDateRange = ReturnType<typeof getContributionMonthDateRange>
 
-const isDateInContributionMonthDateRange = (date: Date | null | undefined, dateRange: ContributionMonthDateRange) =>
-  Boolean(date && date >= dateRange.monthStart && date < dateRange.nextMonthStart)
-
 const fetchContributionVerifiedLedgerTotalsByCode = async (
   associationCodes: string[],
   dateRange: ContributionMonthDateRange
@@ -217,7 +214,7 @@ const AdminContributionPayments = async () => {
         associationCode,
         {
           amountOwed,
-          amountReceived: roundCurrencyAmount(Math.max(currentAmountSent - currentAmountVerified, 0)),
+          amountReceived: roundCurrencyAmount(Math.max(currentAmountSent - amountVerified, 0)),
           amountVerified,
           balance: roundCurrencyAmount(amountVerified + manualBalanceAdjustment - amountOwed)
         }
