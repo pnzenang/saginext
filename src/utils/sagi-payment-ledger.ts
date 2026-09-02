@@ -43,11 +43,21 @@ type FetchAssociationPaymentLedgerEntriesOptions = {
   paymentType?: AssociationPaymentType
 }
 
+type PaymentLedgerDateRange = {
+  gte?: Date
+  lt?: Date
+}
+
+type FetchAssociationPaymentLedgerTotalsOptions = Pick<FetchAssociationPaymentLedgerEntriesOptions, 'noStore'> & {
+  createdAtRange?: PaymentLedgerDateRange
+}
+
 type AssociationPaymentAggregate = {
   amountSent: unknown
   amountVerified: unknown
   associationCode: string
   createdAt: Date
+  lastSubmittedAt: Date | null
   paymentType: AssociationPaymentType
   verifiedAt: Date | null
 }
@@ -62,7 +72,19 @@ const paymentHistoryEventTypes = [
   associationPaymentLedgerEventTypes.verified
 ]
 
-const getAggregateSubmittedAmount = (payment: AssociationPaymentAggregate) => {
+const isDateInRange = (date: Date | null | undefined, dateRange?: PaymentLedgerDateRange) => {
+  if (!dateRange) return true
+  if (!date) return false
+
+  return (!dateRange.gte || date >= dateRange.gte) && (!dateRange.lt || date < dateRange.lt)
+}
+
+const getAggregateSubmittedAmount = (
+  payment: AssociationPaymentAggregate,
+  dateRange?: PaymentLedgerDateRange
+) => {
+  if (!isDateInRange(payment.lastSubmittedAt ?? payment.createdAt, dateRange)) return 0
+
   if (payment.paymentType === associationPaymentTypes.registration) {
     return roundCurrencyAmount(decimalToNumber(payment.amountSent) + decimalToNumber(payment.amountVerified))
   }
@@ -162,6 +184,7 @@ const fetchPaymentAggregates = async (
         amountVerified: payment.amountVerified,
         associationCode: payment.associationCode,
         createdAt: payment.createdAt,
+        lastSubmittedAt: payment.lastSubmittedAt,
         paymentType: associationPaymentTypes.contribution,
         verifiedAt: payment.verifiedAt
       })
@@ -181,6 +204,7 @@ const fetchPaymentAggregates = async (
         amountVerified: payment.amountVerified,
         associationCode: payment.associationCode,
         createdAt: payment.createdAt,
+        lastSubmittedAt: payment.lastSubmittedAt,
         paymentType: associationPaymentTypes.registration,
         verifiedAt: payment.verifiedAt
       })
@@ -258,7 +282,7 @@ export const fetchAssociationPaymentLedgerEntries = async (
 export const fetchAssociationPaymentLedgerTotals = async (
   associationCode: string,
   paymentType: AssociationPaymentType,
-  { noStore: shouldNoStore = false }: Pick<FetchAssociationPaymentLedgerEntriesOptions, 'noStore'> = {}
+  { createdAtRange, noStore: shouldNoStore = false }: FetchAssociationPaymentLedgerTotalsOptions = {}
 ): Promise<AssociationPaymentLedgerTotals> => {
   if (shouldNoStore) {
     noStore()
@@ -279,6 +303,12 @@ export const fetchAssociationPaymentLedgerTotals = async (
     }
   })
 
+  const createdAtFilter = {
+    ...(createdAtRange?.gte ? { gte: createdAtRange.gte } : {}),
+    ...(createdAtRange?.lt ? { lt: createdAtRange.lt } : {}),
+    ...(latestReset ? { gt: latestReset.createdAt } : {})
+  }
+
   const [ledgerTotals, aggregatePayments] = await Promise.all([
     db.associationPaymentLedgerEntry.groupBy({
       _sum: {
@@ -292,7 +322,7 @@ export const fetchAssociationPaymentLedgerTotals = async (
           in: paymentHistoryEventTypes
         },
         paymentType,
-        ...(latestReset ? { createdAt: { gt: latestReset.createdAt } } : {})
+        ...(Object.keys(createdAtFilter).length > 0 ? { createdAt: createdAtFilter } : {})
       }
     }),
     fetchPaymentAggregates(associationCode, paymentType)
@@ -315,15 +345,19 @@ export const fetchAssociationPaymentLedgerTotals = async (
   }, 0)
 
   const aggregateSubmittedTotal = roundCurrencyAmount(
-    aggregatePayments.reduce((total, payment) => total + getAggregateSubmittedAmount(payment), 0)
+    aggregatePayments.reduce((total, payment) => total + getAggregateSubmittedAmount(payment, createdAtRange), 0)
   )
 
   const aggregateVerifiedTotal = roundCurrencyAmount(
-    aggregatePayments.reduce((total, payment) => total + decimalToNumber(payment.amountVerified), 0)
+    aggregatePayments.reduce(
+      (total, payment) =>
+        total + (isDateInRange(payment.verifiedAt, createdAtRange) ? decimalToNumber(payment.amountVerified) : 0),
+      0
+    )
   )
 
   return {
     amountSubmitted: Math.max(recordedSubmittedTotal, aggregateSubmittedTotal),
-    amountVerified: Math.max(recordedVerifiedTotal, aggregateVerifiedTotal)
+    amountVerified: createdAtRange ? recordedVerifiedTotal : Math.max(recordedVerifiedTotal, aggregateVerifiedTotal)
   }
 }

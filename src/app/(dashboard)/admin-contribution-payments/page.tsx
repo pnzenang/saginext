@@ -15,7 +15,8 @@ import {
 } from '@/utils/actions'
 import {
   contributionBalanceAdjustmentType,
-  fetchLatestAssociationContributionAssessmentForMonth
+  fetchLatestAssociationContributionAssessmentForMonth,
+  getContributionMonthDateRange
 } from '@/utils/sagi-contribution-summary'
 import { contributionPaymentAlertType } from '@/utils/payment-constants'
 import { associationPaymentLedgerEventTypes, associationPaymentTypes } from '@/utils/sagi-payment-ledger'
@@ -38,7 +39,15 @@ type ContributionVerifiedLedgerTotal = {
 
 const roundCurrencyAmount = (amount: number) => Number(amount.toFixed(2))
 
-const fetchContributionVerifiedLedgerTotalsByCode = async (associationCodes: string[]) => {
+type ContributionMonthDateRange = ReturnType<typeof getContributionMonthDateRange>
+
+const isDateInContributionMonthDateRange = (date: Date | null | undefined, dateRange: ContributionMonthDateRange) =>
+  Boolean(date && date >= dateRange.monthStart && date < dateRange.nextMonthStart)
+
+const fetchContributionVerifiedLedgerTotalsByCode = async (
+  associationCodes: string[],
+  dateRange: ContributionMonthDateRange
+) => {
   if (associationCodes.length === 0) return new Map<string, number>()
 
   const totals = await db.$queryRaw<ContributionVerifiedLedgerTotal[]>(Prisma.sql`
@@ -60,6 +69,8 @@ const fetchContributionVerifiedLedgerTotalsByCode = async (associationCodes: str
       AND ledger."cancelledAt" IS NULL
       AND ledger."associationCode" IN (${Prisma.join(associationCodes)})
       AND (latest_reset."resetAt" IS NULL OR ledger."createdAt" > latest_reset."resetAt")
+      AND ledger."createdAt" >= ${dateRange.monthStart}
+      AND ledger."createdAt" < ${dateRange.nextMonthStart}
     GROUP BY ledger."associationCode"
   `)
 
@@ -183,7 +194,13 @@ const AdminContributionPayments = async () => {
     })
   )
 
-  const verifiedLedgerTotalsByCode = await fetchContributionVerifiedLedgerTotalsByCode(associationCodes)
+  const currentContributionDateRange = getContributionMonthDateRange()
+
+  const verifiedLedgerTotalsByCode = await fetchContributionVerifiedLedgerTotalsByCode(
+    associationCodes,
+    currentContributionDateRange
+  )
+
   const amountPerVestedMember = decimalToNumber(currentMonthContributionAssessment?.amountPerVestedMember)
 
   const contributionAmountsByCode = new Map(
@@ -191,9 +208,8 @@ const AdminContributionPayments = async () => {
       const payment = paymentsByCode.get(associationCode)
       const vestedMembers = vestedCountsByCode.get(associationCode) ?? 0
       const currentAmountSent = decimalToNumber(payment?.amountSent)
-      const currentAmountVerified = decimalToNumber(payment?.amountVerified)
       const recordedAmountVerified = verifiedLedgerTotalsByCode.get(associationCode) ?? 0
-      const amountVerified = roundCurrencyAmount(Math.max(recordedAmountVerified, currentAmountVerified))
+      const amountVerified = roundCurrencyAmount(recordedAmountVerified)
       const amountOwed = roundCurrencyAmount(amountPerVestedMember * vestedMembers)
       const manualBalanceAdjustment = balanceAdjustmentsByCode.get(associationCode) ?? 0
 

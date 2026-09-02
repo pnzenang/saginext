@@ -103,6 +103,9 @@ export const fetchAssociationContributionSummary = async (
       ? await fetchLatestAssociationContributionAssessment()
       : await fetchLatestAssociationContributionAssessmentForMonth(options.assessmentDate)
 
+  const assessmentDateRange =
+    options.assessmentScope === 'latest' ? null : getContributionMonthDateRange(options.assessmentDate)
+
   const amountPerVestedMember = decimalToNumber(latestAssessment?.amountPerVestedMember)
 
   const [payment, balanceAdjustment, vestedMembersCount, contributionAssessmentGroups, paymentLedgerTotals] =
@@ -140,6 +143,12 @@ export const fetchAssociationContributionSummary = async (
         }
       }),
       fetchAssociationPaymentLedgerTotals(associationCode, associationPaymentTypes.contribution, {
+        createdAtRange: assessmentDateRange
+          ? {
+              gte: assessmentDateRange.monthStart,
+              lt: assessmentDateRange.nextMonthStart
+            }
+          : undefined,
         noStore: options.noStore
       })
     ])
