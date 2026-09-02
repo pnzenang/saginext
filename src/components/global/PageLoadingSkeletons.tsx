@@ -65,7 +65,6 @@ const formToneClassNames = {
 type FormTone = keyof typeof formToneClassNames
 
 const skeletonCards = Array.from({ length: 5 })
-const skeletonColumns = Array.from({ length: 7 })
 
 const LoadingField = ({ labelClassName = 'w-36' }: { labelClassName?: string }) => (
   <div className='min-w-0'>
@@ -83,23 +82,27 @@ const PaginationSkeleton = ({ className }: { className?: string }) => (
   </div>
 )
 
-const SummaryCardsSkeleton = ({ compact = false }: { compact?: boolean }) => (
-  <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-5'>
-    {skeletonCards.map((_, index) => (
-      <Card key={index} className={cn('gap-1 py-2 sm:py-3', compact && 'gap-2 py-4')}>
-        <CardHeader className='px-3 pb-0 sm:px-4'>
-          <div className='flex items-center justify-between gap-2'>
-            <Skeleton className='h-4 w-20' />
-            <Skeleton className='size-4 rounded-md' />
-          </div>
-        </CardHeader>
-        <CardContent className='px-3 sm:px-4'>
-          <Skeleton className={cn('h-7 w-16', compact && 'h-9 w-20')} />
-        </CardContent>
-      </Card>
-    ))}
-  </div>
-)
+const SummaryCardsSkeleton = ({ compact = false, count = 5 }: { compact?: boolean; count?: number }) => {
+  const cards = Array.from({ length: count })
+
+  return (
+    <div className={cn('grid gap-3 sm:grid-cols-2', count >= 6 ? 'lg:grid-cols-6' : 'lg:grid-cols-5')}>
+      {cards.map((_, index) => (
+        <Card key={index} className={cn('gap-1 py-2 sm:py-3', compact && 'gap-2 py-4')}>
+          <CardHeader className='px-3 pb-0 sm:px-4'>
+            <div className='flex items-center justify-between gap-2'>
+              <Skeleton className='h-4 w-20' />
+              <Skeleton className='size-4 rounded-md' />
+            </div>
+          </CardHeader>
+          <CardContent className='px-3 sm:px-4'>
+            <Skeleton className={cn('h-7 w-16', compact && 'h-9 w-20')} />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  )
+}
 
 const PaymentRouteCardsSkeleton = () => (
   <div className='grid w-full grid-cols-1 items-stretch gap-4 lg:grid-cols-2'>
@@ -391,7 +394,7 @@ const AdminCountPageSkeleton = () => (
         <Skeleton className='h-7 w-full max-w-lg md:h-10' />
       </div>
       <div className='mb-6'>
-        <SummaryCardsSkeleton />
+        <SummaryCardsSkeleton count={6} />
       </div>
       <div className='mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
         <Skeleton className='h-10 w-full max-w-md rounded-md' />
@@ -406,7 +409,7 @@ const AdminCountPageSkeleton = () => (
             <Table className='min-w-0 table-fixed text-xs lg:text-sm'>
               <TableHeader>
                 <TableRow className='bg-primary hover:bg-primary'>
-                  {skeletonColumns.map((_, index) => (
+                  {Array.from({ length: 8 }).map((_, index) => (
                     <TableHead key={index} className='px-1 lg:px-2'>
                       <Skeleton className='h-5 w-full bg-white/35' />
                     </TableHead>
@@ -416,7 +419,7 @@ const AdminCountPageSkeleton = () => (
               <TableBody>
                 {Array.from({ length: 7 }).map((_, rowIndex) => (
                   <TableRow key={rowIndex} className='odd:bg-muted/35 even:bg-background h-16'>
-                    {skeletonColumns.map((_, columnIndex) => (
+                    {Array.from({ length: 8 }).map((_, columnIndex) => (
                       <TableCell key={columnIndex} className='px-1 py-4 lg:px-2'>
                         <Skeleton className='h-5 w-full' />
                       </TableCell>
@@ -426,7 +429,7 @@ const AdminCountPageSkeleton = () => (
               </TableBody>
               <TableFooter>
                 <TableRow className='bg-primary/10 h-20'>
-                  {skeletonColumns.map((_, index) => (
+                  {Array.from({ length: 8 }).map((_, index) => (
                     <TableCell key={index} className='py-5'>
                       <Skeleton className='h-6 w-full' />
                     </TableCell>
@@ -442,8 +445,8 @@ const AdminCountPageSkeleton = () => (
                   <Skeleton className='h-5 w-full max-w-64' />
                   <Skeleton className='mt-2 h-4 w-20' />
                 </div>
-                <div className='grid grid-cols-2 gap-2 text-sm sm:grid-cols-5'>
-                  {skeletonCards.map((__, itemIndex) => (
+                <div className='grid grid-cols-2 gap-2 text-sm sm:grid-cols-3'>
+                  {Array.from({ length: 6 }).map((__, itemIndex) => (
                     <div key={itemIndex}>
                       <Skeleton className='h-4 w-16' />
                       <Skeleton className='mt-2 h-5 w-12' />

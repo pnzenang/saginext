@@ -47,6 +47,7 @@ import {
 } from './sagi-contribution-summary'
 import { awaitingPublicationVestingLongevityDays, getAwaitingPublicationVestingCutoff } from './sagi-member-longevity'
 import { getOverdueRegistrationPaymentCreatedAtCutoff } from './registration-payment-deadline'
+import { getCurrentMonthDateRange } from './month-date-ranges'
 import {
   fetchAssociationRegistrationSummary,
   registrationBalanceAdjustmentType,
@@ -2220,12 +2221,30 @@ export const fetchMemberStatusCountsByAssociationCode = async () => {
   await assertAdminUser()
   noStore()
 
-  const [counts, profiles, memberAssociationNames] = await Promise.all([
+  const { monthStart, nextMonthStart } = getCurrentMonthDateRange()
+
+  const [counts, monthlyAdditions, profiles, memberAssociationNames] = await Promise.all([
     db.member.groupBy({
       by: ['associationCode', 'memberStatus'],
       where: {
         memberStatus: {
           in: Object.values(memberStatus)
+        }
+      },
+      _count: {
+        _all: true
+      },
+      orderBy: {
+        associationCode: 'asc'
+      }
+    }),
+    db.member.groupBy({
+      by: ['associationCode'],
+      where: {
+        memberStatus: memberStatus.Vested,
+        vestedAt: {
+          gte: monthStart,
+          lt: nextMonthStart
         }
       },
       _count: {
@@ -2262,13 +2281,18 @@ export const fetchMemberStatusCountsByAssociationCode = async () => {
   }
 
   const associationCodes = Array.from(
-    new Set([...profiles.map(profile => profile.associationCode), ...counts.map(item => item.associationCode)])
+    new Set([
+      ...profiles.map(profile => profile.associationCode),
+      ...counts.map(item => item.associationCode),
+      ...monthlyAdditions.map(item => item.associationCode)
+    ])
   ).sort((firstCode, secondCode) => firstCode.localeCompare(secondCode, undefined, { sensitivity: 'base' }))
 
   type AssociationStatusCounts = {
     associationCode: string
     associationName: string
     vested: number
+    monthlyAddition: number
     pending: number
     awaitingPublication: number
     notInGoodStanding: number
@@ -2282,6 +2306,7 @@ export const fetchMemberStatusCountsByAssociationCode = async () => {
         associationCode,
         associationName: associationNamesByCode.get(associationCode) ?? associationCode,
         vested: 0,
+        monthlyAddition: 0,
         pending: 0,
         awaitingPublication: 0,
         notInGoodStanding: 0,
@@ -2302,6 +2327,10 @@ export const fetchMemberStatusCountsByAssociationCode = async () => {
     if (item.memberStatus === memberStatus.Delinquent) associationCounts.notInGoodStanding += count
 
     associationCounts.total += count
+  }
+
+  for (const item of monthlyAdditions) {
+    countsByAssociationCode[item.associationCode].monthlyAddition += item._count._all
   }
 
   return Object.values(countsByAssociationCode)

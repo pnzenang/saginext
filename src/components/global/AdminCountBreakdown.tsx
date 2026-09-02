@@ -20,6 +20,7 @@ export type AdminCountRow = {
   associationCode: string
   associationName: string
   vested: number
+  monthlyAddition: number
   pending: number
   awaitingPublication: number
   notInGoodStanding: number
@@ -28,6 +29,7 @@ export type AdminCountRow = {
 
 export type AdminCountTotals = {
   vested: number
+  monthlyAddition: number
   pending: number
   awaitingPublication: number
   notInGoodStanding: number
@@ -61,6 +63,7 @@ const sortableColumns: Array<{
   { key: 'associationName', label: 'Association Name', tableLabel: 'Association' },
   { key: 'associationCode', label: 'Association Code', tableLabel: 'Code' },
   { key: 'vested', label: 'Vested', align: 'right' },
+  { key: 'monthlyAddition', label: 'Monthly Addition', tableLabel: 'Monthly Add.', align: 'right' },
   { key: 'awaitingPublication', label: 'Awaiting', align: 'right' },
   { key: 'pending', label: 'Pending', align: 'right' },
   { key: 'notInGoodStanding', label: 'Delinquent', align: 'right' },
@@ -106,6 +109,7 @@ const getCountTotals = (counts: AdminCountRow[]): AdminCountTotals =>
   counts.reduce(
     (acc, item) => ({
       vested: acc.vested + item.vested,
+      monthlyAddition: acc.monthlyAddition + item.monthlyAddition,
       pending: acc.pending + item.pending,
       awaitingPublication: acc.awaitingPublication + item.awaitingPublication,
       notInGoodStanding: acc.notInGoodStanding + item.notInGoodStanding,
@@ -113,6 +117,7 @@ const getCountTotals = (counts: AdminCountRow[]): AdminCountTotals =>
     }),
     {
       vested: 0,
+      monthlyAddition: 0,
       pending: 0,
       awaitingPublication: 0,
       notInGoodStanding: 0,
@@ -285,10 +290,16 @@ const AdminCountBreakdown = ({ counts, totals }: AdminCountBreakdownProps) => {
                         </Button>
                       </div>
                     </div>
-                    <div className='grid grid-cols-2 gap-2 text-sm sm:grid-cols-5'>
+                    <div className='grid grid-cols-2 gap-2 text-sm sm:grid-cols-3'>
                       <div>
                         <p className='text-muted-foreground text-xs'>Vested</p>
                         <p className='font-bold text-green-600 dark:text-green-400'>{formatNumber(item.vested)}</p>
+                      </div>
+                      <div>
+                        <p className='text-muted-foreground text-xs'>Monthly Addition</p>
+                        <p className='font-semibold text-cyan-700 dark:text-cyan-300'>
+                          {formatNumber(item.monthlyAddition)}
+                        </p>
                       </div>
                       <div>
                         <p className='text-muted-foreground text-xs'>Awaiting</p>
@@ -320,6 +331,9 @@ const AdminCountBreakdown = ({ counts, totals }: AdminCountBreakdownProps) => {
                     <span className='font-bold text-green-600 dark:text-green-400'>
                       Vested: {formatNumber(displayedTotals.vested)}
                     </span>
+                    <span className='font-bold text-cyan-700 dark:text-cyan-300'>
+                      Monthly Addition: {formatNumber(displayedTotals.monthlyAddition)}
+                    </span>
                     <span className='text-blue-600 dark:text-blue-400'>
                       Awaiting: {formatNumber(displayedTotals.awaitingPublication)}
                     </span>
@@ -343,12 +357,13 @@ const AdminCountBreakdown = ({ counts, totals }: AdminCountBreakdownProps) => {
             <Table className='min-w-0 table-fixed text-xs lg:text-sm'>
               <colgroup>
                 <col className='w-[30%]' />
-                <col className='w-[13%]' />
-                <col className='w-[10.5%]' />
-                <col className='w-[10.5%]' />
-                <col className='w-[10.5%]' />
-                <col className='w-[10.5%]' />
-                <col className='w-[15%]' />
+                <col className='w-[11%]' />
+                <col className='w-[9%]' />
+                <col className='w-[12%]' />
+                <col className='w-[9%]' />
+                <col className='w-[9%]' />
+                <col className='w-[10%]' />
+                <col className='w-[10%]' />
               </colgroup>
               <TableHeader>
                 <TableRow className='bg-primary hover:bg-primary'>
@@ -410,6 +425,9 @@ const AdminCountBreakdown = ({ counts, totals }: AdminCountBreakdownProps) => {
                       <TableCell className='px-1 py-4 text-right font-bold text-green-600 lg:px-2 dark:text-green-400'>
                         {formatNumber(item.vested)}
                       </TableCell>
+                      <TableCell className='px-1 py-4 text-right font-semibold text-cyan-700 lg:px-2 dark:text-cyan-300'>
+                        {formatNumber(item.monthlyAddition)}
+                      </TableCell>
                       <TableCell className='px-1 py-4 text-right text-blue-600 lg:px-2 dark:text-blue-400'>
                         {formatNumber(item.awaitingPublication)}
                       </TableCell>
@@ -426,7 +444,7 @@ const AdminCountBreakdown = ({ counts, totals }: AdminCountBreakdownProps) => {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={7} className='text-muted-foreground h-24 text-center'>
+                    <TableCell colSpan={8} className='text-muted-foreground h-24 text-center'>
                       No member counts found.
                     </TableCell>
                   </TableRow>
@@ -440,6 +458,9 @@ const AdminCountBreakdown = ({ counts, totals }: AdminCountBreakdownProps) => {
                     </TableCell>
                     <TableCell className='px-1 py-5 text-right font-black text-green-600 lg:px-2 dark:text-green-400'>
                       {formatNumber(displayedTotals.vested)}
+                    </TableCell>
+                    <TableCell className='px-1 py-5 text-right font-black text-cyan-700 lg:px-2 dark:text-cyan-300'>
+                      {formatNumber(displayedTotals.monthlyAddition)}
                     </TableCell>
                     <TableCell className='px-1 py-5 text-right font-black text-blue-600 lg:px-2 dark:text-blue-400'>
                       {formatNumber(displayedTotals.awaitingPublication)}

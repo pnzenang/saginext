@@ -1,20 +1,24 @@
 import React from 'react'
 
-import { AlertTriangle, Clock, Hourglass, ShieldCheck, Users } from 'lucide-react'
+import { AlertTriangle, Clock, Hourglass, ShieldCheck, UserPlus, Users } from 'lucide-react'
 
+import AutoRefreshAt from '@/components/dashboard/AutoRefreshAt'
 import AdminCountBreakdown from '@/components/global/AdminCountBreakdownClient'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { fetchMemberStatusCountsByAssociationCode } from '@/utils/actions'
+import { getCurrentMonthDateRange } from '@/utils/month-date-ranges'
 
 const numberFormatter = new Intl.NumberFormat('en-US')
 const formatNumber = (value: number) => numberFormatter.format(value)
 
 const Counts = async () => {
+  const { nextMonthStart } = getCurrentMonthDateRange()
   const counts = await fetchMemberStatusCountsByAssociationCode()
 
   const totals = counts.reduce(
     (acc, item) => ({
       vested: acc.vested + item.vested,
+      monthlyAddition: acc.monthlyAddition + item.monthlyAddition,
       pending: acc.pending + item.pending,
       awaitingPublication: acc.awaitingPublication + item.awaitingPublication,
       notInGoodStanding: acc.notInGoodStanding + item.notInGoodStanding,
@@ -22,6 +26,7 @@ const Counts = async () => {
     }),
     {
       vested: 0,
+      monthlyAddition: 0,
       pending: 0,
       awaitingPublication: 0,
       notInGoodStanding: 0,
@@ -36,6 +41,13 @@ const Counts = async () => {
       icon: ShieldCheck,
       colorClassName: 'text-green-600 dark:text-green-400',
       cardClassName: 'border-green-500/20 bg-green-500/10'
+    },
+    {
+      label: 'Monthly Addition',
+      value: totals.monthlyAddition,
+      icon: UserPlus,
+      colorClassName: 'text-cyan-700 dark:text-cyan-300',
+      cardClassName: 'border-cyan-500/20 bg-cyan-500/10'
     },
     {
       label: 'Awaiting',
@@ -69,12 +81,14 @@ const Counts = async () => {
 
   return (
     <div className='py-8 sm:py-10 print:py-0'>
+      <AutoRefreshAt refreshAt={nextMonthStart.toISOString()} />
+
       <div className='max-w-9xl mx-auto w-full px-2 sm:px-6 lg:px-8 print:px-0'>
         <div className='mb-6'>
           <h1 className='text-xl font-semibold tracking-normal md:text-4xl'>Member Counts by Association Code</h1>
         </div>
 
-        <div className='mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5'>
+        <div className='mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-6'>
           {statusCards.map(status => {
             const Icon = status.icon
 

@@ -9,6 +9,7 @@ type AdminCountRow = {
   associationCode: string
   associationName: string
   vested: number
+  monthlyAddition: number
   pending: number
   awaitingPublication: number
   notInGoodStanding: number
@@ -17,6 +18,7 @@ type AdminCountRow = {
 
 type AdminCountTotals = {
   vested: number
+  monthlyAddition: number
   pending: number
   awaitingPublication: number
   notInGoodStanding: number
@@ -31,22 +33,50 @@ type AdminCountExcelButtonProps = {
 const AdminCountExcelButton = ({ counts, totals }: AdminCountExcelButtonProps) => {
   const exportToExcel = () => {
     const worksheetData = [
-      ['Association Name', 'Association Code', 'Vested', 'Awaiting', 'Pending', 'Delinquent', 'Total'],
+      [
+        'Association Name',
+        'Association Code',
+        'Vested',
+        'Monthly Addition',
+        'Awaiting',
+        'Pending',
+        'Delinquent',
+        'Total'
+      ],
       ...counts.map(item => [
         item.associationName,
         item.associationCode,
         item.vested,
+        item.monthlyAddition,
         item.awaitingPublication,
         item.pending,
         item.notInGoodStanding,
         item.total
       ]),
-      ['Total', '', totals.vested, totals.awaitingPublication, totals.pending, totals.notInGoodStanding, totals.total]
+      [
+        'Total',
+        '',
+        totals.vested,
+        totals.monthlyAddition,
+        totals.awaitingPublication,
+        totals.pending,
+        totals.notInGoodStanding,
+        totals.total
+      ]
     ]
 
     const worksheet = XLSX.utils.aoa_to_sheet(worksheetData)
 
-    worksheet['!cols'] = [{ wch: 34 }, { wch: 18 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 10 }]
+    worksheet['!cols'] = [
+      { wch: 34 },
+      { wch: 18 },
+      { wch: 10 },
+      { wch: 18 },
+      { wch: 10 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 10 }
+    ]
 
     const workbook = XLSX.utils.book_new()
 
