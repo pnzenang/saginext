@@ -4129,6 +4129,17 @@ export const resetAssociationRegistrationPaymentAction = async (formData: FormDa
         }
       })
 
+      await tx.associationPaymentLedgerEntry.create({
+        data: {
+          amount: 0,
+          associationCode,
+          createdBy: user.id,
+          eventType: associationPaymentLedgerEventTypes.reset,
+          note: 'Registration payment sent and verified totals reset by SAGI.',
+          paymentType: associationPaymentTypes.registration
+        }
+      })
+
       await recordDashboardActivity({
         action: 'registration_payment_reset',
         actorClerkId: user.id,
