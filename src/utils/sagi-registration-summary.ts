@@ -13,6 +13,7 @@ type FetchAssociationRegistrationSummaryOptions = {
 }
 
 export type AssociationRegistrationSummary = {
+  amountAwaitingVerification: number
   amountReceived: number
   amountUsed: number
   amountVerified: number
@@ -128,7 +129,9 @@ export const fetchAssociationRegistrationSummary = async (
     registrationMembersWithAmounts.reduce((total, member) => total + member.amountUsed, 0).toFixed(2)
   )
 
-  const amountVerified = paymentLedgerTotals.amountVerified
+  const amountAwaitingVerification = decimalToNumber(payment?.amountSent)
+  const amountReceived = paymentLedgerTotals.amountSubmitted
+  const amountVerified = amountReceived > 0 ? paymentLedgerTotals.amountVerified : 0
   const manualBalanceAdjustment = decimalToNumber(balanceAdjustment?.amount)
   const pendingMember = registrationMembersWithAmounts[0]
   const balance = roundCurrencyAmount(amountVerified + manualBalanceAdjustment - pendingRegistrationFees)
@@ -137,7 +140,8 @@ export const fetchAssociationRegistrationSummary = async (
   const pendingMemberDueDays = getPendingMemberDueDays(registrationMembersWithAmounts)
 
   return {
-    amountReceived: decimalToNumber(payment?.amountSent),
+    amountAwaitingVerification,
+    amountReceived,
     amountUsed: pendingRegistrationFees,
     amountVerified,
     associationCode,

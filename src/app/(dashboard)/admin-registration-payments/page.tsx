@@ -139,7 +139,8 @@ const AdminRegistrationPayments = async () => {
 
   const registrationPaymentAlerts: PaymentSubmissionAlert[] = payments.flatMap(payment => {
     const amountSent =
-      registrationSummaryByCode.get(payment.associationCode)?.amountReceived ?? decimalToNumber(payment.amountSent)
+      registrationSummaryByCode.get(payment.associationCode)?.amountAwaitingVerification ??
+      decimalToNumber(payment.amountSent)
 
     if (amountSent <= 0 || !payment.lastSubmittedAt || payment.lastSubmittedAt <= registrationPaymentAlertResetAt) {
       return []
@@ -176,6 +177,7 @@ const AdminRegistrationPayments = async () => {
     }
 
     return {
+      amountAwaitingVerification: registrationSummary?.amountAwaitingVerification ?? 0,
       amountExpected: registrationSummary?.balanceDues ?? 0,
       amountSent: registrationSummary?.amountReceived ?? 0,
       amountVerified: registrationSummary?.amountVerified ?? 0,

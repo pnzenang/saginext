@@ -30,6 +30,7 @@ const currencyFormatter = new Intl.NumberFormat('en-US', {
 })
 
 export type AdminPaymentRow = {
+  amountAwaitingVerification?: number
   amountExpected?: number
   amountSent: number
   amountVerified: number
@@ -299,7 +300,7 @@ const PaymentControls = ({
   verifyAction: (formData: FormData) => Promise<void>
 }) => {
   const balanceAmountInputId = useId()
-  const hasSubmittedPayment = row.amountSent > 0
+  const hasSubmittedPayment = (row.amountAwaitingVerification ?? row.amountSent) > 0
 
   return (
     <div
