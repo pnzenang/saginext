@@ -107,8 +107,9 @@ const SummaryRow = ({ label, value }: { label: string; value: number }) => (
   </div>
 )
 
-const BalanceRow = ({ balance }: { balance: number }) => {
+const BalanceRow = ({ balance, owedLabel }: { balance: number; owedLabel?: string }) => {
   const hasReserve = balance >= 0
+  const displayBalance = owedLabel && balance < 0 ? Math.abs(balance) : balance
 
   return (
     <div
@@ -118,12 +119,14 @@ const BalanceRow = ({ balance }: { balance: number }) => {
       )}
     >
       <span className='min-w-0 break-words'>
-        {hasReserve ? 'Reserve' : 'Deficit'}{' '}
-        <span className='text-[10px] leading-tight font-medium'>
-          {hasReserve ? '(To be used for upcoming payments)' : '(Not In Good Standing)'}
-        </span>
+        {hasReserve ? 'Reserve' : (owedLabel ?? 'Deficit')}{' '}
+        {hasReserve || !owedLabel ? (
+          <span className='text-[10px] leading-tight font-medium'>
+            {hasReserve ? '(To be used for upcoming payments)' : '(Not In Good Standing)'}
+          </span>
+        ) : null}
       </span>
-      <span className='shrink-0 text-right tabular-nums'>{currencyFormatter.format(balance)}</span>
+      <span className='shrink-0 text-right tabular-nums'>{currencyFormatter.format(displayBalance)}</span>
     </div>
   )
 }
@@ -224,7 +227,7 @@ const DelegatePaymentsDashboard = ({
               <SummaryRow label='Amount Verified SAGI' value={currentRegistrationPayment.amountVerified} />
               <SummaryRow label='Pending Registration Fees' value={currentRegistrationPayment.balanceDues} />
             </div>
-            <BalanceRow balance={currentRegistrationPayment.balance} />
+            <BalanceRow balance={currentRegistrationPayment.balance} owedLabel='Registration Owed' />
             <p className='text-primary/70 mt-auto pt-4 text-[10px] leading-tight font-medium break-words'>
               All amounts will be verified by SAGI and reversed if they do not match the payment received.
             </p>

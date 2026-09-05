@@ -19,8 +19,9 @@ const SummaryRow = ({ label, value }: { label: string; value: number }) => (
   </div>
 )
 
-const BalanceRow = ({ balance }: { balance: number }) => {
+const BalanceRow = ({ balance, owedLabel }: { balance: number; owedLabel?: string }) => {
   const hasReserve = balance >= 0
+  const displayBalance = owedLabel && balance < 0 ? Math.abs(balance) : balance
 
   return (
     <div
@@ -30,21 +31,33 @@ const BalanceRow = ({ balance }: { balance: number }) => {
       )}
     >
       <span className='min-w-0 break-words'>
-        {hasReserve ? 'Reserve' : 'Deficit'}{' '}
-        <span className='text-[10px] leading-tight font-medium'>
-          {hasReserve ? '(To be used for upcoming payments)' : '(Not In Good Standing)'}
-        </span>
+        {hasReserve ? 'Reserve' : (owedLabel ?? 'Deficit')}{' '}
+        {hasReserve || !owedLabel ? (
+          <span className='text-[10px] leading-tight font-medium'>
+            {hasReserve ? '(To be used for upcoming payments)' : '(Not In Good Standing)'}
+          </span>
+        ) : null}
       </span>
-      <span className='shrink-0 text-right tabular-nums'>{formatCurrency(balance)}</span>
+      <span className='shrink-0 text-right tabular-nums'>{formatCurrency(displayBalance)}</span>
     </div>
   )
 }
 
-const PaymentSummaryCard = ({ balance, children, title }: { balance: number; children: ReactNode; title: string }) => (
+const PaymentSummaryCard = ({
+  balance,
+  children,
+  owedLabel,
+  title
+}: {
+  balance: number
+  children: ReactNode
+  owedLabel?: string
+  title: string
+}) => (
   <Card className='border-primary/20 bg-primary/10 text-primary flex h-full min-h-56 min-w-0 flex-col rounded-md px-3 py-3 sm:px-4'>
     <p className='text-lg font-extrabold break-words sm:text-xl'>{title}</p>
     <div className='mt-2 grid gap-1.5 text-sm font-semibold'>{children}</div>
-    <BalanceRow balance={balance} />
+    <BalanceRow balance={balance} owedLabel={owedLabel} />
     <p className='text-primary/70 mt-auto pt-4 text-[10px] leading-tight font-medium break-words'>
       All amounts are read-only in this admin view and reflect the delegate payment summaries.
     </p>
@@ -71,7 +84,11 @@ const DelegatePaymentSummaryCards = ({ contribution, registration }: DelegatePay
         <SummaryRow label='Contribution Dues' value={contribution.amountOwed} />
       </PaymentSummaryCard>
 
-      <PaymentSummaryCard title='Registration payment summary' balance={registration.balance}>
+      <PaymentSummaryCard
+        title='Registration payment summary'
+        balance={registration.balance}
+        owedLabel='Registration Owed'
+      >
         <SummaryRow label='Amount Sent' value={registration.amountReceived} />
         <SummaryRow label='Amount Verified SAGI' value={registration.amountVerified} />
         <SummaryRow label='Pending Registration Fees' value={registration.balanceDues} />

@@ -104,6 +104,7 @@ const associationPaymentCopy = {
     balance: {
       deficit: 'Deficit',
       deficitNote: '(Not In Good Standing)',
+      registrationOwed: 'Registration Owed',
       reserve: 'Reserve',
       reserveNote: '(To be used for upcoming payments)'
     },
@@ -157,6 +158,7 @@ const associationPaymentCopy = {
     balance: {
       deficit: 'Déficit',
       deficitNote: '(Pas en règle)',
+      registrationOwed: 'Inscription due',
       reserve: 'Réserve',
       reserveNote: '(À utiliser pour les paiements à venir)'
     },
@@ -304,8 +306,17 @@ const SummaryNoticeRow = ({ message }: { message: string }) => (
   <div className='text-amber-700 dark:text-amber-300 font-extrabold break-words'>{message}</div>
 )
 
-const BalanceRow = ({ balance, copy }: { balance: number; copy: AssociationPaymentCopy['balance'] }) => {
+const BalanceRow = ({
+  balance,
+  copy,
+  owedLabel
+}: {
+  balance: number
+  copy: AssociationPaymentCopy['balance']
+  owedLabel?: string
+}) => {
   const hasReserve = balance >= 0
+  const displayBalance = owedLabel && balance < 0 ? Math.abs(balance) : balance
 
   return (
     <div
@@ -315,12 +326,14 @@ const BalanceRow = ({ balance, copy }: { balance: number; copy: AssociationPayme
       )}
     >
       <span className='min-w-0 break-words'>
-        {hasReserve ? copy.reserve : copy.deficit}{' '}
-        <span className='text-[10px] leading-tight font-medium'>
-          {hasReserve ? copy.reserveNote : copy.deficitNote}
-        </span>
+        {hasReserve ? copy.reserve : (owedLabel ?? copy.deficit)}{' '}
+        {hasReserve || !owedLabel ? (
+          <span className='text-[10px] leading-tight font-medium'>
+            {hasReserve ? copy.reserveNote : copy.deficitNote}
+          </span>
+        ) : null}
       </span>
-      <span className='shrink-0 text-right tabular-nums'>{currencyFormatter.format(balance)}</span>
+      <span className='shrink-0 text-right tabular-nums'>{currencyFormatter.format(displayBalance)}</span>
     </div>
   )
 }
@@ -330,18 +343,20 @@ const SummaryCard = ({
   balanceCopy,
   children,
   disclaimer,
+  owedLabel,
   title
 }: {
   balance: number
   balanceCopy: AssociationPaymentCopy['balance']
   children: ReactNode
   disclaimer: string
+  owedLabel?: string
   title: string
 }) => (
   <div className='border-primary/20 bg-primary/10 text-primary flex h-full min-h-56 min-w-0 flex-col rounded-md border px-3 py-3 sm:px-4'>
     <p className='text-lg font-extrabold break-words sm:text-xl'>{title}</p>
     <div className='mt-2 grid gap-1.5 text-sm font-semibold'>{children}</div>
-    <BalanceRow balance={balance} copy={balanceCopy} />
+    <BalanceRow balance={balance} copy={balanceCopy} owedLabel={owedLabel} />
     <p className='text-primary/70 mt-auto pt-4 text-[10px] leading-tight font-medium break-words'>{disclaimer}</p>
   </div>
 )
@@ -801,6 +816,7 @@ const AssociationPaymentPageContent = (props: AssociationPaymentPageContentProps
               balance={props.registration.balance}
               balanceCopy={copy.balance}
               disclaimer={copy.disclaimer}
+              owedLabel={copy.balance.registrationOwed}
             >
               <SummaryRow label={copy.amountSent} value={props.registration.amountReceived} />
               {activeNotFoundPayment ? (
