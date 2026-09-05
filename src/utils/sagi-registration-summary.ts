@@ -44,11 +44,7 @@ type PendingRegistrationMemberWithAmount = {
 const getPendingMemberName = (member: Pick<PendingRegistrationMemberWithAmount, 'firstName' | 'lastAndMiddleNames'>) =>
   [member.firstName, member.lastAndMiddleNames].filter(Boolean).join(' ')
 
-const getPendingMemberDueDaysAfterVerifiedOffset = (
-  members: PendingRegistrationMemberWithAmount[],
-  verifiedOffset: number
-) => {
-  let remainingOffset = roundCurrencyAmount(verifiedOffset)
+const getPendingMemberDueDays = (members: PendingRegistrationMemberWithAmount[]) => {
   const pendingMemberDueDaysByDate = new Map<string, { addedAt: string; amount: number; memberNames: string[] }>()
 
   const sortedMembers = [...members].sort(
@@ -56,21 +52,12 @@ const getPendingMemberDueDaysAfterVerifiedOffset = (
   )
 
   sortedMembers.forEach(member => {
-    const offsetAmount = Math.min(member.amountUsed, Math.max(remainingOffset, 0))
-    const remainingAmount = roundCurrencyAmount(member.amountUsed - offsetAmount)
-
-    remainingOffset = roundCurrencyAmount(remainingOffset - offsetAmount)
-
-    if (remainingAmount <= 0) {
-      return
-    }
-
     const dateKey = member.createdAt.toISOString().slice(0, 10)
     const currentGroup = pendingMemberDueDaysByDate.get(dateKey)
 
     pendingMemberDueDaysByDate.set(dateKey, {
       addedAt: `${dateKey}T12:00:00.000Z`,
-      amount: roundCurrencyAmount((currentGroup?.amount ?? 0) + remainingAmount),
+      amount: roundCurrencyAmount((currentGroup?.amount ?? 0) + member.amountUsed),
       memberNames: [...(currentGroup?.memberNames ?? []), getPendingMemberName(member)]
     })
   })
@@ -145,12 +132,9 @@ export const fetchAssociationRegistrationSummary = async (
   const manualBalanceAdjustment = decimalToNumber(balanceAdjustment?.amount)
   const pendingMember = registrationMembersWithAmounts[0]
   const balance = roundCurrencyAmount(amountVerified + manualBalanceAdjustment - pendingRegistrationFees)
-  const balanceDues = Math.max(roundCurrencyAmount(pendingRegistrationFees - amountVerified), 0)
+  const balanceDues = pendingRegistrationFees
 
-  const pendingMemberDueDays = getPendingMemberDueDaysAfterVerifiedOffset(
-    registrationMembersWithAmounts,
-    amountVerified
-  )
+  const pendingMemberDueDays = getPendingMemberDueDays(registrationMembersWithAmounts)
 
   return {
     amountReceived: decimalToNumber(payment?.amountSent),
