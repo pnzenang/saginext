@@ -10,6 +10,15 @@ import { siteDescription, siteKeywords, siteName, siteTitle, siteUrl } from '@/l
 
 import './globals.css'
 
+const clerkLocalization = {
+  signUp: {
+    start: {
+      title: 'Welcome!',
+      subtitle: "Please fill in the details if you don't have an account with SAGI yet."
+    }
+  }
+}
+
 export const metadata: Metadata = {
   title: {
     template: '%s - SAGI',
@@ -102,7 +111,7 @@ const RootLayout = ({ children }: Readonly<{ children: ReactNode }>) => {
   return (
     <html lang='en' className='flex min-h-full w-full scroll-smooth' suppressHydrationWarning>
       <body className='flex min-h-full w-full flex-auto flex-col overflow-x-hidden'>
-        <ClerkProvider>
+        <ClerkProvider localization={clerkLocalization}>
           <ThemeProvider attribute='class' enableSystem={false} disableTransitionOnChange>
             <TooltipProvider>
               <main>{children}</main>
