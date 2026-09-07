@@ -14,8 +14,8 @@ const createProfileCopy = {
   en: {
     title: 'create association profile',
     labels: {
-      associationName: 'Association Name (The name of your association group or family)',
-      associationCode: "Association Code (Keep the code you already have or create one if you didn't have one)",
+      associationName: 'Association Name(The Name of your association, group or family)',
+      associationCode: "Association Code(Keep the code you already have or create one if you didn't have one before)",
       firstDelegateFullName: 'First Delegate Name',
       firstDelegatePhoneNumber: 'First Delegate Phone Number',
       firstDelegateEmail: 'First Delegate Email',
