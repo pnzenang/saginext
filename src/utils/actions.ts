@@ -2135,7 +2135,8 @@ export const createMemberAction = async (provState: any, formData: FormData): Pr
         data: {
           ...validatedFields,
           clerkId: user.id,
-          memberMatriculationNumber
+          memberMatriculationNumber,
+          ...(validatedFields.memberStatus === memberStatus.Vested ? { vestedAt: new Date() } : {})
         }
       })
 
@@ -4758,7 +4759,8 @@ export const vestEligibleAwaitingPublicationMembersAction = async (): Promise<{ 
 
     const updatedMembers = await db.member.updateMany({
       data: {
-        memberStatus: memberStatus.Vested
+        memberStatus: memberStatus.Vested,
+        vestedAt: new Date()
       },
       where: {
         createdAt: {

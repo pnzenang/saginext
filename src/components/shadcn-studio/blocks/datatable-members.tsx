@@ -292,8 +292,18 @@ const getVisibleMatriculationNumber = (status: unknown, matriculationNumber: unk
   return String(matriculationNumber ?? '')
 }
 
-const getVisibleLongevity = (startDate: Date, status: unknown, language: AppLanguage) => {
-  if (status === memberStatus.Pending || status === memberStatus.Awaiting) {
+const getLongevityStartDate = (member: MemberType) => {
+  if (member.memberStatus === memberStatus.Vested && member.vestedAt) {
+    return member.vestedAt
+  }
+
+  return member.createdAt
+}
+
+const getVisibleLongevity = (member: MemberType, language: AppLanguage) => {
+  const startDate = getLongevityStartDate(member)
+
+  if (member.memberStatus === memberStatus.Pending || member.memberStatus === memberStatus.Awaiting) {
     return formatLongevityInDays(startDate, new Date(), language)
   }
 
@@ -491,13 +501,11 @@ const getColumns = (copy: MemberTableCopy, language: AppLanguage): ColumnDef<Mem
   },
 
   {
-    accessorKey: 'createdAt', // The key in your data object
+    id: 'longevity',
+    accessorFn: row => getLongevityStartDate(row),
     header: copy.columns.longevityShort,
     cell: ({ row }) => {
-      const field = row.getValue('createdAt') as Date
-      const status = row.getValue('memberStatus')
-
-      return <div>{getVisibleLongevity(field, status, language)}</div>
+      return <div>{getVisibleLongevity(row.original, language)}</div>
     },
     meta: {
       label: copy.columns.longevity
@@ -937,8 +945,6 @@ const MembersDataTable = ({
 
   const getVisibleColumnExportRows = (rows: Row<MemberType>[]) =>
     rows.map(row => {
-      const createdAt = row.getValue('createdAt') as Date
-
       return {
         [copy.columns.code]: row.getValue('associationCode'),
         [copy.columns.matriculation]: getVisibleMatriculationNumber(
@@ -948,7 +954,7 @@ const MembersDataTable = ({
         ),
         [copy.columns.lastAndMiddleNames]: row.getValue('lastAndMiddleNames'),
         [copy.columns.firstName]: row.getValue('firstName'),
-        [copy.columns.longevity]: getVisibleLongevity(createdAt, row.getValue('memberStatus'), language),
+        [copy.columns.longevity]: getVisibleLongevity(row.original, language),
         [copy.columns.recommendation]: row.getValue('delegateRecommendation'),
         [copy.columns.status]: formatMemberStatus(row.getValue('memberStatus') as string, language),
         [copy.columns.registrationDues]: getRegistrationPaymentWarning(row.original, language)

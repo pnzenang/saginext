@@ -69,6 +69,7 @@ export type MemberType = {
   associationName: string
   associationCode: string
   createdAt: Date
+  vestedAt?: Date | null
   updatedAt: Date
 }
 
