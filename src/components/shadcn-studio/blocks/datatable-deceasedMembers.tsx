@@ -78,6 +78,12 @@ declare module '@tanstack/react-table' {
   }
 }
 
+const headerSelectionCheckboxClassName =
+  'size-5 border-2 border-white bg-white text-purple-600 shadow-sm data-[state=checked]:border-white data-[state=checked]:bg-white data-[state=checked]:text-purple-600'
+
+const rowSelectionCheckboxClassName =
+  'size-5 border-2 border-purple-500 bg-background shadow-sm data-[state=checked]:border-purple-600 data-[state=checked]:bg-purple-600 data-[state=checked]:text-white dark:border-purple-300 dark:data-[state=checked]:border-purple-300 dark:data-[state=checked]:bg-purple-500'
+
 const columns: ColumnDef<DeceasedMemberType>[] = [
   {
     id: 'select',
@@ -93,15 +99,17 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
             : false
 
       return (
-        <div className='flex items-center justify-center'>
+        <div className='flex items-center justify-center gap-1.5'>
           <Checkbox
             aria-label='Select all deceased members on this page'
             checked={checked}
+            className={headerSelectionCheckboxClassName}
             disabled={selectablePageRows.length === 0}
             onCheckedChange={value => {
               selectablePageRows.forEach(row => row.toggleSelected(Boolean(value)))
             }}
           />
+          <span className='text-[10px] font-extrabold text-white uppercase'>Select</span>
         </div>
       )
     },
@@ -114,6 +122,7 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
           <Checkbox
             aria-label={`Select ${labelName}`}
             checked={row.getIsSelected()}
+            className={rowSelectionCheckboxClassName}
             disabled={!row.getCanSelect()}
             onCheckedChange={value => row.toggleSelected(Boolean(value))}
           />
