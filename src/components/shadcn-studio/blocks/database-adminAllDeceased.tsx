@@ -107,7 +107,7 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
             : false
 
       return (
-        <div className='flex items-center justify-center gap-1.5'>
+        <div className='flex items-center justify-center'>
           <Checkbox
             aria-label='Select all deceased members on this page'
             checked={checked}
@@ -117,7 +117,6 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
               selectablePageRows.forEach(row => row.toggleSelected(Boolean(value)))
             }}
           />
-          <span className='text-[10px] font-extrabold text-white uppercase'>Select</span>
         </div>
       )
     },
@@ -546,11 +545,39 @@ const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
               )
             })}
           </div>
-          <div className='flex items-center justify-between gap-3 py-2 max-sm:flex-col max-sm:items-stretch sm:px-6 sm:py-4'>
+          <div className='flex flex-wrap items-center justify-between gap-3 py-2 max-sm:flex-col max-sm:items-stretch sm:px-6 sm:py-4'>
             <p className='text-sm font-extrabold text-purple-400 sm:whitespace-nowrap' aria-live='polite'>
               <span>{table.getRowCount().toString()} Deceased Member(s) Found</span>
               {selectedRowCount > 0 ? <span className='ml-2'>({selectedRowCount} selected)</span> : null}
             </p>
+
+            <FormContainer
+              action={updateSelectedDeceasedContributionStatusAction}
+              className='flex w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:items-center'
+            >
+              {selectedRows.map(row => (
+                <input key={row.original.id} type='hidden' name='deceasedMemberIds' value={row.original.id} />
+              ))}
+              <Select name='contributionStatus' defaultValue={contributionStatus.review} required>
+                <SelectTrigger className='w-full whitespace-nowrap sm:w-56'>
+                  <SelectValue placeholder='Contribution status' />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.values(contributionStatus).map(status => (
+                    <SelectItem key={status} value={status} className='capitalize'>
+                      {status}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                type='submit'
+                disabled={selectedRowCount === 0}
+                className='text-primary focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40 w-full bg-purple-500/10 hover:bg-purple-400/20 sm:w-auto'
+              >
+                Update Selected
+              </Button>
+            </FormContainer>
 
             <div className='w-full sm:w-auto'>
               <Pagination>
@@ -626,33 +653,6 @@ const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
             <Filter column={table.getColumn('contributionStatus')!} />
           </div>
           <div className='flex w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-between'>
-            <FormContainer
-              action={updateSelectedDeceasedContributionStatusAction}
-              className='flex w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:items-center'
-            >
-              {selectedRows.map(row => (
-                <input key={row.original.id} type='hidden' name='deceasedMemberIds' value={row.original.id} />
-              ))}
-              <Select name='contributionStatus' defaultValue={contributionStatus.review} required>
-                <SelectTrigger className='w-full whitespace-nowrap sm:w-56'>
-                  <SelectValue placeholder='Contribution status' />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.values(contributionStatus).map(status => (
-                    <SelectItem key={status} value={status} className='capitalize'>
-                      {status}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button
-                type='submit'
-                disabled={selectedRowCount === 0}
-                className='text-primary focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40 w-full bg-purple-500/10 hover:bg-purple-400/20 sm:w-auto'
-              >
-                Update Selected
-              </Button>
-            </FormContainer>
             <div className='flex items-center gap-2'>
               <Label htmlFor='#rowSelect' className=''>
                 Show

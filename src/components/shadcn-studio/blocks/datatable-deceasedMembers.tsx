@@ -99,7 +99,7 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
             : false
 
       return (
-        <div className='flex items-center justify-center gap-1.5'>
+        <div className='flex items-center justify-center'>
           <Checkbox
             aria-label='Select all deceased members on this page'
             checked={checked}
@@ -109,7 +109,6 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
               selectablePageRows.forEach(row => row.toggleSelected(Boolean(value)))
             }}
           />
-          <span className='text-[10px] font-extrabold text-white uppercase'>Select</span>
         </div>
       )
     },
