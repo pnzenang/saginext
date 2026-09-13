@@ -22,6 +22,7 @@ import {
 import { Prisma } from '@/generated/prisma/client'
 import {
   delegateIssueNotePriorities,
+  contributionStatus,
   deceasedMemberDocumentLabels,
   deceasedMemberDocumentStatuses,
   deceasedMemberDocumentTypes,
@@ -526,6 +527,9 @@ const isDeceasedMemberDocumentType = (value: string): value is DeceasedMemberDoc
 
 const isDeceasedMemberDocumentStatus = (value: string): value is DeceasedMemberDocumentStatus =>
   deceasedMemberDocumentStatuses.includes(value as DeceasedMemberDocumentStatus)
+
+const isContributionStatus = (value: string): value is contributionStatus =>
+  Object.values(contributionStatus).includes(value as contributionStatus)
 
 const isNameChangeRequestStatus = (value: string): value is NameChangeRequestStatus =>
   nameChangeRequestStatuses.includes(value as NameChangeRequestStatus)
@@ -7985,6 +7989,85 @@ export const updateDeceasedMemberDetailsAction = async (prevState: any, formData
   }
 
   redirect('/admin-all-deceased')
+}
+
+export const updateSelectedDeceasedContributionStatusAction = async (
+  _prevState: { message: string },
+  formData: FormData
+): Promise<{ message: string }> => {
+  const user = await assertAdminUser()
+
+  try {
+    const deceasedMemberIds = getStringFormValues(formData, 'deceasedMemberIds')
+    const nextContributionStatus = getRequiredFormValue(formData, 'contributionStatus')
+
+    if (deceasedMemberIds.length === 0) {
+      throw new Error('Select at least one deceased member.')
+    }
+
+    if (!isContributionStatus(nextContributionStatus)) {
+      throw new Error('Select a valid contribution status.')
+    }
+
+    const selectedDeceasedMembers = await db.deceasedMember.findMany({
+      select: {
+        associationCode: true,
+        firstName: true,
+        id: true,
+        lastAndMiddleNames: true,
+        memberMatriculationNumber: true
+      },
+      where: {
+        id: {
+          in: deceasedMemberIds
+        }
+      }
+    })
+
+    if (selectedDeceasedMembers.length === 0) {
+      throw new Error('No selected deceased members were found.')
+    }
+
+    const selectedIds = selectedDeceasedMembers.map(member => member.id)
+
+    const updatedMembers = await db.deceasedMember.updateMany({
+      data: {
+        contributionStatus: nextContributionStatus
+      },
+      where: {
+        id: {
+          in: selectedIds
+        }
+      }
+    })
+
+    await recordDashboardActivity({
+      action: 'deceased_contribution_status_updated',
+      actorClerkId: user.id,
+      associationCode: selectedDeceasedMembers.length === 1 ? selectedDeceasedMembers[0].associationCode : null,
+      dashboardScope: dashboardActivityScopes.admin,
+      entityId: selectedDeceasedMembers.length === 1 ? selectedDeceasedMembers[0].id : null,
+      entityType: 'deceased_member',
+      summary:
+        selectedDeceasedMembers.length === 1
+          ? `Updated contribution status for ${getMemberActivityLabel(
+              selectedDeceasedMembers[0]
+            )} to ${nextContributionStatus}.`
+          : `Updated contribution status for ${updatedMembers.count} deceased members to ${nextContributionStatus}.`
+    })
+
+    revalidatePath('/admin-all-deceased')
+    revalidatePath('/deceased-members')
+    revalidateDashboardActivityLogs()
+
+    return {
+      message: `Updated contribution status for ${updatedMembers.count} deceased member${
+        updatedMembers.count === 1 ? '' : 's'
+      }.`
+    }
+  } catch (error) {
+    return renderError(error)
+  }
 }
 
 export const updateDeceasedMemberDetailsActionAdmin = async (prevState: any, formData: FormData) => {

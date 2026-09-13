@@ -26,7 +26,7 @@ import {
   XIcon
 } from 'lucide-react'
 
-import type { Cell, Column, ColumnDef, PaginationState, RowData } from '@tanstack/react-table'
+import type { Cell, Column, ColumnDef, PaginationState, RowData, RowSelectionState } from '@tanstack/react-table'
 import {
   flexRender,
   getCoreRowModel,
@@ -43,6 +43,7 @@ import PrintButton from '@/components/global/PrintButton'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
 
 import {
   DropdownMenu,
@@ -78,6 +79,54 @@ declare module '@tanstack/react-table' {
 }
 
 const columns: ColumnDef<DeceasedMemberType>[] = [
+  {
+    id: 'select',
+    header: ({ table }) => {
+      const selectablePageRows = table.getRowModel().rows.filter(row => row.getCanSelect())
+      const selectedPageRows = selectablePageRows.filter(row => row.getIsSelected())
+
+      const checked =
+        selectablePageRows.length > 0 && selectedPageRows.length === selectablePageRows.length
+          ? true
+          : selectedPageRows.length > 0
+            ? 'indeterminate'
+            : false
+
+      return (
+        <div className='flex items-center justify-center'>
+          <Checkbox
+            aria-label='Select all deceased members on this page'
+            checked={checked}
+            disabled={selectablePageRows.length === 0}
+            onCheckedChange={value => {
+              selectablePageRows.forEach(row => row.toggleSelected(Boolean(value)))
+            }}
+          />
+        </div>
+      )
+    },
+    cell: ({ row }) => {
+      const memberName = [row.original.firstName, row.original.lastAndMiddleNames].filter(Boolean).join(' ')
+      const labelName = memberName || row.original.memberMatriculationNumber
+
+      return (
+        <div className='flex items-center justify-center'>
+          <Checkbox
+            aria-label={`Select ${labelName}`}
+            checked={row.getIsSelected()}
+            disabled={!row.getCanSelect()}
+            onCheckedChange={value => row.toggleSelected(Boolean(value))}
+          />
+        </div>
+      )
+    },
+    enableHiding: false,
+    enableSorting: false,
+    meta: {
+      label: 'Select'
+    },
+    size: 42
+  },
   {
     header: 'Last/Middle',
     accessorKey: 'lastAndMiddleNames',
@@ -277,6 +326,7 @@ const formatNumber = (value: number) => numberFormatter.format(value)
 
 const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
   const [columnFilters, setColumnFilters] = usePersistentColumnFilters('sagi:deceased-members:columnFilters')
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
 
   const pageSize = 100
 
@@ -290,9 +340,11 @@ const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
     columns,
     state: {
       columnFilters,
-      pagination
+      pagination,
+      rowSelection
     },
     onColumnFiltersChange: setColumnFilters,
+    onRowSelectionChange: setRowSelection,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -300,9 +352,12 @@ const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
     getFacetedUniqueValues: getFacetedUniqueValues(),
     getFacetedMinMaxValues: getFacetedMinMaxValues(),
     enableSortingRemoval: false,
+    enableRowSelection: true,
     getPaginationRowModel: getPaginationRowModel(),
     onPaginationChange: setPagination
   })
+
+  const selectedRowCount = table.getSelectedRowModel().rows.length
 
   const summaryTotals = table.getCoreRowModel().rows.reduce(
     (acc, row) => {
@@ -476,6 +531,7 @@ const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
           <div className='flex items-center justify-between gap-3 py-2 max-sm:flex-col max-sm:items-stretch sm:px-6 sm:py-4'>
             <p className='text-sm font-extrabold text-purple-400 sm:whitespace-nowrap' aria-live='polite'>
               <span>{table.getRowCount().toString()} Deceased Member(s) Found</span>
+              {selectedRowCount > 0 ? <span className='ml-2'>({selectedRowCount} selected)</span> : null}
             </p>
 
             <div className='w-full sm:w-auto'>

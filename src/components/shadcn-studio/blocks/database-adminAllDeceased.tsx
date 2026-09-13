@@ -29,7 +29,7 @@ import {
   XIcon
 } from 'lucide-react'
 
-import type { Cell, Column, ColumnDef, PaginationState, RowData } from '@tanstack/react-table'
+import type { Cell, Column, ColumnDef, PaginationState, RowData, RowSelectionState } from '@tanstack/react-table'
 import {
   flexRender,
   getCoreRowModel,
@@ -48,6 +48,7 @@ import PrintButton from '@/components/global/PrintButton'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
 
 import {
   DropdownMenu,
@@ -72,7 +73,7 @@ import { getTableCellTitle } from '@/utils/table'
 import { getSelectFilterValues } from '@/utils/table-filter-values'
 
 import { contributionStatus, type DeceasedMemberType } from '@/utils/types'
-import { deleteDeceasedMemberAction } from '@/utils/actions'
+import { deleteDeceasedMemberAction, updateSelectedDeceasedContributionStatusAction } from '@/utils/actions'
 import FormContainer from '@/components/forms/FormContainer'
 import PaginationControls from '@/components/global/PaginationControls'
 import RestoreDeceasedMemberButton from '@/components/global/RestoreDeceasedMemberButton'
@@ -86,6 +87,54 @@ declare module '@tanstack/react-table' {
 }
 
 const columns: ColumnDef<DeceasedMemberType>[] = [
+  {
+    id: 'select',
+    header: ({ table }) => {
+      const selectablePageRows = table.getRowModel().rows.filter(row => row.getCanSelect())
+      const selectedPageRows = selectablePageRows.filter(row => row.getIsSelected())
+
+      const checked =
+        selectablePageRows.length > 0 && selectedPageRows.length === selectablePageRows.length
+          ? true
+          : selectedPageRows.length > 0
+            ? 'indeterminate'
+            : false
+
+      return (
+        <div className='flex items-center justify-center'>
+          <Checkbox
+            aria-label='Select all deceased members on this page'
+            checked={checked}
+            disabled={selectablePageRows.length === 0}
+            onCheckedChange={value => {
+              selectablePageRows.forEach(row => row.toggleSelected(Boolean(value)))
+            }}
+          />
+        </div>
+      )
+    },
+    cell: ({ row }) => {
+      const memberName = [row.original.firstName, row.original.lastAndMiddleNames].filter(Boolean).join(' ')
+      const labelName = memberName || row.original.memberMatriculationNumber
+
+      return (
+        <div className='flex items-center justify-center'>
+          <Checkbox
+            aria-label={`Select ${labelName}`}
+            checked={row.getIsSelected()}
+            disabled={!row.getCanSelect()}
+            onCheckedChange={value => row.toggleSelected(Boolean(value))}
+          />
+        </div>
+      )
+    },
+    enableHiding: false,
+    enableSorting: false,
+    meta: {
+      label: 'Select'
+    },
+    size: 42
+  },
   {
     header: 'Last/Middle',
     accessorKey: 'lastAndMiddleNames',
@@ -285,6 +334,7 @@ const formatNumber = (value: number) => numberFormatter.format(value)
 
 const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
   const [columnFilters, setColumnFilters] = usePersistentColumnFilters('sagi:admin-all-deceased:columnFilters')
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
 
   const pageSize = 100
 
@@ -298,9 +348,11 @@ const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
     columns,
     state: {
       columnFilters,
-      pagination
+      pagination,
+      rowSelection
     },
     onColumnFiltersChange: setColumnFilters,
+    onRowSelectionChange: setRowSelection,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -308,9 +360,13 @@ const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
     getFacetedUniqueValues: getFacetedUniqueValues(),
     getFacetedMinMaxValues: getFacetedMinMaxValues(),
     enableSortingRemoval: false,
+    enableRowSelection: true,
     getPaginationRowModel: getPaginationRowModel(),
     onPaginationChange: setPagination
   })
+
+  const selectedRows = table.getSelectedRowModel().rows
+  const selectedRowCount = selectedRows.length
 
   const summaryTotals = table.getCoreRowModel().rows.reduce(
     (acc, row) => {
@@ -484,6 +540,7 @@ const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
           <div className='flex items-center justify-between gap-3 py-2 max-sm:flex-col max-sm:items-stretch sm:px-6 sm:py-4'>
             <p className='text-sm font-extrabold text-purple-400 sm:whitespace-nowrap' aria-live='polite'>
               <span>{table.getRowCount().toString()} Deceased Member(s) Found</span>
+              {selectedRowCount > 0 ? <span className='ml-2'>({selectedRowCount} selected)</span> : null}
             </p>
 
             <div className='w-full sm:w-auto'>
@@ -560,6 +617,33 @@ const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
             <Filter column={table.getColumn('contributionStatus')!} />
           </div>
           <div className='flex w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-between'>
+            <FormContainer
+              action={updateSelectedDeceasedContributionStatusAction}
+              className='flex w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:items-center'
+            >
+              {selectedRows.map(row => (
+                <input key={row.original.id} type='hidden' name='deceasedMemberIds' value={row.original.id} />
+              ))}
+              <Select name='contributionStatus' defaultValue={contributionStatus.review} required>
+                <SelectTrigger className='w-full whitespace-nowrap sm:w-56'>
+                  <SelectValue placeholder='Contribution status' />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.values(contributionStatus).map(status => (
+                    <SelectItem key={status} value={status} className='capitalize'>
+                      {status}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                type='submit'
+                disabled={selectedRowCount === 0}
+                className='text-primary focus-visible:ring-primary/20 dark:focus-visible:ring-primary/40 w-full bg-purple-500/10 hover:bg-purple-400/20 sm:w-auto'
+              >
+                Update Selected
+              </Button>
+            </FormContainer>
             <div className='flex items-center gap-2'>
               <Label htmlFor='#rowSelect' className=''>
                 Show
