@@ -344,6 +344,142 @@ const rotatingHeroImages: RotatingHeroImage[] = [
       fr: 'Délégués examinant ensemble les dossiers de cotisation de fin d’année'
     },
     objectPosition: '64% 100%'
+  },
+  {
+    src: '/images/hero/sagi-hero-option-01.jpg',
+    alt: {
+      en: 'African couple reviewing support documents together',
+      fr: 'Couple africain examinant ensemble des documents de soutien'
+    },
+    objectPosition: '62% 100%'
+  },
+  {
+    src: '/images/hero/sagi-hero-option-02.jpg',
+    alt: {
+      en: 'African American couple reviewing member paperwork at a table',
+      fr: 'Couple afro-américain examinant des documents de membre à table'
+    },
+    objectPosition: '58% 100%'
+  },
+  {
+    src: '/images/hero/sagi-hero-option-03.jpg',
+    alt: {
+      en: 'Community delegates meeting around support documents',
+      fr: 'Délégués communautaires réunis autour de documents de soutien'
+    },
+    objectPosition: '58% 100%'
+  },
+  {
+    src: '/images/hero/sagi-hero-option-05.jpg',
+    alt: {
+      en: 'Community member smiling while reviewing paperwork',
+      fr: 'Membre de la communauté souriant en examinant des documents'
+    },
+    objectPosition: '58% 100%'
+  },
+  {
+    src: '/images/hero/sagi-hero-option-06.jpg',
+    alt: {
+      en: 'Community member reading documents in a quiet office',
+      fr: 'Membre de la communauté lisant des documents dans un bureau calme'
+    },
+    objectPosition: '50% 100%'
+  },
+  {
+    src: '/images/hero/sagi-hero-option-07.jpg',
+    alt: {
+      en: 'Delegate reviewing support paperwork at a desk',
+      fr: 'Délégué examinant des documents de soutien à un bureau'
+    },
+    objectPosition: '38% 100%'
+  },
+  {
+    src: '/images/hero/sagi-hero-option-08.jpg',
+    alt: {
+      en: 'Colleagues reviewing a community support document together',
+      fr: 'Collègues examinant ensemble un document de soutien communautaire'
+    },
+    objectPosition: '58% 100%'
+  },
+  {
+    src: '/images/hero/sagi-hero-option-10.jpg',
+    alt: {
+      en: 'Delegate writing notes while organizing member records',
+      fr: 'Déléguée prenant des notes en organisant les dossiers des membres'
+    },
+    objectPosition: '50% 100%'
+  },
+  {
+    src: '/images/hero/sagi-hero-option-11.jpg',
+    alt: {
+      en: 'Community member focused on reviewing records',
+      fr: 'Membre de la communauté concentré sur l’examen des dossiers'
+    },
+    objectPosition: '35% 100%'
+  },
+  {
+    src: '/images/hero/sagi-hero-option-12.jpg',
+    alt: {
+      en: 'Elder delegate holding important documents',
+      fr: 'Délégué aîné tenant des documents importants'
+    },
+    objectPosition: '50% 100%'
+  },
+  {
+    src: '/images/hero/sagi-hero-option-13.jpg',
+    alt: {
+      en: 'Delegate comparing community paperwork in an office',
+      fr: 'Déléguée comparant des documents communautaires dans un bureau'
+    },
+    objectPosition: '50% 100%'
+  },
+  {
+    src: '/images/hero/sagi-hero-option-14.jpg',
+    alt: {
+      en: 'Delegate analyzing documents beside a computer',
+      fr: 'Délégué analysant des documents près d’un ordinateur'
+    },
+    objectPosition: '38% 100%'
+  },
+  {
+    src: '/images/hero/sagi-hero-option-15.jpg',
+    alt: {
+      en: 'Community leader reviewing documents during a meeting',
+      fr: 'Responsable communautaire examinant des documents pendant une réunion'
+    },
+    objectPosition: '52% 100%'
+  },
+  {
+    src: '/images/hero/sagi-hero-option-16.jpg',
+    alt: {
+      en: 'Team discussing member documents in a bright office',
+      fr: 'Équipe discutant des documents des membres dans un bureau lumineux'
+    },
+    objectPosition: '64% 100%'
+  },
+  {
+    src: '/images/hero/sagi-hero-option-18.jpg',
+    alt: {
+      en: 'Delegate holding support documents in a community office',
+      fr: 'Déléguée tenant des documents de soutien dans un bureau communautaire'
+    },
+    objectPosition: '65% 100%'
+  },
+  {
+    src: '/images/hero/sagi-hero-option-19.jpg',
+    alt: {
+      en: 'Colleagues smiling while reviewing support documents',
+      fr: 'Collègues souriant en examinant des documents de soutien'
+    },
+    objectPosition: '50% 100%'
+  },
+  {
+    src: '/images/hero/sagi-hero-option-20.jpg',
+    alt: {
+      en: 'Senior community member holding support paperwork',
+      fr: 'Membre aînée de la communauté tenant des documents de soutien'
+    },
+    objectPosition: '45% 100%'
   }
 ]
 
