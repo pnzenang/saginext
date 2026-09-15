@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SAGI Current Hero Rotation</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #f5f3ee;
+        color: #162019;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+      }
+
+      main {
+        width: min(1240px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 36px 0 56px;
+      }
+
+      header {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 20px;
+        margin-bottom: 24px;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: clamp(28px, 4vw, 44px);
+        line-height: 1;
+      }
+
+      p {
+        max-width: 780px;
+        margin: 0;
+        color: #4f5b52;
+        font-size: 16px;
+        line-height: 1.55;
+      }
+
+      .count {
+        flex: 0 0 auto;
+        border-radius: 999px;
+        background: #173f31;
+        color: #fff;
+        padding: 10px 16px;
+        font-weight: 800;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 18px;
+      }
+
+      figure {
+        margin: 0;
+        overflow: hidden;
+        border: 1px solid #d7d0c4;
+        border-radius: 8px;
+        background: #fffdf8;
+        box-shadow: 0 14px 40px rgb(22 32 25 / 10%);
+      }
+
+      img {
+        display: block;
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        object-fit: cover;
+        background: #d7d0c4;
+      }
+
+      figcaption {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 10px;
+        align-items: center;
+        padding: 12px 14px;
+      }
+
+      strong {
+        display: inline-flex;
+        width: 34px;
+        height: 34px;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        background: #173f31;
+        color: #fff;
+        font-size: 14px;
+      }
+
+      span {
+        min-width: 0;
+        overflow: hidden;
+        color: #3e473f;
+        font-size: 13px;
+        font-weight: 700;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      @media (max-width: 720px) {
+        header {
+          display: block;
+        }
+
+        .count {
+          display: inline-flex;
+          margin-top: 16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <h1>SAGI Current Hero Rotation</h1>
+          <p>
+            These are all 30 local hero images currently wired into the homepage rotation, shown in the same order as the
+            rotation array in the code.
+          </p>
+        </div>
+        <div class="count">30 images</div>
+      </header>
+
+      <section class="grid" aria-label="Current hero image rotation">
+        <figure>
+          <img src="public/images/hero/sagi-hero-jan-feb.jpg" alt="Community members reviewing support documents together" />
+          <figcaption><strong>1</strong><span>sagi-hero-jan-feb.jpg</span></figcaption>
+        </figure>
+        <figure>
+          <img src="public/images/hero/sagi-hero-february.jpg" alt="Community members welcoming a family with support documents" />
+          <figcaption><strong>2</strong><span>sagi-hero-february.jpg</span></figcaption>
+        </figure>
+        <figure>
+          <img src="public/images/hero/sagi-hero-mar-apr.jpg" alt="Multigenerational family reviewing support information at home" />
+          <figcaption><strong>3</strong><span>sagi-hero-mar-apr.jpg</span></figcaption>
+        </figure>
+        <figure>
+          <img src="public/images/hero/sagi-hero-april.jpg" alt="Family and delegate reviewing membership support information" />
+          <figcaption><strong>4</strong><span>sagi-hero-april.jpg</span></figcaption>
+        </figure>
+        <figure>
+          <img src="public/images/hero/sagi-hero-may-jun.jpg" alt="Community delegates organizing member support records" />
+          <figcaption><strong>5</strong><span>sagi-hero-may-jun.jpg</span></figcaption>
+        </figure>
+        <figure>
+          <img src="public/images/hero/sagi-hero-june.jpg" alt="Delegate team reconciling member records and contribution details" />
+          <figcaption><strong>6</strong><span>sagi-hero-june.jpg</span></figcaption>
+        </figure>
+        <figure>
+          <img src="public/images/hero/sagi-hero-jul-aug.jpg" alt="Community members meeting in a circle for mutual aid support" />
+          <figcaption><strong>7</strong><span>sagi-hero-jul-aug.jpg</span></figcaption>
+        </figure>
+        <figure>
+          <img src="public/images/hero/sagi-hero-august.jpg" alt="Community members exchanging support forms after a member session" />
+          <figcaption><strong>8</strong><span>sagi-hero-august.jpg</span></figcaption>
+        </figure>
+        <figure>
+          <img src="public/images/hero/sagi-hero-sep-oct.jpg" alt="Family and community members gathered for a dignified support moment" />
+          <figcaption><strong>9</strong><span>sagi-hero-sep-oct.jpg</span></figcaption>
+        </figure>
+        <figure>
+          <img src="public/images/hero/sagi-hero-october.jpg" alt="Family and delegate having a compassionate support conversation" />
+          <figcaption><strong>10</strong><span>sagi-hero-october.jpg</span></figcaption>
+        </figure>
+        <figure>
+          <img src="public/images/hero/sagi-hero-nov-dec.jpg" alt="Family members reviewing contribution records together" />
+          <figcaption><strong>11</strong><span>sagi-hero-nov-dec.jpg</span></figcaption>
+        </figure>
+        <figure>
+          <img src="public/images/hero/sagi-hero-december.jpg" alt="Delegates reviewing year-end contribution records together" />
+          <figcaption><strong>12</strong><span>sagi-hero-december.jpg</span></figcaption>
+        </figure>
+        <figure>
+          <img src="public/images/hero/sagi-hero-option-01.jpg" alt="African couple reviewing support documents together" />
+          <figcaption><strong>13</strong><span>sagi-hero-option-01.jpg</span></figcaption>
+        </figure>
+        <figure>
+          <img src="public/images/hero/sagi-hero-option-02.jpg" alt="African American couple reviewing member paperwork at a table" />
+          <figcaption><strong>14</strong><span>sagi-hero-option-02.jpg</span></figcaption>
+        </figure>
+        <figure>
+          <img src="public/images/hero/sagi-hero-option-03.jpg" alt="Community delegates meeting around support documents" />
+          <figcaption><strong>15</strong><span>sagi-hero-option-03.jpg</span></figcaption>
+        </figure>
+        <figure>
+          <img src="public/images/hero/sagi-hero-option-05.jpg" alt="Community member smiling while reviewing paperwork" />
+          <figcaption><strong>16</strong><span>sagi-hero-option-05.jpg</span></figcaption>
+        </figure>
+        <figure>
+          <img src="public/images/hero/sagi-hero-option-06.jpg" alt="Community member reading documents in a quiet office" />
+          <figcaption><strong>17</strong><span>sagi-hero-option-06.jpg</span></figcaption>
+        </figure>
+        <figure>
+          <img src="public/images/hero/sagi-hero-option-07.jpg" alt="Delegate reviewing support paperwork at a desk" />
+          <figcaption><strong>18</strong><span>sagi-hero-option-07.jpg</span></figcaption>
+        </figure>
+        <figure>
+          <img src="public/images/hero/sagi-hero-option-08.jpg" alt="Colleagues reviewing a community support document together" />
+          <figcaption><strong>19</strong><span>sagi-hero-option-08.jpg</span></figcaption>
+        </figure>
+        <figure>
+          <img src="public/images/hero/sagi-hero-option-10.jpg" alt="Delegate writing notes while organizing member records" />
+          <figcaption><strong>20</strong><span>sagi-hero-option-10.jpg</span></figcaption>
+        </figure>
+        <figure>
+          <img src="public/images/hero/sagi-hero-option-11.jpg" alt="Community member focused on reviewing records" />
+          <figcaption><strong>21</strong><span>sagi-hero-option-11.jpg</span></figcaption>
+        </figure>
+        <figure>
+          <img src="public/images/hero/sagi-hero-option-12.jpg" alt="Elder delegate holding important documents" />
+          <figcaption><strong>22</strong><span>sagi-hero-option-12.jpg</span></figcaption>
+        </figure>
+        <figure>
+          <img src="public/images/hero/sagi-hero-option-13.jpg" alt="Delegate comparing community paperwork in an office" />
+          <figcaption><strong>23</strong><span>sagi-hero-option-13.jpg</span></figcaption>
+        </figure>
+        <figure>
+          <img src="public/images/hero/sagi-hero-option-14.jpg" alt="Delegate analyzing documents beside a computer" />
+          <figcaption><strong>24</strong><span>sagi-hero-option-14.jpg</span></figcaption>
+        </figure>
+        <figure>
+          <img src="public/images/hero/sagi-hero-option-15.jpg" alt="Community leader reviewing documents during a meeting" />
+          <figcaption><strong>25</strong><span>sagi-hero-option-15.jpg</span></figcaption>
+        </figure>
+        <figure>
+          <img src="public/images/hero/sagi-hero-option-16.jpg" alt="Team discussing member documents in a bright office" />
+          <figcaption><strong>26</strong><span>sagi-hero-option-16.jpg</span></figcaption>
+        </figure>
+        <figure>
+          <img src="public/images/hero/sagi-hero-option-18.jpg" alt="Delegate holding support documents in a community office" />
+          <figcaption><strong>27</strong><span>sagi-hero-option-18.jpg</span></figcaption>
+        </figure>
+        <figure>
+          <img src="public/images/hero/sagi-hero-option-19.jpg" alt="Colleagues smiling while reviewing support documents" />
+          <figcaption><strong>28</strong><span>sagi-hero-option-19.jpg</span></figcaption>
+        </figure>
+        <figure>
+          <img src="public/images/hero/sagi-hero-option-20.jpg" alt="Senior community member holding support paperwork" />
+          <figcaption><strong>29</strong><span>sagi-hero-option-20.jpg</span></figcaption>
+        </figure>
+        <figure>
+          <img src="public/images/hero/sagi-hero-option-21.jpg" alt="Community delegate discussing documents during a meeting" />
+          <figcaption><strong>30</strong><span>sagi-hero-option-21.jpg</span></figcaption>
+        </figure>
+      </section>
+    </main>
+  </body>
+</html>

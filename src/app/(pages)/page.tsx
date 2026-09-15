@@ -480,6 +480,14 @@ const rotatingHeroImages: RotatingHeroImage[] = [
       fr: 'Membre aînée de la communauté tenant des documents de soutien'
     },
     objectPosition: '45% 100%'
+  },
+  {
+    src: '/images/hero/sagi-hero-option-21.jpg',
+    alt: {
+      en: 'Community delegate discussing documents during a meeting',
+      fr: 'Délégué communautaire discutant des documents pendant une réunion'
+    },
+    objectPosition: '52% 100%'
   }
 ]
 
