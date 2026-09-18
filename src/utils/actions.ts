@@ -974,6 +974,18 @@ const getManualVestedAtUpdateData = ({
   return {}
 }
 
+const getRestoredVestedAtUpdateData = ({
+  originalMemberVestedAt,
+  restoredMemberStatus
+}: {
+  originalMemberVestedAt?: Date | null
+  restoredMemberStatus: string
+}) => {
+  if (restoredMemberStatus !== memberStatus.Vested || !originalMemberVestedAt) return {}
+
+  return { vestedAt: originalMemberVestedAt }
+}
+
 const addDeceasedMemberContributionUsage = async (associationCode: string) => {
   await db.associationContributionUsage.upsert({
     create: {
@@ -1003,6 +1015,22 @@ const assertAdminUser = async () => {
   }
 
   return { id: userId }
+}
+
+const getAuthUserAllowingAdmin = async () => {
+  const { userId } = await auth()
+
+  if (!userId) {
+    throw new Error('You must be logged in to access this route')
+  }
+
+  if (userId === process.env.ADMIN_USER_ID) {
+    return { id: userId, isAdminUser: true }
+  }
+
+  const user = await getAuthUser()
+
+  return { id: user.id, isAdminUser: false }
 }
 
 const getCurrentAssociationCode = async (clerkId: string) => {
@@ -6639,7 +6667,7 @@ export const fetchRemovedMembersActionAdmin = async () => {
 }
 
 export const restoreRemovedMemberAction = async (prevState: { removedMemberId: string }) => {
-  const user = await getAuthUser()
+  const user = await getAuthUserAllowingAdmin()
   const { removedMemberId } = prevState
 
   try {
@@ -6651,13 +6679,11 @@ export const restoreRemovedMemberAction = async (prevState: { removedMemberId: s
 
     if (!removedMember) throw new Error('Removed member not found')
 
-    const isAdminUser = user.id === process.env.ADMIN_USER_ID
-
-    if (!isAdminUser && removedMember.clerkId !== user.id) {
+    if (!user.isAdminUser && removedMember.clerkId !== user.id) {
       throw new Error('You can only restore members removed from your own account')
     }
 
-    if (!isWithinMemberRemovalRestoreWindow(removedMember.createdAt)) {
+    if (!user.isAdminUser && !isWithinMemberRemovalRestoreWindow(removedMember.createdAt)) {
       throw new Error('This member can no longer be restored because the 48-hour reversal window has expired')
     }
 
@@ -6690,6 +6716,10 @@ export const restoreRemovedMemberAction = async (prevState: { removedMemberId: s
           nameOfBeneficiary,
           associationName,
           associationCode: removedMember.associationCode,
+          ...getRestoredVestedAtUpdateData({
+            originalMemberVestedAt: removedMember.originalMemberVestedAt,
+            restoredMemberStatus
+          }),
           ...(removedMember.originalMemberCreatedAt ? { createdAt: removedMember.originalMemberCreatedAt } : {})
         }
       })
@@ -6726,7 +6756,7 @@ export const restoreRemovedMemberAction = async (prevState: { removedMemberId: s
         action: 'member_restored',
         actorClerkId: user.id,
         associationCode: removedMember.associationCode,
-        dashboardScope: isAdminUser ? dashboardActivityScopes.admin : dashboardActivityScopes.association,
+        dashboardScope: user.isAdminUser ? dashboardActivityScopes.admin : dashboardActivityScopes.association,
         entityId: restoredMember.id,
         entityType: 'member',
         summary: `Restored ${getMemberActivityLabel(restoredMember)} from Removed Members.`,
@@ -7276,7 +7306,7 @@ export const deleteContributionCalculationDeathAction = async (formData: FormDat
 }
 
 export const restoreDeceasedMemberAction = async (prevState: { deceasedMemberId: string }) => {
-  const user = await getAuthUser()
+  const user = await getAuthUserAllowingAdmin()
   const { deceasedMemberId } = prevState
 
   try {
@@ -7295,9 +7325,8 @@ export const restoreDeceasedMemberAction = async (prevState: { deceasedMemberId:
     }
 
     const associationCode = normalizeAssociationCode(deceasedMember.associationCode)
-    const isAdminUser = user.id === process.env.ADMIN_USER_ID
 
-    if (!isAdminUser && deceasedMember.clerkId !== user.id) {
+    if (!user.isAdminUser && deceasedMember.clerkId !== user.id) {
       throw new Error('You can only restore death announcements you submitted.')
     }
 
@@ -7310,7 +7339,7 @@ export const restoreDeceasedMemberAction = async (prevState: { deceasedMemberId:
       }
     })
 
-    if (!isAdminUser && !isWithinMemberRemovalRestoreWindow(deceasedMember.createdAt)) {
+    if (!user.isAdminUser && !isWithinMemberRemovalRestoreWindow(deceasedMember.createdAt)) {
       throw new Error(
         'This death announcement can no longer be restored because the 48-hour reversal window has expired'
       )
@@ -7345,6 +7374,10 @@ export const restoreDeceasedMemberAction = async (prevState: { deceasedMemberId:
           memberMatriculationNumber: deceasedMember.memberMatriculationNumber,
           memberStatus: restoredMemberStatus,
           nameOfBeneficiary,
+          ...getRestoredVestedAtUpdateData({
+            originalMemberVestedAt: deceasedMember.originalMemberVestedAt,
+            restoredMemberStatus
+          }),
           ...(deceasedMember.originalMemberCreatedAt ? { createdAt: deceasedMember.originalMemberCreatedAt } : {})
         }
       })
@@ -7381,7 +7414,7 @@ export const restoreDeceasedMemberAction = async (prevState: { deceasedMemberId:
         action: 'deceased_member_restored',
         actorClerkId: user.id,
         associationCode,
-        dashboardScope: isAdminUser ? dashboardActivityScopes.admin : dashboardActivityScopes.association,
+        dashboardScope: user.isAdminUser ? dashboardActivityScopes.admin : dashboardActivityScopes.association,
         entityId: restoredMember.id,
         entityType: 'deceased_member',
         summary: `Restored ${getMemberActivityLabel(restoredMember)} from deceased members.`,

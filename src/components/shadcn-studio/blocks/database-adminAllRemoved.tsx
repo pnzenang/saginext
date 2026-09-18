@@ -654,7 +654,7 @@ function RowActions({ removedMember }: { removedMember: RemovedMemberType }) {
 
   return (
     <div className='flex items-center gap-2'>
-      <RestoreRemovedMemberButton removedMember={removedMember} compact />
+      <RestoreRemovedMemberButton allowExpiredRestore removedMember={removedMember} compact />
       <FormContainer action={deleteRemovedMember}>
         <Button size='icon' variant='ghost' className='rounded-full p-2 hover:bg-red-300' aria-label='Delete item'>
           <Trash2 className='text-destructive size-5' aria-hidden='true' />

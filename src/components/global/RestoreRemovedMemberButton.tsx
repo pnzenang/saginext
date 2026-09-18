@@ -38,9 +38,11 @@ const formatTimeRemaining = (milliseconds: number) => {
 }
 
 const RestoreRemovedMemberButton = ({
+  allowExpiredRestore = false,
   compact = false,
   removedMember
 }: {
+  allowExpiredRestore?: boolean
   compact?: boolean
   removedMember: RemovedMemberType
 }) => {
@@ -50,7 +52,7 @@ const RestoreRemovedMemberButton = ({
   const memberName = `${removedMember.firstName} ${removedMember.lastAndMiddleNames}`.trim()
   const hasDetails = hasRestoreDetails(removedMember)
   const timeRemaining = getRestoreTimeRemaining(removedMember, now)
-  const canRestore = hasDetails && timeRemaining > 0
+  const canRestore = hasDetails && (allowExpiredRestore || timeRemaining > 0)
 
   const buttonClass = 'border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800'
 
@@ -58,17 +60,17 @@ const RestoreRemovedMemberButton = ({
     'border border-emerald-200 bg-emerald-50 text-emerald-800 shadow-sm [&>svg]:bg-emerald-50 [&>svg]:fill-emerald-50'
 
   useEffect(() => {
-    if (!isOpen) return
+    if (!isOpen || allowExpiredRestore) return
 
     const interval = window.setInterval(() => {
       setNow(Date.now())
     }, 1000)
 
     return () => window.clearInterval(interval)
-  }, [isOpen])
+  }, [allowExpiredRestore, isOpen])
 
   useEffect(() => {
-    if (!hasDetails) return
+    if (!hasDetails || allowExpiredRestore) return
 
     const timeUntilExpiration = getRestoreTimeRemaining(removedMember, Date.now())
 
@@ -79,7 +81,7 @@ const RestoreRemovedMemberButton = ({
     }, timeUntilExpiration)
 
     return () => window.clearTimeout(timeout)
-  }, [hasDetails, removedMember])
+  }, [allowExpiredRestore, hasDetails, removedMember])
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open)
@@ -120,8 +122,14 @@ const RestoreRemovedMemberButton = ({
         >
           {canRestore && (
             <>
-              <p>{memberName} can be restored within 48 hours of removal.</p>
-              <p className='font-semibold'>Time remaining: {formatTimeRemaining(timeRemaining)}</p>
+              <p>
+                {allowExpiredRestore
+                  ? `Admin lifetime reversal is available for ${memberName}.`
+                  : `${memberName} can be restored within 48 hours of removal.`}
+              </p>
+              {!allowExpiredRestore && (
+                <p className='font-semibold'>Time remaining: {formatTimeRemaining(timeRemaining)}</p>
+              )}
             </>
           )}
         </TooltipContent>
