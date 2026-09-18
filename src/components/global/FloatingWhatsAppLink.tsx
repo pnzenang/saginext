@@ -14,18 +14,18 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
 import { normalizeLanguage, type AppLanguage } from '@/lib/i18n'
-import { getSagiWhatsAppUrl, sagiPhoneDisplay, sagiWhatsAppContacts } from '@/utils/sagi-contact'
+import { getSagiWhatsAppUrl, sagiWhatsAppContacts } from '@/utils/sagi-contact'
 
 const floatingWhatsAppCopy = {
   en: {
     ariaLabel: 'Chat with SAGI on WhatsApp',
-    label: sagiPhoneDisplay,
+    label: 'Chat with SAGI',
     menuLabel: 'Choose a SAGI number',
     message: 'Hello SAGI, I need help.'
   },
   fr: {
     ariaLabel: 'Discuter avec SAGI sur WhatsApp',
-    label: sagiPhoneDisplay,
+    label: 'Discuter avec SAGI',
     menuLabel: 'Choisir un numéro SAGI',
     message: 'Bonjour SAGI, j’ai besoin d’aide.'
   }
