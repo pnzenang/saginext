@@ -22,6 +22,6 @@ export const faqData = [
   {
     question: 'How can I contact SAGI for help?',
     answer:
-      'You can call SAGI at (804) 214-6390, email info@mySagi.org, or send a message through the contact form on this page.'
+      'You can call SAGI at (443) 531 5852, email info@mySagi.org, or send a message through the contact form on this page.'
   }
 ]

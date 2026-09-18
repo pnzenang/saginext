@@ -309,7 +309,7 @@ const FuneralHomesPage = ({ language = 'en' }: { language?: 'en' | 'fr' }) => {
 
                 <div className='flex flex-wrap gap-3'>
                   <Button asChild className='rounded-full'>
-                    <a href='tel:+18042146390'>{copy.callCta}</a>
+                    <a href='tel:+14435315852'>{copy.callCta}</a>
                   </Button>
                   <Button asChild variant='outline' className='rounded-full'>
                     <Link href='/sign-in' prefetch={false}>

@@ -718,7 +718,7 @@ const frenchFaqData = [
   {
     question: 'Comment contacter SAGI pour obtenir de l’aide?',
     answer:
-      'Vous pouvez appeler SAGI au (804) 214-6390, envoyer un courriel à info@mySagi.org ou envoyer un message avec le formulaire de contact.'
+      'Vous pouvez appeler SAGI au (443) 531 5852, envoyer un courriel à info@mySagi.org ou envoyer un message avec le formulaire de contact.'
   }
 ]
 

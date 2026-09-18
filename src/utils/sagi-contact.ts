@@ -1,5 +1,5 @@
-export const sagiPhoneDisplay = '(804) 214-6390'
-export const sagiPhoneHref = 'tel:+1-804-214-6390'
+export const sagiPhoneDisplay = '(443) 531 5852'
+export const sagiPhoneHref = 'tel:+1-443-531-5852'
 
 export type SagiWhatsAppContact = {
   display: string
@@ -10,10 +10,10 @@ export type SagiWhatsAppContact = {
 
 export const sagiWhatsAppContacts = [
   {
-    display: '+1 (913) 999-5401',
+    display: '+1 (443) 531-5852',
     id: 'main',
     label: 'SAGI WhatsApp',
-    phone: '19139995401'
+    phone: '14435315852'
   }
 ] as const satisfies readonly SagiWhatsAppContact[]
 
