@@ -227,7 +227,7 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
 
   {
     accessorKey: 'registrationDate', // The key in your data object
-    header: 'Reg. Date',
+    header: 'Vested Date',
     cell: ({ row }) => {
       const field = row.getValue('registrationDate') as string
       const fieldDate = new Date(field)
@@ -237,9 +237,9 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
       return <div>{formattedRegistrationDate}</div>
     },
     meta: {
-      label: 'Registration Date'
+      label: 'Vested Date'
     },
-    size: 82
+    size: 96
   },
   {
     accessorKey: 'dateOfDeath', // The key in your data object

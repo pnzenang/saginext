@@ -56,7 +56,7 @@ const EditCaseStatus = async ({ params }: { params: { id: string } }) => {
               <FormInput
                 type='text'
                 name='registrationDate'
-                label='registration date'
+                label='vested date'
                 defaultValue={registrationDate}
 
                 // placeholder='MM/DD/YYYY'

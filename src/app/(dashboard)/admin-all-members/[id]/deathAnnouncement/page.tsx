@@ -66,7 +66,7 @@ const DeathAnnouncement = async ({ params }: { params: { id: string } }) => {
               <FormInput
                 type='text'
                 name='registrationDate'
-                label='registration date'
+                label='vested date'
                 defaultValue={createdAt.toLocaleDateString()}
 
                 // placeholder='MM/DD/YYYY'

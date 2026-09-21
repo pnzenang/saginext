@@ -757,7 +757,7 @@ const parseUsDateOnlyTimestamp = (value: string, fieldLabel: string) => {
 const getDateOnlyTimestamp = (date: Date) => Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
 
 const getDeathAnnouncementDateBoundary = (date: Date | string) =>
-  date instanceof Date ? getDateOnlyTimestamp(date) : parseUsDateOnlyTimestamp(date, 'registration date')
+  date instanceof Date ? getDateOnlyTimestamp(date) : parseUsDateOnlyTimestamp(date, 'vested date')
 
 const assertValidDeathAnnouncementDate = ({
   announcementDate,
@@ -773,7 +773,7 @@ const assertValidDeathAnnouncementDate = ({
   const announcementDateBoundary = getDateOnlyTimestamp(announcementDate)
 
   if (deathDate <= registrationDateBoundary) {
-    throw new Error('Date of death must be after the registration date.')
+    throw new Error('Date of death must be after the vested date.')
   }
 
   if (deathDate > announcementDateBoundary) {
@@ -975,15 +975,37 @@ const getManualVestedAtUpdateData = ({
 }
 
 const getRestoredVestedAtUpdateData = ({
+  originalMemberCreatedAt,
   originalMemberVestedAt,
   restoredMemberStatus
 }: {
+  originalMemberCreatedAt?: Date | null
   originalMemberVestedAt?: Date | null
   restoredMemberStatus: string
 }) => {
-  if (restoredMemberStatus !== memberStatus.Vested || !originalMemberVestedAt) return {}
+  if (restoredMemberStatus !== memberStatus.Vested) return {}
 
-  return { vestedAt: originalMemberVestedAt }
+  const vestedAt = originalMemberVestedAt ?? originalMemberCreatedAt
+
+  return vestedAt ? { vestedAt } : {}
+}
+
+const getReusableRestoredMemberIdData = async (
+  tx: Prisma.TransactionClient,
+  originalMemberId?: string | null
+) => {
+  if (!originalMemberId) return {}
+
+  const existingMemberWithOriginalId = await tx.member.findUnique({
+    select: {
+      id: true
+    },
+    where: {
+      id: originalMemberId
+    }
+  })
+
+  return existingMemberWithOriginalId ? {} : { id: originalMemberId }
 }
 
 const addDeceasedMemberContributionUsage = async (associationCode: string) => {
@@ -6702,9 +6724,11 @@ export const restoreRemovedMemberAction = async (prevState: { removedMemberId: s
     const nameOfBeneficiary = removedMember.nameOfBeneficiary
 
     await db.$transaction(async tx => {
+      const restoredMemberIdData = await getReusableRestoredMemberIdData(tx, removedMember.originalMemberId)
+
       const restoredMember = await tx.member.create({
         data: {
-          ...(removedMember.originalMemberId ? { id: removedMember.originalMemberId } : {}),
+          ...restoredMemberIdData,
           clerkId: removedMember.clerkId,
           firstName: removedMember.firstName,
           lastAndMiddleNames: removedMember.lastAndMiddleNames,
@@ -6717,6 +6741,7 @@ export const restoreRemovedMemberAction = async (prevState: { removedMemberId: s
           associationName,
           associationCode: removedMember.associationCode,
           ...getRestoredVestedAtUpdateData({
+            originalMemberCreatedAt: removedMember.originalMemberCreatedAt,
             originalMemberVestedAt: removedMember.originalMemberVestedAt,
             restoredMemberStatus
           }),
@@ -7360,9 +7385,11 @@ export const restoreDeceasedMemberAction = async (prevState: { deceasedMemberId:
     const nameOfBeneficiary = deceasedMember.nameOfBeneficiary
 
     await db.$transaction(async tx => {
+      const restoredMemberIdData = await getReusableRestoredMemberIdData(tx, deceasedMember.originalMemberId)
+
       const restoredMember = await tx.member.create({
         data: {
-          ...(deceasedMember.originalMemberId ? { id: deceasedMember.originalMemberId } : {}),
+          ...restoredMemberIdData,
           associationCode,
           associationName: deceasedMember.associationName,
           clerkId: delegateProfile?.clerkId ?? deceasedMember.clerkId,
@@ -7375,6 +7402,7 @@ export const restoreDeceasedMemberAction = async (prevState: { deceasedMemberId:
           memberStatus: restoredMemberStatus,
           nameOfBeneficiary,
           ...getRestoredVestedAtUpdateData({
+            originalMemberCreatedAt: deceasedMember.originalMemberCreatedAt,
             originalMemberVestedAt: deceasedMember.originalMemberVestedAt,
             restoredMemberStatus
           }),

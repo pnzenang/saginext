@@ -46,7 +46,7 @@ const ContributionCalculationPage = async () => {
         <h1 className='text-xl font-semibold tracking-normal break-words md:text-4xl'>Contribution Calculation</h1>
         <p className='text-muted-foreground mt-2 max-w-4xl text-sm leading-6 break-words sm:text-base'>
           Add deceased members by matriculation number and enter the amount to be contributed. The table pulls the name,
-          registration date, and date deceased from the deceased-member records.
+          vested date, and date deceased from the deceased-member records.
         </p>
       </div>
 
@@ -136,8 +136,8 @@ const ContributionCalculationPage = async () => {
                   <TableHead className='text-primary-foreground w-40' title='Last and Middle Names'>
                     Last and Middle Names
                   </TableHead>
-                  <TableHead className='text-primary-foreground' title='Registration Date'>
-                    Registration Date
+                  <TableHead className='text-primary-foreground' title='Vested Date'>
+                    Vested Date
                   </TableHead>
                   <TableHead className='text-primary-foreground' title='Date of Death'>
                     Date of Death

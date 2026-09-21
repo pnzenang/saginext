@@ -72,7 +72,7 @@ const DeathAnnouncement = async ({ params }: { params: { id: string } }) => {
               <FormInput
                 type='text'
                 name='registrationDate'
-                label='registration date'
+                label='vested date'
                 value={createdAt.toLocaleDateString()}
                 readOnly
               />
