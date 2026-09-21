@@ -734,6 +734,8 @@ const getRequiredDateFromForm = (formData: FormData, fieldName: string) => {
 
 const formatRegistrationDate = (date: Date) => registrationDateFormatter.format(date)
 
+const getMemberVestedDate = (member: { createdAt: Date; vestedAt?: Date | null }) => member.vestedAt ?? member.createdAt
+
 const parseUsDateOnlyTimestamp = (value: string, fieldLabel: string) => {
   const match = value.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
 
@@ -6830,10 +6832,12 @@ export const createDeceasedMemberAction = async (provState: any, formData: FormD
     assertValidDeathAnnouncementDate({
       announcementDate: new Date(),
       dateOfDeath: validatedFields.dateOfDeath,
-      registrationDate: member.createdAt
+      registrationDate: getMemberVestedDate(member)
     })
 
     await db.$transaction(async tx => {
+      const memberVestedDate = getMemberVestedDate(member)
+
       const deceasedMember = await tx.deceasedMember.create({
         data: {
           ...validatedFields,
@@ -6845,7 +6849,7 @@ export const createDeceasedMemberAction = async (provState: any, formData: FormD
           originalMemberCreatedAt: member.createdAt,
           originalMemberVestedAt: member.vestedAt,
           originalMemberId: member.id,
-          registrationDate: formatRegistrationDate(member.createdAt)
+          registrationDate: formatRegistrationDate(memberVestedDate)
         }
       })
 
@@ -6939,10 +6943,12 @@ export const createDeceasedMemberActionAdmin = async (
     assertValidDeathAnnouncementDate({
       announcementDate: new Date(),
       dateOfDeath: validatedFields.dateOfDeath,
-      registrationDate: member.createdAt
+      registrationDate: getMemberVestedDate(member)
     })
 
     await db.$transaction(async tx => {
+      const memberVestedDate = getMemberVestedDate(member)
+
       const deceasedMember = await tx.deceasedMember.create({
         data: {
           ...validatedFields,
@@ -6954,7 +6960,7 @@ export const createDeceasedMemberActionAdmin = async (
           originalMemberCreatedAt: member.createdAt,
           originalMemberVestedAt: member.vestedAt,
           originalMemberId: member.id,
-          registrationDate: formatRegistrationDate(member.createdAt)
+          registrationDate: formatRegistrationDate(memberVestedDate)
         }
       })
 

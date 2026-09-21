@@ -29,8 +29,10 @@ const DeathAnnouncement = async ({ params }: { params: { id: string } }) => {
     nameOfBeneficiary,
     memberMatriculationNumber,
     createdAt,
+    vestedAt,
     associationName
   } = member
+  const memberVestedDate = vestedAt ?? createdAt
 
   return (
     <section className='mt-16 flex flex-col'>
@@ -73,7 +75,7 @@ const DeathAnnouncement = async ({ params }: { params: { id: string } }) => {
                 type='text'
                 name='registrationDate'
                 label='vested date'
-                value={createdAt.toLocaleDateString()}
+                value={memberVestedDate.toLocaleDateString()}
                 readOnly
               />
               <FormSelect
