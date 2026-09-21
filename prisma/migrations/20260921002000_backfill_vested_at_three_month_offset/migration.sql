@@ -1,0 +1,5 @@
+UPDATE "Member"
+SET "vestedAt" = "createdAt" - INTERVAL '3 months'
+WHERE "memberStatus" = 'vested'
+  AND "createdAt" > TIMESTAMP '2025-06-01 00:00:00'
+  AND "createdAt" < TIMESTAMP '2026-09-01 00:00:00';
