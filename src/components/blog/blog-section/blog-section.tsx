@@ -59,9 +59,13 @@ const BlogGrid = ({
             </div>
 
             <Link href={`/blog/${post.slug}`} className='block'>
-              <h3 className='line-clamp-2 text-lg font-medium transition-colors md:text-xl'>{post.title}</h3>
+              <h3 className='line-clamp-2 text-lg font-medium transition-colors md:text-xl' title={post.title}>
+                {post.title}
+              </h3>
             </Link>
-            <p className='text-muted-foreground line-clamp-2'>{post.description}</p>
+            <p className='text-muted-foreground line-clamp-2' title={post.description}>
+              {post.description}
+            </p>
             <div className='flex items-center justify-between gap-2'>
               <p className='text-sm font-medium'>{post.author?.name}</p>
               <SecondarySwipeButton

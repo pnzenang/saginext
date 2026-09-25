@@ -3,6 +3,7 @@
 import * as React from 'react'
 
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { getExplicitTooltipText, useOverflowTooltip } from '@/hooks/use-overflow-tooltip'
 import { cn } from '@/lib/utils'
 
 type TableProps = React.ComponentProps<'table'> & {
@@ -11,74 +12,6 @@ type TableProps = React.ComponentProps<'table'> & {
 
 type TableHeadProps = React.ComponentProps<'th'> & {
   showTitleTooltip?: boolean
-}
-
-const getTooltipTitle = (title: React.HTMLAttributes<HTMLElement>['title']) =>
-  typeof title === 'string' && title.trim() ? title : undefined
-
-const truncatedTextSelector = '.truncate, .line-clamp-1, .line-clamp-2, .line-clamp-3'
-const truncationClassNames = ['truncate', 'line-clamp-1', 'line-clamp-2', 'line-clamp-3']
-
-const hasTruncationClass = (element: HTMLElement) =>
-  truncationClassNames.some(className => element.classList.contains(className))
-
-const getTruncatedTextCandidates = (element: HTMLElement) => {
-  const candidates = new Set<HTMLElement>()
-
-  if (hasTruncationClass(element)) candidates.add(element)
-
-  element.querySelectorAll<HTMLElement>(truncatedTextSelector).forEach(candidate => candidates.add(candidate))
-
-  return Array.from(candidates)
-}
-
-const hasVisibleOverflow = (element: HTMLElement) =>
-  element.scrollWidth > element.clientWidth + 1 || element.scrollHeight > element.clientHeight + 1
-
-const useTruncatedTooltip = <TElement extends HTMLElement>(tooltipTitle?: string) => {
-  const elementRef = React.useRef<TElement>(null)
-  const [isTruncated, setIsTruncated] = React.useState(false)
-
-  React.useEffect(() => {
-    if (!tooltipTitle) {
-      setIsTruncated(false)
-
-      return
-    }
-
-    const element = elementRef.current
-
-    if (!element) return
-
-    const checkTruncation = () => {
-      setIsTruncated(getTruncatedTextCandidates(element).some(hasVisibleOverflow))
-    }
-
-    let frameId = window.requestAnimationFrame(checkTruncation)
-
-    if (typeof ResizeObserver === 'undefined') {
-      checkTruncation()
-
-      return () => window.cancelAnimationFrame(frameId)
-    }
-
-    const scheduleCheck = () => {
-      window.cancelAnimationFrame(frameId)
-      frameId = window.requestAnimationFrame(checkTruncation)
-    }
-
-    const resizeObserver = new ResizeObserver(scheduleCheck)
-
-    resizeObserver.observe(element)
-    getTruncatedTextCandidates(element).forEach(candidate => resizeObserver.observe(candidate))
-
-    return () => {
-      window.cancelAnimationFrame(frameId)
-      resizeObserver.disconnect()
-    }
-  }, [tooltipTitle])
-
-  return { elementRef, isTruncated }
 }
 
 function Table({ className, mobileCards = false, ...props }: TableProps) {
@@ -136,33 +69,35 @@ function TableHead({
   showTitleTooltip = false,
   ...props
 }: TableHeadProps) {
-  const tooltipTitle = getTooltipTitle(title)
-  const { elementRef, isTruncated } = useTruncatedTooltip<HTMLTableCellElement>(tooltipTitle)
+  const explicitTooltipText = getExplicitTooltipText(title)
+  const { elementRef, isOverflowing, tooltipText } = useOverflowTooltip<HTMLTableCellElement>(explicitTooltipText)
+  const tooltipContent = showTitleTooltip ? explicitTooltipText : tooltipText
 
   const tableHead = (
     <th
       ref={elementRef}
       data-slot='table-head'
+      data-overflow-tooltip-owner='true'
       scope='col'
       className={cn(
         'text-foreground h-10 px-2 text-left align-middle font-medium whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
         className
       )}
-      aria-label={ariaLabel ?? tooltipTitle}
+      aria-label={ariaLabel ?? explicitTooltipText}
       {...props}
     >
       {children}
     </th>
   )
 
-  if (!tooltipTitle) return tableHead
+  if (!tooltipContent) return tableHead
 
   return (
     <Tooltip>
       <TooltipTrigger asChild>{tableHead}</TooltipTrigger>
-      {showTitleTooltip || isTruncated ? (
+      {showTitleTooltip || isOverflowing ? (
         <TooltipContent side='top' sideOffset={4}>
-          {tooltipTitle}
+          {tooltipContent}
         </TooltipContent>
       ) : null}
     </Tooltip>
@@ -170,32 +105,33 @@ function TableHead({
 }
 
 function TableCell({ className, title, children, 'aria-label': ariaLabel, ...props }: React.ComponentProps<'td'>) {
-  const tooltipTitle = getTooltipTitle(title)
-  const { elementRef, isTruncated } = useTruncatedTooltip<HTMLTableCellElement>(tooltipTitle)
+  const explicitTooltipText = getExplicitTooltipText(title)
+  const { elementRef, isOverflowing, tooltipText } = useOverflowTooltip<HTMLTableCellElement>(explicitTooltipText)
 
   const tableCell = (
     <td
       ref={elementRef}
       data-slot='table-cell'
+      data-overflow-tooltip-owner='true'
       className={cn(
         'p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
         className
       )}
-      aria-label={ariaLabel ?? tooltipTitle}
+      aria-label={ariaLabel ?? explicitTooltipText}
       {...props}
     >
       {children}
     </td>
   )
 
-  if (!tooltipTitle) return tableCell
+  if (!tooltipText) return tableCell
 
   return (
     <Tooltip>
       <TooltipTrigger asChild>{tableCell}</TooltipTrigger>
-      {isTruncated ? (
+      {isOverflowing ? (
         <TooltipContent side='top' sideOffset={4}>
-          {tooltipTitle}
+          {tooltipText}
         </TooltipContent>
       ) : null}
     </Tooltip>

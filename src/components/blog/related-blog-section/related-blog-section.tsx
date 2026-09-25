@@ -51,8 +51,12 @@ const RelatedBlogSection = ({ posts }: { posts: PostMetadata[] }) => {
                     <Badge className='bg-primary/10 text-primary rounded-full text-sm'>{post.category}</Badge>
                   </div>
 
-                  <h3 className='line-clamp-2 text-lg font-medium md:text-xl'>{post.title}</h3>
-                  <p className='text-muted-foreground line-clamp-2'>{post.description}</p>
+                  <h3 className='line-clamp-2 text-lg font-medium md:text-xl' title={post.title}>
+                    {post.title}
+                  </h3>
+                  <p className='text-muted-foreground line-clamp-2' title={post.description}>
+                    {post.description}
+                  </p>
                   <div className='flex items-center justify-between gap-2'>
                     <p className='text-sm font-medium'>{post.author?.name}</p>
                     <SecondarySwipeButton

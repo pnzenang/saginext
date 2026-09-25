@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { ClerkProvider } from '@clerk/nextjs'
 import type { Metadata } from 'next'
 
+import { OverflowTooltipManager } from '@/components/global/overflow-tooltip-manager'
 import { Toaster } from '@/components/ui/sonner'
 import { ThemeProvider } from '@/components/theme-provider'
 import { TooltipProvider } from '@/components/ui/tooltip'
@@ -115,6 +116,7 @@ const RootLayout = ({ children }: Readonly<{ children: ReactNode }>) => {
           <ThemeProvider attribute='class' enableSystem={false} disableTransitionOnChange>
             <TooltipProvider>
               <main>{children}</main>
+              <OverflowTooltipManager />
               <Toaster />
             </TooltipProvider>
           </ThemeProvider>

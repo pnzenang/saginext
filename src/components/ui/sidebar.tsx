@@ -7,6 +7,7 @@ import { FaAlignLeft } from 'react-icons/fa'
 import { Slot } from 'radix-ui'
 
 import { useIsMobile } from '@/hooks/use-mobile'
+import { useOverflowTooltip } from '@/hooks/use-overflow-tooltip'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -493,10 +494,24 @@ function SidebarMenuButton({
   const Comp = asChild ? Slot.Root : 'button'
   const { isMobile, state } = useSidebar()
 
+  const explicitTooltipText =
+    typeof tooltip === 'string' ? tooltip : typeof tooltip?.children === 'string' ? tooltip.children : undefined
+
+  const { elementRef, isOverflowing } = useOverflowTooltip<HTMLElement>(explicitTooltipText)
+
+  const setOverflowElementRef = React.useCallback(
+    (node: HTMLElement | null) => {
+      elementRef.current = node
+    },
+    [elementRef]
+  )
+
   const button = (
     <Comp
+      ref={setOverflowElementRef}
       data-slot='sidebar-menu-button'
       data-sidebar='menu-button'
+      data-overflow-tooltip-owner='true'
       data-size={size}
       data-active={isActive}
       className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
@@ -517,7 +532,7 @@ function SidebarMenuButton({
   return (
     <Tooltip>
       <TooltipTrigger asChild>{button}</TooltipTrigger>
-      <TooltipContent side='right' align='center' hidden={state !== 'collapsed' || isMobile} {...tooltip} />
+      <TooltipContent side='right' align='center' hidden={(state !== 'collapsed' && !isOverflowing) || isMobile} {...tooltip} />
     </Tooltip>
   )
 }
