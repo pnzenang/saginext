@@ -822,7 +822,7 @@ const homeContent = {
       eyebrow: 'Who can join',
       title: 'Built for individuals, families, associations, and groups.',
       description:
-        'SAGI should feel open and practical from the first visit: no health checks, no group-size ceiling, and no complicated gatekeeping.',
+        'SAGI should feel open and practical from the first time: no health checks, no group-size ceiling, and no complicated gatekeeping.',
       imageAlt: 'Black delegate reviewing member information on a phone'
     },
     eligibilityHighlights,
