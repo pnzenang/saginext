@@ -35,13 +35,13 @@ const InternalRules = async () => {
       <div className='bg-muted/30 flex flex-col gap-4 rounded-lg border p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between'>
         <div className='max-w-3xl'>
           <Badge variant='secondary' className='mb-3 w-fit'>
-            Last Revised: Oct 1, 2025
+            Last Revised: Jan 8, 2025
           </Badge>
           <h1 className='text-foreground text-2xl font-semibold tracking-normal sm:text-3xl'>
-            Internal Rules At Glance
+            SAGI Internal Rules At Glance
           </h1>
           <p className='text-muted-foreground mt-3 text-sm leading-6 sm:text-base'>
-            A quick summary of the SAGI internal rules PDF, covering governance, membership, list updates, fraud, death
+            A quick summary of the SAGI Internal Rules PDF, covering governance, membership, list updates, fraud, death
             announcements, contributions, disbursements, penalties, and fees.
           </p>
         </div>
