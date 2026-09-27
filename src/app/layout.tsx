@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react'
 
 import { ClerkProvider } from '@clerk/nextjs'
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 
 import { OverflowTooltipManager } from '@/components/global/overflow-tooltip-manager'
+import { PwaRegistration } from '@/components/global/PwaRegistration'
 import { Toaster } from '@/components/ui/sonner'
 import { ThemeProvider } from '@/components/theme-provider'
 import { TooltipProvider } from '@/components/ui/tooltip'
@@ -21,13 +22,23 @@ const clerkLocalization = {
 }
 
 export const metadata: Metadata = {
+  applicationName: siteName,
   title: {
     template: '%s - SAGI',
     default: siteTitle
   },
   description: siteDescription,
+  manifest: '/manifest.json',
   robots: 'index,follow',
   keywords: siteKeywords,
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: siteName
+  },
+  formatDetection: {
+    telephone: false
+  },
   alternates: {
     canonical: '/'
   },
@@ -108,6 +119,13 @@ export const metadata: Metadata = {
   }
 }
 
+export const viewport: Viewport = {
+  initialScale: 1,
+  themeColor: '#0CA25A',
+  viewportFit: 'cover',
+  width: 'device-width'
+}
+
 const RootLayout = ({ children }: Readonly<{ children: ReactNode }>) => {
   return (
     <html lang='en' className='flex min-h-full w-full scroll-smooth' suppressHydrationWarning>
@@ -116,6 +134,7 @@ const RootLayout = ({ children }: Readonly<{ children: ReactNode }>) => {
           <ThemeProvider attribute='class' enableSystem={false} disableTransitionOnChange>
             <TooltipProvider>
               <main>{children}</main>
+              <PwaRegistration />
               <OverflowTooltipManager />
               <Toaster />
             </TooltipProvider>
