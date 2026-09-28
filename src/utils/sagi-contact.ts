@@ -1,5 +1,5 @@
-export const sagiPhoneDisplay = '(443) 531 5852'
-export const sagiPhoneHref = 'tel:+1-443-531-5852'
+export const sagiPhoneDisplay = '(804) 214-6390'
+export const sagiPhoneHref = 'tel:+1-804-214-6390'
 
 export type SagiWhatsAppContact = {
   display: string

@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { MotionPreset } from '@/components/ui/motion-preset'
+import { sagiPhoneHref } from '@/utils/sagi-contact'
 
 const nextSteps = [
   {
@@ -309,7 +310,7 @@ const FuneralHomesPage = ({ language = 'en' }: { language?: 'en' | 'fr' }) => {
 
                 <div className='flex flex-wrap gap-3'>
                   <Button asChild className='rounded-full'>
-                    <a href='tel:+14435315852'>{copy.callCta}</a>
+                    <a href={sagiPhoneHref}>{copy.callCta}</a>
                   </Button>
                   <Button asChild variant='outline' className='rounded-full'>
                     <Link href='/sign-in' prefetch={false}>
