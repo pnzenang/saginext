@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { unstable_noStore as noStore } from 'next/cache'
+import { unstable_cache as cache } from 'next/cache'
 import { cookies } from 'next/headers'
 import {
   ArrowRightIcon,
@@ -1026,28 +1026,38 @@ const getLanguage = (params?: HomeSearchParams, cookieLanguage?: string): HomeLa
   return normalizeLanguage(rawLang ?? cookieLanguage)
 }
 
-const fetchTotalRegisteredMembers = async () => {
-  noStore()
+const fetchTotalRegisteredMembers = cache(
+  async () => {
+    const [activeMembers, removedMembers, deceasedMembers] = await Promise.all([
+      db.member.count(),
+      db.removedMember.count(),
+      db.deceasedMember.count()
+    ])
 
-  const [activeMembers, removedMembers, deceasedMembers] = await Promise.all([
-    db.member.count(),
-    db.removedMember.count(),
-    db.deceasedMember.count()
-  ])
-
-  return activeMembers + removedMembers + deceasedMembers
-}
-
-const fetchHeroContributionBanner = async () => {
-  noStore()
-
-  const currentMonthAssessment = await fetchLatestAssociationContributionAssessmentForMonth()
-
-  return {
-    amountPerMember: Number(currentMonthAssessment?.amountPerVestedMember ?? 0),
-    deathCount: currentMonthAssessment?.deathCount ?? 0
+    return activeMembers + removedMembers + deceasedMembers
+  },
+  ['home-total-registered-members'],
+  {
+    revalidate: 600,
+    tags: ['home-member-stats']
   }
-}
+)
+
+const fetchHeroContributionBanner = cache(
+  async () => {
+    const currentMonthAssessment = await fetchLatestAssociationContributionAssessmentForMonth()
+
+    return {
+      amountPerMember: Number(currentMonthAssessment?.amountPerVestedMember ?? 0),
+      deathCount: currentMonthAssessment?.deathCount ?? 0
+    }
+  },
+  ['home-hero-contribution-banner'],
+  {
+    revalidate: 600,
+    tags: ['home-contribution-banner']
+  }
+)
 
 const Home = async ({ searchParams }: { searchParams?: Promise<HomeSearchParams> }) => {
   const cookieStore = await cookies()
@@ -1143,7 +1153,6 @@ function HeroSection({
         alt={heroImage.alt[language]}
         fill
         priority
-        unoptimized
         sizes='100vw'
         className='-z-20 bg-slate-950 object-cover brightness-105 saturate-105'
       />
