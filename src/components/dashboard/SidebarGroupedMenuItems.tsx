@@ -16,6 +16,7 @@ import {
 } from '../ui/sidebar'
 import { cn } from '@/lib/utils'
 import type { MenuItem } from '@/utils/types'
+import SidebarAlertNavigationBadge from './SidebarAlertNavigationBadge'
 import { SidebarActiveDropdownButton, SidebarActiveMenuButton, SidebarActiveSubButton } from './SidebarActiveMenuButton'
 
 const primarySidebarStateClass =
@@ -111,6 +112,7 @@ const SidebarDropdownMenu = ({
   formatLabel?: (label: string) => string
 }) => {
   const tooltipTitle = alertCount && alertCount > 0 ? `${title}: ${getActionCountLabel(alertCount)}` : title
+  const firstAlertHref = items.find(item => item.alertCount && item.alertCount > 0)?.href
 
   return (
     <Collapsible asChild>
@@ -125,7 +127,7 @@ const SidebarDropdownMenu = ({
               </span>
             ) : null}
           </span>
-          <SidebarActionBadge count={alertCount} showCollapsedDot />
+          <SidebarAlertNavigationBadge count={alertCount} href={firstAlertHref} showCollapsedDot />
           <ChevronRight className='shrink-0 transition-transform duration-200' />
         </SidebarActiveDropdownButton>
         <CollapsibleContent>
