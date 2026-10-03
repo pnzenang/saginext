@@ -91,6 +91,14 @@ const getUploadedDocumentCount = (deceasedMember: DeathDocumentationCase) =>
     deceasedMember.documents.some(uploadedDocument => uploadedDocument.documentType === documentType)
   ).length
 
+const getSubmittedDocuments = (deceasedMember: DeathDocumentationCase) =>
+  deceasedMember.documents.filter(uploadedDocument => uploadedDocument.status === 'submitted')
+
+const getLatestSubmittedDocumentTime = (deceasedMember: DeathDocumentationCase) =>
+  Math.max(0, ...getSubmittedDocuments(deceasedMember).map(document => document.updatedAt.getTime()))
+
+const getDocumentAnchorId = (documentId: string) => `death-document-${documentId}`
+
 const getCaseSearchText = (deceasedMember: DeathDocumentationCase) =>
   [
     deceasedMember.firstName,
@@ -162,7 +170,15 @@ const DocumentationSlot = ({
     : null
 
   return (
-    <div className='bg-muted/20 grid min-w-0 gap-4 rounded-md border p-4'>
+    <div
+      id={uploadedDocument ? getDocumentAnchorId(uploadedDocument.id) : undefined}
+      className={cn(
+        'bg-muted/20 grid min-w-0 scroll-mt-24 gap-4 rounded-md border p-4 target:ring-2 target:ring-amber-500 target:ring-offset-2',
+        isAdminUser && uploadedDocument?.status === 'submitted'
+          ? 'border-amber-300 bg-amber-50/60 dark:border-amber-900 dark:bg-amber-950/20'
+          : null
+      )}
+    >
       <div className='flex min-w-0 items-start justify-between gap-3'>
         <div className='min-w-0'>
           <div className='flex items-center gap-2 text-sm font-extrabold'>
@@ -407,7 +423,24 @@ const DeathDocumentationsContent = ({
   isAdminUser,
   title
 }: DeathDocumentationsContentProps) => {
-  const caseListItems: DeathDocumentationCasesListItem[] = deceasedMembers.map(deceasedMember => ({
+  const displayedDeceasedMembers = deceasedMembers
+    .map((deceasedMember, index) => ({
+      deceasedMember,
+      index,
+      latestSubmittedDocumentTime: getLatestSubmittedDocumentTime(deceasedMember)
+    }))
+    .sort((firstCase, secondCase) => {
+      if (isAdminUser) {
+        const pendingComparison = secondCase.latestSubmittedDocumentTime - firstCase.latestSubmittedDocumentTime
+
+        if (pendingComparison !== 0) return pendingComparison
+      }
+
+      return firstCase.index - secondCase.index
+    })
+    .map(item => item.deceasedMember)
+
+  const caseListItems: DeathDocumentationCasesListItem[] = displayedDeceasedMembers.map(deceasedMember => ({
     id: deceasedMember.id,
     searchText: getCaseSearchText(deceasedMember)
   }))
@@ -425,6 +458,11 @@ const DeathDocumentationsContent = ({
   const actionRequiredCount = isAdminUser
     ? countSubmittedDeathDocuments(deceasedMembers)
     : deceasedMembers.filter(needsDelegateDeathDocumentationAction).length
+
+  const firstSubmittedDocument = displayedDeceasedMembers.flatMap(getSubmittedDocuments)[0]
+  const pendingDocumentsHref = firstSubmittedDocument
+    ? `?documentId=${encodeURIComponent(firstSubmittedDocument.id)}#${getDocumentAnchorId(firstSubmittedDocument.id)}`
+    : undefined
 
   const alertToneClassName = isAdminUser
     ? 'border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/40'
@@ -474,9 +512,23 @@ const DeathDocumentationsContent = ({
                 </p>
               </div>
             </div>
-            <Badge variant='outline' className={cn('w-fit border-current bg-white dark:bg-black/20', alertTextClassName)}>
-              {actionRequiredCount} {isAdminUser ? 'pending' : 'required'}
-            </Badge>
+            {isAdminUser && pendingDocumentsHref ? (
+              <Button
+                asChild
+                variant='outline'
+                size='sm'
+                className={cn('w-fit border-current bg-white dark:bg-black/20', alertTextClassName)}
+              >
+                <a href={pendingDocumentsHref}>{actionRequiredCount} pending</a>
+              </Button>
+            ) : (
+              <Badge
+                variant='outline'
+                className={cn('w-fit border-current bg-white dark:bg-black/20', alertTextClassName)}
+              >
+                {actionRequiredCount} {isAdminUser ? 'pending' : 'required'}
+              </Badge>
+            )}
           </CardContent>
         </Card>
       ) : null}
@@ -491,7 +543,7 @@ const DeathDocumentationsContent = ({
         </Card>
       ) : (
         <DeathDocumentationCasesList cases={caseListItems} emptyDescription={emptyDescription}>
-          {deceasedMembers.map(deceasedMember => (
+          {displayedDeceasedMembers.map(deceasedMember => (
             <DeceasedMemberDocumentationCard
               key={deceasedMember.id}
               currentUserId={currentUserId}
