@@ -734,7 +734,7 @@ const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
                       hasSubmittedDeathDocuments &&
                         'bg-yellow-400/15 hover:bg-yellow-600/25 data-[state=selected]:bg-yellow-600/25 data-[state=selected]:hover:bg-yellow-600/30 dark:bg-yellow-400/15 dark:hover:bg-yellow-600/25 dark:data-[state=selected]:bg-yellow-600/25 dark:data-[state=selected]:hover:bg-yellow-600/30',
                       hasRejectedDeathDocuments &&
-                        'bg-red-400/15 hover:bg-red-600/25 data-[state=selected]:bg-red-600/25 data-[state=selected]:hover:bg-red-600/30 dark:bg-red-400/15 dark:hover:bg-red-600/25 dark:data-[state=selected]:bg-red-600/25 dark:data-[state=selected]:hover:bg-red-600/30',
+                        'bg-red-500/15 hover:bg-red-600/25 data-[state=selected]:bg-red-600/25 data-[state=selected]:hover:bg-red-600/30 dark:bg-red-500/15 dark:hover:bg-red-600/25 dark:data-[state=selected]:bg-red-600/25 dark:data-[state=selected]:hover:bg-red-600/30',
                       isContributionCompleted &&
                         'bg-sky-400/15 hover:bg-sky-400/25 data-[state=selected]:bg-sky-600/25 data-[state=selected]:hover:bg-sky-600/30 dark:bg-sky-400/15 dark:hover:bg-sky-400/20 dark:data-[state=selected]:bg-sky-600/25 dark:data-[state=selected]:hover:bg-sky-600/30'
                     )}
