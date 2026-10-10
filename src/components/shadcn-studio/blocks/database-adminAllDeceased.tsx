@@ -758,6 +758,7 @@ const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
               table.getRowModel().rows.map(row => {
                 const hasApprovedDeathDocuments = row.original.hasApprovedDeathDocuments
                 const hasRejectedDeathDocuments = row.original.hasRejectedDeathDocuments
+                const hasSubmittedDeathDocuments = row.original.hasSubmittedDeathDocuments
 
                 return (
                   <TableRow
@@ -767,6 +768,8 @@ const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
                       'hover:bg-purple-300/30',
                       hasApprovedDeathDocuments &&
                         'bg-green-400/15 hover:bg-green-400/25 data-[state=selected]:bg-green-600/25 data-[state=selected]:hover:bg-green-600/30 dark:bg-green-400/15 dark:hover:bg-green-400/20 dark:data-[state=selected]:bg-green-600/25 dark:data-[state=selected]:hover:bg-green-600/30',
+                      hasSubmittedDeathDocuments &&
+                        'bg-yellow-400/15 hover:bg-yellow-600/25 data-[state=selected]:bg-yellow-600/25 data-[state=selected]:hover:bg-yellow-600/30 dark:bg-yellow-400/15 dark:hover:bg-yellow-600/25 dark:data-[state=selected]:bg-yellow-600/25 dark:data-[state=selected]:hover:bg-yellow-600/30',
                       hasRejectedDeathDocuments &&
                         'bg-red-400/15 hover:bg-red-600/25 data-[state=selected]:bg-red-600/25 data-[state=selected]:hover:bg-red-600/30 dark:bg-red-400/15 dark:hover:bg-red-600/25 dark:data-[state=selected]:bg-red-600/25 dark:data-[state=selected]:hover:bg-red-600/30'
                     )}

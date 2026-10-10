@@ -125,6 +125,7 @@ export type DeceasedMemberType = {
   placeOfDeathCountry?: string | null
   hasApprovedDeathDocuments?: boolean
   hasRejectedDeathDocuments?: boolean
+  hasSubmittedDeathDocuments?: boolean
   createdAt: Date
   updatedAt: Date
 }

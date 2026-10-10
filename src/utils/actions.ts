@@ -6912,7 +6912,8 @@ export const fetchDeceasedMembersAction = async () => {
       documents,
       placeOfDeathCountry: member.placeOfDeathCountry
     }),
-    hasRejectedDeathDocuments: documents.some(document => document.status === 'rejected')
+    hasRejectedDeathDocuments: documents.some(document => document.status === 'rejected'),
+    hasSubmittedDeathDocuments: documents.some(document => document.status === 'submitted')
   }))
 }
 
@@ -7024,7 +7025,8 @@ export const fetchDeceasedMembersActionAdmin = async () => {
       documents,
       placeOfDeathCountry: member.placeOfDeathCountry
     }),
-    hasRejectedDeathDocuments: documents.some(document => document.status === 'rejected')
+    hasRejectedDeathDocuments: documents.some(document => document.status === 'rejected'),
+    hasSubmittedDeathDocuments: documents.some(document => document.status === 'submitted')
   }))
 }
 
