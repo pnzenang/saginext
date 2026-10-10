@@ -765,7 +765,7 @@ const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
                     className={cn(
                       'hover:bg-purple-300/30',
                       hasApprovedDeathDocuments &&
-                        'bg-green-600/10 hover:bg-green-600/20 dark:bg-green-400/10 dark:hover:bg-green-400/15'
+                        'bg-green-500/15 hover:bg-green-500/25 data-[state=selected]:bg-green-500/25 dark:bg-green-400/15 dark:hover:bg-green-400/20 dark:data-[state=selected]:bg-green-400/20'
                     )}
                   >
                     {row.getVisibleCells().map(cell => {
