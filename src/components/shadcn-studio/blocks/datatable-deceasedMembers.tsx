@@ -720,15 +720,23 @@ const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map(row => {
                 const hasApprovedDeathDocuments = row.original.hasApprovedDeathDocuments
+                const hasRejectedDeathDocuments = row.original.hasRejectedDeathDocuments
+                const hasSubmittedDeathDocuments = row.original.hasSubmittedDeathDocuments
+                const isContributionCompleted = row.original.contributionStatus === contributionStatus.completed
 
                 return (
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && 'selected'}
                     className={cn(
-                      'hover:bg-purple-300/30',
                       hasApprovedDeathDocuments &&
-                        'bg-green-600/10 hover:bg-green-600/20 dark:bg-green-400/10 dark:hover:bg-green-400/15'
+                        'bg-green-400/15 hover:bg-green-400/25 data-[state=selected]:bg-green-600/25 data-[state=selected]:hover:bg-green-600/30 dark:bg-green-400/15 dark:hover:bg-green-400/20 dark:data-[state=selected]:bg-green-600/25 dark:data-[state=selected]:hover:bg-green-600/30',
+                      hasSubmittedDeathDocuments &&
+                        'bg-yellow-400/15 hover:bg-yellow-600/25 data-[state=selected]:bg-yellow-600/25 data-[state=selected]:hover:bg-yellow-600/30 dark:bg-yellow-400/15 dark:hover:bg-yellow-600/25 dark:data-[state=selected]:bg-yellow-600/25 dark:data-[state=selected]:hover:bg-yellow-600/30',
+                      hasRejectedDeathDocuments &&
+                        'bg-red-400/15 hover:bg-red-600/25 data-[state=selected]:bg-red-600/25 data-[state=selected]:hover:bg-red-600/30 dark:bg-red-400/15 dark:hover:bg-red-600/25 dark:data-[state=selected]:bg-red-600/25 dark:data-[state=selected]:hover:bg-red-600/30',
+                      isContributionCompleted &&
+                        'bg-sky-400/15 hover:bg-sky-400/25 data-[state=selected]:bg-sky-600/25 data-[state=selected]:hover:bg-sky-600/30 dark:bg-sky-400/15 dark:hover:bg-sky-400/20 dark:data-[state=selected]:bg-sky-600/25 dark:data-[state=selected]:hover:bg-sky-600/30'
                     )}
                   >
                     {row.getVisibleCells().map(cell => {
