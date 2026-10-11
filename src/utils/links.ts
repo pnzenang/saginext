@@ -51,11 +51,6 @@ export const getPagesItems = (date: Date = new Date()): MenuItem[] => [
     href: '/all-members'
   },
   {
-    icon: WalletCards,
-    label: 'Registration Payments',
-    href: '/registrationsPayments'
-  },
-  {
     icon: Wallet,
     label: 'Payment Center',
     href: '/contributions'
