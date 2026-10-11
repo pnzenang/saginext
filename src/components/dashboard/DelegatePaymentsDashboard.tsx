@@ -137,7 +137,7 @@ const DelegatePaymentsDashboard = ({
   currentRegistrationPayment
 }: DelegatePaymentsDashboardProps) => {
   const currentMonthName = monthFormatter.format(new Date())
-  const monthlyContributionAmount = currentContribution.amountOwed
+  const monthlyContributionAmount = currentContribution.amountToMatch
   const registrationMembersCount = Math.round(currentRegistrationPayment.balanceDues / registrationFeePerEligibleMember)
 
   return (
@@ -212,7 +212,7 @@ const DelegatePaymentsDashboard = ({
             <div className='mt-2 grid gap-1.5 text-sm font-semibold'>
               <SummaryRow label='Amount Sent' value={currentContribution.amountReceived} />
               <SummaryRow label='Amount Verified SAGI' value={currentContribution.amountVerified} />
-              <SummaryRow label='Contribution Dues' value={currentContribution.amountOwed} />
+              <SummaryRow label='Contribution Dues' value={currentContribution.amountToMatch} />
             </div>
             <BalanceRow balance={currentContribution.balance} />
             <p className='text-primary/70 mt-auto pt-4 text-[10px] leading-tight font-medium break-words'>

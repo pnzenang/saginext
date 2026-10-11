@@ -722,7 +722,7 @@ const AssociationPaymentNavigationCards = ({
     <div className='grid w-full grid-cols-1 items-stretch gap-4 lg:grid-cols-2'>
       <PaymentRouteCard
         afterTitle={contributionDueDate ? paymentCopy.contributionDueDate(contributionDueDate) : undefined}
-        amount={currentContribution.amountOwed}
+        amount={currentContribution.amountToMatch}
         cta={paymentCopy.contributionCta}
         description={
           <>
