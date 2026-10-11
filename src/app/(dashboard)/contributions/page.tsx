@@ -1,31 +1,32 @@
-import AssociationPaymentPageContent from '@/components/dashboard/AssociationPaymentPageContent'
-import { getDashboardLanguage } from '@/lib/get-dashboard-language'
+import PaymentTypeSelector from './PaymentTypeSelector'
 import { fetchProfile } from '@/utils/actions'
+import { fetchContributionPaymentCodeCents } from '@/utils/contribution-payment-code-records'
 import { fetchAssociationContributionSummary } from '@/utils/sagi-contribution-summary'
-import { associationPaymentTypes, fetchAssociationPaymentLedgerEntries } from '@/utils/sagi-payment-ledger'
+import { fetchAssociationRegistrationSummary, registrationFeePerEligibleMember } from '@/utils/sagi-registration-summary'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 const ContributionPayments = async () => {
-  const [language, profile] = await Promise.all([getDashboardLanguage(), fetchProfile()])
+  const profile = await fetchProfile()
 
-  const [contribution, ledgerEntries] = await Promise.all([
+  const [contribution, registration, contributionPaymentCodeCents] = await Promise.all([
     fetchAssociationContributionSummary(profile.associationCode, { noStore: true }),
-    fetchAssociationPaymentLedgerEntries(profile.associationCode, {
-      noStore: true,
-      paymentType: associationPaymentTypes.contribution
-    })
+    fetchAssociationRegistrationSummary(profile.associationCode, { noStore: true }),
+    fetchContributionPaymentCodeCents(profile.associationCode)
   ])
 
   return (
-    <AssociationPaymentPageContent
-      associationCode={profile.associationCode}
-      contribution={contribution}
-      kind='contribution'
-      language={language}
-      ledgerEntries={ledgerEntries}
-    />
+    <main className='flex min-h-[calc(100vh-8rem)] w-full items-center justify-center'>
+      <PaymentTypeSelector
+        contributionAmountOwed={contribution.amountOwed}
+        contributionAmountPerVestedMember={contribution.amountPerVestedMember}
+        contributionPaymentCodeCents={contributionPaymentCodeCents}
+        contributionVestedMemberCount={contribution.vestedMembersCount}
+        pendingRegistrationMemberCount={registration.pendingMemberNames.length}
+        registrationFeePerMember={registrationFeePerEligibleMember}
+      />
+    </main>
   )
 }
 

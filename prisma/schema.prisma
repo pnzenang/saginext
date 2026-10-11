@@ -235,6 +235,16 @@ model AssociationContributionPayment {
   @@index([lastSubmittedAt])
 }
 
+model AssociationContributionPaymentCode {
+  id              String   @id @default(uuid())
+  associationCode String   @unique
+  codeCents       Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([associationCode])
+}
+
 model AssociationContributionAssessment {
   id                    String                                   @id @default(uuid())
   deathCount            Int                                      @default(0)

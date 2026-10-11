@@ -4,6 +4,8 @@ import AdminPaymentsTable from '@/components/global/AdminPaymentsTableClient'
 import ContributionAssessmentForm from '@/components/dashboard/ContributionAssessmentForm'
 import PaymentSubmissionAlertCard, { type PaymentSubmissionAlert } from '@/components/global/PaymentSubmissionAlertCard'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { getContributionPaymentAmountDetails } from '@/utils/contribution-payment-code'
+import { fetchContributionPaymentCodeCentsByAssociationCode } from '@/utils/contribution-payment-code-records'
 import db from '@/utils/db'
 import {
   addAssociationContributionBalanceAdjustmentAction,
@@ -11,6 +13,7 @@ import {
   fetchContributionCalculationSummaryAction,
   markAssociationContributionPaymentNotFoundAction,
   resetContributionPaymentAlertAction,
+  updateAssociationContributionPaymentCodeAction,
   verifyAssociationContributionPaymentAction
 } from '@/utils/actions'
 import {
@@ -201,6 +204,8 @@ const AdminContributionPayments = async () => {
     currentContributionDateRange
   )
 
+  const contributionPaymentCodesByCode = await fetchContributionPaymentCodeCentsByAssociationCode(associationCodes)
+
   const amountPerVestedMember = decimalToNumber(currentMonthContributionAssessment?.amountPerVestedMember)
 
   const contributionAmountsByCode = new Map(
@@ -219,6 +224,17 @@ const AdminContributionPayments = async () => {
       const recordedAmountVerified = verifiedLedgerTotalsByCode.get(associationCode) ?? 0
       const amountVerified = roundCurrencyAmount(Math.max(recordedAmountVerified, currentAmountVerified))
       const amountOwed = roundCurrencyAmount(amountPerVestedMember * vestedMembers)
+      const paymentCodeCents = contributionPaymentCodesByCode.get(associationCode) ?? null
+      const paymentCodeAmount = paymentCodeCents === null ? undefined : roundCurrencyAmount(paymentCodeCents / 100)
+
+      const contributionPaymentAmountDetails =
+        amountOwed > 0 ? getContributionPaymentAmountDetails(amountOwed, paymentCodeCents) : undefined
+
+      const amountToMatch =
+        contributionPaymentAmountDetails?.hasPaymentCode && contributionPaymentAmountDetails.amountToSend > 0
+          ? contributionPaymentAmountDetails.amountToSend
+          : amountOwed
+
       const manualBalanceAdjustment = balanceAdjustmentsByCode.get(associationCode) ?? 0
 
       return [
@@ -226,8 +242,12 @@ const AdminContributionPayments = async () => {
         {
           amountOwed,
           amountReceived: roundCurrencyAmount(Math.max(currentAmountSent - currentAmountVerified, 0)),
+          amountToSend: contributionPaymentAmountDetails?.hasPaymentCode
+            ? contributionPaymentAmountDetails.amountToSend
+            : undefined,
           amountVerified,
-          balance: roundCurrencyAmount(amountVerified + manualBalanceAdjustment - amountOwed)
+          balance: roundCurrencyAmount(amountVerified + manualBalanceAdjustment - amountToMatch),
+          paymentCodeAmount
         }
       ] as const
     })
@@ -271,10 +291,12 @@ const AdminContributionPayments = async () => {
     return {
       amountExpected: contributionAmounts?.amountOwed ?? 0,
       amountSent: contributionAmounts?.amountReceived ?? 0,
+      amountToSend: contributionAmounts?.amountToSend ?? 0,
       amountVerified: contributionAmounts?.amountVerified ?? 0,
       associationCode,
       associationName,
       balance: contributionAmounts?.balance ?? 0,
+      paymentCodeAmount: contributionAmounts?.paymentCodeAmount ?? 0,
       vestedMembers
     }
   })
@@ -283,6 +305,7 @@ const AdminContributionPayments = async () => {
     (currentTotals, row) => ({
       amountExpected: (currentTotals.amountExpected ?? 0) + (row.amountExpected ?? 0),
       amountSent: currentTotals.amountSent + row.amountSent,
+      amountToSend: (currentTotals.amountToSend ?? 0) + (row.amountToSend ?? 0),
       amountVerified: currentTotals.amountVerified + row.amountVerified,
       balance: currentTotals.balance + row.balance,
       vestedMembers: currentTotals.vestedMembers + row.vestedMembers
@@ -290,6 +313,7 @@ const AdminContributionPayments = async () => {
     {
       amountExpected: 0,
       amountSent: 0,
+      amountToSend: 0,
       amountVerified: 0,
       balance: 0,
       vestedMembers: 0
@@ -338,6 +362,7 @@ const AdminContributionPayments = async () => {
             rows={rows}
             totals={totals}
             adjustAction={addAssociationContributionBalanceAdjustmentAction}
+            paymentCodeAction={updateAssociationContributionPaymentCodeAction}
             sentAdjustmentAction={addAssociationContributionSentAdjustmentAction}
             verifyAction={verifyAssociationContributionPaymentAction}
             secondaryAction={markAssociationContributionPaymentNotFoundAction}

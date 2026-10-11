@@ -42,11 +42,15 @@ const currencyFormatter = new Intl.NumberFormat('en-US', {
 const defaultRowsPerPage = 10
 const rowsPerPageOptions = [10, 25, 50, 100]
 
+const formatOptionalCurrency = (amount?: number) => (amount === undefined ? '' : currencyFormatter.format(amount))
+
 const columns: PaymentUpdateColumn[] = [
   { key: 'associationName', label: 'Association' },
   { key: 'associationCode', label: 'Code' },
   { align: 'right', key: 'vestedMembers', label: 'Vested' },
   { align: 'right', key: 'contributionDue', label: 'Due' },
+  { align: 'right', key: 'paymentCodeAmount', label: 'Payment Code' },
+  { align: 'right', key: 'amountToSend', label: 'Amount To Match' },
   { align: 'right', key: 'amountSent', label: 'Sent' },
   { align: 'right', key: 'amountVerified', label: 'Verified' },
   { align: 'right', key: 'balance', label: 'Contribution Balance' }
@@ -56,6 +60,7 @@ const getTotals = (rows: AdminContributionPaymentUpdateRow[]) =>
   rows.reduce(
     (totals, row) => ({
       amountSent: totals.amountSent + row.amountSent,
+      amountToSend: totals.amountToSend + (row.amountToSend ?? 0),
       amountVerified: totals.amountVerified + row.amountVerified,
       balance: totals.balance + row.balance,
       contributionDue: totals.contributionDue + row.contributionDue,
@@ -63,6 +68,7 @@ const getTotals = (rows: AdminContributionPaymentUpdateRow[]) =>
     }),
     {
       amountSent: 0,
+      amountToSend: 0,
       amountVerified: 0,
       balance: 0,
       contributionDue: 0,
@@ -224,13 +230,15 @@ const AdminPaymentUpdateTable = ({
           >
             <colgroup>
               <col className='w-[5%]' />
-              <col className='w-[31%]' />
-              <col className='w-[7%]' />
+              <col className='w-[24%]' />
               <col className='w-[6%]' />
-              <col className='w-[12%]' />
-              <col className='w-[12%]' />
+              <col className='w-[6%]' />
               <col className='w-[10%]' />
-              <col className='w-[17%]' />
+              <col className='w-[7%]' />
+              <col className='w-[10%]' />
+              <col className='w-[10%]' />
+              <col className='w-[9%]' />
+              <col className='w-[13%]' />
             </colgroup>
             <TableHeader>
               <TableRow className='bg-primary hover:bg-primary'>
@@ -315,6 +323,18 @@ const AdminPaymentUpdateTable = ({
                         {currencyFormatter.format(row.contributionDue)}
                       </TableCell>
                       <TableCell
+                        data-label='Payment Code'
+                        className='overflow-hidden px-1.5 text-right font-semibold whitespace-nowrap tabular-nums text-emerald-700 dark:text-emerald-300'
+                      >
+                        {formatOptionalCurrency(row.paymentCodeAmount)}
+                      </TableCell>
+                      <TableCell
+                        data-label='Amount To Match'
+                        className='overflow-hidden px-1.5 text-right font-semibold whitespace-nowrap tabular-nums text-sky-700 dark:text-sky-300'
+                      >
+                        {formatOptionalCurrency(row.amountToSend)}
+                      </TableCell>
+                      <TableCell
                         data-label='Sent Not Verified'
                         className='overflow-hidden px-1.5 text-right font-semibold whitespace-nowrap tabular-nums'
                       >
@@ -344,6 +364,10 @@ const AdminPaymentUpdateTable = ({
                     <TableCell className='overflow-hidden px-1.5 text-right whitespace-nowrap tabular-nums'>
                       {currencyFormatter.format(totals.contributionDue)}
                     </TableCell>
+                    <TableCell className='overflow-hidden px-1.5 text-right whitespace-nowrap tabular-nums' />
+                    <TableCell className='overflow-hidden px-1.5 text-right whitespace-nowrap tabular-nums'>
+                      {currencyFormatter.format(totals.amountToSend)}
+                    </TableCell>
                     <TableCell className='overflow-hidden px-1.5 text-right whitespace-nowrap tabular-nums'>
                       {currencyFormatter.format(totals.amountSent)}
                     </TableCell>
@@ -357,7 +381,7 @@ const AdminPaymentUpdateTable = ({
                 </>
               ) : (
                 <TableRow>
-                  <TableCell colSpan={8} className='text-muted-foreground h-24 text-center'>
+                  <TableCell colSpan={10} className='text-muted-foreground h-24 text-center'>
                     {emptyMessage}
                   </TableCell>
                 </TableRow>

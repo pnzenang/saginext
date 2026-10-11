@@ -32,7 +32,7 @@ const paymentInstructionsCopy = {
       description:
         'Pending members have sixty (60) days to send the registration fee. If the fee is not received within sixty (60) days, the pending member may be deleted.'
     },
-    contributionsCta: 'Contribution Payments',
+    contributionsCta: 'Payment Center',
     registrationsCta: 'Registration Payments',
     memoCodePlaceholder: 'SAGI-USA-{association 4-letter code}',
     zelle: {
@@ -44,7 +44,7 @@ const paymentInstructionsCopy = {
       ariaLabel: 'Open SAGI Zelle payment information',
       imageAlt: 'SAGI Zelle payment QR code',
       after:
-        'After sending the payment, return to SAGI and submit the payment record in Registration Payments or Contribution Payments.'
+        'After sending the payment, return to SAGI and submit the payment record in the Payment Center.'
     },
     stepLabel: 'Step',
     paymentSteps: [
@@ -97,7 +97,7 @@ const paymentInstructionsCopy = {
       description:
         "Les membres en attente ont soixante (60) jours pour envoyer les frais d'inscription. Si les frais ne sont pas reçus dans les soixante (60) jours, le membre en attente sera supprimé."
     },
-    contributionsCta: 'Paiements des cotisations',
+    contributionsCta: 'Centre de paiement',
     registrationsCta: "Paiements d'inscription",
     memoCodePlaceholder: "SAGI-USA-{code d'association à 4 lettres}",
     zelle: {
@@ -109,7 +109,7 @@ const paymentInstructionsCopy = {
       ariaLabel: 'Ouvrir les informations de paiement Zelle de SAGI',
       imageAlt: 'Code QR du paiement Zelle de SAGI',
       after:
-        "Après avoir envoyé le paiement, revenez dans SAGI et soumettez l'enregistrement du paiement dans Paiements d'inscription ou Paiements des cotisations."
+        "Après avoir envoyé le paiement, revenez dans SAGI et soumettez l'enregistrement du paiement dans le centre de paiement."
     },
     stepLabel: 'Étape',
     paymentSteps: [

@@ -32,11 +32,25 @@ export const createProfileAction = async (prevState: any, formData: FormData) =>
     const rawData = Object.fromEntries(formData)
     const validatedFields = validateWithZodSchema(profileSchema, rawData)
 
-    await db.profile.create({
-      data: {
-        clerkId: userId,
-        ...validatedFields
-      }
+    await db.$transaction(async tx => {
+      await tx.profile.create({
+        data: {
+          clerkId: userId,
+          ...validatedFields
+        }
+      })
+
+      await tx.associationContributionPaymentCode.upsert({
+        create: {
+          associationCode: validatedFields.associationCode
+        },
+        update: {
+          codeCents: null
+        },
+        where: {
+          associationCode: validatedFields.associationCode
+        }
+      })
     })
 
     const client = await clerkClient()
@@ -224,10 +238,18 @@ export const deleteAssociationProfileAction = async (
       )
     }
 
-    await db.profile.delete({
-      where: {
-        id: profile.id
-      }
+    await db.$transaction(async tx => {
+      await tx.associationContributionPaymentCode.deleteMany({
+        where: {
+          associationCode: profile.associationCode
+        }
+      })
+
+      await tx.profile.delete({
+        where: {
+          id: profile.id
+        }
+      })
     })
 
     try {

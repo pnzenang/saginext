@@ -46,6 +46,7 @@ import {
   getContributionAssessmentMonthWhere,
   fetchLatestAssociationContributionAssessment
 } from './sagi-contribution-summary'
+import { parseContributionPaymentCodeCents } from './contribution-payment-code'
 import { awaitingPublicationVestingLongevityDays, getAwaitingPublicationVestingCutoff } from './sagi-member-longevity'
 import { getOverdueRegistrationPaymentCreatedAtCutoff } from './registration-payment-deadline'
 import { getCurrentMonthDateRange } from './month-date-ranges'
@@ -3680,6 +3681,77 @@ const addAssociationBalanceAdjustment = async (formData: FormData, balanceType: 
 
 export const addAssociationContributionBalanceAdjustmentAction = async (formData: FormData): Promise<void> => {
   await addAssociationBalanceAdjustment(formData, contributionBalanceAdjustmentType)
+}
+
+export const updateAssociationContributionPaymentCodeAction = async (formData: FormData): Promise<void> => {
+  const user = await assertAdminUser()
+
+  try {
+    const associationCode = getRequiredFormValue(formData, 'associationCode').toUpperCase()
+    const paymentCodeValue = formData.get('paymentCode')
+
+    const codeCents =
+      typeof paymentCodeValue === 'string' && paymentCodeValue.trim()
+        ? parseContributionPaymentCodeCents(paymentCodeValue)
+        : null
+
+    const paymentCodeAmount = codeCents === null ? null : codeCents / 100
+
+    await db.$transaction(async tx => {
+      if (codeCents !== null) {
+        const formattedPaymentCodeAmount = currencyFormatter.format(codeCents / 100)
+
+        const duplicatePaymentCode = await tx.associationContributionPaymentCode.findFirst({
+          select: {
+            associationCode: true
+          },
+          where: {
+            associationCode: {
+              not: associationCode
+            },
+            codeCents
+          }
+        })
+
+        if (duplicatePaymentCode) {
+          throw new Error(
+            `${formattedPaymentCodeAmount} is already linked to ${duplicatePaymentCode.associationCode}.`
+          )
+        }
+      }
+
+      const paymentCode = await tx.associationContributionPaymentCode.upsert({
+        create: {
+          associationCode,
+          codeCents
+        },
+        update: {
+          codeCents
+        },
+        where: {
+          associationCode
+        }
+      })
+
+      await recordDashboardActivity({
+        action: 'contribution_payment_code_updated',
+        actorClerkId: user.id,
+        associationCode,
+        dashboardScope: dashboardActivityScopes.admin,
+        entityId: paymentCode.id,
+        entityType: 'association_contribution_payment_code',
+        summary:
+          paymentCodeAmount === null
+            ? `Cleared contribution payment code for ${associationCode}.`
+            : `Updated contribution payment code for ${associationCode} to ${currencyFormatter.format(paymentCodeAmount)}.`,
+        tx
+      })
+    })
+
+    revalidatePaymentViews()
+  } catch (error) {
+    renderError(error)
+  }
 }
 
 export const addAssociationContributionSentAdjustmentAction = async (formData: FormData): Promise<void> => {

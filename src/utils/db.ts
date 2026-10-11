@@ -16,6 +16,7 @@ const hasCachedModelField = (client: PrismaClient, modelName: string, fieldName:
 const hasCurrentPrismaDelegates = (client?: PrismaClient) =>
   Boolean(
     client &&
+    'associationContributionPaymentCode' in (client as unknown as Record<string, unknown>) &&
     'associationPaymentLedgerEntry' in (client as unknown as Record<string, unknown>) &&
     'dashboardActivityLog' in (client as unknown as Record<string, unknown>) &&
     'delegateIssueNote' in (client as unknown as Record<string, unknown>) &&
@@ -31,6 +32,7 @@ const hasCurrentPrismaDelegates = (client?: PrismaClient) =>
     hasCachedModelField(client, 'DeceasedMember', 'associationCode') &&
     hasCachedModelField(client, 'DeceasedMember', 'originalMemberVestedAt') &&
     hasCachedModelField(client, 'DeceasedMemberDocument', 'cloudinaryPublicId') &&
+    hasCachedModelField(client, 'AssociationContributionPaymentCode', 'codeCents') &&
     hasCachedModelField(client, 'Member', 'vestedAt') &&
     hasCachedModelField(client, 'RemovedMember', 'originalMemberVestedAt') &&
     hasCachedModelField(client, 'NameChangeRequest', 'cloudinaryPublicId') &&

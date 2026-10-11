@@ -103,7 +103,7 @@ const featuresList = [
   },
   {
     icon: Wallet,
-    title: 'Contribution Payment',
+    title: 'Payment Center',
     description:
       'Delegates should record each contribution after sending it. They should also upload the payment confirmation to reduce confusion.',
     cardBorderColor: 'border-primary/40 hover:border-primary',

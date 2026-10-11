@@ -10,6 +10,7 @@ type PaymentKind = 'contribution' | 'registration'
 type AdminPaymentsTableProps = {
   adjustAction: (formData: FormData) => Promise<void>
   kind: PaymentKind
+  paymentCodeAction?: (formData: FormData) => Promise<void>
   rows: AdminPaymentRow[]
   sentAdjustmentAction?: (formData: FormData) => Promise<void>
   secondaryAction: (formData: FormData) => Promise<void>
@@ -18,7 +19,7 @@ type AdminPaymentsTableProps = {
 }
 
 const AdminPaymentsTable = dynamic(() => import('@/components/global/AdminPaymentsTable'), {
-  loading: () => <AdminPaymentsTableSkeleton columnCount={8} />,
+  loading: () => <AdminPaymentsTableSkeleton columnCount={10} />,
   ssr: false
 })
 

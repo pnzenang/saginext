@@ -3,15 +3,7 @@
 import type { ReactNode } from 'react'
 import { useMemo, useState } from 'react'
 
-import {
-  ArrowDown,
-  ArrowUp,
-  ArrowUpDown,
-  CalendarDays,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  SearchIcon
-} from 'lucide-react'
+import { CalendarDays, ChevronLeftIcon, ChevronRightIcon, SearchIcon } from 'lucide-react'
 
 import PrintButton from '@/components/global/PrintButton'
 import { Badge } from '@/components/ui/badge'
@@ -20,7 +12,6 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem } from '@/components/ui/pagination'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { usePagination } from '@/hooks/use-pagination'
 import { cn } from '@/lib/utils'
 
@@ -49,30 +40,17 @@ export type DelegatePaymentHistoryTotals = {
   transactionCount: number
 }
 
-type SortKey = keyof DelegatePaymentHistoryRow
-type SortDirection = 'asc' | 'desc'
 type PaymentTypeFilter = 'all' | 'contribution' | 'registration'
 
-type DelegatePaymentHistoryColumn = {
-  align?: 'left' | 'right'
-  key: SortKey
-  label: string
-}
-
-const columns: DelegatePaymentHistoryColumn[] = [
-  { key: 'month', label: 'Month' },
-  { key: 'paymentType', label: 'Payment Type' },
-  { align: 'right', key: 'amountSentOrAdjusted', label: 'Amount Sent / Adjustments' },
-  { align: 'right', key: 'amountVerified', label: 'Amount Verified' },
-  { align: 'right', key: 'balance', label: 'Balance' }
-]
-
-const columnWidths: Partial<Record<SortKey, number>> = {
-  amountSentOrAdjusted: 24,
-  amountVerified: 20,
-  balance: 20,
-  month: 20,
-  paymentType: 16
+type DelegatePaymentMonthGroup = {
+  amountSentOrAdjusted: number
+  amountVerified: number
+  balance: number
+  entryCount: number
+  id: string
+  month: string
+  monthLabel: string
+  rows: DelegatePaymentHistoryRow[]
 }
 
 const pageSizeOptions = [10, 25, 50, 100]
@@ -83,31 +61,7 @@ const paymentTypeFilterLabels: Record<PaymentTypeFilter, string> = {
   registration: 'Registration'
 }
 
-const getColumnStyle = (columnKey: SortKey) => ({ width: `${columnWidths[columnKey] ?? 10}%` })
-
 const roundCurrencyAmount = (amount: number) => Number(amount.toFixed(2))
-
-const getSortIcon = (isActive: boolean, direction: SortDirection) => {
-  if (!isActive) return <ArrowUpDown className='size-3.5' aria-hidden='true' />
-
-  return direction === 'asc' ? (
-    <ArrowUp className='size-3.5' aria-hidden='true' />
-  ) : (
-    <ArrowDown className='size-3.5' aria-hidden='true' />
-  )
-}
-
-const compareValues = (
-  firstValue: DelegatePaymentHistoryRow[SortKey],
-  secondValue: DelegatePaymentHistoryRow[SortKey]
-) => {
-  if (typeof firstValue === 'number' && typeof secondValue === 'number') return firstValue - secondValue
-
-  return String(firstValue ?? '').localeCompare(String(secondValue ?? ''), undefined, {
-    numeric: true,
-    sensitivity: 'base'
-  })
-}
 
 const getHistoryTotals = (rows: DelegatePaymentHistoryRow[]): DelegatePaymentHistoryTotals => {
   const amountSentOrAdjusted = roundCurrencyAmount(rows.reduce((total, row) => total + row.amountSentOrAdjusted, 0))
@@ -121,6 +75,42 @@ const getHistoryTotals = (rows: DelegatePaymentHistoryRow[]): DelegatePaymentHis
     monthCount: months.size,
     transactionCount: rows.reduce((total, row) => total + row.entryCount, 0)
   }
+}
+
+const getMonthGroups = (rows: DelegatePaymentHistoryRow[]): DelegatePaymentMonthGroup[] => {
+  const groupsByMonth = rows.reduce((groups, row) => {
+    const group = groups.get(row.month) ?? {
+      amountSentOrAdjusted: 0,
+      amountVerified: 0,
+      balance: 0,
+      entryCount: 0,
+      id: row.month,
+      month: row.month,
+      monthLabel: row.monthLabel,
+      rows: []
+    }
+
+    group.rows.push(row)
+    group.amountSentOrAdjusted = roundCurrencyAmount(group.amountSentOrAdjusted + row.amountSentOrAdjusted)
+    group.amountVerified = roundCurrencyAmount(group.amountVerified + row.amountVerified)
+    group.balance = roundCurrencyAmount(group.amountSentOrAdjusted - group.amountVerified)
+    group.entryCount += row.entryCount
+    groups.set(row.month, group)
+
+    return groups
+  }, new Map<string, DelegatePaymentMonthGroup>())
+
+  return Array.from(groupsByMonth.values())
+    .map(group => ({
+      ...group,
+      rows: [...group.rows].sort((firstRow, secondRow) =>
+        firstRow.paymentType.localeCompare(secondRow.paymentType, undefined, {
+          numeric: true,
+          sensitivity: 'base'
+        })
+      )
+    }))
+    .sort((firstGroup, secondGroup) => secondGroup.month.localeCompare(firstGroup.month))
 }
 
 const getRowSearchText = (row: DelegatePaymentHistoryRow) => [row.monthLabel, row.paymentType].join(' ').toLowerCase()
@@ -196,8 +186,6 @@ const DelegatePaymentHistoryTable = ({
   const [pageSize, setPageSize] = useState(25)
   const [paymentTypeFilter, setPaymentTypeFilter] = useState<PaymentTypeFilter>('all')
   const [search, setSearch] = useState('')
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
-  const [sortKey, setSortKey] = useState<SortKey>('month')
 
   const normalizedSearch = search.trim().toLowerCase()
 
@@ -210,13 +198,7 @@ const DelegatePaymentHistoryTable = ({
     })
   }, [normalizedSearch, paymentTypeFilter, rows])
 
-  const sortedRows = useMemo(() => {
-    return [...filteredRows].sort((firstRow, secondRow) => {
-      const comparison = compareValues(firstRow[sortKey], secondRow[sortKey])
-
-      return sortDirection === 'asc' ? comparison : -comparison
-    })
-  }, [filteredRows, sortDirection, sortKey])
+  const monthGroups = useMemo(() => getMonthGroups(filteredRows), [filteredRows])
 
   const visibleTotals = useMemo(() => {
     if (!normalizedSearch && paymentTypeFilter === 'all') return totals
@@ -224,31 +206,18 @@ const DelegatePaymentHistoryTable = ({
     return getHistoryTotals(filteredRows)
   }, [filteredRows, normalizedSearch, paymentTypeFilter, totals])
 
-  const totalPages = Math.max(1, Math.ceil(sortedRows.length / pageSize))
+  const totalPages = Math.max(1, Math.ceil(monthGroups.length / pageSize))
   const effectiveCurrentPage = Math.min(currentPage, totalPages)
   const pageStartIndex = (effectiveCurrentPage - 1) * pageSize
-  const pageEndIndex = Math.min(pageStartIndex + pageSize, sortedRows.length)
-  const paginatedRows = sortedRows.slice(pageStartIndex, pageEndIndex)
-  const showingStart = sortedRows.length > 0 ? pageStartIndex + 1 : 0
+  const pageEndIndex = Math.min(pageStartIndex + pageSize, monthGroups.length)
+  const paginatedMonthGroups = monthGroups.slice(pageStartIndex, pageEndIndex)
+  const showingStart = monthGroups.length > 0 ? pageStartIndex + 1 : 0
 
   const { pages, showLeftEllipsis, showRightEllipsis } = usePagination({
     currentPage: effectiveCurrentPage,
     paginationItemsToDisplay: 3,
     totalPages
   })
-
-  const handleSort = (nextSortKey: SortKey) => {
-    if (nextSortKey === sortKey) {
-      setSortDirection(currentDirection => (currentDirection === 'asc' ? 'desc' : 'asc'))
-      setCurrentPage(1)
-
-      return
-    }
-
-    setSortKey(nextSortKey)
-    setSortDirection(nextSortKey === 'month' ? 'asc' : 'desc')
-    setCurrentPage(1)
-  }
 
   const handleSearchChange = (nextSearch: string) => {
     setSearch(nextSearch)
@@ -314,183 +283,96 @@ const DelegatePaymentHistoryTable = ({
         </div>
       </div>
 
-      <div className='border-border max-w-full min-w-0 overflow-hidden rounded-lg border'>
-        <div className='hidden overflow-x-auto xl:block'>
-          <Table className='table-fixed [&_td]:whitespace-nowrap [&_th]:whitespace-normal'>
-            <colgroup>
-              {columns.map(column => (
-                <col key={column.key} style={getColumnStyle(column.key)} />
-              ))}
-            </colgroup>
-            <TableHeader>
-              <TableRow className='bg-primary hover:bg-primary h-16'>
-                {columns.map(column => {
-                  const isActive = sortKey === column.key
-
-                  return (
-                    <TableHead
-                      key={column.key}
-                      title={column.label}
-                      className='text-primary-foreground h-16'
-                      style={getColumnStyle(column.key)}
-                      aria-sort={isActive ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
-                    >
-                      <button
-                        type='button'
-                        className={cn(
-                          'flex min-h-12 w-full items-center gap-1.5 font-semibold',
-                          column.align === 'right'
-                            ? 'justify-end text-right [&>span]:text-right'
-                            : 'justify-start text-left'
-                        )}
-                        onClick={() => handleSort(column.key)}
-                      >
-                        <span>{column.label}</span>
-                        {getSortIcon(isActive, sortDirection)}
-                      </button>
-                    </TableHead>
-                  )
-                })}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedRows.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={columns.length} className='text-muted-foreground h-24 text-center'>
-                    {rows.length === 0
-                      ? 'No transaction history has been recorded yet.'
-                      : 'No transaction history matches the current filters.'}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                paginatedRows.map(row => (
-                  <TableRow key={row.id} className='odd:bg-muted/30 even:bg-background'>
-                    <TableCell
-                      title={row.monthLabel}
-                      className='truncate text-sm font-extrabold'
-                      style={getColumnStyle('month')}
-                    >
-                      {row.monthLabel}
-                    </TableCell>
-                    <TableCell
-                      title={row.paymentType}
-                      className='truncate text-sm font-semibold'
-                      style={getColumnStyle('paymentType')}
-                    >
-                      <Badge
-                        variant='outline'
-                        className={cn(
-                          'w-full max-w-full justify-start truncate rounded-md capitalize',
-                          getPaymentBadgeClassName(row.paymentTypeKey)
-                        )}
-                      >
-                        {row.paymentType}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className='text-right' style={getColumnStyle('amountSentOrAdjusted')}>
-                      <span className={getAmountClassName(row.amountSentOrAdjusted)}>
-                        {currencyFormatter.format(row.amountSentOrAdjusted)}
-                      </span>
-                    </TableCell>
-                    <TableCell className='text-right' style={getColumnStyle('amountVerified')}>
-                      <span className={getVerifiedAmountClassName(row.amountVerified)}>
-                        {currencyFormatter.format(row.amountVerified)}
-                      </span>
-                    </TableCell>
-                    <TableCell className='text-right' style={getColumnStyle('balance')}>
-                      <span className={getBalanceClassName(row.balance)}>{currencyFormatter.format(row.balance)}</span>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-            {sortedRows.length > 0 ? (
-              <TableFooter className='bg-white text-black dark:bg-white dark:text-black'>
-                <TableRow className='bg-white text-base text-black hover:bg-white dark:bg-white dark:text-black dark:hover:bg-white'>
-                  <TableCell className='font-extrabold' style={getColumnStyle('month')}>
-                    Total
-                  </TableCell>
-                  <TableCell className='font-semibold' style={getColumnStyle('paymentType')}>
-                    {visibleTotals.transactionCount} transaction(s)
-                  </TableCell>
-                  <TableCell
-                    className='text-right font-extrabold tabular-nums'
-                    style={getColumnStyle('amountSentOrAdjusted')}
-                  >
-                    {currencyFormatter.format(visibleTotals.amountSentOrAdjusted)}
-                  </TableCell>
-                  <TableCell
-                    className='text-right font-extrabold tabular-nums'
-                    style={getColumnStyle('amountVerified')}
-                  >
-                    {currencyFormatter.format(visibleTotals.amountVerified)}
-                  </TableCell>
-                  <TableCell className='text-right font-extrabold tabular-nums' style={getColumnStyle('balance')}>
-                    {currencyFormatter.format(visibleTotals.balance)}
-                  </TableCell>
-                </TableRow>
-              </TableFooter>
-            ) : null}
-          </Table>
-        </div>
-
-        <div className='grid gap-3 p-2 sm:p-3 xl:hidden'>
-          {sortedRows.length === 0 ? (
-            <div className='text-muted-foreground rounded-md border px-3 py-8 text-center text-sm sm:px-4 sm:py-10'>
-              {rows.length === 0
-                ? 'No transaction history has been recorded yet.'
-                : 'No transaction history matches the current filters.'}
-            </div>
-          ) : (
-            paginatedRows.map(row => (
-              <article key={row.id} className='bg-background overflow-hidden rounded-md border shadow-sm'>
-                <div className='flex flex-col gap-2 border-b px-3 py-3 sm:flex-row sm:items-start sm:justify-between sm:px-4'>
-                  <div className='min-w-0'>
+      <div className='max-w-full min-w-0 space-y-3'>
+        {monthGroups.length === 0 ? (
+          <div className='text-muted-foreground rounded-lg border px-3 py-8 text-center text-sm sm:px-4 sm:py-10'>
+            {rows.length === 0
+              ? 'No transaction history has been recorded yet.'
+              : 'No transaction history matches the current filters.'}
+          </div>
+        ) : (
+          <div className='grid gap-4'>
+            {paginatedMonthGroups.map(group => (
+              <article key={group.id} className='bg-background overflow-hidden rounded-lg border shadow-sm'>
+                <div className='border-b px-3 py-3 sm:px-4'>
+                  <div className='flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between'>
                     <div className='flex min-w-0 items-center gap-2'>
-                      <CalendarDays className='text-primary size-4 shrink-0' aria-hidden='true' />
-                      <div className='truncate text-lg font-extrabold'>{row.monthLabel}</div>
+                      <CalendarDays className='text-primary size-5 shrink-0' aria-hidden='true' />
+                      <h2 className='truncate text-xl font-extrabold tracking-normal sm:text-2xl'>
+                        {group.monthLabel}
+                      </h2>
                     </div>
-                    <Badge
-                      variant='outline'
-                      className={cn('mt-2 w-fit rounded-md capitalize', getPaymentBadgeClassName(row.paymentTypeKey))}
-                    >
-                      {row.paymentType}
-                    </Badge>
+                    <div className='text-muted-foreground text-xs font-semibold sm:text-right'>
+                      {group.entryCount} transaction{group.entryCount === 1 ? '' : 's'}
+                    </div>
                   </div>
-                  <div className='text-muted-foreground text-xs font-semibold'>
-                    {row.entryCount} transaction{row.entryCount === 1 ? '' : 's'}
+
+                  <div className='mt-3 grid gap-2 sm:grid-cols-3'>
+                    <MobileValue
+                      label='Month Sent / Adjustments'
+                      value={currencyFormatter.format(group.amountSentOrAdjusted)}
+                      valueClassName={getAmountClassName(group.amountSentOrAdjusted)}
+                    />
+                    <MobileValue
+                      label='Month Verified'
+                      value={currencyFormatter.format(group.amountVerified)}
+                      valueClassName={getVerifiedAmountClassName(group.amountVerified)}
+                    />
+                    <MobileValue
+                      label='Month Net'
+                      value={currencyFormatter.format(group.balance)}
+                      valueClassName={getBalanceClassName(group.balance)}
+                    />
                   </div>
                 </div>
-                <div className='grid gap-2 px-3 py-3 text-sm sm:px-4'>
-                  <MobileValue
-                    label='Sent / Adjustments'
-                    value={currencyFormatter.format(row.amountSentOrAdjusted)}
-                    valueClassName={getAmountClassName(row.amountSentOrAdjusted)}
-                  />
-                  <MobileValue
-                    label='Verified'
-                    value={currencyFormatter.format(row.amountVerified)}
-                    valueClassName={getVerifiedAmountClassName(row.amountVerified)}
-                  />
-                  <MobileValue
-                    label='Balance'
-                    value={currencyFormatter.format(row.balance)}
-                    valueClassName={getBalanceClassName(row.balance)}
-                  />
+
+                <div className='divide-y'>
+                  {group.rows.map(row => (
+                    <div
+                      key={row.id}
+                      className='grid gap-3 px-3 py-3 sm:px-4 lg:grid-cols-[minmax(10rem,0.8fr)_minmax(0,2.2fr)] lg:items-start'
+                    >
+                      <div className='min-w-0'>
+                        <Badge
+                          variant='outline'
+                          className={cn('w-fit rounded-md capitalize', getPaymentBadgeClassName(row.paymentTypeKey))}
+                        >
+                          {row.paymentType}
+                        </Badge>
+                      </div>
+                      <div className='grid gap-2 sm:grid-cols-3'>
+                        <MobileValue
+                          label='Sent / Adjustments'
+                          value={currencyFormatter.format(row.amountSentOrAdjusted)}
+                          valueClassName={getAmountClassName(row.amountSentOrAdjusted)}
+                        />
+                        <MobileValue
+                          label='Verified'
+                          value={currencyFormatter.format(row.amountVerified)}
+                          valueClassName={getVerifiedAmountClassName(row.amountVerified)}
+                        />
+                        <MobileValue
+                          label='Running Balance'
+                          value={currencyFormatter.format(row.balance)}
+                          valueClassName={getBalanceClassName(row.balance)}
+                        />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </article>
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        )}
 
-        {sortedRows.length > 0 ? (
-          <div className='bg-background flex flex-col gap-3 border-t px-3 py-3 lg:flex-row lg:items-center lg:justify-between'>
+        {monthGroups.length > 0 ? (
+          <div className='bg-background flex flex-col gap-3 rounded-lg border px-3 py-3 lg:flex-row lg:items-center lg:justify-between'>
             <p className='text-muted-foreground text-sm font-semibold'>
-              Showing {showingStart}-{pageEndIndex} of {sortedRows.length} month(s)
+              Showing {showingStart}-{pageEndIndex} of {monthGroups.length} month card(s)
             </p>
             <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end'>
               <div className='flex items-center gap-2'>
-                <span className='text-muted-foreground text-sm font-semibold whitespace-nowrap'>Rows per page</span>
+                <span className='text-muted-foreground text-sm font-semibold whitespace-nowrap'>Months per page</span>
                 <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
                   <SelectTrigger className='bg-background h-9 w-24'>
                     <SelectValue />

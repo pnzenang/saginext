@@ -1,5 +1,6 @@
 import { unstable_noStore as noStore } from 'next/cache'
 
+import { getContributionPaymentAmountDetails } from './contribution-payment-code'
 import db from './db'
 import { associationPaymentTypes, fetchAssociationPaymentLedgerTotals } from './sagi-payment-ledger'
 import { memberStatus } from './types'
@@ -17,6 +18,7 @@ export type AssociationContributionSummary = {
   amountOwed: number
   amountPerVestedMember: number
   amountReceived: number
+  amountToMatch: number
   amountVerified: number
   balance: number
   associationCode: string
@@ -29,6 +31,7 @@ export type AssociationContributionSummary = {
   existingBalance: number
   lastSubmittedAt: string | null
   manualBalanceAdjustment: number
+  paymentCodeAmount: number | null
   verifiedAt: string | null
   vestedContributionCredit: number
   vestedMembersCount: number
@@ -108,7 +111,14 @@ export const fetchAssociationContributionSummary = async (
 
   const amountPerVestedMember = decimalToNumber(latestAssessment?.amountPerVestedMember)
 
-  const [payment, balanceAdjustment, vestedMembersCount, contributionAssessmentGroups, paymentLedgerTotals] =
+  const [
+    payment,
+    balanceAdjustment,
+    vestedMembersCount,
+    contributionAssessmentGroups,
+    paymentLedgerTotals,
+    paymentCode
+  ] =
     await Promise.all([
       db.associationContributionPayment.findUnique({
         where: {
@@ -150,10 +160,26 @@ export const fetchAssociationContributionSummary = async (
             }
           : undefined,
         noStore: options.noStore
+      }),
+      db.associationContributionPaymentCode.findUnique({
+        select: {
+          codeCents: true
+        },
+        where: {
+          associationCode
+        }
       })
     ])
 
   const amountOwed = Number((amountPerVestedMember * vestedMembersCount).toFixed(2))
+
+  const contributionPaymentAmountDetails =
+    amountOwed > 0 ? getContributionPaymentAmountDetails(amountOwed, paymentCode?.codeCents) : undefined
+
+  const amountToMatch = contributionPaymentAmountDetails?.hasPaymentCode
+    ? contributionPaymentAmountDetails.amountToSend
+    : amountOwed
+
   const currentAmountSent = decimalToNumber(payment?.amountSent)
   const amountReceived = Number(Math.max(currentAmountSent, 0).toFixed(2))
   const amountVerified = paymentLedgerTotals.amountVerified
@@ -191,15 +217,19 @@ export const fetchAssociationContributionSummary = async (
     amountOwed,
     amountPerVestedMember,
     amountReceived,
+    amountToMatch,
     amountVerified,
     associationCode,
-    balance: Number((amountVerified + existingBalance - amountOwed).toFixed(2)),
+    balance: Number((amountVerified + existingBalance - amountToMatch).toFixed(2)),
     contributionDueMonths: fallbackContributionDueMonths,
     deathCount: latestAssessment?.deathCount ?? 0,
     dueDate: latestAssessment?.dueDate?.toISOString() ?? null,
     existingBalance,
     lastSubmittedAt: payment?.lastSubmittedAt?.toISOString() ?? null,
     manualBalanceAdjustment,
+    paymentCodeAmount: contributionPaymentAmountDetails?.hasPaymentCode
+      ? contributionPaymentAmountDetails.paymentCodeAmount
+      : null,
     verifiedAt: payment?.verifiedAt?.toISOString() ?? null,
     vestedContributionCredit: 0,
     vestedMembersCount

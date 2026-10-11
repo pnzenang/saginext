@@ -33,18 +33,21 @@ export type AdminPaymentRow = {
   amountAwaitingVerification?: number
   amountExpected?: number
   amountSent: number
+  amountToSend?: number
   amountVerified: number
   associationCode: string
   associationName: string
   awaitingPublication?: number
   balance: number
   pendingMembers?: number
+  paymentCodeAmount?: number
   vestedMembers: number
 }
 
 export type AdminPaymentTotals = {
   amountExpected?: number
   amountSent: number
+  amountToSend?: number
   amountVerified: number
   awaitingPublication?: number
   balance: number
@@ -66,6 +69,7 @@ type AdminPaymentColumn = {
 type AdminPaymentsTableProps = {
   adjustAction: (formData: FormData) => Promise<void>
   kind: PaymentKind
+  paymentCodeAction?: (formData: FormData) => Promise<void>
   rows: AdminPaymentRow[]
   sentAdjustmentAction?: (formData: FormData) => Promise<void>
   secondaryAction: (formData: FormData) => Promise<void>
@@ -78,6 +82,8 @@ const contributionColumns: AdminPaymentColumn[] = [
   { key: 'associationCode', label: 'Code' },
   { key: 'vestedMembers', label: 'Vested', align: 'right', format: 'number' },
   { key: 'amountExpected', label: 'Contribution Dues', align: 'right', format: 'currency' },
+  { key: 'paymentCodeAmount', label: 'Payment Code', align: 'right', format: 'currency' },
+  { key: 'amountToSend', label: 'Amount To Match', align: 'right', format: 'currency' },
   { key: 'amountSent', label: 'Contribution Sent', align: 'right', format: 'currency' },
   { key: 'amountVerified', label: 'Verified', align: 'right', format: 'currency' },
   { key: 'balance', label: 'Contribution Balance', align: 'right', format: 'currency' }
@@ -111,13 +117,15 @@ const paymentRowsPerPageOptions = [10, 25, 50, 100]
 
 const desktopColumnWidthPercentByKind: Record<PaymentKind, Partial<Record<SortKey, number>>> = {
   contribution: {
-    amountExpected: 10,
-    amountSent: 10,
-    amountVerified: 10,
-    associationCode: 6,
-    associationName: 18,
-    balance: 15,
-    vestedMembers: 6
+    amountExpected: 8,
+    amountSent: 8,
+    amountToSend: 9,
+    amountVerified: 8,
+    associationCode: 5,
+    associationName: 16,
+    balance: 12,
+    paymentCodeAmount: 7,
+    vestedMembers: 5
   },
   registration: {
     amountExpected: 12,
@@ -135,7 +143,8 @@ const getColumnSizeClassName = (column: AdminPaymentColumn) => {
   if (column.key === 'associationName') return 'min-w-0'
   if (column.key === 'associationCode') return 'min-w-0'
   if (['vestedMembers', 'awaitingPublication', 'pendingMembers'].includes(column.key)) return 'min-w-0'
-  if (['amountExpected', 'amountSent', 'amountVerified'].includes(column.key)) return 'min-w-0'
+  if (['amountExpected', 'amountSent', 'amountToSend', 'amountVerified', 'paymentCodeAmount'].includes(column.key))
+    return 'min-w-0'
 
   return 'min-w-0'
 }
@@ -143,9 +152,9 @@ const getColumnSizeClassName = (column: AdminPaymentColumn) => {
 const getColumnWidthPercent = (kind: PaymentKind, column: AdminPaymentColumn) =>
   desktopColumnWidthPercentByKind[kind][column.key] ?? 8
 
-const getSentAdjustmentColumnWidthPercent = (kind: PaymentKind) => (kind === 'contribution' ? 9 : 10)
+const getSentAdjustmentColumnWidthPercent = (kind: PaymentKind) => (kind === 'contribution' ? 8 : 10)
 
-const getActionColumnWidthPercent = (kind: PaymentKind) => (kind === 'contribution' ? 16 : 16)
+const getActionColumnWidthPercent = (kind: PaymentKind) => (kind === 'contribution' ? 14 : 16)
 
 const shouldRenderSentAdjustmentBeforeColumn = (column: AdminPaymentColumn, showSentAdjustment: boolean) =>
   showSentAdjustment && column.key === 'amountSent'
@@ -169,6 +178,7 @@ const formatValue = (row: AdminPaymentRow, column: AdminPaymentColumn) => {
   const value = row[column.key]
 
   if (column.key === 'associationName') return String(value ?? '').trim() || row.associationCode
+  if (value === undefined || value === null) return ''
   if (column.format === 'currency') return currencyFormatter.format(Number(value ?? 0))
   if (column.format === 'number') return Number(value ?? 0).toLocaleString('en-US')
 
@@ -179,6 +189,7 @@ const getRawExportValue = (row: AdminPaymentRow, column: AdminPaymentColumn) => 
   const value = row[column.key]
 
   if (column.key === 'associationName') return String(value ?? '').trim() || row.associationCode
+  if (value === undefined || value === null) return ''
   if (column.format === 'currency' || column.format === 'number') return Number(value ?? 0)
 
   return String(value ?? '')
@@ -204,6 +215,7 @@ const getPaymentTotals = (rows: AdminPaymentRow[]): AdminPaymentTotals =>
     (currentTotals, row) => ({
       amountExpected: (currentTotals.amountExpected ?? 0) + (row.amountExpected ?? 0),
       amountSent: currentTotals.amountSent + row.amountSent,
+      amountToSend: (currentTotals.amountToSend ?? 0) + (row.amountToSend ?? 0),
       amountVerified: currentTotals.amountVerified + row.amountVerified,
       awaitingPublication: (currentTotals.awaitingPublication ?? 0) + (row.awaitingPublication ?? 0),
       balance: currentTotals.balance + row.balance,
@@ -213,6 +225,7 @@ const getPaymentTotals = (rows: AdminPaymentRow[]): AdminPaymentTotals =>
     {
       amountExpected: 0,
       amountSent: 0,
+      amountToSend: 0,
       amountVerified: 0,
       awaitingPublication: 0,
       balance: 0,
@@ -223,7 +236,10 @@ const getPaymentTotals = (rows: AdminPaymentRow[]): AdminPaymentTotals =>
 
 const getValueClassName = (row: AdminPaymentRow, column: AdminPaymentColumn) => {
   if (column.key === 'amountSent' && row.amountSent > 0) return 'text-green-700 dark:text-green-300'
+  if (column.key === 'amountToSend' && (row.amountToSend ?? 0) > 0) return 'text-sky-700 dark:text-sky-300'
   if (column.key === 'amountVerified' && row.amountVerified > 0) return 'text-blue-700 dark:text-blue-300'
+  if (column.key === 'paymentCodeAmount' && (row.paymentCodeAmount ?? 0) > 0)
+    return 'text-emerald-700 dark:text-emerald-300'
   if (column.key === 'vestedMembers') return 'text-green-600 dark:text-green-400'
   if (column.key === 'awaitingPublication') return 'text-blue-600 dark:text-blue-400'
   if (column.key === 'pendingMembers') return 'text-amber-600 dark:text-amber-400'
@@ -281,6 +297,41 @@ const PaymentSentAdjustmentForm = ({
       <Button type='submit' size='xs' variant='outline' className='h-7 w-full gap-1 px-1 text-[11px]'>
         <Plus className='size-3' />
         Sent
+      </Button>
+    </form>
+  )
+}
+
+const formatPaymentCodeInputValue = (paymentCodeAmount?: number) =>
+  paymentCodeAmount === undefined ? '' : paymentCodeAmount.toFixed(2)
+
+const PaymentCodeForm = ({
+  action,
+  row
+}: {
+  action: (formData: FormData) => Promise<void>
+  row: AdminPaymentRow
+}) => {
+  const paymentCodeInputId = useId()
+
+  return (
+    <form action={action} className='grid min-w-0 gap-1.5'>
+      <input type='hidden' name='associationCode' value={row.associationCode} />
+      <label htmlFor={paymentCodeInputId} className='sr-only'>
+        Contribution payment code
+      </label>
+      <Input
+        id={paymentCodeInputId}
+        name='paymentCode'
+        type='text'
+        inputMode='decimal'
+        defaultValue={formatPaymentCodeInputValue(row.paymentCodeAmount)}
+        placeholder='0.00'
+        className='h-7 px-1.5 text-right text-[11px] tabular-nums'
+      />
+      <Button type='submit' size='xs' variant='outline' className='h-7 w-full gap-1 px-1 text-[11px]'>
+        <CheckCircle2 className='size-3' />
+        Code
       </Button>
     </form>
   )
@@ -366,6 +417,7 @@ const PaymentControls = ({
 const AdminPaymentsTable = ({
   adjustAction,
   kind,
+  paymentCodeAction,
   rows,
   secondaryAction,
   sentAdjustmentAction,
@@ -376,6 +428,7 @@ const AdminPaymentsTable = ({
   const balanceColumn = columns.find(column => column.key === 'balance')
   const showAdjustment = true
   const showSentAdjustment = Boolean(sentAdjustmentAction)
+  const showPaymentCodeForm = kind === 'contribution' && Boolean(paymentCodeAction)
   const tableColumns = columns.filter(column => column.key !== 'balance')
   const [sortKey, setSortKey] = useState<SortKey>('associationCode')
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
@@ -649,14 +702,21 @@ const AdminPaymentsTable = ({
                         key={column.key}
                         title={formatValue(row, column)}
                         className={cn(
-                          'min-w-0 truncate px-1.5 py-4 font-semibold whitespace-nowrap',
+                          'min-w-0 px-1.5 font-semibold',
+                          column.key === 'paymentCodeAmount' && showPaymentCodeForm
+                            ? 'py-3 align-middle'
+                            : 'truncate py-4 whitespace-nowrap',
                           getColumnSizeClassName(column),
                           column.key === 'associationName' && 'text-foreground text-sm font-bold',
                           column.align === 'right' && 'text-right text-xs tabular-nums xl:text-sm',
                           getValueClassName(row, column)
                         )}
                       >
-                        {formatValue(row, column)}
+                        {column.key === 'paymentCodeAmount' && showPaymentCodeForm && paymentCodeAction ? (
+                          <PaymentCodeForm action={paymentCodeAction} row={row} />
+                        ) : (
+                          formatValue(row, column)
+                        )}
                       </TableCell>
                     </Fragment>
                   ))}
@@ -773,15 +833,21 @@ const AdminPaymentsTable = ({
                         <span className='text-muted-foreground min-w-0 text-xs font-semibold break-words uppercase'>
                           {column.label}
                         </span>
-                        <span
-                          className={cn(
-                            'min-w-0 text-right font-extrabold tabular-nums',
-                            column.align === 'right' && 'text-base',
-                            getValueClassName(row, column)
-                          )}
-                        >
-                          {formatValue(row, column)}
-                        </span>
+                        {column.key === 'paymentCodeAmount' && showPaymentCodeForm && paymentCodeAction ? (
+                          <div className='w-32 min-w-0'>
+                            <PaymentCodeForm action={paymentCodeAction} row={row} />
+                          </div>
+                        ) : (
+                          <span
+                            className={cn(
+                              'min-w-0 text-right font-extrabold tabular-nums',
+                              column.align === 'right' && 'text-base',
+                              getValueClassName(row, column)
+                            )}
+                          >
+                            {formatValue(row, column)}
+                          </span>
+                        )}
                       </div>
                     </Fragment>
                   ))}

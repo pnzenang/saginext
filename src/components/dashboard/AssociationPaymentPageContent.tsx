@@ -243,7 +243,6 @@ const PaymentForm = ({
   return (
     <form
       action={formAction}
-      encType='multipart/form-data'
       className='border-secondary bg-secondary text-secondary-foreground h-full min-h-56 min-w-0 rounded-md border px-3 py-3 sm:px-4'
     >
       <div className='grid gap-3'>

@@ -94,7 +94,7 @@ const dashboardMenuLabelTranslations: Record<string, string> = {
   'Add Member': 'Ajouter un membre',
   'All Members': 'Tous les membres',
   'Registrations Payments': "Paiements d'inscription",
-  'Contributions Payments': 'Paiements des cotisations',
+  'Payment Center': 'Centre de paiement',
   'Remove Member': 'Retirer un membre',
   'Removed Members': 'Membres retirés',
   'Death Announcement': 'Annonce de décès',

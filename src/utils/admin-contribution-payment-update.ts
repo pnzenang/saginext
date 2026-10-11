@@ -1,5 +1,7 @@
 import { Prisma } from '@/generated/prisma/client'
 
+import { getContributionPaymentAmountDetails } from '@/utils/contribution-payment-code'
+import { fetchContributionPaymentCodeCentsByAssociationCode } from '@/utils/contribution-payment-code-records'
 import db from '@/utils/db'
 import {
   contributionBalanceAdjustmentType,
@@ -11,11 +13,13 @@ import { memberStatus } from '@/utils/types'
 
 export type AdminContributionPaymentUpdateRow = {
   amountSent: number
+  amountToSend?: number
   amountVerified: number
   associationCode: string
   associationName: string
   balance: number
   contributionDue: number
+  paymentCodeAmount?: number
   vestedMembers: number
 }
 
@@ -182,6 +186,8 @@ export const fetchAdminContributionPaymentUpdateRows = async () => {
     currentContributionDateRange
   )
 
+  const contributionPaymentCodesByCode = await fetchContributionPaymentCodeCentsByAssociationCode(associationCodes)
+
   const amountPerVestedMember = decimalToNumber(currentMonthContributionAssessment?.amountPerVestedMember)
 
   return associationCodes.map<AdminContributionPaymentUpdateRow>(associationCode => {
@@ -197,6 +203,17 @@ export const fetchAdminContributionPaymentUpdateRows = async () => {
     const recordedAmountVerified = verifiedLedgerTotalsByCode.get(associationCode) ?? 0
     const amountVerified = roundCurrencyAmount(Math.max(recordedAmountVerified, currentAmountVerified))
     const contributionDue = roundCurrencyAmount(amountPerVestedMember * vestedMembers)
+    const paymentCodeCents = contributionPaymentCodesByCode.get(associationCode) ?? null
+    const paymentCodeAmount = paymentCodeCents === null ? undefined : roundCurrencyAmount(paymentCodeCents / 100)
+
+    const contributionPaymentAmountDetails =
+      contributionDue > 0 ? getContributionPaymentAmountDetails(contributionDue, paymentCodeCents) : undefined
+
+    const amountToMatch =
+      contributionPaymentAmountDetails?.hasPaymentCode && contributionPaymentAmountDetails.amountToSend > 0
+        ? contributionPaymentAmountDetails.amountToSend
+        : contributionDue
+
     const amountSent = roundCurrencyAmount(Math.max(currentAmountSent - currentAmountVerified, 0))
     const manualBalanceAdjustment = balanceAdjustmentsByCode.get(associationCode) ?? 0
 
@@ -205,11 +222,15 @@ export const fetchAdminContributionPaymentUpdateRows = async () => {
 
     return {
       amountSent,
+      amountToSend: contributionPaymentAmountDetails?.hasPaymentCode
+        ? contributionPaymentAmountDetails.amountToSend
+        : undefined,
       amountVerified,
       associationCode,
       associationName,
-      balance: roundCurrencyAmount(amountVerified + manualBalanceAdjustment - contributionDue),
+      balance: roundCurrencyAmount(amountVerified + manualBalanceAdjustment - amountToMatch),
       contributionDue,
+      paymentCodeAmount,
       vestedMembers
     }
   })

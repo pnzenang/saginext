@@ -57,7 +57,7 @@ export const getPagesItems = (date: Date = new Date()): MenuItem[] => [
   },
   {
     icon: Wallet,
-    label: 'Contribution Payments',
+    label: 'Payment Center',
     href: '/contributions'
   },
   {
