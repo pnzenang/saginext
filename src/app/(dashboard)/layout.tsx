@@ -153,13 +153,6 @@ const getAdminDeathDocumentationAlertCount = () =>
 
 type DashboardSidebarActionCounts = Record<string, number>
 
-const adminVisibleMemberTransferStatuses = [
-  'admin_initiated',
-  'receiving_delegate_pending',
-  'initiating_delegate_approved',
-  'receiving_delegate_approved'
-]
-
 const getDashboardSidebarActionCounts = async (userId?: string | null): Promise<DashboardSidebarActionCounts> => {
   if (!userId) return {}
 
@@ -205,9 +198,7 @@ const getDashboardSidebarActionCounts = async (userId?: string | null): Promise<
           }),
           db.memberTransferRequest.count({
             where: {
-              status: {
-                in: adminVisibleMemberTransferStatuses
-              }
+              status: 'receiving_delegate_approved'
             }
           }),
           getAdminDeathDocumentationAlertCount(),
