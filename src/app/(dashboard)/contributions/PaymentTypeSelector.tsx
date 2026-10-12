@@ -155,6 +155,7 @@ const PaymentDetails = ({
 
 type PaymentTypeSelectorProps = {
   contributionAmountOwed: number
+  contributionAmountToMatch: number
   contributionAmountPerVestedMember: number
   contributionPaymentCodeCents: number | null
   contributionVestedMemberCount: number
@@ -164,6 +165,7 @@ type PaymentTypeSelectorProps = {
 
 const PaymentTypeSelector = ({
   contributionAmountOwed,
+  contributionAmountToMatch,
   contributionAmountPerVestedMember,
   contributionPaymentCodeCents,
   contributionVestedMemberCount,
@@ -177,6 +179,7 @@ const PaymentTypeSelector = ({
     contributionAmountOwed,
     contributionPaymentCodeCents
   )
+  const contributionPaymentAmount = contributionAmountOwed > 0 ? contributionAmountToMatch : 0
 
   const handlePaymentTypeChange = (value: PaymentType) => {
     setPaymentType(value)
@@ -197,7 +200,7 @@ const PaymentTypeSelector = ({
         }
       : paymentType === 'contribution'
         ? {
-            amount: contributionPaymentAmountDetails.amountToSend,
+            amount: contributionPaymentAmount,
             contributionPaymentAmountDetails,
             detailCount: contributionVestedMemberCount,
             detailLabel: 'vested member',
@@ -233,11 +236,7 @@ const PaymentTypeSelector = ({
             </div>
             <div className='rounded-lg bg-primary-foreground/10 p-4 ring-1 ring-primary-foreground/20'>
               <p className='text-sm font-semibold text-primary-foreground/80'>Contribution amount</p>
-              <p className='mt-1 text-2xl font-extrabold'>
-                {currencyFormatter.format(
-                  contributionAmountOwed > 0 ? contributionPaymentAmountDetails.amountToSend : contributionAmountOwed
-                )}
-              </p>
+              <p className='mt-1 text-2xl font-extrabold'>{currencyFormatter.format(contributionPaymentAmount)}</p>
               {contributionAmountOwed > 0 ? (
                 <p className='mt-1 text-xs font-semibold text-primary-foreground/75'>
                   {contributionPaymentAmountDetails.hasPaymentCode ? 'Code included' : 'Payment code not entered'}

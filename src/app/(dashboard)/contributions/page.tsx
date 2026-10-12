@@ -20,6 +20,7 @@ const ContributionPayments = async () => {
     <main className='flex min-h-[calc(100vh-8rem)] w-full items-center justify-center'>
       <PaymentTypeSelector
         contributionAmountOwed={contribution.amountOwed}
+        contributionAmountToMatch={contribution.amountToMatch}
         contributionAmountPerVestedMember={contribution.amountPerVestedMember}
         contributionPaymentCodeCents={contributionPaymentCodeCents}
         contributionVestedMemberCount={contribution.vestedMembersCount}
