@@ -14,8 +14,12 @@ export const revalidate = 0
 
 const adminMemberTransfersPageCopy = {
   en: {
+    delegatePendingBadge: (count: number) => `${count} pending`,
+    delegatePendingDescription: (count: number) =>
+      `${count} open transfer request${count === 1 ? '' : 's'} still need${count === 1 ? 's' : ''} delegate approval before admin can complete it.`,
+    delegatePendingTitle: 'Delegate approval pending',
     description: 'Initiate member transfer requests and complete them after both delegate associations approve.',
-    emptyDescription: 'Transfers approved by both delegates will appear here.',
+    emptyDescription: 'Open transfer requests will appear here.',
     emptyTitle: 'No member transfer requests found.',
     listTitle: 'All member transfer requests',
     pendingBadge: (count: number) => `${count} pending`,
@@ -27,8 +31,12 @@ const adminMemberTransfersPageCopy = {
     title: 'Admin Member Transfers'
   },
   fr: {
+    delegatePendingBadge: (count: number) => `${count} en attente`,
+    delegatePendingDescription: (count: number) =>
+      `${count} demande${count === 1 ? '' : 's'} de transfert ouverte${count === 1 ? '' : 's'} nécessite${count === 1 ? '' : 'nt'} encore l'approbation des délégués avant que l'admin puisse la terminer.`,
+    delegatePendingTitle: 'Approbation des délégués en attente',
     description: 'Initiez les demandes de transfert et terminez-les après approbation des deux associations déléguées.',
-    emptyDescription: 'Les transferts approuvés par les deux délégués apparaîtront ici.',
+    emptyDescription: 'Les demandes de transfert ouvertes apparaîtront ici.',
     emptyTitle: 'Aucune demande de transfert trouvée.',
     listTitle: 'Toutes les demandes de transfert',
     pendingBadge: (count: number) => `${count} en attente`,
@@ -52,6 +60,10 @@ const AdminMemberTransfersPage = async () => {
   const copy = adminMemberTransfersPageCopy[language]
 
   const pendingAdminCount = requests.filter(request => request.status === 'receiving_delegate_approved').length
+
+  const delegatePendingCount = requests.filter(request =>
+    ['admin_initiated', 'receiving_delegate_pending', 'initiating_delegate_approved'].includes(request.status)
+  ).length
 
   return (
     <section className='grid w-full max-w-full min-w-0 shrink-0 gap-5 overflow-visible px-0 py-4 sm:px-6 sm:py-8 lg:px-8'>
@@ -84,6 +96,28 @@ const AdminMemberTransfersPage = async () => {
               className='w-fit border-amber-300 bg-white text-amber-800 dark:bg-black/20 dark:text-amber-200'
             >
               {copy.pendingBadge(pendingAdminCount)}
+            </Badge>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {delegatePendingCount > 0 ? (
+        <Card className='rounded-lg border-blue-200 bg-blue-50 py-0 dark:border-blue-900 dark:bg-blue-950/40'>
+          <CardContent className='flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between'>
+            <div className='flex min-w-0 items-start gap-3'>
+              <ArrowLeftRight className='mt-0.5 size-5 shrink-0 text-blue-700 dark:text-blue-300' />
+              <div className='min-w-0'>
+                <p className='font-extrabold text-blue-800 dark:text-blue-200'>{copy.delegatePendingTitle}</p>
+                <p className='text-sm text-blue-700 dark:text-blue-300'>
+                  {copy.delegatePendingDescription(delegatePendingCount)}
+                </p>
+              </div>
+            </div>
+            <Badge
+              variant='outline'
+              className='w-fit border-blue-300 bg-white text-blue-800 dark:bg-black/20 dark:text-blue-200'
+            >
+              {copy.delegatePendingBadge(delegatePendingCount)}
             </Badge>
           </CardContent>
         </Card>
