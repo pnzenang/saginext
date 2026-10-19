@@ -1,13 +1,14 @@
 import { CheckCircle2, Download, FileText, ShieldCheck, XCircle } from 'lucide-react'
 
+import DocumentFileInput from '@/components/forms/DocumentFileInput'
 import FormContainer from '@/components/forms/FormContainer'
 import { SubmitButton } from '@/components/forms/Buttons'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
+import { maxDocumentationFileSizeMb } from '@/utils/upload-limits'
 import {
   deleteNameChangeRequestAction,
   reviewNameChangeRequestAction,
@@ -240,8 +241,8 @@ const NameChangeRequestCard = ({
           <input type='hidden' name='requestId' value={request.id} />
           <div className='grid gap-1.5'>
             <Label htmlFor={`${request.id}-document`}>Upload requested documentation</Label>
-            <p className='text-muted-foreground text-xs'>PDF or image, up to 20 MB.</p>
-            <Input id={`${request.id}-document`} name='documentFile' type='file' accept={documentAccept} required />
+            <p className='text-muted-foreground text-xs'>PDF or image, up to {maxDocumentationFileSizeMb} MB.</p>
+            <DocumentFileInput id={`${request.id}-document`} name='documentFile' accept={documentAccept} required />
           </div>
           <SubmitButton text='Upload documentation' className='h-8 w-full text-xs normal-case sm:w-fit' />
         </FormContainer>

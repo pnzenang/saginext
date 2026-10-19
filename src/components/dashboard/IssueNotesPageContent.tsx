@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 
 import PaginationControls from '@/components/global/PaginationControls'
+import DocumentFileInput from '@/components/forms/DocumentFileInput'
 import FormContainer from '@/components/forms/FormContainer'
 import { SubmitButton } from '@/components/forms/Buttons'
 import { Badge } from '@/components/ui/badge'
@@ -30,6 +31,7 @@ import { usePagination } from '@/hooks/use-pagination'
 import { usePersistentState } from '@/hooks/use-persistent-state'
 import type { AppLanguage } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
+import { documentationFileTooLargeMessages, maxDocumentationFileSizeMb } from '@/utils/upload-limits'
 import {
   createAdminIssueNoteAction,
   createDelegateIssueNoteAction,
@@ -72,7 +74,8 @@ const issueNotesCopy = {
     allNotes: 'All messages',
     associationAll: 'All associations',
     association: 'Association',
-    attachmentHelp: 'Optional PDF or image, up to 20 MB.',
+    attachmentHelp: `Optional PDF or image, up to ${maxDocumentationFileSizeMb} MB.`,
+    attachmentTooLarge: documentationFileTooLargeMessages.en,
     attachmentLabel: 'Attach document',
     body: 'Message',
     clear: 'Clear',
@@ -122,7 +125,8 @@ const issueNotesCopy = {
     allNotes: 'Tous les messages',
     associationAll: 'Toutes les associations',
     association: 'Association',
-    attachmentHelp: "PDF ou image facultatif, jusqu'à 20 Mo.",
+    attachmentHelp: `PDF ou image facultatif, jusqu'à ${maxDocumentationFileSizeMb} Mo.`,
+    attachmentTooLarge: documentationFileTooLargeMessages.fr,
     attachmentLabel: 'Joindre un document',
     body: 'Message',
     clear: 'Effacer',
@@ -355,11 +359,11 @@ const CreateIssueNoteForm = ({
               {copy.attachmentLabel}
             </Label>
             <p className='text-muted-foreground text-xs'>{copy.attachmentHelp}</p>
-            <Input
+            <DocumentFileInput
               id={documentInputId}
               name='documentFile'
-              type='file'
               accept={documentAccept}
+              tooLargeMessage={copy.attachmentTooLarge}
               className='bg-background'
             />
           </div>
@@ -514,11 +518,11 @@ const IssueNoteCard = ({
                 {copy.attachmentLabel}
               </Label>
               <p className='text-muted-foreground text-xs'>{copy.attachmentHelp}</p>
-              <Input
+              <DocumentFileInput
                 id={`reply-document-${note.id}`}
                 name='documentFile'
-                type='file'
                 accept={documentAccept}
+                tooLargeMessage={copy.attachmentTooLarge}
                 className='bg-background'
               />
             </div>

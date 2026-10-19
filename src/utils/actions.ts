@@ -12,6 +12,7 @@ import { after } from 'next/server'
 import { customAlphabet } from 'nanoid'
 
 import db from './db'
+import { documentationFileTooLargeMessages, maxDocumentationFileSize } from './upload-limits'
 import {
   createMemberSchema,
   DeceasedMemberSchema,
@@ -73,7 +74,6 @@ import { associationPaymentLedgerEventTypes, associationPaymentTypes } from './s
 
 const randomMatriculation = customAlphabet('1234567890', 6)
 const MEMBER_REMOVAL_RESTORE_WINDOW_MS = 48 * 60 * 60 * 1000
-const maxDocumentationFileSize = 20 * 1024 * 1024
 
 const allowedDeceasedMemberDocumentMimeTypes = new Set([
   'application/pdf',
@@ -610,7 +610,7 @@ const getOptionalIssueNoteDocumentFile = (formData: FormData) => {
   if (!(file instanceof File) || file.size <= 0) return null
 
   if (file.size > maxDocumentationFileSize) {
-    throw new Error('The file is too large. Please upload a file that is 20 MB or smaller.')
+    throw new Error(documentationFileTooLargeMessages.en)
   }
 
   if (!isAllowedDeceasedMemberDocumentFile(file)) {
@@ -5143,7 +5143,7 @@ export const uploadNameChangeDocumentationAction = async (
     }
 
     if (file.size > maxDocumentationFileSize) {
-      throw new Error('The file is too large. Please upload a file that is 20 MB or smaller.')
+      throw new Error(documentationFileTooLargeMessages.en)
     }
 
     if (!isAllowedDeceasedMemberDocumentFile(file)) {
@@ -7728,7 +7728,7 @@ export const uploadDeceasedMemberDocumentAction = async (
     }
 
     if (file.size > maxDocumentationFileSize) {
-      throw new Error('The file is too large. Please upload a file that is 20 MB or smaller.')
+      throw new Error(documentationFileTooLargeMessages.en)
     }
 
     if (!isAllowedDeceasedMemberDocumentFile(file)) {

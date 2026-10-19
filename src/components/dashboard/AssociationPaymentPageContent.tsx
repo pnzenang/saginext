@@ -9,12 +9,14 @@ import { AlertTriangle, DollarSign } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { SubmitButton } from '@/components/forms/Buttons'
+import DocumentFileInput from '@/components/forms/DocumentFileInput'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { AppLanguage } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { saveAssociationContributionPaymentAction, saveAssociationRegistrationPaymentAction } from '@/utils/actions'
 import { registrationFeePerEligibleMember } from '@/utils/payment-constants'
+import { documentationFileTooLargeMessages, maxDocumentationFileSizeMb } from '@/utils/upload-limits'
 import type { AssociationPaymentLedgerEntry } from '@/utils/sagi-payment-ledger'
 import type { AssociationContributionSummary } from '@/utils/sagi-contribution-summary'
 import type { AssociationRegistrationSummary } from '@/utils/sagi-registration-summary'
@@ -86,7 +88,8 @@ const associationPaymentCopy = {
     paymentFound: 'Payment found',
     paymentNotFound: (amount: string, date: string) => `Your ${amount} was not found by SAGI on ${date}`,
     paymentNotFoundSummary: (amount: string) => `Your ${amount} was not found. Please upload proof of payment in the amount form.`,
-    paymentProofHelp: 'Upload the Zelle confirmation, receipt, or transaction screenshot requested by SAGI.',
+    paymentProofHelp: `Upload the Zelle confirmation, receipt, or transaction screenshot requested by SAGI. PDF or image, up to ${maxDocumentationFileSizeMb} MB.`,
+    paymentProofTooLarge: documentationFileTooLargeMessages.en,
     paymentProofLabel: 'Proof of payment',
     paymentQrAlt: 'SAGI payment QR code',
     paymentSubmitted: 'Payment submitted',
@@ -140,7 +143,8 @@ const associationPaymentCopy = {
     paymentNotFound: (amount: string, date: string) => `Votre paiement de ${amount} n’a pas été retrouvé par SAGI le ${date}`,
     paymentNotFoundSummary: (amount: string) =>
       `Votre paiement de ${amount} n’a pas été retrouvé. Veuillez téléverser une preuve de paiement dans le formulaire du montant.`,
-    paymentProofHelp: 'Téléversez la confirmation Zelle, le reçu ou la capture de transaction demandée par SAGI.',
+    paymentProofHelp: `Téléversez la confirmation Zelle, le reçu ou la capture de transaction demandée par SAGI. PDF ou image, jusqu'à ${maxDocumentationFileSizeMb} Mo.`,
+    paymentProofTooLarge: documentationFileTooLargeMessages.fr,
     paymentProofLabel: 'Preuve de paiement',
     paymentQrAlt: 'Code QR de paiement SAGI',
     paymentSubmitted: 'Paiement soumis',
@@ -200,6 +204,7 @@ type PaymentFormProps = {
   fieldLabel: string
   proofHelp?: string
   proofLabel?: string
+  proofTooLargeMessage?: string
   proofUploadRequired?: boolean
   submitText: string
   warning: string
@@ -228,6 +233,7 @@ const PaymentForm = ({
   fieldLabel,
   proofHelp,
   proofLabel,
+  proofTooLargeMessage,
   proofUploadRequired = false,
   submitText,
   warning
@@ -271,11 +277,11 @@ const PaymentForm = ({
             <Label htmlFor={proofInputId} className='text-sm font-extrabold break-words'>
               {proofLabel}
             </Label>
-            <Input
+            <DocumentFileInput
               id={proofInputId}
               name='documentFile'
-              type='file'
               accept={paymentProofAccept}
+              tooLargeMessage={proofTooLargeMessage}
               className='bg-background text-foreground'
               required
             />
@@ -787,6 +793,7 @@ const AssociationPaymentPageContent = (props: AssociationPaymentPageContentProps
             fieldLabel={isContributionPayment ? copy.contributionAmountSent : copy.registrationAmountSent}
             proofHelp={copy.paymentProofHelp}
             proofLabel={copy.paymentProofLabel}
+            proofTooLargeMessage={copy.paymentProofTooLarge}
             proofUploadRequired={Boolean(activeNotFoundPayment)}
             submitText={isContributionPayment ? copy.contributionSubmit : copy.registrationSubmit}
             warning={copy.verificationWarning}

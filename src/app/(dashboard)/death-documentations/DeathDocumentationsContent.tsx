@@ -1,5 +1,6 @@
 import { CheckCircle2, Download, FileText, ShieldCheck, Upload, XCircle } from 'lucide-react'
 
+import DocumentFileInput from '@/components/forms/DocumentFileInput'
 import FormContainer from '@/components/forms/FormContainer'
 import { SubmitButton } from '@/components/forms/Buttons'
 import RestoreDeceasedMemberButton from '@/components/global/RestoreDeceasedMemberButton'
@@ -9,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
+import { maxDocumentationFileSizeMb } from '@/utils/upload-limits'
 import {
   countSubmittedDeathDocuments,
   hasDeathDocumentationDetails,
@@ -234,8 +236,8 @@ const DocumentationSlot = ({
           <input type='hidden' name='deceasedMemberId' value={deceasedMember.id} />
           <input type='hidden' name='documentType' value={documentType} />
           <Label htmlFor={inputId}>{uploadedDocument ? 'Replace file' : 'Choose file'}</Label>
-          <p className='text-muted-foreground text-xs'>PDF or image, up to 20 MB.</p>
-          <Input id={inputId} name='documentFile' type='file' accept={documentAccept} required />
+          <p className='text-muted-foreground text-xs'>PDF or image, up to {maxDocumentationFileSizeMb} MB.</p>
+          <DocumentFileInput id={inputId} name='documentFile' accept={documentAccept} required />
           <SubmitButton
             text={uploadedDocument ? 'Replace document' : 'Upload document'}
             className='h-9 w-full text-sm normal-case'
