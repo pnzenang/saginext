@@ -164,11 +164,10 @@ const memberTableCopy = {
       previousAria: 'Go to previous page'
     },
     payment: {
-      contributionCta: 'Go to contribution payment',
       contributionDetail: (count: number, amount: string) => `${count} vested member(s) x ${amount}`,
       contributionDueDate: (date: string) => `Due date: ${date}`,
       contributionTitle: (month: string) => `${month}'s Contribution`,
-      registrationCta: 'Go to registration payment',
+      paymentCenterCta: 'Go to Payment Center',
       registrationDetail: (count: number, amount: string) => `${count} pending member(s) x ${amount}`,
       registrationDueDate: `Due ${registrationPaymentDeadlineDays} days after adding Names`,
       registrationTitle: 'Registration Payment',
@@ -245,11 +244,10 @@ const memberTableCopy = {
       previousAria: 'Aller à la page précédente'
     },
     payment: {
-      contributionCta: 'Aller au paiement des cotisations',
       contributionDetail: (count: number, amount: string) => `${count} membre(s) acquis x ${amount}`,
       contributionDueDate: (date: string) => `Date d'échéance : ${date}`,
       contributionTitle: (month: string) => `Cotisation de ${month}`,
-      registrationCta: "Aller au paiement d'inscription",
+      paymentCenterCta: 'Aller au Centre de paiement',
       registrationDetail: (count: number, amount: string) => `${count} membre(s) en attente x ${amount}`,
       registrationDueDate: `Échéance : ${registrationPaymentDeadlineDays} jours après l'ajout des noms`,
       registrationTitle: "Paiement d'inscription",
@@ -723,7 +721,7 @@ const AssociationPaymentNavigationCards = ({
       <PaymentRouteCard
         afterTitle={contributionDueDate ? paymentCopy.contributionDueDate(contributionDueDate) : undefined}
         amount={currentContribution.amountToMatch}
-        cta={paymentCopy.contributionCta}
+        cta={paymentCopy.paymentCenterCta}
         description={
           <>
             {paymentCopy.contributionDetail(
@@ -744,7 +742,7 @@ const AssociationPaymentNavigationCards = ({
       <PaymentRouteCard
         afterTitle={paymentCopy.registrationDueDate}
         amount={currentRegistrationPayment.balanceDues}
-        cta={paymentCopy.registrationCta}
+        cta={paymentCopy.paymentCenterCta}
         description={
           <>
             {paymentCopy.registrationDetail(registrationMembersCount, formatCurrency(registrationFeePerEligibleMember))}
@@ -756,7 +754,7 @@ const AssociationPaymentNavigationCards = ({
             <PaymentSummaryRow label={paymentCopy.verified} value={currentRegistrationPayment.amountVerified} />
           </>
         }
-        href='/registrationsPayments'
+        href='/contributions'
         title={paymentCopy.registrationTitle}
       />
     </div>
