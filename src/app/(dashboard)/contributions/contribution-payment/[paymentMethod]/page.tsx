@@ -9,9 +9,8 @@ import BankDepositPaymentInstructionContent from '../../BankDepositPaymentInstru
 import CardPaymentInstructionContent from '../../CardPaymentInstructionContent'
 import CashAppPaymentInstructionContent from '../../CashAppPaymentInstructionContent'
 import ZelleFeaturesSection from '../../ZelleFeaturesSection'
+import ZelleStepOneSection from '../../ZelleStepOneSection'
 import ZellePaymentAmountForm from '../../ZellePaymentAmountForm'
-
-const sagiInfoClassName = 'font-bold text-green-700 dark:text-green-300'
 
 type ContributionPaymentInstructionPageProps = {
   params: Promise<{
@@ -129,32 +128,7 @@ const ContributionPaymentInstructionPage = async ({ params }: ContributionPaymen
         <p className='text-primary/80 mt-6 text-[8px] leading-snug font-medium whitespace-nowrap sm:text-xs md:text-lg lg:text-2xl xl:text-3xl'>
           To successfully make zelle payment with to SAGI, follow the two step process below.
         </p>
-        <div className='border-primary/30 bg-background mt-8 rounded-lg border p-4 text-center shadow-sm sm:p-6'>
-          <p className='text-[clamp(1rem,3vw,2.25rem)] leading-tight font-semibold whitespace-nowrap'>
-            Step1: Register SAGI Zelle information.
-          </p>
-          <p className='text-primary/80 mt-4 text-left text-lg leading-snug font-normal sm:text-xl lg:text-2xl'>
-            1. Open your banking app: Sign in to your bank or credit union&apos;s mobile app or online portal where Zelle
-            is built-in.
-          </p>
-          <p className='text-primary/80 mt-3 text-left text-lg leading-snug font-normal sm:text-xl lg:text-2xl'>
-            2. Navigate to Zelle: Look for a menu labeled &quot;Send Money with Zelle&quot;, &quot;Pay &amp; Transfer&quot;, or
-            &quot;Move Money&quot;.
-          </p>
-          <p className='text-primary/80 mt-3 text-left text-lg leading-snug font-normal sm:text-xl lg:text-2xl'>
-            3. Select to send money to a business and enter SAGI email:{' '}
-            <span className={sagiInfoClassName}>info@sagiusa.org</span>.
-          </p>
-          <p className='text-primary/80 mt-3 text-left text-lg leading-snug font-normal sm:text-xl lg:text-2xl'>
-            4. Verify the recipient name: Double-check that the recipient&apos;s is:{' '}
-            <span className={sagiInfoClassName}>Active Solidarity Ltd.</span>
-          </p>
-          <p className='text-primary/80 mt-3 text-left text-lg leading-snug font-normal sm:text-xl lg:text-2xl'>
-            5. Enter the amount and memo: Type in the dollar amount you wish to send and enter as note or memo:
-            <span className={sagiInfoClassName}> SAGI-{profile.associationCode}</span>. Without the 4-letter code memo,
-            the money won&apos;t be recognizable until you send the receipt including your 4-letter code.
-          </p>
-        </div>
+        <ZelleStepOneSection associationCode={profile.associationCode} />
         <div className='border-primary/30 bg-background mt-8 rounded-lg border p-4 text-center shadow-sm sm:p-6'>
           <p className='text-[clamp(1rem,3vw,2.25rem)] leading-tight font-semibold whitespace-nowrap'>
             Step2: Complete the form below:
