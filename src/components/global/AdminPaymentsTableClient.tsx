@@ -1,21 +1,24 @@
 'use client'
 
 import dynamic from 'next/dynamic'
+import { toast } from 'sonner'
 
 import { AdminPaymentsTableSkeleton } from '@/components/global/PageLoadingSkeletons'
 import type { AdminPaymentRow, AdminPaymentTotals } from '@/components/global/AdminPaymentsTable'
 
 type PaymentKind = 'contribution' | 'registration'
 
+type AdminPaymentAction = (formData: FormData) => Promise<{ message: string } | void>
+
 type AdminPaymentsTableProps = {
-  adjustAction: (formData: FormData) => Promise<void>
+  adjustAction: AdminPaymentAction
   kind: PaymentKind
-  paymentCodeAction?: (formData: FormData) => Promise<void>
+  paymentCodeAction?: AdminPaymentAction
   rows: AdminPaymentRow[]
-  sentAdjustmentAction?: (formData: FormData) => Promise<void>
-  secondaryAction: (formData: FormData) => Promise<void>
+  sentAdjustmentAction?: AdminPaymentAction
+  secondaryAction: AdminPaymentAction
   totals: AdminPaymentTotals
-  verifyAction: (formData: FormData) => Promise<void>
+  verifyAction: AdminPaymentAction
 }
 
 const AdminPaymentsTable = dynamic(() => import('@/components/global/AdminPaymentsTable'), {
@@ -23,8 +26,33 @@ const AdminPaymentsTable = dynamic(() => import('@/components/global/AdminPaymen
   ssr: false
 })
 
-const AdminPaymentsTableClient = (props: AdminPaymentsTableProps) => {
-  return <AdminPaymentsTable {...props} />
+// Server actions report failures by returning { message }; surface them so a failed click isn't silent.
+const withErrorToast =
+  (action: AdminPaymentAction) =>
+  async (formData: FormData): Promise<void> => {
+    const result = await action(formData)
+
+    if (result?.message) toast.error(result.message)
+  }
+
+const AdminPaymentsTableClient = ({
+  adjustAction,
+  paymentCodeAction,
+  secondaryAction,
+  sentAdjustmentAction,
+  verifyAction,
+  ...props
+}: AdminPaymentsTableProps) => {
+  return (
+    <AdminPaymentsTable
+      {...props}
+      adjustAction={withErrorToast(adjustAction)}
+      paymentCodeAction={paymentCodeAction && withErrorToast(paymentCodeAction)}
+      secondaryAction={withErrorToast(secondaryAction)}
+      sentAdjustmentAction={sentAdjustmentAction && withErrorToast(sentAdjustmentAction)}
+      verifyAction={withErrorToast(verifyAction)}
+    />
+  )
 }
 
 export default AdminPaymentsTableClient

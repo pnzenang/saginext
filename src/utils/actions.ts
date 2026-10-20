@@ -45,6 +45,7 @@ import {
   contributionCreditPerVestedMember,
   fetchAssociationContributionSummary,
   getContributionAssessmentMonthWhere,
+  getContributionMonthDateRange,
   fetchLatestAssociationContributionAssessment
 } from './sagi-contribution-summary'
 import { parseContributionPaymentCodeCents } from './contribution-payment-code'
@@ -348,6 +349,23 @@ const getServerActionLanguage = async (): Promise<AppLanguage> => {
 }
 
 const decimalToNumber = (value: unknown) => Number(value ?? 0)
+
+type AdminPaymentActionResult = { message: string } | void
+
+// The admin contribution table is month-scoped: amounts verified in an earlier contribution month
+// don't count against the amount sent this month.
+const getContributionAmountVerifiedThisMonth = (
+  payment: { amountVerified: unknown; verifiedAt: Date | null } | null
+) => {
+  if (!payment?.verifiedAt) return 0
+
+  const { monthStart, nextMonthStart } = getContributionMonthDateRange()
+
+  return payment.verifiedAt >= monthStart && payment.verifiedAt < nextMonthStart
+    ? decimalToNumber(payment.amountVerified)
+    : 0
+}
+
 const roundCurrencyAmount = (amount: number) => Number(amount.toFixed(2))
 
 const createMissingVerifiedLedgerEntry = async ({
@@ -3551,7 +3569,9 @@ export const saveAssociationRegistrationPaymentAction = async (
   }
 }
 
-export const verifyAssociationContributionPaymentAction = async (formData: FormData): Promise<void> => {
+export const verifyAssociationContributionPaymentAction = async (
+  formData: FormData
+): Promise<AdminPaymentActionResult> => {
   const user = await assertAdminUser()
 
   try {
@@ -3569,7 +3589,7 @@ export const verifyAssociationContributionPaymentAction = async (formData: FormD
 
     const amountSent = decimalToNumber(payment.amountSent)
     const amountVerified = decimalToNumber(payment.amountVerified)
-    const amountToVerify = Number((amountSent - amountVerified).toFixed(2))
+    const amountToVerify = Number((amountSent - getContributionAmountVerifiedThisMonth(payment)).toFixed(2))
 
     if (amountToVerify <= 0) {
       throw new Error('No new contribution amount sent to verify.')
@@ -3620,11 +3640,14 @@ export const verifyAssociationContributionPaymentAction = async (formData: FormD
 
     revalidatePaymentViews()
   } catch (error) {
-    renderError(error)
+    return renderError(error)
   }
 }
 
-const addAssociationBalanceAdjustment = async (formData: FormData, balanceType: string): Promise<void> => {
+const addAssociationBalanceAdjustment = async (
+  formData: FormData,
+  balanceType: string
+): Promise<AdminPaymentActionResult> => {
   const user = await assertAdminUser()
 
   try {
@@ -3675,15 +3698,19 @@ const addAssociationBalanceAdjustment = async (formData: FormData, balanceType: 
 
     revalidatePaymentViews()
   } catch (error) {
-    renderError(error)
+    return renderError(error)
   }
 }
 
-export const addAssociationContributionBalanceAdjustmentAction = async (formData: FormData): Promise<void> => {
-  await addAssociationBalanceAdjustment(formData, contributionBalanceAdjustmentType)
+export const addAssociationContributionBalanceAdjustmentAction = async (
+  formData: FormData
+): Promise<AdminPaymentActionResult> => {
+  return addAssociationBalanceAdjustment(formData, contributionBalanceAdjustmentType)
 }
 
-export const updateAssociationContributionPaymentCodeAction = async (formData: FormData): Promise<void> => {
+export const updateAssociationContributionPaymentCodeAction = async (
+  formData: FormData
+): Promise<AdminPaymentActionResult> => {
   const user = await assertAdminUser()
 
   try {
@@ -3750,11 +3777,13 @@ export const updateAssociationContributionPaymentCodeAction = async (formData: F
 
     revalidatePaymentViews()
   } catch (error) {
-    renderError(error)
+    return renderError(error)
   }
 }
 
-export const addAssociationContributionSentAdjustmentAction = async (formData: FormData): Promise<void> => {
+export const addAssociationContributionSentAdjustmentAction = async (
+  formData: FormData
+): Promise<AdminPaymentActionResult> => {
   const user = await assertAdminUser()
 
   try {
@@ -3769,10 +3798,9 @@ export const addAssociationContributionSentAdjustmentAction = async (formData: F
       })
 
       const currentAmountSent = decimalToNumber(payment?.amountSent)
-      const currentAmountVerified = decimalToNumber(payment?.amountVerified)
       const nextAmountSent = roundCurrencyAmount(currentAmountSent + amount)
 
-      if (nextAmountSent < currentAmountVerified) {
+      if (nextAmountSent < getContributionAmountVerifiedThisMonth(payment)) {
         throw new Error('Contribution sent cannot be less than the amount already verified.')
       }
 
@@ -3834,11 +3862,13 @@ export const addAssociationContributionSentAdjustmentAction = async (formData: F
 
     revalidatePaymentViews()
   } catch (error) {
-    renderError(error)
+    return renderError(error)
   }
 }
 
-export const markAssociationContributionPaymentNotFoundAction = async (formData: FormData): Promise<void> => {
+export const markAssociationContributionPaymentNotFoundAction = async (
+  formData: FormData
+): Promise<AdminPaymentActionResult> => {
   const user = await assertAdminUser()
 
   try {
@@ -3855,8 +3885,8 @@ export const markAssociationContributionPaymentNotFoundAction = async (formData:
     }
 
     const amountSent = decimalToNumber(currentPayment.amountSent)
-    const amountVerified = decimalToNumber(currentPayment.amountVerified)
-    const amountNotFound = roundCurrencyAmount(amountSent - amountVerified)
+    const amountVerifiedThisMonth = getContributionAmountVerifiedThisMonth(currentPayment)
+    const amountNotFound = roundCurrencyAmount(amountSent - amountVerifiedThisMonth)
 
     if (amountNotFound <= 0) {
       throw new Error('No new contribution amount sent to mark as not found.')
@@ -3886,7 +3916,7 @@ export const markAssociationContributionPaymentNotFoundAction = async (formData:
 
       await tx.associationContributionPayment.update({
         data: {
-          amountSent: amountVerified,
+          amountSent: amountVerifiedThisMonth,
           lastSubmittedAt: null
         },
         where: {
@@ -3946,15 +3976,19 @@ export const markAssociationContributionPaymentNotFoundAction = async (formData:
     revalidatePaymentViews()
     revalidateIssueNoteViews()
   } catch (error) {
-    renderError(error)
+    return renderError(error)
   }
 }
 
-export const addAssociationRegistrationBalanceAdjustmentAction = async (formData: FormData): Promise<void> => {
-  await addAssociationBalanceAdjustment(formData, registrationBalanceAdjustmentType)
+export const addAssociationRegistrationBalanceAdjustmentAction = async (
+  formData: FormData
+): Promise<AdminPaymentActionResult> => {
+  return addAssociationBalanceAdjustment(formData, registrationBalanceAdjustmentType)
 }
 
-export const addAssociationRegistrationSentAdjustmentAction = async (formData: FormData): Promise<void> => {
+export const addAssociationRegistrationSentAdjustmentAction = async (
+  formData: FormData
+): Promise<AdminPaymentActionResult> => {
   const user = await assertAdminUser()
 
   try {
@@ -4030,11 +4064,13 @@ export const addAssociationRegistrationSentAdjustmentAction = async (formData: F
 
     revalidatePaymentViews()
   } catch (error) {
-    renderError(error)
+    return renderError(error)
   }
 }
 
-export const verifyAssociationRegistrationPaymentAction = async (formData: FormData): Promise<void> => {
+export const verifyAssociationRegistrationPaymentAction = async (
+  formData: FormData
+): Promise<AdminPaymentActionResult> => {
   const user = await assertAdminUser()
 
   try {
@@ -4105,11 +4141,13 @@ export const verifyAssociationRegistrationPaymentAction = async (formData: FormD
 
     revalidatePaymentViews()
   } catch (error) {
-    renderError(error)
+    return renderError(error)
   }
 }
 
-export const markAssociationRegistrationPaymentNotFoundAction = async (formData: FormData): Promise<void> => {
+export const markAssociationRegistrationPaymentNotFoundAction = async (
+  formData: FormData
+): Promise<AdminPaymentActionResult> => {
   const user = await assertAdminUser()
 
   try {
@@ -4215,7 +4253,7 @@ export const markAssociationRegistrationPaymentNotFoundAction = async (formData:
     revalidatePaymentViews()
     revalidateIssueNoteViews()
   } catch (error) {
-    renderError(error)
+    return renderError(error)
   }
 }
 
