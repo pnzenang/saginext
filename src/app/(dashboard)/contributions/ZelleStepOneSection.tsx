@@ -17,7 +17,7 @@ const ZelleStepOneSection = ({ associationCode }: ZelleStepOneSectionProps) => (
     <p className='text-[clamp(1rem,3vw,2.25rem)] leading-tight font-semibold whitespace-nowrap'>
       Step1: Register SAGI Zelle information.
     </p>
-    <div className='mt-4 grid items-stretch gap-6 lg:grid-cols-2'>
+    <div className='mt-4 grid items-stretch gap-6 lg:grid-cols-[1fr_auto_1fr]'>
       <div>
         <p className='text-primary/80 text-left text-lg leading-snug font-normal sm:text-xl lg:text-2xl'>
           1. Open your banking app: Sign in to your bank or credit union&apos;s mobile app or online portal where Zelle
@@ -42,7 +42,19 @@ const ZelleStepOneSection = ({ associationCode }: ZelleStepOneSectionProps) => (
         </p>
       </div>
 
-      <div className='border-primary/20 bg-primary/5 flex flex-col items-center justify-center rounded-lg border p-4'>
+      <div className='flex items-center gap-3 lg:flex-col' aria-hidden='true'>
+        <span className='bg-primary/30 h-px flex-1 lg:h-auto lg:w-px' />
+        <span className='border-primary/30 bg-primary/10 text-primary flex size-12 shrink-0 items-center justify-center rounded-full border text-base font-extrabold sm:text-lg'>
+          OR
+        </span>
+        <span className='bg-primary/30 h-px flex-1 lg:h-auto lg:w-px' />
+      </div>
+
+      <div className='border-primary/20 bg-primary/5 flex flex-col items-center justify-between gap-3 rounded-lg border p-4'>
+        <p className='text-primary/80 text-base leading-snug font-medium sm:text-lg'>
+          Scan or click the QR code to send payment by Zelle. Add{' '}
+          <span className={sagiInfoClassName}>SAGI-{associationCode}</span> in the memo.
+        </p>
         <Link href={sagiPaymentUrl} target='_blank' rel='noopener noreferrer'>
           <Image
             src={sagiQrCodeUrl}
@@ -53,10 +65,6 @@ const ZelleStepOneSection = ({ associationCode }: ZelleStepOneSectionProps) => (
             unoptimized
           />
         </Link>
-        <p className='text-primary/80 mt-3 text-base leading-snug font-medium sm:text-lg'>
-          Scan or click the QR code to send payment by Zelle. Add{' '}
-          <span className={sagiInfoClassName}>SAGI-{associationCode}</span> in the memo.
-        </p>
       </div>
     </div>
   </div>
