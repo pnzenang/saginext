@@ -15,9 +15,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import type { AppLanguage } from '@/lib/i18n'
-
-const zellePaymentLink =
-  'https://enroll.zellepay.com/qr-codes?data=eyJuYW1lIjoiUEFUUklDRSIsImFjdGlvbiI6InBheW1lbnQiLCJ0b2tlbiI6IjQ0MzUzMTU4NTIifQ=='
+import { sagiZellePaymentUrl, sagiZelleQrCodeUrl } from '@/utils/payment-constants'
 
 const paymentInstructionsCopy = {
   en: {
@@ -213,14 +211,14 @@ const PaymentInstructionsContent = ({ associationCode, language = 'en' }: Paymen
             <Link
               aria-label={copy.zelle.ariaLabel}
               className='bg-background hover:border-primary rounded-lg border p-4 transition'
-              href={zellePaymentLink}
+              href={sagiZellePaymentUrl}
             >
               <Image
                 alt={copy.zelle.imageAlt}
                 className='h-auto w-full max-w-64'
                 height={300}
                 priority
-                src='https://res.cloudinary.com/dp8tkb7hq/image/upload/v1778042720/sagiQrCode_jmwsbf.svg'
+                src={sagiZelleQrCodeUrl}
                 unoptimized
                 width={300}
               />

@@ -1,12 +1,9 @@
 import Image from 'next/image'
 import Link from 'next/link'
 
+import { sagiZellePaymentUrl, sagiZelleQrCodeUrl } from '@/utils/payment-constants'
+
 const sagiInfoClassName = 'font-bold text-green-700 dark:text-green-300'
-
-const sagiPaymentUrl =
-  'https://enroll.zellepay.com/qr-codes?data=eyJuYW1lIjoiUEFUUklDRSIsImFjdGlvbiI6InBheW1lbnQiLCJ0b2tlbiI6IjQ0MzUzMTU4NTIifQ=='
-
-const sagiQrCodeUrl = 'https://res.cloudinary.com/dp8tkb7hq/image/upload/v1778042720/sagiQrCode_jmwsbf.svg'
 
 type ZelleStepOneSectionProps = {
   associationCode: string
@@ -55,9 +52,9 @@ const ZelleStepOneSection = ({ associationCode }: ZelleStepOneSectionProps) => (
           Scan or click the QR code to send payment by Zelle. Add{' '}
           <span className={sagiInfoClassName}>SAGI-{associationCode}</span> in the memo.
         </p>
-        <Link href={sagiPaymentUrl} target='_blank' rel='noopener noreferrer'>
+        <Link href={sagiZellePaymentUrl} target='_blank' rel='noopener noreferrer'>
           <Image
-            src={sagiQrCodeUrl}
+            src={sagiZelleQrCodeUrl}
             width={320}
             height={320}
             alt='SAGI Zelle payment QR code'

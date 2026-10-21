@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label'
 import type { AppLanguage } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { saveAssociationContributionPaymentAction, saveAssociationRegistrationPaymentAction } from '@/utils/actions'
-import { registrationFeePerEligibleMember } from '@/utils/payment-constants'
+import { registrationFeePerEligibleMember, sagiZellePaymentUrl, sagiZelleQrCodeUrl } from '@/utils/payment-constants'
 import { documentationFileTooLargeMessages, maxDocumentationFileSizeMb } from '@/utils/upload-limits'
 import type { AssociationPaymentLedgerEntry } from '@/utils/sagi-payment-ledger'
 import type { AssociationContributionSummary } from '@/utils/sagi-contribution-summary'
@@ -187,10 +187,6 @@ const getLedgerEntryTime = (entry: Pick<AssociationPaymentLedgerEntry, 'createdA
 const getLatestLedgerEntry = (entries: AssociationPaymentLedgerEntry[]) =>
   [...entries].sort((firstEntry, secondEntry) => getLedgerEntryTime(secondEntry) - getLedgerEntryTime(firstEntry))[0]
 
-const sagiPaymentUrl =
-  'https://enroll.zellepay.com/qr-codes?data=eyJuYW1lIjoiUEFUUklDRSIsImFjdGlvbiI6InBheW1lbnQiLCJ0b2tlbiI6IjQ0MzUzMTU4NTIifQ=='
-
-const sagiQrCodeUrl = 'https://res.cloudinary.com/dp8tkb7hq/image/upload/v1778042720/sagiQrCode_jmwsbf.svg'
 const paymentProofAccept = '.pdf,.jpg,.jpeg,.png,.webp,.heic,.heif,application/pdf,image/*'
 
 const initialState = {
@@ -770,11 +766,11 @@ const AssociationPaymentPageContent = (props: AssociationPaymentPageContentProps
         </div>
 
         <Link
-          href={sagiPaymentUrl}
+          href={sagiZellePaymentUrl}
           className='border-primary/20 bg-background flex h-full min-h-60 min-w-0 items-center justify-center rounded-md border p-0 sm:p-1'
         >
           <Image
-            src={sagiQrCodeUrl}
+            src={sagiZelleQrCodeUrl}
             width={320}
             height={320}
             alt={copy.paymentQrAlt}

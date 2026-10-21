@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import { saveAssociationContributionPaymentAction, saveAssociationRegistrationPaymentAction } from '@/utils/actions'
-import { registrationFeePerEligibleMember } from '@/utils/payment-constants'
+import { registrationFeePerEligibleMember, sagiZellePaymentUrl, sagiZelleQrCodeUrl } from '@/utils/payment-constants'
 import type { AssociationContributionSummary } from '@/utils/sagi-contribution-summary'
 import type { AssociationRegistrationSummary } from '@/utils/sagi-registration-summary'
 
@@ -29,10 +29,6 @@ const dateFormatter = new Intl.DateTimeFormat('en-US', {
   dateStyle: 'medium'
 })
 
-const sagiPaymentUrl =
-  'https://enroll.zellepay.com/qr-codes?data=eyJuYW1lIjoiUEFUUklDRSIsImFjdGlvbiI6InBheW1lbnQiLCJ0b2tlbiI6IjQ0MzUzMTU4NTIifQ=='
-
-const sagiQrCodeUrl = 'https://res.cloudinary.com/dp8tkb7hq/image/upload/v1778042720/sagiQrCode_jmwsbf.svg'
 
 type MembershipSummary = {
   awaiting: number
@@ -171,11 +167,11 @@ const DelegatePaymentsDashboard = ({
 
         <div className='grid h-full min-w-0 auto-rows-fr gap-4'>
           <Link
-            href={sagiPaymentUrl}
+            href={sagiZellePaymentUrl}
             className='border-primary/20 bg-background flex h-full min-h-44 min-w-0 items-center justify-center rounded-md border p-3'
           >
             <Image
-              src={sagiQrCodeUrl}
+              src={sagiZelleQrCodeUrl}
               width={190}
               height={190}
               alt='SAGI payment QR code'
