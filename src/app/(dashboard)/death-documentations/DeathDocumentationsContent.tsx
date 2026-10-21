@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 import { CheckCircle2, Download, FileText, ShieldCheck, Upload, XCircle } from 'lucide-react'
 
 import DocumentFileInput from '@/components/forms/DocumentFileInput'
@@ -33,7 +35,11 @@ import {
   type DeceasedMemberDocumentType
 } from '@/utils/types'
 
-import DeathDocumentationCasesList, { type DeathDocumentationCasesListItem } from './DeathDocumentationCasesList'
+import DeathDocumentationCasesList, {
+  actionOnlySearchParam,
+  deathDocumentationCasesListId,
+  type DeathDocumentationCasesListItem
+} from './DeathDocumentationCasesList'
 
 type DeathDocumentationCase = Awaited<ReturnType<typeof fetchDeathDocumentationCasesAction>>['deceasedMembers'][number]
 type DeathDocumentationDocument = DeathDocumentationCase['documents'][number]
@@ -444,6 +450,9 @@ const DeathDocumentationsContent = ({
 
   const caseListItems: DeathDocumentationCasesListItem[] = displayedDeceasedMembers.map(deceasedMember => ({
     id: deceasedMember.id,
+    needsAction: isAdminUser
+      ? getSubmittedDocuments(deceasedMember).length > 0
+      : needsDelegateDeathDocumentationAction(deceasedMember),
     searchText: getCaseSearchText(deceasedMember)
   }))
 
@@ -461,10 +470,7 @@ const DeathDocumentationsContent = ({
     ? countSubmittedDeathDocuments(deceasedMembers)
     : deceasedMembers.filter(needsDelegateDeathDocumentationAction).length
 
-  const firstSubmittedDocument = displayedDeceasedMembers.flatMap(getSubmittedDocuments)[0]
-  const pendingDocumentsHref = firstSubmittedDocument
-    ? `?documentId=${encodeURIComponent(firstSubmittedDocument.id)}#${getDocumentAnchorId(firstSubmittedDocument.id)}`
-    : undefined
+  const actionCasesHref = `?${actionOnlySearchParam}=1#${deathDocumentationCasesListId}`
 
   const alertToneClassName = isAdminUser
     ? 'border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/40'
@@ -514,23 +520,16 @@ const DeathDocumentationsContent = ({
                 </p>
               </div>
             </div>
-            {isAdminUser && pendingDocumentsHref ? (
-              <Button
-                asChild
-                variant='outline'
-                size='sm'
-                className={cn('w-fit border-current bg-white dark:bg-black/20', alertTextClassName)}
-              >
-                <a href={pendingDocumentsHref}>{actionRequiredCount} pending</a>
-              </Button>
-            ) : (
-              <Badge
-                variant='outline'
-                className={cn('w-fit border-current bg-white dark:bg-black/20', alertTextClassName)}
-              >
+            <Button
+              asChild
+              variant='outline'
+              size='sm'
+              className={cn('w-fit border-current bg-white dark:bg-black/20', alertTextClassName)}
+            >
+              <Link href={actionCasesHref}>
                 {actionRequiredCount} {isAdminUser ? 'pending' : 'required'}
-              </Badge>
-            )}
+              </Link>
+            </Button>
           </CardContent>
         </Card>
       ) : null}
@@ -544,7 +543,11 @@ const DeathDocumentationsContent = ({
           </CardContent>
         </Card>
       ) : (
-        <DeathDocumentationCasesList cases={caseListItems} emptyDescription={emptyDescription}>
+        <DeathDocumentationCasesList
+          actionFilterLabel={isAdminUser ? 'Pending review only' : 'Action required only'}
+          cases={caseListItems}
+          emptyDescription={emptyDescription}
+        >
           {displayedDeceasedMembers.map(deceasedMember => (
             <DeceasedMemberDocumentationCard
               key={deceasedMember.id}

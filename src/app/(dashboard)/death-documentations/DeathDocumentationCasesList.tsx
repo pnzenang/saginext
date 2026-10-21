@@ -2,9 +2,12 @@
 
 import { Children, useMemo, useState, type ReactNode } from 'react'
 
-import { Search } from 'lucide-react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+
+import { ListFilter, Search } from 'lucide-react'
 
 import PaginationControls from '@/components/global/PaginationControls'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -12,18 +15,34 @@ import { usePagination } from '@/hooks/use-pagination'
 
 export type DeathDocumentationCasesListItem = {
   id: string
+  needsAction: boolean
   searchText: string
 }
 
 type DeathDocumentationCasesListProps = {
+  actionFilterLabel: string
   cases: DeathDocumentationCasesListItem[]
   children: ReactNode
   emptyDescription: string
 }
 
+// The "# pending" button in the page alert links here with ?pending=1 to show only cases needing action.
+export const deathDocumentationCasesListId = 'death-documentation-cases'
+export const actionOnlySearchParam = 'pending'
+
 const pageSizeOptions = [5, 10, 25, 50]
 
-const DeathDocumentationCasesList = ({ cases, children, emptyDescription }: DeathDocumentationCasesListProps) => {
+const DeathDocumentationCasesList = ({
+  actionFilterLabel,
+  cases,
+  children,
+  emptyDescription
+}: DeathDocumentationCasesListProps) => {
+  const pathname = usePathname()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const showActionOnly = searchParams.get(actionOnlySearchParam) === '1'
+  const actionCaseCount = cases.filter(item => item.needsAction).length
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(pageSizeOptions[0])
@@ -33,8 +52,9 @@ const DeathDocumentationCasesList = ({ cases, children, emptyDescription }: Deat
   const filteredCases = useMemo(() => {
     return cases
       .map((item, index) => ({ ...item, index }))
+      .filter(item => !showActionOnly || item.needsAction)
       .filter(item => !normalizedSearchQuery || item.searchText.includes(normalizedSearchQuery))
-  }, [cases, normalizedSearchQuery])
+  }, [cases, normalizedSearchQuery, showActionOnly])
 
   const totalPages = Math.max(1, Math.ceil(filteredCases.length / pageSize))
   const activePage = Math.min(currentPage, totalPages)
@@ -54,16 +74,28 @@ const DeathDocumentationCasesList = ({ cases, children, emptyDescription }: Deat
     setCurrentPage(1)
   }
 
+  const handleActionOnlyToggle = () => {
+    const nextSearchParams = new URLSearchParams(searchParams.toString())
+
+    if (showActionOnly) nextSearchParams.delete(actionOnlySearchParam)
+    else nextSearchParams.set(actionOnlySearchParam, '1')
+
+    const nextQuery = nextSearchParams.toString()
+
+    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false })
+    setCurrentPage(1)
+  }
+
   const handlePageSizeChange = (value: string) => {
     setPageSize(Number(value))
     setCurrentPage(1)
   }
 
   return (
-    <div className='grid gap-4'>
+    <div id={deathDocumentationCasesListId} className='grid scroll-mt-24 gap-4'>
       <Card className='rounded-lg py-0'>
         <CardContent className='grid gap-3 px-3 py-3 sm:px-4'>
-          <div className='grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center'>
+          <div className='grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto_auto] lg:items-center'>
             <div className='relative min-w-0'>
               <Search className='text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2' />
               <Input
@@ -74,6 +106,18 @@ const DeathDocumentationCasesList = ({ cases, children, emptyDescription }: Deat
                 aria-label='Search by deceased name, code, or place of death'
               />
             </div>
+            {actionCaseCount > 0 || showActionOnly ? (
+              <Button
+                type='button'
+                variant={showActionOnly ? 'default' : 'outline'}
+                className='h-10 w-fit'
+                aria-pressed={showActionOnly}
+                onClick={handleActionOnlyToggle}
+              >
+                <ListFilter className='size-4' />
+                {actionFilterLabel} ({actionCaseCount})
+              </Button>
+            ) : null}
             <div className='flex items-center gap-2'>
               <span className='text-muted-foreground text-sm font-semibold whitespace-nowrap'>Entries per page</span>
               <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
@@ -96,7 +140,9 @@ const DeathDocumentationCasesList = ({ cases, children, emptyDescription }: Deat
               ? `Showing ${pageStartIndex + 1}-${pageEndIndex} of ${filteredCases.length} case${
                   filteredCases.length === 1 ? '' : 's'
                 }`
-              : 'No cases match your search'}
+              : showActionOnly
+                ? 'No cases match this filter'
+                : 'No cases match your search'}
           </p>
         </CardContent>
       </Card>
