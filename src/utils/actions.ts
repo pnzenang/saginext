@@ -27,6 +27,7 @@ import {
   deceasedMemberDocumentLabels,
   deceasedMemberDocumentStatuses,
   deceasedMemberDocumentTypes,
+  getRequiredDeceasedMemberDocumentTypes,
   hasApprovedRequiredDeceasedMemberDocuments,
   memberStatus,
   memberTransferRequestStatuses,
@@ -7777,7 +7778,8 @@ export const uploadDeceasedMemberDocumentAction = async (
       select: {
         associationCode: true,
         clerkId: true,
-        id: true
+        id: true,
+        placeOfDeathCountry: true
       },
       where: {
         id: deceasedMemberId
@@ -7786,6 +7788,14 @@ export const uploadDeceasedMemberDocumentAction = async (
 
     if (!deceasedMember) {
       throw new Error('Death announcement not found.')
+    }
+
+    if (!deceasedMember.placeOfDeathCountry?.trim()) {
+      throw new Error('Enter and save the country of death before uploading documents.')
+    }
+
+    if (!getRequiredDeceasedMemberDocumentTypes(deceasedMember).includes(documentType)) {
+      throw new Error(`${deceasedMemberDocumentLabels[documentType]} is not required for this place of death.`)
     }
 
     const isAdminUser = user.id === process.env.ADMIN_USER_ID

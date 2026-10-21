@@ -16,6 +16,7 @@ import { maxDocumentationFileSizeMb } from '@/utils/upload-limits'
 import {
   countSubmittedDeathDocuments,
   hasDeathDocumentationDetails,
+  isRequiredDeathDocument,
   needsDelegateDeathDocumentationAction
 } from '@/utils/death-documentation-alerts'
 import {
@@ -100,7 +101,10 @@ const getUploadedDocumentCount = (deceasedMember: DeathDocumentationCase) =>
   ).length
 
 const getSubmittedDocuments = (deceasedMember: DeathDocumentationCase) =>
-  deceasedMember.documents.filter(uploadedDocument => uploadedDocument.status === 'submitted')
+  deceasedMember.documents.filter(
+    uploadedDocument =>
+      uploadedDocument.status === 'submitted' && isRequiredDeathDocument(deceasedMember, uploadedDocument.documentType)
+  )
 
 const getLatestSubmittedDocumentTime = (deceasedMember: DeathDocumentationCase) =>
   Math.max(0, ...getSubmittedDocuments(deceasedMember).map(document => document.updatedAt.getTime()))
@@ -163,9 +167,11 @@ const DocumentationSlot = ({
   deceasedMember,
   documentType,
   isAdminUser,
+  notRequired = false,
   uploadedDocument
 }: {
   allowUpload?: boolean
+  notRequired?: boolean
   currentUserId: string
   deceasedMember: DeathDocumentationCase
   documentType: DeceasedMemberDocumentType
@@ -184,7 +190,7 @@ const DocumentationSlot = ({
       id={uploadedDocument ? getDocumentAnchorId(uploadedDocument.id) : undefined}
       className={cn(
         'bg-muted/20 grid min-w-0 scroll-mt-24 gap-4 rounded-md border p-4 target:ring-2 target:ring-amber-500 target:ring-offset-2',
-        isAdminUser && uploadedDocument?.status === 'submitted'
+        isAdminUser && !notRequired && uploadedDocument?.status === 'submitted'
           ? 'border-amber-300 bg-amber-50/60 dark:border-amber-900 dark:bg-amber-950/20'
           : null
       )}
@@ -203,7 +209,11 @@ const DocumentationSlot = ({
             <p className='text-muted-foreground mt-1 text-xs'>Not uploaded yet</p>
           )}
         </div>
-        {uploadedDocument ? (
+        {uploadedDocument && notRequired ? (
+          <Badge variant='outline' className='text-muted-foreground shrink-0'>
+            Not required
+          </Badge>
+        ) : uploadedDocument ? (
           <Badge
             variant='outline'
             className={cn('shrink-0 capitalize', getDocumentStatusClassName(uploadedDocument.status))}
@@ -257,7 +267,9 @@ const DocumentationSlot = ({
         </p>
       )}
 
-      {isAdminUser && uploadedDocument ? <ReviewDocumentControls uploadedDocument={uploadedDocument} /> : null}
+      {isAdminUser && uploadedDocument && !notRequired ? (
+        <ReviewDocumentControls uploadedDocument={uploadedDocument} />
+      ) : null}
     </div>
   )
 }
@@ -358,8 +370,8 @@ const DeceasedMemberDocumentationCard = ({
   )
 
   // Uploads whose type isn't required for this place of death (e.g. U.S. documents uploaded before the country
-  // was set to Cameroon). They still need to be visible so admins can review them.
-  const otherUploadedDocuments = deceasedMember.documents.filter(
+  // was set to Cameroon). Shown read-only so nothing disappears, but they don't need review.
+  const notRequiredDocuments = deceasedMember.documents.filter(
     uploadedDocument => !requiredDocumentTypes.includes(uploadedDocument.documentType as DeceasedMemberDocumentType)
   )
 
@@ -398,43 +410,68 @@ const DeceasedMemberDocumentationCard = ({
         <div className='grid gap-5'>
           <DeathDocumentationDetailsForm deceasedMember={deceasedMember} />
 
-          <div className='grid gap-3'>
-            <div>
-              <h3 className='text-sm font-extrabold'>
-                {requiresInternationalDocuments
-                  ? 'Required documents for death outside the United States'
-                  : 'Required documents for death in the United States'}
-              </h3>
-              <p className='text-muted-foreground mt-1 text-xs'>
-                {requiresInternationalDocuments
-                  ? 'These documents are required when the death occurred in a country other than the USA.'
-                  : 'These documents are required when the death occurred in the United States.'}
+          {!countryOfDeath ? (
+            <div className='grid gap-3'>
+              <p className='rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-800 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-200'>
+                Enter and save the country of death above to see which documents are required. Upload slots appear after
+                the country is saved.
               </p>
+              {deceasedMember.documents.length > 0 ? (
+                <div className='grid w-full min-w-0 gap-4 lg:grid-cols-2 2xl:grid-cols-4'>
+                  {deceasedMember.documents.map(uploadedDocument => (
+                    <DocumentationSlot
+                      key={uploadedDocument.id}
+                      allowUpload={false}
+                      currentUserId={currentUserId}
+                      deceasedMember={deceasedMember}
+                      documentType={uploadedDocument.documentType as DeceasedMemberDocumentType}
+                      isAdminUser={isAdminUser}
+                      uploadedDocument={uploadedDocument}
+                    />
+                  ))}
+                </div>
+              ) : null}
             </div>
-            <div className='grid w-full min-w-0 gap-4 lg:grid-cols-2 2xl:grid-cols-4'>
-              {requiredDocumentTypes.map(documentType => (
-                <DocumentationSlot
-                  key={documentType}
-                  currentUserId={currentUserId}
-                  deceasedMember={deceasedMember}
-                  documentType={documentType}
-                  isAdminUser={isAdminUser}
-                  uploadedDocument={documentsByType.get(documentType)}
-                />
-              ))}
-            </div>
-          </div>
-
-          {otherUploadedDocuments.length > 0 ? (
+          ) : (
             <div className='grid gap-3'>
               <div>
-                <h3 className='text-sm font-extrabold'>Other uploaded documents</h3>
+                <h3 className='text-sm font-extrabold'>
+                  {requiresInternationalDocuments
+                    ? 'Required documents for death outside the United States'
+                    : 'Required documents for death in the United States'}
+                </h3>
                 <p className='text-muted-foreground mt-1 text-xs'>
-                  These files were uploaded but are not on the required list for this place of death.
+                  {requiresInternationalDocuments
+                    ? 'These documents are required when the death occurred in a country other than the USA.'
+                    : 'These documents are required when the death occurred in the United States.'}
                 </p>
               </div>
               <div className='grid w-full min-w-0 gap-4 lg:grid-cols-2 2xl:grid-cols-4'>
-                {otherUploadedDocuments.map(uploadedDocument => (
+                {requiredDocumentTypes.map(documentType => (
+                  <DocumentationSlot
+                    key={documentType}
+                    currentUserId={currentUserId}
+                    deceasedMember={deceasedMember}
+                    documentType={documentType}
+                    isAdminUser={isAdminUser}
+                    uploadedDocument={documentsByType.get(documentType)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {countryOfDeath && notRequiredDocuments.length > 0 ? (
+            <div className='grid gap-3'>
+              <div>
+                <h3 className='text-muted-foreground text-sm font-extrabold'>Not required for this place of death</h3>
+                <p className='text-muted-foreground mt-1 text-xs'>
+                  These files were uploaded before the country of death was set. They are not needed and do not need
+                  review.
+                </p>
+              </div>
+              <div className='grid w-full min-w-0 gap-4 opacity-70 lg:grid-cols-2 2xl:grid-cols-4'>
+                {notRequiredDocuments.map(uploadedDocument => (
                   <DocumentationSlot
                     key={uploadedDocument.id}
                     allowUpload={false}
@@ -442,6 +479,7 @@ const DeceasedMemberDocumentationCard = ({
                     deceasedMember={deceasedMember}
                     documentType={uploadedDocument.documentType as DeceasedMemberDocumentType}
                     isAdminUser={isAdminUser}
+                    notRequired
                     uploadedDocument={uploadedDocument}
                   />
                 ))}
