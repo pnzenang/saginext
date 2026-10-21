@@ -158,12 +158,14 @@ const ReviewDocumentControls = ({ uploadedDocument }: { uploadedDocument: DeathD
 }
 
 const DocumentationSlot = ({
+  allowUpload = true,
   currentUserId,
   deceasedMember,
   documentType,
   isAdminUser,
   uploadedDocument
 }: {
+  allowUpload?: boolean
   currentUserId: string
   deceasedMember: DeathDocumentationCase
   documentType: DeceasedMemberDocumentType
@@ -191,7 +193,7 @@ const DocumentationSlot = ({
         <div className='min-w-0'>
           <div className='flex items-center gap-2 text-sm font-extrabold'>
             <FileText className='text-primary size-4' />
-            <span className='break-words'>{deceasedMemberDocumentLabels[documentType]}</span>
+            <span className='break-words'>{deceasedMemberDocumentLabels[documentType] ?? documentType}</span>
           </div>
           {uploadedDocument ? (
             <p className='text-muted-foreground mt-1 text-xs break-words'>
@@ -237,7 +239,7 @@ const DocumentationSlot = ({
         </div>
       ) : null}
 
-      {canManageUploadedDocument ? (
+      {!allowUpload ? null : canManageUploadedDocument ? (
         <FormContainer action={uploadDeceasedMemberDocumentAction} className='grid gap-2'>
           <input type='hidden' name='deceasedMemberId' value={deceasedMember.id} />
           <input type='hidden' name='documentType' value={documentType} />
@@ -355,6 +357,12 @@ const DeceasedMemberDocumentationCard = ({
     deceasedMember.documents.map(uploadedDocument => [uploadedDocument.documentType, uploadedDocument])
   )
 
+  // Uploads whose type isn't required for this place of death (e.g. U.S. documents uploaded before the country
+  // was set to Cameroon). They still need to be visible so admins can review them.
+  const otherUploadedDocuments = deceasedMember.documents.filter(
+    uploadedDocument => !requiredDocumentTypes.includes(uploadedDocument.documentType as DeceasedMemberDocumentType)
+  )
+
   return (
     <Card
       className={cn(
@@ -416,6 +424,30 @@ const DeceasedMemberDocumentationCard = ({
               ))}
             </div>
           </div>
+
+          {otherUploadedDocuments.length > 0 ? (
+            <div className='grid gap-3'>
+              <div>
+                <h3 className='text-sm font-extrabold'>Other uploaded documents</h3>
+                <p className='text-muted-foreground mt-1 text-xs'>
+                  These files were uploaded but are not on the required list for this place of death.
+                </p>
+              </div>
+              <div className='grid w-full min-w-0 gap-4 lg:grid-cols-2 2xl:grid-cols-4'>
+                {otherUploadedDocuments.map(uploadedDocument => (
+                  <DocumentationSlot
+                    key={uploadedDocument.id}
+                    allowUpload={false}
+                    currentUserId={currentUserId}
+                    deceasedMember={deceasedMember}
+                    documentType={uploadedDocument.documentType as DeceasedMemberDocumentType}
+                    isAdminUser={isAdminUser}
+                    uploadedDocument={uploadedDocument}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null}
         </div>
       </CardContent>
     </Card>
