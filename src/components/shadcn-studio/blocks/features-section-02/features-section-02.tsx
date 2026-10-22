@@ -16,7 +16,7 @@ const Features2 = () => {
             blur
             transition={{ duration: 0.5 }}
           >
-            <p className='text-2xl md:text-4xl lg:text-6xl'>Internal Rules At Glance</p>
+            <p className='text-2xl md:text-4xl lg:text-6xl'>SAGI Internal Rules At Glance</p>
           </MotionPreset>
           <MotionPreset
             component='p'
@@ -27,7 +27,7 @@ const Features2 = () => {
             delay={0.3}
             transition={{ duration: 0.5 }}
           >
-            Here, you can find a summary of our internal rules and guidelines.
+            Here, you can find a summary of the SAGI Internal Rules.
           </MotionPreset>
         </div>
         <AccordionWithImage />

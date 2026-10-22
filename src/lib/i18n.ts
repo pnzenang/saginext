@@ -90,7 +90,7 @@ export const dashboardText = {
 
 const dashboardMenuLabelTranslations: Record<string, string> = {
   'Navigation Instructions': 'Instructions de navigation',
-  'Internal Rules At Glance': 'Aperçu des règles internes',
+  'SAGI Internal Rules At Glance': 'Aperçu des règles internes de SAGI',
   'Add Member': 'Ajouter un membre',
   'All Members': 'Tous les membres',
   'Registrations Payments': "Paiements d'inscription",

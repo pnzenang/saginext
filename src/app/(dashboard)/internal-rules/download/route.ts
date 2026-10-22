@@ -7,7 +7,7 @@ import { internalRulesDownloadFileName } from '@/utils/internal-rules-at-glance'
 
 export const dynamic = 'force-dynamic'
 
-const internalRulesPdfPath = join(process.cwd(), 'src/content/documents/InternalRules.pdf')
+const internalRulesPdfPath = join(process.cwd(), 'src/content/documents/SAGI Internal Rules.pdf')
 
 export const GET = async () => {
   const { userId } = await auth()

@@ -98,7 +98,7 @@ export const acceptInternalRulesAction = async (prevState: any, formData: FormDa
   const accepted = formData.get('internalRulesAccepted') === 'accepted'
 
   if (!accepted) {
-    return { message: 'Please acknowledge that you have read and agree to the Internal Rules.' }
+    return { message: 'Please acknowledge that you have read and agree to the SAGI Internal Rules.' }
   }
 
   await db.profile.update({

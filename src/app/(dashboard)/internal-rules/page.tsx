@@ -35,7 +35,7 @@ const InternalRules = async () => {
       <div className='bg-muted/30 flex flex-col gap-4 rounded-lg border p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between'>
         <div className='max-w-3xl'>
           <Badge variant='secondary' className='mb-3 w-fit'>
-            Last Revised: Jan 8, 2025
+            Last Revised: Jul 1, 2026
           </Badge>
           <h1 className='text-foreground text-2xl font-semibold tracking-normal sm:text-3xl'>
             SAGI Internal Rules At Glance
@@ -55,11 +55,11 @@ const InternalRules = async () => {
 
       <div className='border-primary/20 bg-primary/5 flex flex-col gap-4 rounded-lg border p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between'>
         <div className='max-w-3xl'>
-          <h2 className='text-foreground text-lg font-semibold'>Internal Rules Acknowledgement</h2>
+          <h2 className='text-foreground text-lg font-semibold'>SAGI Internal Rules Acknowledgement</h2>
           <p className='text-muted-foreground mt-2 text-sm leading-6'>
             {hasAcceptedInternalRules
               ? `Accepted on ${acceptedDateFormatter.format(profile.internalRulesAcceptedAt!)}.`
-              : 'Please read the Internal Rules PDF and confirm that you agree before continuing to the dashboard.'}
+              : 'Please read the SAGI Internal Rules PDF and confirm that you agree before continuing to the dashboard.'}
           </p>
         </div>
         {hasAcceptedInternalRules ? (
@@ -117,7 +117,7 @@ const InternalRules = async () => {
       <div className='border-primary/20 bg-primary/5 text-primary flex gap-3 rounded-lg border p-4 text-sm leading-6'>
         <ShieldCheck className='mt-0.5 size-5 shrink-0' aria-hidden='true' />
         <p>
-          This page is a quick reference only. Use the downloaded Internal Rules PDF as the complete reference when more
+          This page is a quick reference only. Use the downloaded SAGI Internal Rules PDF as the complete reference when more
           detail is needed.
         </p>
       </div>

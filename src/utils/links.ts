@@ -36,7 +36,7 @@ export const getPagesItems = (date: Date = new Date()): MenuItem[] => [
   },
   {
     icon: BookCheck,
-    label: 'Internal Rules At Glance',
+    label: 'SAGI Internal Rules At Glance',
     href: '/internal-rules'
   },
 

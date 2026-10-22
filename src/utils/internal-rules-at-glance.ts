@@ -4,133 +4,140 @@ export type InternalRulesAtGlanceSection = {
   bullets: string[]
 }
 
-export const internalRulesDownloadFileName = 'InternalRules.pdf'
+export const internalRulesDownloadFileName = 'SAGI Internal Rules.pdf'
 
+// Summary of the SAGI Internal Rules & Regulations, Last Revised Jul 1, 2026 (src/content/documents/SAGI Internal Rules.pdf).
 export const internalRulesAtGlance: InternalRulesAtGlanceSection[] = [
   {
     title: 'Purpose and Objectives',
-    summary: 'SAGI is organized to reduce the burden families face after losing a member.',
+    summary:
+      'Active Solidarity Ltd. (SAGI) is a network of people living in the United States that helps families with the financial burden of losing a loved one.',
     bullets: [
       'Maintain an electronic database of associations organized in the United States.',
-      'Share death information with presidents and delegates of member associations.',
-      'Facilitate repatriation or burial services for eligible affiliated members.',
-      'Collect contributions from member associations and coordinate eligible support.',
-      'Transfer support to the funeral home and any remaining balance to the beneficiary after administrative costs.'
+      'Inform presidents and delegates of member associations when an individual member dies.',
+      'Facilitate the repatriation of remains or burial of eligible individual members.',
+      'Collect contributions (donations) from each member association.',
+      'Pay the funeral home, and pay any balance to the beneficiary after administrative costs.'
     ]
   },
   {
     title: 'Governance and Meetings',
-    summary: 'SAGI operates through officers, the Bureau/Board, and the General Assembly.',
+    summary: 'SAGI operates through its officers, the Bureau/Board of Directors, and the General Assembly.',
     bullets: [
-      'Officers and the Bureau/Board support day-to-day organization and rule administration.',
-      'The Bureau/Board determines the place, date, and time of the General Assembly.',
-      'The Bureau/Board may meet periodically to review whether SAGI is operating within its mission.',
-      'When a death is reported, the Bureau may announce the death, validate it, and create the contribution table.'
+      'Officers are a President, Vice President(s), Secretary-General(s), a Treasurer, and an Auditor, co-opted by the Founding Members and approved by the Bureau/Board.',
+      'The Bureau/Board decides the location and time of the General Assembly; presidents and delegates should attend.',
+      'The Bureau/Board meets at least three (3) times a year, and the President may summon an emergency meeting.',
+      'Within 48 hours of a death announcement, the Bureau/Board meets to announce the death, verify the documents, and send out the contribution table.'
     ]
   },
   {
     title: 'Membership and Good Standing',
-    summary: 'Associations, not individual members directly, are members of SAGI.',
+    summary: 'Only associations can be members of SAGI. Membership is free and voluntary.',
     bullets: [
-      'Eligible associations are composed of people living in the United States.',
-      'Associations must remain in good standing, including payment of SAGI fees and contributions.',
-      'Individual association members do not have standing to demand accounting or challenge SAGI operations directly.',
-      'SAGI may accept or decline an association membership request at its discretion.',
-      'Members with at least ten years of active membership may retain membership worldwide, subject to the benefit rules.'
+      'Member associations must be composed of people living in the United States and must follow these Internal Rules.',
+      'Associations receive contributions only while in good standing, including payment of administration and matriculation fees.',
+      'Individual members cannot make claims or raise issues with SAGI; only associations in good standing can.',
+      'Membership becomes active once a SAGI matriculation number is assigned and published by email.',
+      'Members with 10 years of membership can keep it worldwide with proof of U.S. citizenship or permanent residency; if they die in their country of origin, the contribution is $10,000.'
     ]
   },
   {
     title: 'Matriculation and Registration',
-    summary: 'A SAGI matriculation number is issued only after the required waiting period and review.',
+    summary: 'New members are registered by the delegate on www.mySagi.org and wait at least 90 days.',
     bullets: [
-      'Matriculation is assigned and published by email after the applicable waiting period.',
-      'Associations are responsible for ensuring the same member is not registered twice.',
-      'Registration can be submitted at any time through the SAGI web application.',
-      'Member names must match official documents such as an ID or passport.',
-      'Documents, name changes, and corrections are not accepted after a death announcement.'
+      'Matriculation numbers are assigned and published at least ninety (90) days after a new registration.',
+      'An association may not have two matriculation numbers; its president or delegate must prevent duplicate registration.',
+      'Names and dates of birth must match official documents exactly, without abbreviations.',
+      'Name changes or corrections for a deceased member are not accepted after the death announcement.',
+      'Returning members and associations pay all missed contributions plus a $150.00 return fee, then wait 90 days.'
     ]
   },
   {
     title: 'List Updates and Delegate Duties',
-    summary: 'Member list changes should be completed through the SAGI web application and official forms.',
+    summary: 'Additions, withdrawals, and transfers are done in the delegate dashboard on www.mySagi.org.',
     bullets: [
-      'Additions, withdrawals, transfers, contact changes, and name corrections should be handled in the dashboard or required SAGI forms.',
-      'Delegates should not use email replies to submit forms because doing so may delay processing.',
-      'Withdrawals should be submitted before the contribution table is created.',
-      'Delegates must keep names, emails, and phone numbers current for each association contact.'
+      'Name corrections, name changes, and contact updates use Forms S4 and S6, downloaded from www.mySagi.org.',
+      'Submit forms in a fresh email, not as a reply, to avoid delays.',
+      'New individual members pay their administration and matriculation fees within fifteen (15) days of the invoice.',
+      'Withdrawals take effect by the next contribution table and do not change a contribution already in progress.',
+      'The cutoff for the next contribution is between the 5th and 8th of each month.'
     ]
   },
   {
-    title: 'Withdrawals, Name Corrections, and Transfers',
-    summary: 'Certain member changes require formal proof or approval by the involved delegates.',
+    title: 'Name Corrections, Transfers, and Contacts',
+    summary: 'Some member changes need supporting documents or both delegates’ agreement.',
     bullets: [
-      'Withdrawals are performed by the association or delegate in the SAGI dashboard.',
-      'Name corrections require Form S4 and supporting documents for divorce, marriage, or court-ordered name changes.',
-      'Transfers require the delegates of the involved associations to recommend the same transfer.',
-      'A transfer cannot proceed unless both delegates complete the required transfer steps.'
+      'Name corrections (Form S4) are for minor errors such as typos.',
+      'A name change requires a divorce decree, marriage certificate, or court order.',
+      'A transfer needs both delegates to recommend the same member in their dashboards.',
+      'Delegates should answer transfer requests within 2 weeks; after that, the SAGI Bureau may proceed with the transfer.',
+      'Contact updates use Form S6 and include each delegate’s email and phone number.'
     ]
   },
   {
     title: 'Fraud, Sanctions, and SAGI Identification',
-    summary: 'False information and misuse of SAGI identification can lead to discipline or exclusion.',
+    summary: 'False information and misuse of SAGI identification can lead to penalties or exclusion.',
     bullets: [
-      'Fraud includes false statements, falsified documents, and holding a SAGI matriculation number while not residing in the United States.',
-      'The Bureau/Board may issue a caution or penalty based on the circumstances.',
-      'Fraud may result in termination of the individual membership and exclusion of the member association from SAGI.',
-      'SAGI ID cards, names, and matriculation numbers may not be used for political, social, or economic purposes outside SAGI.'
+      'Fraud includes holding a SAGI matriculation number while not living in the United States, falsified documents, and false statements.',
+      'The Bureau/Board may give a caution or a penalty, depending on the circumstances.',
+      'Offenses meant to disrupt SAGI end the offender’s membership; detected fraud excludes the individual and/or association.',
+      'SAGI ID cards belong to SAGI. SAGI names, matriculation numbers, emails, and phone numbers may not be used for political or economic purposes.'
     ]
   },
   {
     title: 'Claims, Forum, and Attorney Fees',
-    summary: 'The rules limit who may challenge SAGI operations and where disputes are handled.',
+    summary: 'Only member associations may challenge SAGI’s operations, and disputes are heard in Maryland.',
     bullets: [
-      'Member associations may challenge operations through the General Assembly or proper legal forum.',
-      'Individual members of member associations do not have the same direct right to challenge SAGI operations.',
-      'The exclusive forum is generally Montgomery County, Maryland, or the District of Maryland when federal jurisdiction applies.',
-      'If SAGI prevails in litigation or similar proceedings, SAGI may recover reasonable attorney fees from the non-prevailing party.'
+      'Only member associations have a right to accounting or to challenge SAGI’s operations and funds, in court or through the General Assembly.',
+      'Individual members of associations have no such right.',
+      'The exclusive forum is the Circuit Court for Montgomery County, Maryland, or the federal district court for the District of Maryland.',
+      'When SAGI prevails in litigation or arbitration, the other party pays SAGI’s reasonable attorney fees.'
     ]
   },
   {
     title: 'Death Announcement and Documentation',
-    summary: 'Death documentation depends on whether the death occurred inside or outside the United States.',
+    summary:
+      'Report a death by email within 7 days for the full contribution; the documents required depend on where the death occurred.',
     bullets: [
-      'For a death in the United States, required documents include a death certificate, SAGI matriculation number, photo of the deceased, government picture ID, funeral home invoice, and proof the association is in good standing.',
-      'The cause of death may be redacted before documents are sent to SAGI.',
-      'For a death outside the United States, additional proof may include consular death records, passport or visa pages, and evidence of the trip date.',
-      'Documents submission deadline is set to 180 days after the passing of the member.',
-      'SAGI does not issue death certificates and does not keep medical records for families.'
+      'Reporting later reduces the contribution: $5,000 within 8–30 days, $2,000 within 30–45 days, and none after 45 days. No documents are needed to report a death.',
+      'Death in the U.S.: death certificate (cause of death may be redacted), matriculation number, picture of the deceased, government picture ID, funeral home invoice, funeral program, and proof of good standing.',
+      'Death outside the U.S. (U.S. citizen or permanent resident visiting a country, trip started on or after May 1, 2024, death within 180 days of arriving): death certificate certified by that country’s Ministry of External Relations, proof the death was reported to Social Security (Consular Report of Death), green card and passport or U.S. passport with the visa page and trip ticket(s) showing the trip began no more than 180 days before the death, a picture of the deceased, and the funeral program.',
+      'The family has 180 days after the date of death to provide the required documents; after that, documents are no longer accepted.',
+      'SAGI does not handle family paperwork and does not keep records of deaths.'
     ]
   },
   {
     title: 'Contributions and Eligibility',
-    summary: 'Contribution support depends on active membership length, death location, timing, and good standing.',
+    summary:
+      'The contribution amount depends on active membership length, where the death occurred, and how quickly it was reported.',
     bullets: [
-      'All active member associations contribute when an eligible death is announced.',
-      'Contribution amounts change based on active membership duration and how quickly the death is reported to SAGI.',
-      'The highest listed support is available only when eligibility, timing, location, and good-standing rules are satisfied.',
-      'Support may be reduced or denied for waiting-period deaths, missing matriculation, non-payment, name mismatch, certain travel dates, lack of required U.S. residency documents, or body donation for research.'
+      'All active member associations contribute, even for deaths that occurred before their matriculation.',
+      'Death in the U.S. or outside the country of origin, reported within 7 days: $2,000 (under 180 days), $5,000 (180–359 days), or $20,000 (360+ days).',
+      'U.S. passport or green card holder dying within 180 days in their country of origin, reported within 7 days: $2,000, $5,000, or $10,000. After 180 days there: $1,000, or $10,000 with 10+ years of membership.',
+      'No contribution for deaths during the waiting period. Contributions are denied for associations not in good standing, a name mismatch with the death certificate, travel that began before May 1, 2024, no U.S. permanent residency documents, or a body donated for research.',
+      'The amount cannot change after the contribution table is sent out.'
     ]
   },
   {
     title: 'Contribution Payment and Disbursement',
-    summary: 'Payments must match the contribution list and support is disbursed through formal channels.',
+    summary: 'Pay the exact amount on the contribution list; support is paid to the funeral home and the beneficiary.',
     bullets: [
-      'Associations should pay the exact amount listed on the contribution list.',
-      'Contributions may be sent through the provided SAGI payment methods, including Zelle to Active Solidarity Ltd.',
-      'Delegates should record deposits in SAGI after payment is made.',
-      'Eligible support is paid to the funeral home and any remaining balance is issued to the beneficiary.',
-      'Beneficiary payments are not provided in cash.'
+      'Pay by bank deposit or transfer, or online to info@sagiusa.org, name Active Solidarity Ltd.',
+      'Pay the exact amount, including cents: the cents identify your association.',
+      'Send the deposit receipt by email after paying.',
+      'Families should allow a brief SAGI testimony at the farewell ceremony; otherwise $2,000 is deducted from their contribution.',
+      'The funeral home is paid by bank transfer or check, and any balance goes to the beneficiary by check, never in cash.'
     ]
   },
   {
     title: 'Penalties, Fees, and Rule Changes',
-    summary:
-      'Late payments, administration fees, matriculation fees, and amendments are governed by the internal rules.',
+    summary: 'Late payments, fees, and amendments are set by these Internal Rules.',
     bullets: [
-      'An association that misses the contribution due date may owe a late fee of $100.00 plus missed contributions.',
-      'Associations that remain unpaid may be excluded from the next contribution and may be excluded from SAGI.',
-      'Administration fees and matriculation fees are non-refundable.',
-      'The Internal Rules and Regulations may be amended by the SAGI Bureau/Board and distributed to presidents and delegates by email.'
+      'A contribution not paid by the due date incurs a $100.00 late fee.',
+      'An association still unpaid 24 hours after the due date is left out of the next contribution and may be excluded from SAGI.',
+      'Administration fee: $2.00 per individual member. Matriculation fee: $20.00 once, after the matriculation number is assigned. Both are non-refundable.',
+      'Returning members pay a $150.00 return fee plus missed contributions.',
+      'The Bureau/Board amends these rules by majority vote and sends them to all presidents and delegates by email.'
     ]
   }
 ]
