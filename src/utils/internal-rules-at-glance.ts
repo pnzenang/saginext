@@ -35,7 +35,7 @@ export const internalRulesAtGlance: InternalRulesAtGlanceSection[] = [
     summary: 'Only associations can be members of SAGI. Membership is free and voluntary.',
     bullets: [
       'Member associations must be composed of people living in the United States and must follow these Internal Rules.',
-      'Associations receive contributions only while in good standing, including payment of administration and matriculation fees.',
+      'Associations receive contributions only while in good standing, including payment of administration and registration fees.',
       'Individual members cannot make claims or raise issues with SAGI; only associations in good standing can.',
       'Membership becomes active once a SAGI matriculation number is assigned and published by email.',
       'Members with 10 years of membership can keep it worldwide with proof of U.S. citizenship or permanent residency; a special contribution amount applies if they die in their country of origin.'
@@ -58,7 +58,7 @@ export const internalRulesAtGlance: InternalRulesAtGlanceSection[] = [
     bullets: [
       'Name corrections, name changes, and contact updates use Forms S4 and S6, downloaded from www.mySagi.org.',
       'Submit forms in a fresh email, not as a reply, to avoid delays.',
-      'New individual members pay their administration and matriculation fees within fifteen (15) days of the invoice.',
+      'New individual members pay their administration and registration fees within 60 days of registration.',
       'Withdrawals take effect by the next contribution table and do not change a contribution already in progress.',
       'The cutoff for the next contribution is between the 5th and 8th of each month.'
     ]
@@ -135,7 +135,7 @@ export const internalRulesAtGlance: InternalRulesAtGlanceSection[] = [
     bullets: [
       'A contribution not paid by the due date incurs a late fee.',
       'An association still unpaid 24 hours after the due date is left out of the next contribution and may be excluded from SAGI.',
-      'Administration fee: $2.00 per individual member. Matriculation fee: $20.00 once, after the matriculation number is assigned. Both are non-refundable.',
+      'Every individual member pays an administration fee and a one-time registration fee within 60 days of registration. Both are non-refundable.',
       'Returning members pay a return fee plus missed contributions.',
       'The Bureau/Board amends these rules by majority vote and sends them to all presidents and delegates by email.'
     ]
