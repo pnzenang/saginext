@@ -53,25 +53,25 @@ export const internalRulesAtGlance: InternalRulesAtGlanceSection[] = [
     ]
   },
   {
-    title: 'List Updates and Delegate Duties',
-    summary: 'Additions, withdrawals, and transfers are done in the delegate dashboard on www.mySagi.org.',
+    title: 'Adding and Removing Members',
+    summary: 'Delegates add and remove members in the delegate dashboard.',
     bullets: [
-      'Name corrections, name changes, and contact updates use Forms S4 and S6, downloaded from www.mySagi.org.',
-      'Submit forms in a fresh email, not as a reply, to avoid delays.',
-      'New individual members pay their administration and registration fees within 60 days of registration.',
-      'Withdrawals take effect by the next contribution table and do not change a contribution already in progress.',
-      'The cutoff for the next contribution is between the 5th and 8th of each month.'
+      'Add: on Add Member, enter the member’s names exactly as on their official ID (last and middle names first, no abbreviations), date of birth, country of residence, and beneficiary. The member is added as pending.',
+      'Pay the registration fee in the Payment Center by choosing Registration payment, then record the payment. The fee must be received within 60 days of registration, or the pending member is removed.',
+      'Remove: on All Members, open the three-dot menu at the end of the member’s row, choose Remove Member, check the details, select the reason for leaving, and click Withdraw member.',
+      'Vested members can only be removed from the 25th of the month through the 5th of the next month. Removal does not change a contribution already in progress.',
+      'A removed member moves to Removed Members and can be restored there within 48 hours.'
     ]
   },
   {
-    title: 'Name Corrections, Transfers, and Contacts',
-    summary: 'Some member changes need supporting documents or both delegates’ agreement.',
+    title: 'Name Changes, Transfers, and Contacts',
+    summary: 'Name changes, member transfers, and contact updates are done in the delegate dashboard.',
     bullets: [
-      'Name corrections (Form S4) are for minor errors such as typos.',
-      'A name change requires a divorce decree, marriage certificate, or court order.',
-      'A transfer needs both delegates to recommend the same member in their dashboards.',
-      'Delegates should answer transfer requests within 2 weeks; after that, the SAGI Bureau may proceed with the transfer.',
-      'Contact updates use Form S6 and include each delegate’s email and phone number.'
+      'Name change: on Name Change & Documentation, select the member, enter the proposed first and last/middle names, and click Submit for admin review.',
+      'The admin approves, rejects, or requests documentation (such as a divorce decree, marriage certificate, or court order). If documentation is requested, upload it on the same page. Once approved, the member’s name is updated.',
+      'Transfer: on Member Transfer, either send one of your members to another association or request a member from another association. The other association’s delegate must approve, then the admin completes the transfer.',
+      'Requests that need your action (a transfer to approve or documents to upload) appear at the top of the Member Transfer and Name Change & Documentation pages.',
+      'Contacts: update delegate and board member names, phone numbers, and emails on the Profile page, then click Update Profile.'
     ]
   },
   {
@@ -102,8 +102,7 @@ export const internalRulesAtGlance: InternalRulesAtGlanceSection[] = [
       'Reporting a death after 7 days reduces the contribution, and the later it is reported, the lower it is. No documents are needed to report a death.',
       'Death in the U.S.: death certificate (cause of death may be redacted), matriculation number, picture of the deceased, government picture ID, funeral home invoice, funeral program, and proof of good standing.',
       'Death outside the U.S. (U.S. citizen or permanent resident visiting a country, trip started on or after May 1, 2024, death within 180 days of arriving): death certificate certified by that country’s Ministry of External Relations, proof the death was reported to Social Security (Consular Report of Death), green card and passport or U.S. passport with the visa page and trip ticket(s) showing the trip began no more than 180 days before the death, a picture of the deceased, and the funeral program.',
-      'The family has 180 days after the date of death to provide the required documents; after that, documents are no longer accepted.',
-      'SAGI does not handle family paperwork and does not keep records of deaths.'
+      'The family has 180 days after the date of death to provide the required documents; after that, documents are no longer accepted.'
     ]
   },
   {
@@ -114,8 +113,7 @@ export const internalRulesAtGlance: InternalRulesAtGlanceSection[] = [
       'All active member associations contribute, even for deaths that occurred before their matriculation.',
       'The amount grows with the member’s length of active membership: under 180 days, 180–359 days, and 360 days or more.',
       'Different amounts apply when a U.S. passport or green card holder dies in their country of origin. See the contribution tables in section 17.2 of the PDF for exact amounts.',
-      'No contribution for deaths during the waiting period. Contributions are denied for associations not in good standing, a name mismatch with the death certificate, travel that began before May 1, 2024, no U.S. permanent residency documents, or a body donated for research.',
-      'The amount cannot change after the contribution table is sent out.'
+      'No contribution for deaths during the waiting period. Contributions are denied for associations not in good standing, a name mismatch with the death certificate, travel that began before May 1, 2024, no U.S. permanent residency documents, or a body donated for research.'
     ]
   },
   {
