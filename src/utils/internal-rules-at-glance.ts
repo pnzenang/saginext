@@ -38,7 +38,7 @@ export const internalRulesAtGlance: InternalRulesAtGlanceSection[] = [
       'Associations receive contributions only while in good standing, including payment of administration and matriculation fees.',
       'Individual members cannot make claims or raise issues with SAGI; only associations in good standing can.',
       'Membership becomes active once a SAGI matriculation number is assigned and published by email.',
-      'Members with 10 years of membership can keep it worldwide with proof of U.S. citizenship or permanent residency; if they die in their country of origin, the contribution is $10,000.'
+      'Members with 10 years of membership can keep it worldwide with proof of U.S. citizenship or permanent residency; a special contribution amount applies if they die in their country of origin.'
     ]
   },
   {
@@ -49,7 +49,7 @@ export const internalRulesAtGlance: InternalRulesAtGlanceSection[] = [
       'An association may not have two matriculation numbers; its president or delegate must prevent duplicate registration.',
       'Names and dates of birth must match official documents exactly, without abbreviations.',
       'Name changes or corrections for a deceased member are not accepted after the death announcement.',
-      'Returning members and associations pay all missed contributions plus a $150.00 return fee, then wait 90 days.'
+      'Returning members and associations pay all missed contributions plus a return fee, then wait 90 days.'
     ]
   },
   {
@@ -99,7 +99,7 @@ export const internalRulesAtGlance: InternalRulesAtGlanceSection[] = [
     summary:
       'Report a death by email within 7 days for the full contribution; the documents required depend on where the death occurred.',
     bullets: [
-      'Reporting later reduces the contribution: $5,000 within 8–30 days, $2,000 within 30–45 days, and none after 45 days. No documents are needed to report a death.',
+      'Reporting a death after 7 days reduces the contribution, and the later it is reported, the lower it is. No documents are needed to report a death.',
       'Death in the U.S.: death certificate (cause of death may be redacted), matriculation number, picture of the deceased, government picture ID, funeral home invoice, funeral program, and proof of good standing.',
       'Death outside the U.S. (U.S. citizen or permanent resident visiting a country, trip started on or after May 1, 2024, death within 180 days of arriving): death certificate certified by that country’s Ministry of External Relations, proof the death was reported to Social Security (Consular Report of Death), green card and passport or U.S. passport with the visa page and trip ticket(s) showing the trip began no more than 180 days before the death, a picture of the deceased, and the funeral program.',
       'The family has 180 days after the date of death to provide the required documents; after that, documents are no longer accepted.',
@@ -112,8 +112,8 @@ export const internalRulesAtGlance: InternalRulesAtGlanceSection[] = [
       'The contribution amount depends on active membership length, where the death occurred, and how quickly it was reported.',
     bullets: [
       'All active member associations contribute, even for deaths that occurred before their matriculation.',
-      'Death in the U.S. or outside the country of origin, reported within 7 days: $2,000 (under 180 days), $5,000 (180–359 days), or $20,000 (360+ days).',
-      'U.S. passport or green card holder dying within 180 days in their country of origin, reported within 7 days: $2,000, $5,000, or $10,000. After 180 days there: $1,000, or $10,000 with 10+ years of membership.',
+      'The amount grows with the member’s length of active membership: under 180 days, 180–359 days, and 360 days or more.',
+      'Different amounts apply when a U.S. passport or green card holder dies in their country of origin. See the contribution tables in section 17.2 of the PDF for exact amounts.',
       'No contribution for deaths during the waiting period. Contributions are denied for associations not in good standing, a name mismatch with the death certificate, travel that began before May 1, 2024, no U.S. permanent residency documents, or a body donated for research.',
       'The amount cannot change after the contribution table is sent out.'
     ]
@@ -125,7 +125,7 @@ export const internalRulesAtGlance: InternalRulesAtGlanceSection[] = [
       'Pay by bank deposit or transfer, or online to info@sagiusa.org, name Active Solidarity Ltd.',
       'Pay the exact amount, including cents: the cents identify your association.',
       'Send the deposit receipt by email after paying.',
-      'Families should allow a brief SAGI testimony at the farewell ceremony; otherwise $2,000 is deducted from their contribution.',
+      'Families should allow a brief SAGI testimony at the farewell ceremony; otherwise part of their contribution is deducted.',
       'The funeral home is paid by bank transfer or check, and any balance goes to the beneficiary by check, never in cash.'
     ]
   },
@@ -133,10 +133,10 @@ export const internalRulesAtGlance: InternalRulesAtGlanceSection[] = [
     title: 'Penalties, Fees, and Rule Changes',
     summary: 'Late payments, fees, and amendments are set by these Internal Rules.',
     bullets: [
-      'A contribution not paid by the due date incurs a $100.00 late fee.',
+      'A contribution not paid by the due date incurs a late fee.',
       'An association still unpaid 24 hours after the due date is left out of the next contribution and may be excluded from SAGI.',
       'Administration fee: $2.00 per individual member. Matriculation fee: $20.00 once, after the matriculation number is assigned. Both are non-refundable.',
-      'Returning members pay a $150.00 return fee plus missed contributions.',
+      'Returning members pay a return fee plus missed contributions.',
       'The Bureau/Board amends these rules by majority vote and sends them to all presidents and delegates by email.'
     ]
   }
