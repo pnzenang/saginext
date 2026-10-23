@@ -67,6 +67,7 @@ const siteHeaderNavigationLabelTranslations: Record<string, string> = {
   'How It Works': 'Fonctionnement',
   Status: 'Statut',
   Dashboard: 'Tableau de bord',
+  Contribution: 'Contribution',
   Contact: 'Contact'
 }
 

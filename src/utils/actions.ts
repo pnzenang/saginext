@@ -49,7 +49,8 @@ import {
   getContributionMonthDateRange,
   fetchLatestAssociationContributionAssessment
 } from './sagi-contribution-summary'
-import { parseContributionPaymentCodeCents } from './contribution-payment-code'
+import { getContributionPaymentAmountDetails, parseContributionPaymentCodeCents } from './contribution-payment-code'
+import { fetchContributionPaymentCodeCentsByAssociationCode } from './contribution-payment-code-records'
 import { awaitingPublicationVestingLongevityDays, getAwaitingPublicationVestingCutoff } from './sagi-member-longevity'
 import { getOverdueRegistrationPaymentCreatedAtCutoff } from './registration-payment-deadline'
 import { getCurrentMonthDateRange } from './month-date-ranges'
@@ -7297,8 +7298,17 @@ export const fetchPublishedContributionTableAction = async () => {
   const associationCodes = publishedAssessment.groups.map(group => group.associationCode)
 
   const deathMatriculationNumbers = publishedAssessment.deaths.map(death => death.memberMatriculationNumber)
+  const { monthStart, nextMonthStart } = getContributionMonthDateRange()
 
-  const [profiles, memberAssociationNames, contributionTableDocuments] = await Promise.all([
+  const [
+    profiles,
+    memberAssociationNames,
+    contributionTableDocuments,
+    balanceAdjustments,
+    contributionPayments,
+    verifiedLedgerTotals,
+    paymentCodeCentsByCode
+  ] = await Promise.all([
     db.profile.findMany({
       select: {
         associationCode: true,
@@ -7351,8 +7361,77 @@ export const fetchPublishedContributionTableAction = async () => {
         },
         status: 'approved'
       }
-    })
+    }),
+    db.associationBalanceAdjustment.findMany({
+      select: {
+        amount: true,
+        associationCode: true
+      },
+      where: {
+        associationCode: {
+          in: associationCodes
+        },
+        balanceType: contributionBalanceAdjustmentType
+      }
+    }),
+    db.associationContributionPayment.findMany({
+      select: {
+        amountVerified: true,
+        associationCode: true,
+        verifiedAt: true
+      },
+      where: {
+        associationCode: {
+          in: associationCodes
+        }
+      }
+    }),
+    db.associationPaymentLedgerEntry.groupBy({
+      _sum: {
+        amount: true
+      },
+      by: ['associationCode'],
+      where: {
+        associationCode: {
+          in: associationCodes
+        },
+        cancelledAt: null,
+        createdAt: {
+          gte: monthStart,
+          lt: nextMonthStart
+        },
+        eventType: associationPaymentLedgerEventTypes.verified,
+        paymentType: associationPaymentTypes.contribution
+      }
+    }),
+    fetchContributionPaymentCodeCentsByAssociationCode(associationCodes)
   ])
+
+  const balanceBeforeByCode = new Map(
+    balanceAdjustments.map(adjustment => [adjustment.associationCode, decimalToNumber(adjustment.amount)])
+  )
+
+  // Same "verified this month" rule as Admin Contribution Payments: the larger of this month's verified ledger total
+  // and the payment record's verified amount when it was verified this month.
+  const ledgerVerifiedByCode = new Map(
+    verifiedLedgerTotals.map(total => [total.associationCode, decimalToNumber(total._sum.amount)])
+  )
+
+  const amountAddedByCode = new Map(
+    associationCodes.map(associationCode => {
+      const payment = contributionPayments.find(item => item.associationCode === associationCode)
+
+      const recordedVerified =
+        payment?.verifiedAt && payment.verifiedAt >= monthStart && payment.verifiedAt < nextMonthStart
+          ? decimalToNumber(payment.amountVerified)
+          : 0
+
+      return [
+        associationCode,
+        roundCurrencyAmount(Math.max(ledgerVerifiedByCode.get(associationCode) ?? 0, recordedVerified))
+      ]
+    })
+  )
 
   const associationNamesByCode = new Map(profiles.map(profile => [profile.associationCode, profile.associationName]))
 
@@ -7392,12 +7471,30 @@ export const fetchPublishedContributionTableAction = async () => {
       registrationDate: death.registrationDate
     })),
     dueDate: publishedAssessment.dueDate?.toISOString() ?? null,
-    groups: publishedAssessment.groups.map(group => ({
-      amountOwed: decimalToNumber(group.amountOwed),
-      associationCode: group.associationCode,
-      associationName: associationNamesByCode.get(group.associationCode) ?? group.associationCode,
-      vestedMembersCount: group.vestedMembersCount
-    })),
+    groups: publishedAssessment.groups.map(group => {
+      const amountOwed = decimalToNumber(group.amountOwed)
+      const balanceBefore = balanceBeforeByCode.get(group.associationCode) ?? 0
+      const amountAdded = amountAddedByCode.get(group.associationCode) ?? 0
+      const paymentCodeCents = paymentCodeCentsByCode.get(group.associationCode) ?? null
+      const paymentAmountDetails = amountOwed > 0 ? getContributionPaymentAmountDetails(amountOwed, paymentCodeCents) : null
+
+      // Balance is measured against the amount to send (rounded up plus identifying cents), as on Admin Contribution
+      // Payments, so an association that sends exactly that amount ends at $0.00.
+      const amountToMatch =
+        paymentAmountDetails?.hasPaymentCode && paymentAmountDetails.amountToSend > 0
+          ? paymentAmountDetails.amountToSend
+          : amountOwed
+
+      return {
+        amountAdded,
+        amountOwed,
+        associationCode: group.associationCode,
+        associationName: associationNamesByCode.get(group.associationCode) ?? group.associationCode,
+        balanceBefore,
+        currentBalance: roundCurrencyAmount(balanceBefore + amountAdded - amountToMatch),
+        vestedMembersCount: group.vestedMembersCount
+      }
+    }),
     totalAmount: decimalToNumber(publishedAssessment.totalAmount),
     totalVestedMembers: publishedAssessment.totalVestedMembers
   }

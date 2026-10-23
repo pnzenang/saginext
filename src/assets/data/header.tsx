@@ -18,6 +18,10 @@ export const navigationData: Navigation[] = [
     href: '/#delegate-dashboard'
   },
   {
+    title: 'Contribution',
+    href: '/monthly-contribution'
+  },
+  {
     title: 'Contact',
     href: '/#contact'
   }

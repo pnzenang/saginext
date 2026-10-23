@@ -19,6 +19,10 @@ const dateFormatter = new Intl.DateTimeFormat('en-US', {
   dateStyle: 'medium'
 })
 
+const monthFormatter = new Intl.DateTimeFormat('en-US', {
+  month: 'long'
+})
+
 const formatDate = (value: string | null) => {
   if (!value) return 'Not set'
 
@@ -117,6 +121,7 @@ const ContributionTable = async () => {
 
       <PublishedContributionTables
         amountPerVestedMember={publishedTable.amountPerVestedMember}
+        contributionMonth={monthFormatter.format(new Date(publishedTable.dueDate ?? publishedTable.createdAt))}
         deaths={publishedTable.deaths}
         groups={publishedTable.groups}
         totalVestedMembers={publishedTable.totalVestedMembers}

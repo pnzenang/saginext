@@ -32,14 +32,18 @@ export type PublishedContributionDeathRow = {
 }
 
 export type PublishedContributionGroupRow = {
+  amountAdded: number
   amountOwed: number
   associationCode: string
   associationName: string
+  balanceBefore: number
+  currentBalance: number
   vestedMembersCount: number
 }
 
 type PublishedContributionTablesProps = {
   amountPerVestedMember: number
+  contributionMonth: string
   deaths: PublishedContributionDeathRow[]
   groups: PublishedContributionGroupRow[]
   totalVestedMembers: number
@@ -56,7 +60,14 @@ type DeathSortKey =
   | 'lastAndMiddleNames'
   | 'memberMatriculationNumber'
   | 'registrationDate'
-type GroupSortKey = 'amountOwed' | 'associationCode' | 'associationName' | 'vestedMembersCount'
+type GroupSortKey =
+  | 'amountAdded'
+  | 'amountOwed'
+  | 'associationCode'
+  | 'associationName'
+  | 'balanceBefore'
+  | 'currentBalance'
+  | 'vestedMembersCount'
 
 type SortState<T extends string> = {
   direction: SortDirection
@@ -112,7 +123,7 @@ const deathSortColumns: SortColumn<DeathSortKey>[] = [
   { key: 'associationName', label: 'Association', className: 'hidden min-w-72 md:table-cell' }
 ]
 
-const groupSortColumns: SortColumn<GroupSortKey>[] = [
+const getGroupSortColumns = (contributionMonth: string): SortColumn<GroupSortKey>[] => [
   { key: 'associationName', label: 'Association', className: 'hidden md:table-cell' },
   { key: 'associationCode', label: 'Code', className: 'px-1.5 md:min-w-28 md:px-2' },
   {
@@ -124,12 +135,40 @@ const groupSortColumns: SortColumn<GroupSortKey>[] = [
   },
   {
     align: 'right',
+    className: 'px-1.5 md:min-w-44 md:px-2',
+    key: 'balanceBefore',
+    label: 'Balance Before Contribution',
+    shortLabel: 'Before'
+  },
+  {
+    align: 'right',
     className: 'px-1.5 md:min-w-48 md:px-2',
     key: 'amountOwed',
     label: 'Amount To Contribute',
     shortLabel: 'Amount'
+  },
+  {
+    align: 'right',
+    className: 'px-1.5 md:min-w-44 md:px-2',
+    key: 'amountAdded',
+    label: `Amount Added (${contributionMonth})`,
+    shortLabel: 'Added'
+  },
+  {
+    align: 'right',
+    className: 'px-1.5 md:min-w-40 md:px-2',
+    key: 'currentBalance',
+    label: 'Current Balance',
+    shortLabel: 'Balance'
   }
 ]
+
+const getBalanceClassName = (amount: number) => {
+  if (amount < 0) return 'text-red-700 dark:text-red-400'
+  if (amount > 0) return 'text-green-700 dark:text-green-400'
+
+  return undefined
+}
 
 const formatDate = (value: string | null) => {
   if (!value) return 'Not set'
@@ -189,10 +228,9 @@ const compareGroupRows = (
   right: PublishedContributionGroupRow,
   key: GroupSortKey
 ) => {
-  if (key === 'amountOwed') return left.amountOwed - right.amountOwed
-  if (key === 'vestedMembersCount') return left.vestedMembersCount - right.vestedMembersCount
+  if (key === 'associationCode' || key === 'associationName') return compareText(left[key], right[key])
 
-  return compareText(left[key], right[key])
+  return left[key] - right[key]
 }
 
 const SortIcon = ({ active, direction }: { active: boolean; direction: SortDirection }) => {
@@ -310,10 +348,13 @@ const SortControl = <T extends string>({
 
 const PublishedContributionTables = ({
   amountPerVestedMember,
+  contributionMonth,
   deaths,
   groups,
   totalVestedMembers
 }: PublishedContributionTablesProps) => {
+  const groupSortColumns = getGroupSortColumns(contributionMonth)
+
   const [deathSort, setDeathSort] = useState<SortState<DeathSortKey>>({
     direction: 'asc',
     key: 'lastAndMiddleNames'
@@ -618,10 +659,34 @@ const PublishedContributionTables = ({
                       {group.vestedMembersCount}
                     </TableCell>
                     <TableCell
+                      data-label='Balance Before'
+                      className={cn(
+                        'px-1.5 text-right font-semibold whitespace-nowrap tabular-nums md:min-w-44 md:px-2',
+                        getBalanceClassName(group.balanceBefore)
+                      )}
+                    >
+                      {currencyFormatter.format(group.balanceBefore)}
+                    </TableCell>
+                    <TableCell
                       data-label='Amount'
                       className='px-1.5 text-right font-semibold whitespace-nowrap md:min-w-48 md:px-2'
                     >
                       {currencyFormatter.format(group.amountOwed)}
+                    </TableCell>
+                    <TableCell
+                      data-label={`Added (${contributionMonth})`}
+                      className='px-1.5 text-right font-semibold whitespace-nowrap tabular-nums md:min-w-44 md:px-2'
+                    >
+                      {currencyFormatter.format(group.amountAdded)}
+                    </TableCell>
+                    <TableCell
+                      data-label='Current Balance'
+                      className={cn(
+                        'px-1.5 text-right font-bold whitespace-nowrap tabular-nums md:min-w-40 md:px-2',
+                        getBalanceClassName(group.currentBalance)
+                      )}
+                    >
+                      {currencyFormatter.format(group.currentBalance)}
                     </TableCell>
                   </TableRow>
                 ))}
