@@ -27,7 +27,7 @@ export const internalRulesAtGlance: InternalRulesAtGlanceSection[] = [
       'Officers are a President, Vice President(s), Secretary-General(s), a Treasurer, and an Auditor, co-opted by the Founding Members and approved by the Bureau/Board.',
       'The Bureau/Board decides the location and time of the General Assembly; presidents and delegates should attend.',
       'The Bureau/Board meets at least three (3) times a year, and the President may summon an emergency meeting.',
-      'Within 48 hours of a death announcement, the Bureau/Board meets to announce the death, verify the documents, and send out the contribution table.'
+      'Within 48 hours of a death announcement, the Bureau/Board meets to announce the death and send out the contribution table.'
     ]
   },
   {
@@ -97,7 +97,7 @@ export const internalRulesAtGlance: InternalRulesAtGlanceSection[] = [
   {
     title: 'Death Announcement and Documentation',
     summary:
-      'Report a death by email within 7 days for the full contribution; the documents required depend on where the death occurred.',
+      'Report a death on the SAGI website or by email within 7 days for the full contribution; the documents required depend on where the death occurred.',
     bullets: [
       'Reporting a death after 7 days reduces the contribution, and the later it is reported, the lower it is. No documents are needed to report a death.',
       'Death in the U.S.: death certificate (cause of death may be redacted), matriculation number, picture of the deceased, government picture ID, funeral home invoice, funeral program, and proof of good standing.',
@@ -133,9 +133,9 @@ export const internalRulesAtGlance: InternalRulesAtGlanceSection[] = [
     bullets: [
       'A contribution not paid by the due date incurs a late fee.',
       'An association still unpaid 24 hours after the due date is left out of the next contribution and may be excluded from SAGI.',
-      'Every individual member pays an administration fee and a one-time registration fee within 60 days of registration. Both are non-refundable.',
+      'Every individual member pays a monthly administration fee and a one-time registration fee within 60 days of registration. Both are non-refundable.',
       'Returning members pay a return fee plus missed contributions.',
-      'The Bureau/Board amends these rules by majority vote and sends them to all presidents and delegates by email.'
+      'The Bureau/Board amends these rules by majority vote and makes them available to all presidents and delegates.'
     ]
   }
 ]
