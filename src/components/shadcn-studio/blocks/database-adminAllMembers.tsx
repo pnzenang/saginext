@@ -40,6 +40,7 @@ import {
   Hourglass,
   Loader,
   Pencil,
+  PrinterIcon,
   SearchIcon,
   ShieldCheck,
   Trash2,
@@ -246,9 +247,12 @@ const adminMemberTableCopy = {
       dismissedRows: (count: number) => `${count} dismissed row${count === 1 ? '' : 's'}`,
       empty: 'No members share both last/middle and first-name words.',
       emptyAfterDismissal: 'All matching rows have been dismissed as not duplicates.',
+      exportExcel: 'Export to Excel',
       jumpToWord: 'Choose shared words',
       memberCount: (count: number) => `${count} member${count === 1 ? '' : 's'}`,
+      print: 'Print',
       resetDismissedRows: 'Show dismissed rows',
+      sharedWords: 'Shared Words',
       title: 'Members Sharing Last/Middle and First Name Words'
     },
     selection: {
@@ -386,9 +390,12 @@ const adminMemberTableCopy = {
       dismissedRows: (count: number) => `${count} ligne${count === 1 ? '' : 's'} masquée${count === 1 ? '' : 's'}`,
       empty: 'Aucun membre ne partage à la fois des mots de nom/prénoms et de prénom.',
       emptyAfterDismissal: 'Toutes les lignes correspondantes ont été masquées comme non-doublons.',
+      exportExcel: 'Exporter en Excel',
       jumpToWord: 'Choisir des mots partagés',
       memberCount: (count: number) => `${count} membre${count === 1 ? '' : 's'}`,
+      print: 'Imprimer',
       resetDismissedRows: 'Réafficher les lignes masquées',
+      sharedWords: 'Mots partagés',
       title: 'Membres partageant des mots de nom/prénoms et de prénom'
     },
     selection: {
@@ -1979,6 +1986,126 @@ function SharedLastNameWordsPanel({
     }))
   }
 
+  const getSharedNameExportRows = () =>
+    sortedGroups.flatMap(group =>
+      group.members.map(member => ({
+        [copy.sharedLastNameWords.sharedWords]: `${group.firstSharedNameWord} + ${group.secondSharedNameWord}`,
+        [copy.columns.code]: member.associationCode,
+        [copy.columns.matriculation]: getVisibleMatriculationNumber(
+          member.memberStatus,
+          member.memberMatriculationNumber,
+          copy.pendingMatriculation
+        ),
+        [copy.columns.lastAndMiddleNames]: member.lastAndMiddleNames,
+        [copy.columns.firstName]: member.firstName,
+        [copy.sharedLastNameWords.dateOfBirth]: member.dateOfBirth,
+        [copy.columns.status]: member.memberStatus ? formatMemberStatus(member.memberStatus, language) : ''
+      }))
+    )
+
+  const exportSharedNamesToExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(getSharedNameExportRows())
+    const workbook = XLSX.utils.book_new()
+
+    worksheet['!cols'] = [{ wch: 26 }, { wch: 10 }, { wch: 18 }, { wch: 32 }, { wch: 22 }, { wch: 14 }, { wch: 14 }]
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Shared Name Matches')
+    XLSX.writeFile(workbook, `members-sharing-name-words-${new Date().toISOString().split('T')[0]}.xlsx`)
+  }
+
+  // Prints from a hidden iframe so only the match groups are printed, not the side panel or the page behind it.
+  const printSharedNames = () => {
+    const escapeHtml = (value: string | null | undefined) =>
+      String(value ?? '').replace(
+        /[&<>"']/g,
+        character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character] ?? character
+      )
+
+    const headers = [
+      copy.columns.code,
+      copy.columns.matriculation,
+      copy.columns.lastAndMiddleNames,
+      copy.columns.firstName,
+      copy.sharedLastNameWords.dateOfBirth,
+      copy.columns.status
+    ]
+
+    const groupsHtml = sortedGroups
+      .map(
+        group => `
+          <section>
+            <h2>${escapeHtml(group.firstSharedNameWord)} + ${escapeHtml(group.secondSharedNameWord)}
+              <span>${escapeHtml(copy.sharedLastNameWords.memberCount(group.members.length))}</span></h2>
+            <table>
+              <thead><tr>${headers.map(header => `<th>${escapeHtml(header)}</th>`).join('')}</tr></thead>
+              <tbody>${group.members
+                .map(
+                  member => `<tr>
+                    <td>${escapeHtml(member.associationCode)}</td>
+                    <td>${escapeHtml(
+                      getVisibleMatriculationNumber(
+                        member.memberStatus,
+                        member.memberMatriculationNumber,
+                        copy.pendingMatriculation
+                      )
+                    )}</td>
+                    <td>${escapeHtml(member.lastAndMiddleNames)}</td>
+                    <td>${escapeHtml(member.firstName)}</td>
+                    <td>${escapeHtml(member.dateOfBirth)}</td>
+                    <td>${escapeHtml(member.memberStatus ? formatMemberStatus(member.memberStatus, language) : '')}</td>
+                  </tr>`
+                )
+                .join('')}</tbody>
+            </table>
+          </section>`
+      )
+      .join('')
+
+    const iframe = document.createElement('iframe')
+
+    iframe.setAttribute('aria-hidden', 'true')
+    iframe.style.position = 'fixed'
+    iframe.style.width = '0'
+    iframe.style.height = '0'
+    iframe.style.border = '0'
+    document.body.appendChild(iframe)
+
+    const printDocument = iframe.contentDocument
+
+    if (!printDocument || !iframe.contentWindow) {
+      iframe.remove()
+
+      return
+    }
+
+    printDocument.open()
+    printDocument.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(
+      copy.sharedLastNameWords.title
+    )}</title><style>
+      body { font-family: system-ui, sans-serif; color: #111; margin: 24px; }
+      h1 { font-size: 18px; margin: 0 0 4px; }
+      p { font-size: 12px; color: #555; margin: 0 0 16px; }
+      section { break-inside: avoid; margin-bottom: 16px; }
+      h2 { font-size: 13px; font-family: ui-monospace, monospace; margin: 0 0 6px; }
+      h2 span { font-family: system-ui, sans-serif; font-weight: normal; color: #555; margin-left: 8px; }
+      table { width: 100%; border-collapse: collapse; font-size: 11px; }
+      th, td { border: 1px solid #ccc; padding: 4px 6px; text-align: left; }
+      th { background: #f1f1f1; }
+      tbody tr:nth-child(even) { background: #fafafa; }
+    </style></head><body>
+      <h1>${escapeHtml(copy.sharedLastNameWords.title)}</h1>
+      <p>${escapeHtml(copy.sharedLastNameWords.description(formatNumber(groups.length), formatNumber(memberCount)))}
+        · ${escapeHtml(new Date().toLocaleDateString())}</p>
+      ${groupsHtml}
+    </body></html>`)
+    printDocument.close()
+
+    const removeIframe = () => window.setTimeout(() => iframe.remove(), 0)
+
+    iframe.contentWindow.addEventListener('afterprint', removeIframe, { once: true })
+    iframe.contentWindow.focus()
+    iframe.contentWindow.print()
+  }
+
   const renderSortableHeader = (key: SharedLastNameSortKey, label: string, className?: string) => {
     const isActive = sharedNameSort.key === key
     const SortIcon = isActive ? (sharedNameSort.direction === 'asc' ? ChevronUpIcon : ChevronDownIcon) : ArrowUpDown
@@ -2045,17 +2172,37 @@ function SharedLastNameWordsPanel({
           ) : (
             <p className='text-muted-foreground text-sm'>{copy.sharedLastNameWords.emptyAfterDismissal}</p>
           )}
-          {dismissedRowCount > 0 ? (
-            <Button
-              type='button'
-              variant='outline'
-              size='sm'
-              className='w-full sm:w-auto'
-              onClick={onResetDismissedRows}
-            >
-              {copy.sharedLastNameWords.resetDismissedRows}
-            </Button>
-          ) : null}
+          <div className='flex flex-col gap-2 sm:flex-row sm:items-center'>
+            {dismissedRowCount > 0 ? (
+              <Button
+                type='button'
+                variant='outline'
+                size='sm'
+                className='w-full sm:w-auto'
+                onClick={onResetDismissedRows}
+              >
+                {copy.sharedLastNameWords.resetDismissedRows}
+              </Button>
+            ) : null}
+            {groups.length > 0 ? (
+              <>
+                <Button type='button' variant='outline' size='sm' className='w-full sm:w-auto' onClick={printSharedNames}>
+                  <PrinterIcon aria-hidden='true' />
+                  {copy.sharedLastNameWords.print}
+                </Button>
+                <Button
+                  type='button'
+                  variant='outline'
+                  size='sm'
+                  className='w-full sm:w-auto'
+                  onClick={exportSharedNamesToExcel}
+                >
+                  <FileSpreadsheetIcon aria-hidden='true' />
+                  {copy.sharedLastNameWords.exportExcel}
+                </Button>
+              </>
+            ) : null}
+          </div>
         </div>
       ) : null}
       <ScrollArea className='min-h-0 flex-1'>
