@@ -7,7 +7,7 @@ import { FaWhatsapp } from 'react-icons/fa'
 import { Button } from '@/components/ui/button'
 import { fetchProfile } from '@/utils/profile-actions'
 
-// Same invite link encoded in public/images/sagi-whatsapp-qr.png. If the group's invite link is reset in
+// Same invite link encoded in public/images/sagi-whatsapp-group-invite-qr.png. If the group's invite link is reset in
 // WhatsApp, regenerate the QR image and update this link together.
 const sagiWhatsappGroupUrl = 'https://chat.whatsapp.com/Cc8nG7rmmxhG6Qm0AzxPv6'
 
@@ -36,7 +36,7 @@ const WhatsappGroup = async () => {
           <p className='text-xl font-bold'>SAGI-UPDATES</p>
           <p className='mb-5 text-sm text-gray-500'>WhatsApp group</p>
           <Image
-            src='/images/sagi-whatsapp-qr.png'
+            src='/images/sagi-whatsapp-group-invite-qr.png'
             width={1024}
             height={1024}
             alt='QR code to join the SAGI-UPDATES WhatsApp group'
