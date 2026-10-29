@@ -20,7 +20,8 @@ const protectedRoutes = [
   '/payment-instructions',
   '/profile',
   '/registrationsPayments',
-  '/removed-members'
+  '/removed-members',
+  '/whatsapp-group'
 ]
 
 export default function robots(): MetadataRoute.Robots {

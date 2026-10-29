@@ -22,13 +22,19 @@ import {
   Table,
   FileCheck,
   ArrowLeftRight,
-  BellDot
+  BellDot,
+  MessageCircle
 } from 'lucide-react'
 
 import type { MenuItem } from './types'
 import { getContributionTableLabel } from './contribution-table-label'
 
 export const getPagesItems = (date: Date = new Date()): MenuItem[] => [
+  {
+    icon: MessageCircle,
+    label: 'Join SAGI Whatsapp group',
+    href: '/whatsapp-group'
+  },
   {
     icon: Navigation,
     label: 'Navigation Instructions',

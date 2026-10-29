@@ -110,7 +110,8 @@ export const acceptInternalRulesAction = async (prevState: any, formData: FormDa
     }
   })
 
-  redirect('/navigation-instructions')
+  // New delegates land on the WhatsApp group page right after accepting the rules at the end of profile creation.
+  redirect('/whatsapp-group')
 }
 
 export const updateProfileAction = async (prevState: any, formData: FormData): Promise<{ message: string }> => {

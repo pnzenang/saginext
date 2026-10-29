@@ -96,6 +96,7 @@ const dashboardMenuLabelTranslations: Record<string, string> = {
   'All Members': 'Tous les membres',
   'Registrations Payments': "Paiements d'inscription",
   'Payment Center': 'Centre de paiement',
+  'Join SAGI Whatsapp group': 'Rejoindre le groupe Whatsapp SAGI',
   'Remove Member': 'Retirer un membre',
   'Removed Members': 'Membres retirés',
   'Death Announcement': 'Annonce de décès',
