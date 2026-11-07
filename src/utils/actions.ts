@@ -4443,10 +4443,10 @@ export const makeMembersDelinquentAction = async (
       const vestedMemberIds = vestedMembers.map(member => member.id)
       const vestedMatriculationNumbers = vestedMembers.map(member => member.memberMatriculationNumber)
 
+      // Keep vestedAt so the member returns to Vested with their original date and longevity.
       const updatedMembers = await tx.member.updateMany({
         data: {
-          memberStatus: memberStatus.Delinquent,
-          vestedAt: null
+          memberStatus: memberStatus.Delinquent
         },
         where: {
           id: {
@@ -4620,8 +4620,10 @@ export const makeMembersVestedAction = async (
       const delinquentMembers = await tx.member.findMany({
         select: {
           associationCode: true,
+          createdAt: true,
           id: true,
-          memberMatriculationNumber: true
+          memberMatriculationNumber: true,
+          vestedAt: true
         },
         where: {
           id: {
@@ -4635,20 +4637,22 @@ export const makeMembersVestedAction = async (
         return 0
       }
 
-      const delinquentMemberIds = delinquentMembers.map(member => member.id)
-
-      const updatedMembers = await tx.member.updateMany({
-        data: {
-          memberStatus: memberStatus.Vested,
-          vestedAt: new Date()
-        },
-        where: {
-          id: {
-            in: delinquentMemberIds
-          },
-          memberStatus: memberStatus.Delinquent
-        }
-      })
+      // Returning members keep their original vested date, falling back to their registration date, so they keep
+      // their longevity and are not listed as new monthly additions.
+      const updatedMembers = await Promise.all(
+        delinquentMembers.map(member =>
+          tx.member.updateMany({
+            data: {
+              memberStatus: memberStatus.Vested,
+              vestedAt: getMemberVestedDate(member)
+            },
+            where: {
+              id: member.id,
+              memberStatus: memberStatus.Delinquent
+            }
+          })
+        )
+      )
 
       await Promise.all(
         delinquentMembers.map(member =>
@@ -4669,7 +4673,7 @@ export const makeMembersVestedAction = async (
         )
       )
 
-      return updatedMembers.count
+      return updatedMembers.reduce((total, result) => total + result.count, 0)
     })
 
     if (updatedCount > 0) {
