@@ -57,9 +57,13 @@ const ZellePaymentAmountForm = ({ contributionPaymentAmountDetails, paymentType 
   return (
     <form action={formAction} className='mx-auto mt-6 grid w-full max-w-3xl gap-4 text-left'>
       {shouldShowContributionAmountDetails ? (
-        <div className='bg-primary/5 text-primary rounded-lg p-4 ring-1 ring-primary/15'>
+        <div className='bg-primary/5 text-primary ring-primary/15 rounded-lg p-4 ring-1'>
           <p className='text-lg leading-tight font-semibold sm:text-xl'>Contribution amount to send</p>
-          <div className='mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4'>
+          <div
+            className={`mt-3 grid gap-3 sm:grid-cols-2 ${
+              contributionPaymentAmountDetails.hasPaymentCode ? 'lg:grid-cols-4' : 'lg:grid-cols-3'
+            }`}
+          >
             <div>
               <p className='text-primary/70 text-xs font-semibold uppercase'>Due</p>
               <p className='mt-1 text-lg font-extrabold'>
@@ -72,14 +76,14 @@ const ZellePaymentAmountForm = ({ contributionPaymentAmountDetails, paymentType 
                 {currencyFormatter.format(contributionPaymentAmountDetails.roundedAmountDue)}
               </p>
             </div>
-            <div>
-              <p className='text-primary/70 text-xs font-semibold uppercase'>Code</p>
-              <p className='mt-1 text-lg font-extrabold'>
-                {contributionPaymentAmountDetails.hasPaymentCode
-                  ? currencyFormatter.format(contributionPaymentAmountDetails.paymentCodeAmount)
-                  : 'Not entered'}
-              </p>
-            </div>
+            {contributionPaymentAmountDetails.hasPaymentCode ? (
+              <div>
+                <p className='text-primary/70 text-xs font-semibold uppercase'>Code</p>
+                <p className='mt-1 text-lg font-extrabold'>
+                  {currencyFormatter.format(contributionPaymentAmountDetails.paymentCodeAmount)}
+                </p>
+              </div>
+            ) : null}
             <div>
               <p className='text-primary/70 text-xs font-semibold uppercase'>Enter exactly</p>
               <p className='mt-1 text-lg font-extrabold'>

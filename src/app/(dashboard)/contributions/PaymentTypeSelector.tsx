@@ -117,28 +117,32 @@ const PaymentDetails = ({
           {detailCount === 1 ? '' : 's'} x {currencyFormatter.format(detailUnitAmount)}
         </p>
         {contributionPaymentAmountDetails ? (
-          <div className='mt-6 grid w-full max-w-5xl gap-3 sm:grid-cols-2 xl:grid-cols-4'>
-            <div className='rounded-lg bg-background/70 p-3 ring-1 ring-primary/15'>
+          <div
+            className={`mt-6 grid w-full max-w-5xl gap-3 sm:grid-cols-2 ${
+              contributionPaymentAmountDetails.hasPaymentCode ? 'xl:grid-cols-4' : 'xl:grid-cols-3'
+            }`}
+          >
+            <div className='bg-background/70 ring-primary/15 rounded-lg p-3 ring-1'>
               <p className='text-primary/70 text-xs font-semibold uppercase'>Contribution due</p>
               <p className='mt-1 text-xl font-extrabold'>
                 {currencyFormatter.format(contributionPaymentAmountDetails.amountDue)}
               </p>
             </div>
-            <div className='rounded-lg bg-background/70 p-3 ring-1 ring-primary/15'>
+            <div className='bg-background/70 ring-primary/15 rounded-lg p-3 ring-1'>
               <p className='text-primary/70 text-xs font-semibold uppercase'>Rounded up</p>
               <p className='mt-1 text-xl font-extrabold'>
                 {currencyFormatter.format(contributionPaymentAmountDetails.roundedAmountDue)}
               </p>
             </div>
-            <div className='rounded-lg bg-background/70 p-3 ring-1 ring-primary/15'>
-              <p className='text-primary/70 text-xs font-semibold uppercase'>Payment code</p>
-              <p className='mt-1 text-xl font-extrabold'>
-                {contributionPaymentAmountDetails.hasPaymentCode
-                  ? currencyFormatter.format(contributionPaymentAmountDetails.paymentCodeAmount)
-                  : 'Not entered'}
-              </p>
-            </div>
-            <div className='rounded-lg bg-background/70 p-3 ring-1 ring-primary/15'>
+            {contributionPaymentAmountDetails.hasPaymentCode ? (
+              <div className='bg-background/70 ring-primary/15 rounded-lg p-3 ring-1'>
+                <p className='text-primary/70 text-xs font-semibold uppercase'>Payment code</p>
+                <p className='mt-1 text-xl font-extrabold'>
+                  {currencyFormatter.format(contributionPaymentAmountDetails.paymentCodeAmount)}
+                </p>
+              </div>
+            ) : null}
+            <div className='bg-background/70 ring-primary/15 rounded-lg p-3 ring-1'>
               <p className='text-primary/70 text-xs font-semibold uppercase'>Send exactly</p>
               <p className='mt-1 text-xl font-extrabold'>
                 {currencyFormatter.format(contributionPaymentAmountDetails.amountToSend)}
@@ -179,6 +183,7 @@ const PaymentTypeSelector = ({
     contributionAmountOwed,
     contributionPaymentCodeCents
   )
+
   const contributionPaymentAmount = contributionAmountOwed > 0 ? contributionAmountToMatch : 0
 
   const handlePaymentTypeChange = (value: PaymentType) => {
@@ -215,7 +220,7 @@ const PaymentTypeSelector = ({
 
   return (
     <section className='mx-auto grid w-full max-w-[90rem] min-w-0 shrink-0 gap-5 overflow-visible px-0 py-4 sm:px-6 sm:py-8 lg:px-8'>
-      <div className='bg-primary text-primary-foreground w-full rounded-lg border border-primary/30 p-5 shadow-md sm:p-7'>
+      <div className='bg-primary text-primary-foreground border-primary/30 w-full rounded-lg border p-5 shadow-md sm:p-7'>
         <div className='flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between'>
           <div className='flex min-w-0 items-center gap-4'>
             <span className='bg-primary-foreground/15 flex size-14 shrink-0 items-center justify-center rounded-lg'>
@@ -223,24 +228,22 @@ const PaymentTypeSelector = ({
             </span>
             <div className='min-w-0'>
               <h1 className='text-3xl font-extrabold tracking-normal sm:text-4xl'>Payment Center</h1>
-              <p className='mt-2 max-w-3xl text-base font-medium text-primary-foreground/85 sm:text-lg'>
+              <p className='text-primary-foreground/85 mt-2 max-w-3xl text-base font-medium sm:text-lg'>
                 Choose the payment type, review the amount due, then continue with your preferred payment method.
               </p>
             </div>
           </div>
 
           <div className='grid shrink-0 gap-3 sm:grid-cols-2 lg:min-w-[28rem]'>
-            <div className='rounded-lg bg-primary-foreground/10 p-4 ring-1 ring-primary-foreground/20'>
-              <p className='text-sm font-semibold text-primary-foreground/80'>Registration due</p>
+            <div className='bg-primary-foreground/10 ring-primary-foreground/20 rounded-lg p-4 ring-1'>
+              <p className='text-primary-foreground/80 text-sm font-semibold'>Registration due</p>
               <p className='mt-1 text-2xl font-extrabold'>{currencyFormatter.format(registrationDues)}</p>
             </div>
-            <div className='rounded-lg bg-primary-foreground/10 p-4 ring-1 ring-primary-foreground/20'>
-              <p className='text-sm font-semibold text-primary-foreground/80'>Contribution amount</p>
+            <div className='bg-primary-foreground/10 ring-primary-foreground/20 rounded-lg p-4 ring-1'>
+              <p className='text-primary-foreground/80 text-sm font-semibold'>Contribution amount</p>
               <p className='mt-1 text-2xl font-extrabold'>{currencyFormatter.format(contributionPaymentAmount)}</p>
-              {contributionAmountOwed > 0 ? (
-                <p className='mt-1 text-xs font-semibold text-primary-foreground/75'>
-                  {contributionPaymentAmountDetails.hasPaymentCode ? 'Code included' : 'Payment code not entered'}
-                </p>
+              {contributionAmountOwed > 0 && contributionPaymentAmountDetails.hasPaymentCode ? (
+                <p className='text-primary-foreground/75 mt-1 text-xs font-semibold'>Code included</p>
               ) : null}
             </div>
           </div>
@@ -248,7 +251,7 @@ const PaymentTypeSelector = ({
       </div>
 
       <div className='grid w-full gap-5 md:grid-cols-2'>
-        <div className='border-primary/25 w-full rounded-lg border bg-background p-4 shadow-sm sm:p-6'>
+        <div className='border-primary/25 bg-background w-full rounded-lg border p-4 shadow-sm sm:p-6'>
           <div className='flex items-start gap-3'>
             <span className='bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-lg'>
               <CreditCard className='size-5' aria-hidden='true' />
@@ -261,7 +264,7 @@ const PaymentTypeSelector = ({
           </div>
         </div>
 
-        <div className='border-primary/25 w-full rounded-lg border bg-background p-4 shadow-sm sm:p-6'>
+        <div className='border-primary/25 bg-background w-full rounded-lg border p-4 shadow-sm sm:p-6'>
           <div className='grid w-full gap-2'>
             <Label htmlFor='payment-type'>Payment type</Label>
             <Select value={paymentType} onValueChange={handlePaymentTypeChange}>
