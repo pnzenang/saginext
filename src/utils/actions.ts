@@ -1113,6 +1113,7 @@ export const fetchAdminDashboardActivityLogsAction = async () => {
 const revalidatePaymentViews = () => {
   revalidatePath('/')
   revalidatePath('/admin-contribution-payments')
+  revalidatePath('/admin-payment-codes')
   revalidatePath('/admin-activity-log')
   revalidatePath('/admin-payment-history')
   revalidatePath('/admin-payment-update')

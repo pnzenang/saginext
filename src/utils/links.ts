@@ -23,7 +23,8 @@ import {
   FileCheck,
   ArrowLeftRight,
   BellDot,
-  MessageCircle
+  MessageCircle,
+  Coins
 } from 'lucide-react'
 
 import type { MenuItem } from './types'
@@ -193,6 +194,11 @@ export const getPagesItems = (date: Date = new Date()): MenuItem[] => [
     icon: Wallet,
     label: 'Admin Contribution Payments',
     href: '/admin-contribution-payments'
+  },
+  {
+    icon: Coins,
+    label: 'Payment Codes',
+    href: '/admin-payment-codes'
   },
   {
     icon: BellDot,
