@@ -3726,29 +3726,8 @@ export const updateAssociationContributionPaymentCodeAction = async (
 
     const paymentCodeAmount = codeCents === null ? null : codeCents / 100
 
+    // Payment codes do not need to be unique: several associations can share the same cents code.
     await db.$transaction(async tx => {
-      if (codeCents !== null) {
-        const formattedPaymentCodeAmount = currencyFormatter.format(codeCents / 100)
-
-        const duplicatePaymentCode = await tx.associationContributionPaymentCode.findFirst({
-          select: {
-            associationCode: true
-          },
-          where: {
-            associationCode: {
-              not: associationCode
-            },
-            codeCents
-          }
-        })
-
-        if (duplicatePaymentCode) {
-          throw new Error(
-            `${formattedPaymentCodeAmount} is already linked to ${duplicatePaymentCode.associationCode}.`
-          )
-        }
-      }
-
       const paymentCode = await tx.associationContributionPaymentCode.upsert({
         create: {
           associationCode,
