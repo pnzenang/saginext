@@ -2,6 +2,7 @@ import { auth } from '@clerk/nextjs/server'
 
 import { getCloudinaryDocumentDownloadUrl } from '@/utils/cloudinary-documents'
 import db from '@/utils/db'
+import { maxDocumentationFileSize } from '@/utils/upload-limits'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,11 +23,7 @@ const getDownloadHeaders = ({
   'Content-Type': mimeType || 'application/octet-stream'
 })
 
-const contributionTableDocumentTypes = [
-  'death_certificate',
-  'deceased_picture',
-  'ministry_certified_death_certificate'
-]
+const contributionTableDocumentTypes = ['death_certificate', 'deceased_picture', 'ministry_certified_death_certificate']
 
 export const GET = async (_request: Request, { params }: { params: Promise<{ documentId: string }> }) => {
   const { userId } = await auth()
@@ -117,6 +114,15 @@ export const GET = async (_request: Request, { params }: { params: Promise<{ doc
       publicId: document.cloudinaryPublicId,
       resourceType: document.cloudinaryResourceType
     })
+
+    // Vercel Functions can't send responses over 4.5 MB, so larger files are served straight from Cloudinary
+    // through the short-lived signed link instead of being passed through this route.
+    if (document.fileSize > maxDocumentationFileSize) {
+      return new Response(null, {
+        headers: { 'Cache-Control': 'private, no-store', Location: downloadUrl },
+        status: 302
+      })
+    }
 
     const cloudinaryResponse = await fetch(downloadUrl, { cache: 'no-store' })
 
