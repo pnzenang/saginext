@@ -12,7 +12,12 @@ import { after } from 'next/server'
 import { customAlphabet } from 'nanoid'
 
 import db from './db'
-import { documentationFileTooLargeMessages, maxDocumentationFileSize } from './upload-limits'
+import {
+  deathDocumentFileTooLargeMessage,
+  documentationFileTooLargeMessages,
+  maxDeathDocumentFileSize,
+  maxDocumentationFileSize
+} from './upload-limits'
 import {
   createMemberSchema,
   DeceasedMemberSchema,
@@ -61,9 +66,13 @@ import {
 } from './sagi-registration-summary'
 import { contributionPaymentAlertType, registrationPaymentAlertType } from './payment-constants'
 import {
+  createSignedDocumentUpload,
   deleteCloudinaryDocument,
+  getCloudinaryClient,
   getSafeCloudinaryPathSegment,
+  isValidCloudinaryUploadSignature,
   uploadDocumentToCloudinary,
+  type SignedDocumentUpload,
   type StoredCloudinaryDocument
 } from './cloudinary-documents'
 import { sendDeathAnnouncementAcknowledgmentEmail, sendMemberAdditionAcknowledgmentEmail } from './email'
@@ -568,14 +577,6 @@ const isAllowedDeceasedMemberDocumentFile = (file: File) =>
   allowedDeceasedMemberDocumentMimeTypes.has(file.type) ||
   allowedDeceasedMemberDocumentExtensions.has(getFileExtension(file.name))
 
-const getSafeDocumentFileName = (file: File, documentType: DeceasedMemberDocumentType) => {
-  const fileName = file.name.trim()
-
-  if (!fileName) return deceasedMemberDocumentLabels[documentType]
-
-  return fileName.slice(0, 180)
-}
-
 const getSafeUploadedFileName = (file: File, fallbackFileName: string) => {
   const fileName = file.name.trim()
 
@@ -1013,10 +1014,7 @@ const getRestoredVestedAtUpdateData = ({
   return vestedAt ? { vestedAt } : {}
 }
 
-const getReusableRestoredMemberIdData = async (
-  tx: Prisma.TransactionClient,
-  originalMemberId?: string | null
-) => {
+const getReusableRestoredMemberIdData = async (tx: Prisma.TransactionClient, originalMemberId?: string | null) => {
   if (!originalMemberId) return {}
 
   const existingMemberWithOriginalId = await tx.member.findUnique({
@@ -7460,7 +7458,9 @@ export const fetchPublishedContributionTableAction = async () => {
       const balanceBefore = balanceBeforeByCode.get(group.associationCode) ?? 0
       const amountAdded = amountAddedByCode.get(group.associationCode) ?? 0
       const paymentCodeCents = paymentCodeCentsByCode.get(group.associationCode) ?? null
-      const paymentAmountDetails = amountOwed > 0 ? getContributionPaymentAmountDetails(amountOwed, paymentCodeCents) : null
+
+      const paymentAmountDetails =
+        amountOwed > 0 ? getContributionPaymentAmountDetails(amountOwed, paymentCodeCents) : null
 
       // Balance is measured against the amount to send (rounded up plus identifying cents), as on Admin Contribution
       // Payments, so an association that sends exactly that amount ends at $0.00.
@@ -7828,99 +7828,205 @@ export const updateDeathDocumentationDetailsAction = async (
   }
 }
 
-export const uploadDeceasedMemberDocumentAction = async (
-  provState: any,
-  formData: FormData
-): Promise<{ message: string }> => {
+// Checks shared by both steps of a death document upload: the case must exist, have a country of death,
+// require this document type, belong to the user (or the admin), and any existing file must be the user's own.
+const getDeathDocumentUploadContext = async ({
+  deceasedMemberId,
+  documentType,
+  userId
+}: {
+  deceasedMemberId: string
+  documentType: DeceasedMemberDocumentType
+  userId: string
+}) => {
+  const deceasedMember = await db.deceasedMember.findUnique({
+    select: {
+      associationCode: true,
+      clerkId: true,
+      id: true,
+      placeOfDeathCountry: true
+    },
+    where: {
+      id: deceasedMemberId
+    }
+  })
+
+  if (!deceasedMember) {
+    throw new Error('Death announcement not found.')
+  }
+
+  if (!deceasedMember.placeOfDeathCountry?.trim()) {
+    throw new Error('Enter and save the country of death before uploading documents.')
+  }
+
+  if (!getRequiredDeceasedMemberDocumentTypes(deceasedMember).includes(documentType)) {
+    throw new Error(`${deceasedMemberDocumentLabels[documentType]} is not required for this place of death.`)
+  }
+
+  const isAdminUser = userId === process.env.ADMIN_USER_ID
+
+  if (!isAdminUser && deceasedMember.clerkId !== userId) {
+    throw new Error('You can only upload documents for death announcements from your own account.')
+  }
+
+  const existingDocument = await db.deceasedMemberDocument.findUnique({
+    select: {
+      cloudinaryDeliveryType: true,
+      cloudinaryPublicId: true,
+      cloudinaryResourceType: true,
+      clerkId: true
+    },
+    where: {
+      deceasedMemberId_documentType: {
+        deceasedMemberId,
+        documentType
+      }
+    }
+  })
+
+  if (existingDocument && existingDocument.clerkId !== userId) {
+    throw new Error('Only the person who uploaded this document can replace it.')
+  }
+
+  return { deceasedMember, existingDocument, isAdminUser }
+}
+
+const getDeathDocumentTypeFromInput = (value: string) => {
+  if (!isDeceasedMemberDocumentType(value)) {
+    throw new Error('Select a valid document type.')
+  }
+
+  return value
+}
+
+const getSafeDeathDocumentFileName = (fileName: string, documentType: DeceasedMemberDocumentType) =>
+  fileName.trim().slice(0, 180) || deceasedMemberDocumentLabels[documentType]
+
+const allowedDeathDocumentFormats = new Set(['heic', 'heif', 'jpeg', 'jpg', 'pdf', 'png', 'webp'])
+
+// Step 1 of a death document upload: checks permissions and the file, then returns a signed request the
+// browser uses to upload the file straight to Cloudinary.
+export const createDeathDocumentUploadAction = async (input: {
+  deceasedMemberId: string
+  documentType: string
+  fileName: string
+  fileSize: number
+  mimeType: string
+}): Promise<{ message: string } | { upload: SignedDocumentUpload }> => {
   const user = await getAuthUser()
 
   try {
-    const deceasedMemberId = getRequiredFormValue(formData, 'deceasedMemberId')
-    const documentType = getRequiredFormValue(formData, 'documentType')
-    const file = formData.get('documentFile')
+    const documentType = getDeathDocumentTypeFromInput(input.documentType)
 
-    if (!isDeceasedMemberDocumentType(documentType)) {
-      throw new Error('Select a valid document type.')
-    }
-
-    if (!(file instanceof File) || file.size <= 0) {
+    if (!Number.isFinite(input.fileSize) || input.fileSize <= 0) {
       throw new Error(`Please choose a file for ${deceasedMemberDocumentLabels[documentType]}.`)
     }
 
-    if (file.size > maxDocumentationFileSize) {
-      throw new Error(documentationFileTooLargeMessages.en)
+    if (input.fileSize > maxDeathDocumentFileSize) {
+      throw new Error(deathDocumentFileTooLargeMessage)
     }
 
-    if (!isAllowedDeceasedMemberDocumentFile(file)) {
+    if (
+      !allowedDeceasedMemberDocumentMimeTypes.has(input.mimeType) &&
+      !allowedDeceasedMemberDocumentExtensions.has(getFileExtension(input.fileName))
+    ) {
       throw new Error('Please upload a PDF, JPG, PNG, WEBP, HEIC, or HEIF file.')
     }
 
-    const deceasedMember = await db.deceasedMember.findUnique({
-      select: {
-        associationCode: true,
-        clerkId: true,
-        id: true,
-        placeOfDeathCountry: true
-      },
-      where: {
-        id: deceasedMemberId
-      }
+    await getDeathDocumentUploadContext({
+      deceasedMemberId: input.deceasedMemberId,
+      documentType,
+      userId: user.id
     })
 
-    if (!deceasedMember) {
-      throw new Error('Death announcement not found.')
+    return {
+      upload: createSignedDocumentUpload({
+        fileName: getSafeDeathDocumentFileName(input.fileName, documentType),
+        folder: getDeathDocumentCloudinaryFolder(input.deceasedMemberId, documentType)
+      })
+    }
+  } catch (error) {
+    return renderError(error)
+  }
+}
+
+// Step 2 of a death document upload: confirms with Cloudinary that the file really was uploaded to this
+// case's folder and is within the limits, then saves it (replacing any earlier file for this document type).
+export const saveUploadedDeceasedMemberDocumentAction = async (input: {
+  deceasedMemberId: string
+  documentType: string
+  fileName: string
+  mimeType: string
+  publicId: string
+  resourceType: string
+  signature: string
+  version: string
+}): Promise<{ message: string; ok: boolean }> => {
+  const user = await getAuthUser()
+
+  try {
+    const documentType = getDeathDocumentTypeFromInput(input.documentType)
+    const folder = getDeathDocumentCloudinaryFolder(input.deceasedMemberId, documentType)
+
+    if (
+      !input.publicId.startsWith(`${folder}/`) ||
+      !isValidCloudinaryUploadSignature({
+        publicId: input.publicId,
+        signature: input.signature,
+        version: input.version
+      })
+    ) {
+      throw new Error('The uploaded file could not be verified. Please upload it again.')
     }
 
-    if (!deceasedMember.placeOfDeathCountry?.trim()) {
-      throw new Error('Enter and save the country of death before uploading documents.')
+    const resourceType = input.resourceType === 'raw' ? 'raw' : 'image'
+
+    const uploadedResource: { bytes: number; format?: string; secure_url: string; type: string } =
+      await getCloudinaryClient().api.resource(input.publicId, {
+        resource_type: resourceType,
+        type: 'private'
+      })
+
+    const cloudinaryDocument: StoredCloudinaryDocument = {
+      bytes: uploadedResource.bytes,
+      deliveryType: uploadedResource.type,
+      format: uploadedResource.format || null,
+      publicId: input.publicId,
+      resourceType,
+      secureUrl: uploadedResource.secure_url
     }
 
-    if (!getRequiredDeceasedMemberDocumentTypes(deceasedMember).includes(documentType)) {
-      throw new Error(`${deceasedMemberDocumentLabels[documentType]} is not required for this place of death.`)
+    const fileFormat = (cloudinaryDocument.format || getFileExtension(input.fileName).replace('.', '')).toLowerCase()
+
+    if (cloudinaryDocument.bytes > maxDeathDocumentFileSize || !allowedDeathDocumentFormats.has(fileFormat)) {
+      await deleteCloudinaryDocumentWithoutBlocking({
+        cloudinaryDeliveryType: cloudinaryDocument.deliveryType,
+        cloudinaryPublicId: cloudinaryDocument.publicId,
+        cloudinaryResourceType: cloudinaryDocument.resourceType
+      })
+
+      throw new Error(
+        cloudinaryDocument.bytes > maxDeathDocumentFileSize
+          ? deathDocumentFileTooLargeMessage
+          : 'Please upload a PDF, JPG, PNG, WEBP, HEIC, or HEIF file.'
+      )
     }
 
-    const isAdminUser = user.id === process.env.ADMIN_USER_ID
-
-    if (!isAdminUser && deceasedMember.clerkId !== user.id) {
-      throw new Error('You can only upload documents for death announcements from your own account.')
-    }
-
-    const existingDocument = await db.deceasedMemberDocument.findUnique({
-      select: {
-        cloudinaryDeliveryType: true,
-        cloudinaryPublicId: true,
-        cloudinaryResourceType: true,
-        clerkId: true
-      },
-      where: {
-        deceasedMemberId_documentType: {
-          deceasedMemberId,
-          documentType
-        }
-      }
+    const { deceasedMember, existingDocument, isAdminUser } = await getDeathDocumentUploadContext({
+      deceasedMemberId: input.deceasedMemberId,
+      documentType,
+      userId: user.id
     })
 
-    if (existingDocument && existingDocument.clerkId !== user.id) {
-      throw new Error('Only the person who uploaded this document can replace it.')
-    }
-
-    const safeFileName = getSafeDocumentFileName(file, documentType)
-    const mimeType = file.type || 'application/octet-stream'
-    const fileBuffer = Buffer.from(await file.arrayBuffer())
-
-    const cloudinaryDocument = await uploadDocumentToCloudinary({
-      fileBuffer,
-      fileName: safeFileName,
-      folder: getDeathDocumentCloudinaryFolder(deceasedMemberId, documentType),
-      mimeType
-    })
+    const safeFileName = getSafeDeathDocumentFileName(input.fileName, documentType)
+    const mimeType = input.mimeType || 'application/octet-stream'
 
     try {
       const document = await db.deceasedMemberDocument.upsert({
         create: {
           associationCode: deceasedMember.associationCode,
           clerkId: user.id,
-          deceasedMemberId,
+          deceasedMemberId: input.deceasedMemberId,
           documentType,
           fileName: safeFileName,
           mimeType,
@@ -7937,7 +8043,7 @@ export const uploadDeceasedMemberDocumentAction = async (
         },
         where: {
           deceasedMemberId_documentType: {
-            deceasedMemberId,
+            deceasedMemberId: input.deceasedMemberId,
             documentType
           }
         }
@@ -7962,15 +8068,15 @@ export const uploadDeceasedMemberDocumentAction = async (
       throw error
     }
 
-    if (existingDocument) {
+    if (existingDocument && existingDocument.cloudinaryPublicId !== cloudinaryDocument.publicId) {
       await deleteCloudinaryDocumentWithoutBlocking(existingDocument)
     }
 
     revalidateDeathDocumentationViews()
 
-    return { message: `${deceasedMemberDocumentLabels[documentType]} uploaded successfully` }
+    return { message: `${deceasedMemberDocumentLabels[documentType]} uploaded successfully`, ok: true }
   } catch (error) {
-    return renderError(error)
+    return { ...renderError(error), ok: false }
   }
 }
 

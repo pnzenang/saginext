@@ -9,4 +9,12 @@ export const documentationFileTooLargeMessages = {
   fr: `Ce fichier est trop volumineux. Veuillez téléverser un fichier de ${maxDocumentationFileSizeMb} Mo ou moins.`
 }
 
+// Death documents upload straight from the browser to Cloudinary, so they are not held to the Vercel
+// request limit. 10 MB is the largest file the current Cloudinary plan (Free) accepts.
+export const maxDeathDocumentFileSizeMb = 10
+
+export const maxDeathDocumentFileSize = maxDeathDocumentFileSizeMb * 1024 * 1024
+
+export const deathDocumentFileTooLargeMessage = `This file is too large. Please upload a file that is ${maxDeathDocumentFileSizeMb} MB or smaller.`
+
 export const formatFileSizeInMb = (bytes: number) => `${(bytes / (1024 * 1024)).toFixed(1)} MB`

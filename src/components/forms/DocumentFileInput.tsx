@@ -4,13 +4,10 @@ import { useState, type ChangeEvent, type ComponentProps } from 'react'
 
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
-import {
-  documentationFileTooLargeMessages,
-  formatFileSizeInMb,
-  maxDocumentationFileSize
-} from '@/utils/upload-limits'
+import { documentationFileTooLargeMessages, formatFileSizeInMb, maxDocumentationFileSize } from '@/utils/upload-limits'
 
 type DocumentFileInputProps = Omit<ComponentProps<typeof Input>, 'type'> & {
+  maxFileSize?: number
   tooLargeMessage?: string
 }
 
@@ -18,6 +15,7 @@ type DocumentFileInputProps = Omit<ComponentProps<typeof Input>, 'type'> & {
 // the server action in production, so the server-side check alone can't show a message.
 const DocumentFileInput = ({
   className,
+  maxFileSize = maxDocumentationFileSize,
   onChange,
   tooLargeMessage = documentationFileTooLargeMessages.en,
   ...props
@@ -28,7 +26,7 @@ const DocumentFileInput = ({
     const input = event.currentTarget
     const file = input.files?.[0]
 
-    if (file && file.size > maxDocumentationFileSize) {
+    if (file && file.size > maxFileSize) {
       input.value = ''
       setError(`${tooLargeMessage} (${file.name}: ${formatFileSizeInMb(file.size)})`)
     } else {

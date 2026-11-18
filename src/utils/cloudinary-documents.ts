@@ -128,6 +128,65 @@ export const uploadDocumentToCloudinary = ({
     uploadStream.end(fileBuffer)
   })
 
+export type SignedDocumentUpload = {
+  params: Record<string, string>
+  uploadUrl: string
+}
+
+// Lets the browser upload a file straight to Cloudinary (bypassing the 4.5 MB Vercel request limit).
+// The signature pins the folder and private delivery type, so the browser can't store the file elsewhere.
+export const createSignedDocumentUpload = ({
+  fileName,
+  folder
+}: {
+  fileName: string
+  folder: string
+}): SignedDocumentUpload => {
+  const client = getCloudinaryClient()
+  const { api_key: apiKey, api_secret: apiSecret, cloud_name: cloudName } = client.config()
+
+  if (!apiKey || !apiSecret || !cloudName) {
+    throw new Error('Cloudinary is not configured for document uploads.')
+  }
+
+  const paramsToSign = {
+    filename_override: fileName,
+    folder,
+    timestamp: String(Math.floor(Date.now() / 1000)),
+    type: defaultDeliveryType,
+    unique_filename: 'true',
+    use_filename: 'false'
+  }
+
+  return {
+    params: {
+      ...paramsToSign,
+      api_key: apiKey,
+      signature: client.utils.api_sign_request(paramsToSign, apiSecret)
+    },
+    uploadUrl: `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`
+  }
+}
+
+// Confirms an upload result reported by the browser really came from Cloudinary for this account.
+export const isValidCloudinaryUploadSignature = ({
+  publicId,
+  signature,
+  version
+}: {
+  publicId: string
+  signature: string
+  version: string
+}) => {
+  const client = getCloudinaryClient()
+  const { api_secret: apiSecret } = client.config()
+
+  if (!apiSecret || !publicId || !signature || !version) return false
+
+  // Cloudinary signs upload responses the same way as requests, over public_id and version.
+  return client.utils.api_sign_request({ public_id: publicId, version }, apiSecret) === signature
+}
+
 export const deleteCloudinaryDocument = async ({
   deliveryType,
   publicId,

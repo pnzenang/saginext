@@ -2,7 +2,6 @@ import Link from 'next/link'
 
 import { CheckCircle2, Download, FileText, ShieldCheck, Upload, XCircle } from 'lucide-react'
 
-import DocumentFileInput from '@/components/forms/DocumentFileInput'
 import FormContainer from '@/components/forms/FormContainer'
 import { SubmitButton } from '@/components/forms/Buttons'
 import RestoreDeceasedMemberButton from '@/components/global/RestoreDeceasedMemberButton'
@@ -12,7 +11,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
-import { maxDocumentationFileSizeMb } from '@/utils/upload-limits'
 import {
   countSubmittedDeathDocuments,
   hasDeathDocumentationDetails,
@@ -22,8 +20,7 @@ import {
 import {
   deleteDeceasedMemberDocumentAction,
   reviewDeceasedMemberDocumentAction,
-  updateDeathDocumentationDetailsAction,
-  uploadDeceasedMemberDocumentAction
+  updateDeathDocumentationDetailsAction
 } from '@/utils/actions'
 import type { fetchDeathDocumentationCasesAction } from '@/utils/actions'
 import {
@@ -36,6 +33,7 @@ import {
   type DeceasedMemberDocumentType
 } from '@/utils/types'
 
+import DeathDocumentUploadForm from './DeathDocumentUploadForm'
 import DeathDocumentationCasesList, {
   actionOnlySearchParam,
   deathDocumentationCasesListId,
@@ -181,9 +179,10 @@ const DocumentationSlot = ({
   const inputId = `${deceasedMember.id}-${documentType}`
   const canManageUploadedDocument = !uploadedDocument || uploadedDocument.clerkId === currentUserId
 
-  const deleteDocument = uploadedDocument && canManageUploadedDocument
-    ? deleteDeceasedMemberDocumentAction.bind(null, { documentId: uploadedDocument.id })
-    : null
+  const deleteDocument =
+    uploadedDocument && canManageUploadedDocument
+      ? deleteDeceasedMemberDocumentAction.bind(null, { documentId: uploadedDocument.id })
+      : null
 
   return (
     <div
@@ -250,17 +249,13 @@ const DocumentationSlot = ({
       ) : null}
 
       {!allowUpload ? null : canManageUploadedDocument ? (
-        <FormContainer action={uploadDeceasedMemberDocumentAction} className='grid gap-2'>
-          <input type='hidden' name='deceasedMemberId' value={deceasedMember.id} />
-          <input type='hidden' name='documentType' value={documentType} />
-          <Label htmlFor={inputId}>{uploadedDocument ? 'Replace file' : 'Choose file'}</Label>
-          <p className='text-muted-foreground text-xs'>PDF or image, up to {maxDocumentationFileSizeMb} MB.</p>
-          <DocumentFileInput id={inputId} name='documentFile' accept={documentAccept} required />
-          <SubmitButton
-            text={uploadedDocument ? 'Replace document' : 'Upload document'}
-            className='h-9 w-full text-sm normal-case'
-          />
-        </FormContainer>
+        <DeathDocumentUploadForm
+          accept={documentAccept}
+          deceasedMemberId={deceasedMember.id}
+          documentType={documentType}
+          hasUploadedDocument={Boolean(uploadedDocument)}
+          inputId={inputId}
+        />
       ) : (
         <p className='text-muted-foreground rounded-md border px-3 py-2 text-xs font-semibold'>
           Only the person who uploaded this document can replace or remove it.
@@ -379,9 +374,7 @@ const DeceasedMemberDocumentationCard = ({
     <Card
       className={cn(
         'rounded-lg py-0',
-        showApprovedCaseBackground
-          ? 'border-green-200 bg-green-50/45 dark:border-green-900 dark:bg-green-950/20'
-          : null
+        showApprovedCaseBackground ? 'border-green-200 bg-green-50/45 dark:border-green-900 dark:bg-green-950/20' : null
       )}
     >
       <CardHeader className='border-b px-4 py-4 sm:px-6'>
@@ -546,9 +539,7 @@ const DeathDocumentationsContent = ({
     ? 'border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/40'
     : 'border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/40'
 
-  const alertTextClassName = isAdminUser
-    ? 'text-amber-800 dark:text-amber-200'
-    : 'text-blue-800 dark:text-blue-200'
+  const alertTextClassName = isAdminUser ? 'text-amber-800 dark:text-amber-200' : 'text-blue-800 dark:text-blue-200'
 
   const alertMutedTextClassName = isAdminUser
     ? 'text-amber-700 dark:text-amber-300'
