@@ -776,7 +776,7 @@ const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
                       isContributionUnderway &&
                         'bg-green-400/15 hover:bg-green-400/25 data-[state=selected]:bg-green-600/25 data-[state=selected]:hover:bg-green-600/30 dark:bg-green-400/15 dark:hover:bg-green-400/20 dark:data-[state=selected]:bg-green-600/25 dark:data-[state=selected]:hover:bg-green-600/30',
                       isContributionCompleted &&
-                        'bg-sky-400/15 hover:bg-sky-400/25 data-[state=selected]:bg-sky-600/25 data-[state=selected]:hover:bg-sky-600/30 dark:bg-sky-400/15 dark:hover:bg-sky-400/20 dark:data-[state=selected]:bg-sky-600/25 dark:data-[state=selected]:hover:bg-sky-600/30'
+                        'bg-sky-500/25 hover:bg-sky-500/35 data-[state=selected]:bg-sky-600/35 data-[state=selected]:hover:bg-sky-600/40 dark:bg-sky-500/25 dark:hover:bg-sky-500/30 dark:data-[state=selected]:bg-sky-600/35 dark:data-[state=selected]:hover:bg-sky-600/40'
                     )}
                   >
                     {row.getVisibleCells().map(cell => {
