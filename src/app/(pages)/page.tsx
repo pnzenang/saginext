@@ -1155,6 +1155,7 @@ function HeroSection({
         priority
         sizes='100vw'
         className='-z-20 bg-slate-950 object-cover brightness-105 saturate-105'
+        style={{ objectPosition: heroImage.objectPosition }}
       />
       <div className='absolute inset-0 -z-10 bg-slate-950/20' />
       <div className='absolute inset-0 -z-10 bg-linear-to-r from-slate-950/82 via-slate-950/48 to-slate-950/12' />

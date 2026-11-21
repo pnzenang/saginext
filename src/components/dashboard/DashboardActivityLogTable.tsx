@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { usePagination } from '@/hooks/use-pagination'
 import { usePersistentState } from '@/hooks/use-persistent-state'
-import type { DashboardActivityLogRow } from '@/utils/types'
+import type { DashboardActivityLogMovedMember, DashboardActivityLogRow } from '@/utils/types'
 
 type SortKey = 'action' | 'actorEmail' | 'associationLabel' | 'createdAt' | 'entityType' | 'summary'
 type SortDirection = 'asc' | 'desc'
@@ -57,6 +57,27 @@ const getTitleLabel = (value: string) =>
     .filter(Boolean)
     .map(part => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ')
+
+// Lists the exact members moved by a status-change entry, collapsed by default.
+const MovedMembersList = ({ members }: { members: DashboardActivityLogMovedMember[] }) => {
+  if (members.length === 0) return null
+
+  return (
+    <details className='mt-2'>
+      <summary className='text-primary cursor-pointer text-xs font-semibold'>
+        Show {members.length} member{members.length === 1 ? '' : 's'}
+      </summary>
+      <ul className='mt-2 grid max-h-64 gap-1 overflow-y-auto text-xs'>
+        {members.map(member => (
+          <li key={`${member.associationCode}-${member.memberMatriculationNumber}`} className='tabular-nums'>
+            <span className='font-semibold'>{member.associationCode}</span> · {member.memberMatriculationNumber} ·{' '}
+            {member.name}
+          </li>
+        ))}
+      </ul>
+    </details>
+  )
+}
 
 const getActorEmailLabel = (row: DashboardActivityLogRow) => row.actorEmail || 'Email unavailable'
 
@@ -116,7 +137,10 @@ const DashboardActivityLogTable = ({
         row.associationLabel,
         getTitleLabel(row.action),
         getTitleLabel(row.entityType),
-        row.summary
+        row.summary,
+        ...row.movedMembers.map(
+          member => `${member.associationCode} ${member.memberMatriculationNumber} ${member.name}`
+        )
       ]
         .join(' ')
         .toLowerCase()
@@ -261,7 +285,10 @@ const DashboardActivityLogTable = ({
                     <TableCell className='text-muted-foreground text-sm font-semibold break-words'>
                       {getTitleLabel(row.entityType)}
                     </TableCell>
-                    <TableCell className='text-sm leading-relaxed break-words'>{row.summary}</TableCell>
+                    <TableCell className='text-sm leading-relaxed break-words'>
+                      {row.summary}
+                      <MovedMembersList members={row.movedMembers} />
+                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -288,7 +315,10 @@ const DashboardActivityLogTable = ({
                     {getTitleLabel(row.action)}
                   </Badge>
                 </div>
-                <p className='mt-3 text-sm leading-relaxed break-words'>{row.summary}</p>
+                <div className='mt-3 text-sm leading-relaxed break-words'>
+                  {row.summary}
+                  <MovedMembersList members={row.movedMembers} />
+                </div>
                 <div className='mt-4 grid gap-3 border-t pt-3'>
                   {showAssociation ? (
                     <ActivityMobileValue label='Association' value={row.associationLabel || 'Admin'} />

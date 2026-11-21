@@ -42,6 +42,7 @@ import {
   type DelegateIssueNoteRole,
   type DeceasedMemberDocumentStatus,
   type DeceasedMemberDocumentType,
+  type DashboardActivityLogMovedMember,
   type DashboardActivityLogRow,
   type MemberTransferRequestStatus,
   type NameChangeRequestStatus
@@ -265,6 +266,29 @@ const recordDashboardActivity = async ({
   })
 }
 
+// Reads the member list saved with status-move log entries (see getMovedMembersMetadata).
+const getMovedMembersFromMetadata = (metadata: Prisma.JsonValue | null): DashboardActivityLogMovedMember[] => {
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) return []
+
+  const members = (metadata as Prisma.JsonObject).members
+
+  if (!Array.isArray(members)) return []
+
+  return members.flatMap(member => {
+    if (!member || typeof member !== 'object' || Array.isArray(member)) return []
+
+    const { associationCode, firstName, lastAndMiddleNames, memberMatriculationNumber } = member as Prisma.JsonObject
+
+    return [
+      {
+        associationCode: String(associationCode ?? ''),
+        memberMatriculationNumber: String(memberMatriculationNumber ?? ''),
+        name: [lastAndMiddleNames, firstName].filter(Boolean).join(' ')
+      }
+    ]
+  })
+}
+
 const fetchDashboardActivityLogs = async (
   where: Prisma.DashboardActivityLogWhereInput
 ): Promise<DashboardActivityLogRow[]> => {
@@ -319,6 +343,7 @@ const fetchDashboardActivityLogs = async (
       entityId: log.entityId ?? '',
       entityType: log.entityType,
       id: log.id,
+      movedMembers: getMovedMembersFromMetadata(log.metadata),
       summary: log.summary
     }
   })
@@ -4304,6 +4329,33 @@ export const resetAssociationRegistrationPaymentAction = async (formData: FormDa
   }
 }
 
+const movedMemberSelect = {
+  associationCode: true,
+  firstName: true,
+  id: true,
+  lastAndMiddleNames: true,
+  memberMatriculationNumber: true
+} as const
+
+type MovedMember = {
+  associationCode: string
+  firstName: string
+  id: string
+  lastAndMiddleNames: string
+  memberMatriculationNumber: string
+}
+
+// Saved with each status-move log entry so the exact members moved can always be found later.
+const getMovedMembersMetadata = (members: MovedMember[]): Prisma.InputJsonValue => ({
+  members: members.map(member => ({
+    associationCode: member.associationCode,
+    firstName: member.firstName,
+    id: member.id,
+    lastAndMiddleNames: member.lastAndMiddleNames,
+    memberMatriculationNumber: member.memberMatriculationNumber
+  }))
+})
+
 export const movePendingMembersToAwaitingPublicationAction = async (
   _prevState: { message: string },
   formData: FormData
@@ -4317,12 +4369,9 @@ export const movePendingMembersToAwaitingPublicationAction = async (
       throw new Error('Select at least one pending member.')
     }
 
-    const updatedCount = await db.$transaction(async tx => {
+    const movedMembers = await db.$transaction(async tx => {
       const pendingMembers = await tx.member.findMany({
-        select: {
-          id: true,
-          memberMatriculationNumber: true
-        },
+        select: movedMemberSelect,
         where: {
           id: {
             in: memberIds
@@ -4332,7 +4381,7 @@ export const movePendingMembersToAwaitingPublicationAction = async (
       })
 
       if (pendingMembers.length === 0) {
-        return 0
+        return []
       }
 
       const pendingMemberIds = pendingMembers.map(member => member.id)
@@ -4358,8 +4407,10 @@ export const movePendingMembersToAwaitingPublicationAction = async (
         }
       })
 
-      return updatedMembers.count
+      return updatedMembers.count > 0 ? pendingMembers : []
     })
+
+    const updatedCount = movedMembers.length
 
     if (updatedCount > 0) {
       await recordDashboardActivity({
@@ -4367,6 +4418,7 @@ export const movePendingMembersToAwaitingPublicationAction = async (
         actorClerkId: user.id,
         dashboardScope: dashboardActivityScopes.admin,
         entityType: 'member',
+        metadata: getMovedMembersMetadata(movedMembers),
         summary: `Moved ${updatedCount} pending member${updatedCount === 1 ? '' : 's'} to Awaiting Publication.`
       })
     }
@@ -4400,12 +4452,9 @@ export const makeMembersDelinquentAction = async (
       throw new Error('Select at least one vested member.')
     }
 
-    const updatedCount = await db.$transaction(async tx => {
+    const movedMembers = await db.$transaction(async tx => {
       const vestedMembers = await tx.member.findMany({
-        select: {
-          id: true,
-          memberMatriculationNumber: true
-        },
+        select: movedMemberSelect,
         where: {
           id: {
             in: memberIds
@@ -4415,7 +4464,7 @@ export const makeMembersDelinquentAction = async (
       })
 
       if (vestedMembers.length === 0) {
-        return 0
+        return []
       }
 
       const vestedMemberIds = vestedMembers.map(member => member.id)
@@ -4444,8 +4493,10 @@ export const makeMembersDelinquentAction = async (
         })
       }
 
-      return updatedMembers.count
+      return updatedMembers.count > 0 ? vestedMembers : []
     })
+
+    const updatedCount = movedMembers.length
 
     if (updatedCount > 0) {
       await recordDashboardActivity({
@@ -4453,6 +4504,7 @@ export const makeMembersDelinquentAction = async (
         actorClerkId: user.id,
         dashboardScope: dashboardActivityScopes.admin,
         entityType: 'member',
+        metadata: getMovedMembersMetadata(movedMembers),
         summary: `Moved ${updatedCount} vested member${updatedCount === 1 ? '' : 's'} to Not in Good Standing.`
       })
     }
@@ -4486,18 +4538,34 @@ export const makeVestedMembersAwaitingAction = async (
       throw new Error('Select at least one vested member.')
     }
 
-    const updatedMembers = await db.member.updateMany({
-      data: {
-        memberStatus: memberStatus.Awaiting,
-        vestedAt: null
-      },
-      where: {
-        id: {
-          in: memberIds
+    const movedMembers = await db.$transaction(async tx => {
+      const vestedMembers = await tx.member.findMany({
+        select: movedMemberSelect,
+        where: {
+          id: {
+            in: memberIds
+          },
+          memberStatus: memberStatus.Vested
+        }
+      })
+
+      await tx.member.updateMany({
+        data: {
+          memberStatus: memberStatus.Awaiting,
+          vestedAt: null
         },
-        memberStatus: memberStatus.Vested
-      }
+        where: {
+          id: {
+            in: vestedMembers.map(member => member.id)
+          },
+          memberStatus: memberStatus.Vested
+        }
+      })
+
+      return vestedMembers
     })
+
+    const updatedMembers = { count: movedMembers.length }
 
     if (updatedMembers.count > 0) {
       await recordDashboardActivity({
@@ -4505,6 +4573,7 @@ export const makeVestedMembersAwaitingAction = async (
         actorClerkId: user.id,
         dashboardScope: dashboardActivityScopes.admin,
         entityType: 'member',
+        metadata: getMovedMembersMetadata(movedMembers),
         summary: `Moved ${updatedMembers.count} vested member${
           updatedMembers.count === 1 ? '' : 's'
         } to Awaiting Publication without changing accounting records.`
@@ -4540,18 +4609,34 @@ export const makeAwaitingMembersVestedAction = async (
       throw new Error('Select at least one awaiting publication member.')
     }
 
-    const updatedMembers = await db.member.updateMany({
-      data: {
-        memberStatus: memberStatus.Vested,
-        vestedAt: new Date()
-      },
-      where: {
-        id: {
-          in: memberIds
+    const movedMembers = await db.$transaction(async tx => {
+      const awaitingMembers = await tx.member.findMany({
+        select: movedMemberSelect,
+        where: {
+          id: {
+            in: memberIds
+          },
+          memberStatus: memberStatus.Awaiting
+        }
+      })
+
+      await tx.member.updateMany({
+        data: {
+          memberStatus: memberStatus.Vested,
+          vestedAt: new Date()
         },
-        memberStatus: memberStatus.Awaiting
-      }
+        where: {
+          id: {
+            in: awaitingMembers.map(member => member.id)
+          },
+          memberStatus: memberStatus.Awaiting
+        }
+      })
+
+      return awaitingMembers
     })
+
+    const updatedMembers = { count: movedMembers.length }
 
     if (updatedMembers.count > 0) {
       await recordDashboardActivity({
@@ -4559,6 +4644,7 @@ export const makeAwaitingMembersVestedAction = async (
         actorClerkId: user.id,
         dashboardScope: dashboardActivityScopes.admin,
         entityType: 'member',
+        metadata: getMovedMembersMetadata(movedMembers),
         summary: `Moved ${updatedMembers.count} awaiting publication member${
           updatedMembers.count === 1 ? '' : 's'
         } to Vested without applying contribution credit.`
@@ -4594,13 +4680,11 @@ export const makeMembersVestedAction = async (
       throw new Error('Select at least one delinquent member.')
     }
 
-    const updatedCount = await db.$transaction(async tx => {
+    const movedMembers = await db.$transaction(async tx => {
       const delinquentMembers = await tx.member.findMany({
         select: {
-          associationCode: true,
+          ...movedMemberSelect,
           createdAt: true,
-          id: true,
-          memberMatriculationNumber: true,
           vestedAt: true
         },
         where: {
@@ -4612,7 +4696,7 @@ export const makeMembersVestedAction = async (
       })
 
       if (delinquentMembers.length === 0) {
-        return 0
+        return []
       }
 
       // Returning members keep their original vested date, falling back to their registration date, so they keep
@@ -4651,8 +4735,10 @@ export const makeMembersVestedAction = async (
         )
       )
 
-      return updatedMembers.reduce((total, result) => total + result.count, 0)
+      return delinquentMembers.filter((_member, index) => updatedMembers[index]?.count)
     })
+
+    const updatedCount = movedMembers.length
 
     if (updatedCount > 0) {
       await recordDashboardActivity({
@@ -4660,6 +4746,7 @@ export const makeMembersVestedAction = async (
         actorClerkId: user.id,
         dashboardScope: dashboardActivityScopes.admin,
         entityType: 'member',
+        metadata: getMovedMembersMetadata(movedMembers),
         summary: `Moved ${updatedCount} delinquent member${updatedCount === 1 ? '' : 's'} to Vested.`
       })
     }
@@ -4907,18 +4994,34 @@ export const vestEligibleAwaitingPublicationMembersAction = async (): Promise<{ 
   try {
     const cutoffAt = getAwaitingPublicationVestingCutoff()
 
-    const updatedMembers = await db.member.updateMany({
-      data: {
-        memberStatus: memberStatus.Vested,
-        vestedAt: new Date()
-      },
-      where: {
-        createdAt: {
-          lte: cutoffAt
+    const movedMembers = await db.$transaction(async tx => {
+      const eligibleMembers = await tx.member.findMany({
+        select: movedMemberSelect,
+        where: {
+          createdAt: {
+            lte: cutoffAt
+          },
+          memberStatus: memberStatus.Awaiting
+        }
+      })
+
+      await tx.member.updateMany({
+        data: {
+          memberStatus: memberStatus.Vested,
+          vestedAt: new Date()
         },
-        memberStatus: memberStatus.Awaiting
-      }
+        where: {
+          id: {
+            in: eligibleMembers.map(member => member.id)
+          },
+          memberStatus: memberStatus.Awaiting
+        }
+      })
+
+      return eligibleMembers
     })
+
+    const updatedMembers = { count: movedMembers.length }
 
     if (updatedMembers.count > 0) {
       await recordDashboardActivity({
@@ -4926,6 +5029,7 @@ export const vestEligibleAwaitingPublicationMembersAction = async (): Promise<{ 
         actorClerkId: user.id,
         dashboardScope: dashboardActivityScopes.admin,
         entityType: 'member',
+        metadata: getMovedMembersMetadata(movedMembers),
         summary: `Moved ${updatedMembers.count} eligible awaiting publication member${
           updatedMembers.count === 1 ? '' : 's'
         } to Vested.`

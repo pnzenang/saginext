@@ -298,6 +298,12 @@ export const memberTransferRequestStatusLabels: Record<MemberTransferRequestStat
   receiving_delegate_rejected: 'Delegate rejected'
 }
 
+export type DashboardActivityLogMovedMember = {
+  associationCode: string
+  memberMatriculationNumber: string
+  name: string
+}
+
 export type DashboardActivityLogRow = {
   action: string
   actorEmail: string
@@ -308,6 +314,7 @@ export type DashboardActivityLogRow = {
   entityId: string
   entityType: string
   id: string
+  movedMembers: DashboardActivityLogMovedMember[]
   summary: string
 }
 
