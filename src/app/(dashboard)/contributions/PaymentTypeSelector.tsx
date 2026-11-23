@@ -2,12 +2,11 @@
 
 import { useState } from 'react'
 
-import { Banknote, CreditCard, Landmark, WalletCards } from 'lucide-react'
+import { Banknote, CreditCard, HandCoins, Landmark, UserPlus, WalletCards } from 'lucide-react'
 import Link from 'next/link'
 import { SiZelle } from 'react-icons/si'
 
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { cn } from '@/lib/utils'
 import {
   getContributionPaymentAmountDetails,
   type ContributionPaymentAmountDetails
@@ -19,6 +18,11 @@ const currencyFormatter = new Intl.NumberFormat('en-US', {
 })
 
 type PaymentType = 'contribution' | 'registration'
+
+const paymentTypeOptions: { icon: typeof UserPlus; label: string; value: PaymentType }[] = [
+  { icon: UserPlus, label: 'Registration payment', value: 'registration' },
+  { icon: HandCoins, label: 'Contribution payment', value: 'contribution' }
+]
 
 type PaymentInstructionRoutes = {
   bankDeposit: string
@@ -265,17 +269,54 @@ const PaymentTypeSelector = ({
         </div>
 
         <div className='border-primary/25 bg-background w-full rounded-lg border p-4 shadow-sm sm:p-6'>
-          <div className='grid w-full gap-2'>
-            <Label htmlFor='payment-type'>Payment type</Label>
-            <Select value={paymentType} onValueChange={handlePaymentTypeChange}>
-              <SelectTrigger id='payment-type' className='w-full'>
-                <SelectValue placeholder='Select payment type' />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value='registration'>Registration payment</SelectItem>
-                <SelectItem value='contribution'>Contribution payment</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className='grid w-full gap-3'>
+            <p id='payment-type-label' className='text-sm leading-none font-medium'>
+              Choose a payment type
+            </p>
+            {/* Two always-visible buttons instead of a dropdown, so neither option can be missed on a phone. */}
+            <div role='radiogroup' aria-labelledby='payment-type-label' className='grid gap-3 sm:grid-cols-2'>
+              {paymentTypeOptions.map(option => {
+                const isSelected = paymentType === option.value
+                const Icon = option.icon
+                const amountDue = option.value === 'registration' ? registrationDues : contributionPaymentAmount
+
+                return (
+                  <button
+                    key={option.value}
+                    type='button'
+                    role='radio'
+                    aria-checked={isSelected}
+                    onClick={() => handlePaymentTypeChange(option.value)}
+                    className={cn(
+                      'focus-visible:ring-ring/50 flex min-h-20 w-full items-center gap-4 rounded-lg border-2 p-4 text-left transition-colors focus-visible:ring-3 focus-visible:outline-none',
+                      isSelected
+                        ? 'border-primary bg-primary text-primary-foreground shadow-md'
+                        : 'border-primary/30 bg-primary/5 text-primary hover:border-primary/60 hover:bg-primary/10'
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        'flex size-11 shrink-0 items-center justify-center rounded-md',
+                        isSelected ? 'bg-primary-foreground/15' : 'bg-primary/10'
+                      )}
+                    >
+                      <Icon className='size-6' aria-hidden='true' />
+                    </span>
+                    <span className='grid min-w-0 gap-0.5'>
+                      <span className='text-base font-extrabold sm:text-lg'>{option.label}</span>
+                      <span
+                        className={cn(
+                          'text-sm font-semibold',
+                          isSelected ? 'text-primary-foreground/80' : 'text-primary/70'
+                        )}
+                      >
+                        {amountDue > 0 ? `${currencyFormatter.format(amountDue)} due` : 'Nothing due right now'}
+                      </span>
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
           </div>
         </div>
       </div>
