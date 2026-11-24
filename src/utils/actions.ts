@@ -53,6 +53,7 @@ import {
   fetchAssociationContributionSummary,
   getContributionAssessmentMonthWhere,
   getContributionMonthDateRange,
+  getContributionPaymentAmountsForMonth,
   fetchLatestAssociationContributionAssessment
 } from './sagi-contribution-summary'
 import { getContributionPaymentAmountDetails, parseContributionPaymentCodeCents } from './contribution-payment-code'
@@ -554,6 +555,70 @@ const createMissingPaymentHistoryLedgerEntries = async ({
     tx,
     verifiedAt: payment.verifiedAt
   })
+}
+
+// A contribution payment row only tracks the current month. When its last verification was in an earlier
+// month, that verified money is already in the ledger, so the row starts the new month with only what is
+// still unverified. Without this, last month's verified amount is counted again as "sent" this month.
+const rollOverStaleContributionPayment = async ({
+  associationCode,
+  createdBy,
+  tx
+}: {
+  associationCode: string
+  createdBy: string
+  tx: Prisma.TransactionClient
+}) => {
+  const payment = await tx.associationContributionPayment.findUnique({
+    where: {
+      associationCode
+    }
+  })
+
+  const { monthStart } = getContributionMonthDateRange()
+
+  if (!payment?.verifiedAt || payment.verifiedAt >= monthStart) {
+    return payment
+  }
+
+  await createMissingPaymentHistoryLedgerEntries({
+    createdBy,
+    payment,
+    paymentType: associationPaymentTypes.contribution,
+    tx
+  })
+
+  return tx.associationContributionPayment.update({
+    data: {
+      amountSent: roundCurrencyAmount(
+        Math.max(decimalToNumber(payment.amountSent) - decimalToNumber(payment.amountVerified), 0)
+      ),
+      amountVerified: 0,
+      verifiedAt: null
+    },
+    where: {
+      associationCode
+    }
+  })
+}
+
+const awaitingVerificationMessage = (paymentType: string, amount: number) =>
+  `Your ${paymentType} payment of ${currencyFormatter.format(amount)} is still waiting for SAGI to verify it. You can record another amount after it is verified.`
+
+// Only one submitted amount can wait for verification at a time.
+const assertNoContributionPaymentAwaitingVerification = async (client: Prisma.TransactionClient | typeof db, associationCode: string) => {
+  const payment = await client.associationContributionPayment.findUnique({ where: { associationCode } })
+  const { amountSent, amountVerified } = getContributionPaymentAmountsForMonth(payment)
+  const amountAwaiting = roundCurrencyAmount(amountSent - amountVerified)
+
+  if (amountAwaiting > 0) throw new Error(awaitingVerificationMessage(associationPaymentTypes.contribution, amountAwaiting))
+}
+
+const assertNoRegistrationPaymentAwaitingVerification = async (client: Prisma.TransactionClient | typeof db, associationCode: string) => {
+  const payment = await client.associationRegistrationPayment.findUnique({ where: { associationCode } })
+  const amountAwaiting = roundCurrencyAmount(decimalToNumber(payment?.amountSent))
+
+  if (amountAwaiting > 0) throw new Error(awaitingVerificationMessage(associationPaymentTypes.registration, amountAwaiting))
 }
 
 const getRequiredFormValue = (formData: FormData, fieldName: string) => {
@@ -3226,6 +3291,9 @@ export const saveAssociationContributionPaymentAction = async (
   try {
     const associationCode = await getCurrentAssociationCode(user.id)
     const amountSent = getPositiveDollarAmountFromForm(formData, 'amountSent')
+
+    await assertNoContributionPaymentAwaitingVerification(db, associationCode)
+
     const submittedAt = new Date()
     const documentFile = getOptionalIssueNoteDocumentFile(formData)
     const latestContributionPaymentStateEntry = await fetchLatestContributionPaymentStateLedgerEntry(associationCode)
@@ -3271,6 +3339,9 @@ export const saveAssociationContributionPaymentAction = async (
 
     try {
       const payment = await db.$transaction(async tx => {
+        await rollOverStaleContributionPayment({ associationCode, createdBy: user.id, tx })
+        await assertNoContributionPaymentAwaitingVerification(tx, associationCode)
+
         const payment = await tx.associationContributionPayment.upsert({
           create: {
             amountSent,
@@ -3415,6 +3486,9 @@ export const saveAssociationRegistrationPaymentAction = async (
   try {
     const associationCode = await getCurrentAssociationCode(user.id)
     const amountSent = getPositiveDollarAmountFromForm(formData, 'amountSent')
+
+    await assertNoRegistrationPaymentAwaitingVerification(db, associationCode)
+
     const submittedAt = new Date()
     const documentFile = getOptionalIssueNoteDocumentFile(formData)
     const latestRegistrationPaymentStateEntry = await fetchLatestRegistrationPaymentStateLedgerEntry(associationCode)
@@ -3460,6 +3534,8 @@ export const saveAssociationRegistrationPaymentAction = async (
 
     try {
       const payment = await db.$transaction(async tx => {
+        await assertNoRegistrationPaymentAwaitingVerification(tx, associationCode)
+
         const payment = await tx.associationRegistrationPayment.upsert({
           create: {
             amountSent,
@@ -3603,11 +3679,9 @@ export const verifyAssociationContributionPaymentAction = async (
   try {
     const associationCode = getRequiredFormValue(formData, 'associationCode')
 
-    const payment = await db.associationContributionPayment.findUnique({
-      where: {
-        associationCode
-      }
-    })
+    const payment = await db.$transaction(tx =>
+      rollOverStaleContributionPayment({ associationCode, createdBy: user.id, tx })
+    )
 
     if (!payment) {
       throw new Error('No contribution payment found for this association code.')
@@ -3796,11 +3870,7 @@ export const addAssociationContributionSentAdjustmentAction = async (
     const amount = getSignedDollarAmountFromForm(formData, 'sentAmount')
 
     await db.$transaction(async tx => {
-      const payment = await tx.associationContributionPayment.findUnique({
-        where: {
-          associationCode
-        }
-      })
+      const payment = await rollOverStaleContributionPayment({ associationCode, createdBy: user.id, tx })
 
       const currentAmountSent = decimalToNumber(payment?.amountSent)
       const nextAmountSent = roundCurrencyAmount(currentAmountSent + amount)
@@ -3879,11 +3949,9 @@ export const markAssociationContributionPaymentNotFoundAction = async (
   try {
     const associationCode = getRequiredFormValue(formData, 'associationCode')
 
-    const currentPayment = await db.associationContributionPayment.findUnique({
-      where: {
-        associationCode
-      }
-    })
+    const currentPayment = await db.$transaction(tx =>
+      rollOverStaleContributionPayment({ associationCode, createdBy: user.id, tx })
+    )
 
     if (!currentPayment) {
       throw new Error('No contribution payment found for this association code.')

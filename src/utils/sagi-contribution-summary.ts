@@ -59,6 +59,24 @@ export const getContributionMonthDateRange = (date = new Date()) => {
   }
 }
 
+// The sent and verified amounts on a contribution payment row that belong to the given month. When the last
+// verification was in an earlier month, that verified money is not counted again as sent this month.
+export const getContributionPaymentAmountsForMonth = (
+  payment: { amountSent: unknown; amountVerified: unknown; verifiedAt: Date | null } | null | undefined,
+  date = new Date()
+) => {
+  const amountSent = decimalToNumber(payment?.amountSent)
+  const amountVerified = decimalToNumber(payment?.amountVerified)
+
+  if (!payment?.verifiedAt) return { amountSent, amountVerified: 0 }
+
+  const { monthStart, nextMonthStart } = getContributionMonthDateRange(date)
+
+  if (payment.verifiedAt >= monthStart && payment.verifiedAt < nextMonthStart) return { amountSent, amountVerified }
+
+  return { amountSent: Number(Math.max(amountSent - amountVerified, 0).toFixed(2)), amountVerified: 0 }
+}
+
 export const getContributionAssessmentMonthWhere = (date = new Date()) => {
   const { monthStart, nextMonthStart } = getContributionMonthDateRange(date)
 
@@ -180,7 +198,7 @@ export const fetchAssociationContributionSummary = async (
     ? contributionPaymentAmountDetails.amountToSend
     : amountOwed
 
-  const currentAmountSent = decimalToNumber(payment?.amountSent)
+  const currentAmountSent = getContributionPaymentAmountsForMonth(payment, options.assessmentDate).amountSent
   const amountReceived = Number(Math.max(currentAmountSent, 0).toFixed(2))
   const amountVerified = paymentLedgerTotals.amountVerified
   const manualBalanceAdjustment = decimalToNumber(balanceAdjustment?.amount)

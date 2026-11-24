@@ -19,7 +19,8 @@ import {
 import {
   contributionBalanceAdjustmentType,
   fetchLatestAssociationContributionAssessmentForMonth,
-  getContributionMonthDateRange
+  getContributionMonthDateRange,
+  getContributionPaymentAmountsForMonth
 } from '@/utils/sagi-contribution-summary'
 import { contributionPaymentAlertType } from '@/utils/payment-constants'
 import { associationPaymentLedgerEventTypes, associationPaymentTypes } from '@/utils/sagi-payment-ledger'
@@ -43,9 +44,6 @@ type ContributionVerifiedLedgerTotal = {
 const roundCurrencyAmount = (amount: number) => Number(amount.toFixed(2))
 
 type ContributionMonthDateRange = ReturnType<typeof getContributionMonthDateRange>
-
-const isDateInContributionMonthDateRange = (date: Date | null | undefined, dateRange: ContributionMonthDateRange) =>
-  Boolean(date && date >= dateRange.monthStart && date < dateRange.nextMonthStart)
 
 const fetchContributionVerifiedLedgerTotalsByCode = async (
   associationCodes: string[],
@@ -212,14 +210,9 @@ const AdminContributionPayments = async () => {
     associationCodes.map(associationCode => {
       const payment = paymentsByCode.get(associationCode)
       const vestedMembers = vestedCountsByCode.get(associationCode) ?? 0
-      const currentAmountSent = decimalToNumber(payment?.amountSent)
 
-      const currentAmountVerified = isDateInContributionMonthDateRange(
-        payment?.verifiedAt,
-        currentContributionDateRange
-      )
-        ? decimalToNumber(payment?.amountVerified)
-        : 0
+      const { amountSent: currentAmountSent, amountVerified: currentAmountVerified } =
+        getContributionPaymentAmountsForMonth(payment)
 
       const recordedAmountVerified = verifiedLedgerTotalsByCode.get(associationCode) ?? 0
       const amountVerified = roundCurrencyAmount(Math.max(recordedAmountVerified, currentAmountVerified))
