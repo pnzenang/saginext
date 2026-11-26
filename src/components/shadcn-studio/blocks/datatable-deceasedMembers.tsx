@@ -280,13 +280,13 @@ const columns: ColumnDef<DeceasedMemberType>[] = [
 
       const styles = {
         Case_In_Review:
-          'bg-amber-600/10 text-amber-600 focus-visible:ring-amber-600/20 dark:bg-amber-400/10 dark:text-amber-400 dark:focus-visible:ring-amber-400/40 [a&]:hover:bg-amber-600/5 dark:[a&]:hover:bg-amber-400/5',
+          'bg-amber-600/20 text-amber-800 focus-visible:ring-amber-600/30 dark:bg-amber-400/25 dark:text-amber-300 dark:focus-visible:ring-amber-400/40 [a&]:hover:bg-amber-600/15 dark:[a&]:hover:bg-amber-400/20',
         Contribution_Denied:
           'bg-destructive/10 text-destructive focus-visible:ring-destructive/20 dark:bg-destructive/10 dark:text-destructive dark:focus-visible:ring-destructive/40 [a&]:hover:bg-destructive/5 dark:[a&]:hover:bg-destructive/5',
         Contribution_Underway:
-          'bg-blue-600/10 text-blue-600 focus-visible:ring-blue-600/20 dark:bg-blue-400/10 dark:text-blue-400 dark:focus-visible:ring-blue-400/40 [a&]:hover:bg-blue-600/5 dark:[a&]:hover:bg-blue-400/5',
+          'bg-blue-600/20 text-blue-800 focus-visible:ring-blue-600/30 dark:bg-blue-400/25 dark:text-blue-300 dark:focus-visible:ring-blue-400/40 [a&]:hover:bg-blue-600/15 dark:[a&]:hover:bg-blue-400/20',
         Contribution_Completed:
-          'bg-green-600/10 text-green-600 focus-visible:ring-green-600/20 dark:bg-green-400/10 dark:text-green-400 dark:focus-visible:ring-green-400/40 [a&]:hover:bg-green-600/5 dark:[a&]:hover:bg-green-400/5'
+          'bg-green-600/20 text-green-800 focus-visible:ring-green-600/30 dark:bg-green-400/25 dark:text-green-300 dark:focus-visible:ring-green-400/40 [a&]:hover:bg-green-600/15 dark:[a&]:hover:bg-green-400/20'
       }[contributionStatus]
 
       return (
@@ -395,21 +395,21 @@ const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
       value: summaryTotals.completed,
       icon: CheckCircle2,
       colorClassName: 'text-green-600 dark:text-green-400',
-      cardClassName: 'border-green-500/20 bg-green-500/10'
+      cardClassName: 'border-green-600/40 bg-green-500/25'
     },
     {
       label: 'Underway',
       value: summaryTotals.underway,
       icon: CircleDollarSign,
       colorClassName: 'text-blue-600 dark:text-blue-400',
-      cardClassName: 'border-blue-500/20 bg-blue-500/10'
+      cardClassName: 'border-blue-600/40 bg-blue-500/25'
     },
     {
       label: 'In Review',
       value: summaryTotals.review,
       icon: ClipboardList,
       colorClassName: 'text-amber-600 dark:text-amber-400',
-      cardClassName: 'border-amber-500/20 bg-amber-500/10'
+      cardClassName: 'border-amber-600/40 bg-amber-500/25'
     },
     {
       label: 'Denied',
@@ -731,15 +731,15 @@ const DeceasedMembersDataTable = ({ data }: { data: DeceasedMemberType[] }) => {
                     data-state={row.getIsSelected() && 'selected'}
                     className={cn(
                       hasApprovedDeathDocuments &&
-                        'bg-green-400/15 hover:bg-green-400/25 data-[state=selected]:bg-green-600/25 data-[state=selected]:hover:bg-green-600/30 dark:bg-green-400/15 dark:hover:bg-green-400/20 dark:data-[state=selected]:bg-green-600/25 dark:data-[state=selected]:hover:bg-green-600/30',
+                        'bg-green-500/30 hover:bg-green-500/40 data-[state=selected]:bg-green-600/40 data-[state=selected]:hover:bg-green-600/45 dark:bg-green-500/30 dark:hover:bg-green-500/40 dark:data-[state=selected]:bg-green-600/40 dark:data-[state=selected]:hover:bg-green-600/45',
                       hasSubmittedDeathDocuments &&
-                        'bg-yellow-400/15 hover:bg-yellow-600/25 data-[state=selected]:bg-yellow-600/25 data-[state=selected]:hover:bg-yellow-600/30 dark:bg-yellow-400/15 dark:hover:bg-yellow-600/25 dark:data-[state=selected]:bg-yellow-600/25 dark:data-[state=selected]:hover:bg-yellow-600/30',
+                        'bg-yellow-500/35 hover:bg-yellow-600/40 data-[state=selected]:bg-yellow-600/40 data-[state=selected]:hover:bg-yellow-600/45 dark:bg-yellow-500/30 dark:hover:bg-yellow-600/40 dark:data-[state=selected]:bg-yellow-600/40 dark:data-[state=selected]:hover:bg-yellow-600/45',
                       hasRejectedDeathDocuments &&
-                        'bg-red-500/15 hover:bg-red-600/25 data-[state=selected]:bg-red-600/25 data-[state=selected]:hover:bg-red-600/30 dark:bg-red-500/15 dark:hover:bg-red-600/25 dark:data-[state=selected]:bg-red-600/25 dark:data-[state=selected]:hover:bg-red-600/30',
+                        'bg-red-500/30 hover:bg-red-600/40 data-[state=selected]:bg-red-600/40 data-[state=selected]:hover:bg-red-600/45 dark:bg-red-500/30 dark:hover:bg-red-600/40 dark:data-[state=selected]:bg-red-600/40 dark:data-[state=selected]:hover:bg-red-600/45',
                       isContributionUnderway &&
-                        'bg-green-400/15 hover:bg-green-400/25 data-[state=selected]:bg-green-600/25 data-[state=selected]:hover:bg-green-600/30 dark:bg-green-400/15 dark:hover:bg-green-400/20 dark:data-[state=selected]:bg-green-600/25 dark:data-[state=selected]:hover:bg-green-600/30',
+                        'bg-green-500/30 hover:bg-green-500/40 data-[state=selected]:bg-green-600/40 data-[state=selected]:hover:bg-green-600/45 dark:bg-green-500/30 dark:hover:bg-green-500/40 dark:data-[state=selected]:bg-green-600/40 dark:data-[state=selected]:hover:bg-green-600/45',
                       isContributionCompleted &&
-                        'bg-sky-500/25 hover:bg-sky-500/35 data-[state=selected]:bg-sky-600/35 data-[state=selected]:hover:bg-sky-600/40 dark:bg-sky-500/25 dark:hover:bg-sky-500/30 dark:data-[state=selected]:bg-sky-600/35 dark:data-[state=selected]:hover:bg-sky-600/40'
+                        'bg-sky-600/40 hover:bg-sky-600/50 data-[state=selected]:bg-sky-700/50 data-[state=selected]:hover:bg-sky-700/55 dark:bg-sky-600/40 dark:hover:bg-sky-600/50 dark:data-[state=selected]:bg-sky-700/50 dark:data-[state=selected]:hover:bg-sky-700/55'
                     )}
                   >
                     {row.getVisibleCells().map(cell => {
